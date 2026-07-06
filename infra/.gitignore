@@ -1,16 +1,17 @@
-# ─── Terraform ───────────────────────────────────────────────────────────────
-infra/.terraform/
-infra/**/.terraform/
-infra/**/*.tfstate
-infra/**/*.tfstate.*
-infra/**/.terraform.lock.hcl
-infra/**/crash.log
-infra/**/crash.*.log
-infra/**/*.tfvars.local
-infra/**/override.tf
-infra/**/override.tf.json
-infra/**/*_override.tf
-infra/**/*_override.tf.json
+# ─── Terraform (relativo a la carpeta infra) ─────────────────────────────────
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+crash.*.log
+*.tfvars.local
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+tfplan
 
 # ─── Secretos (NUNCA subir al repositorio) ───────────────────────────────────
 *.pem

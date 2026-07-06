@@ -22,7 +22,7 @@ resource "aws_elastic_beanstalk_application" "gestia" {
 resource "aws_elastic_beanstalk_environment" "dev" {
   name                = "${var.project}-backend-${var.env}"
   application         = aws_elastic_beanstalk_application.gestia.name
-  solution_stack_name = "64bit Amazon Linux 2023 v6.5.1 running Node.js 20"
+  solution_stack_name = "64bit Amazon Linux 2023 v6.11.3 running Node.js 20"
   tier                = "WebServer"
 
   # ── Instancia ────────────────────────────────────────────────────────────────

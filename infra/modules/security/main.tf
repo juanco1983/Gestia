@@ -51,7 +51,7 @@ resource "aws_security_group" "backend" {
 # ─── Security Group: Base de Datos (RDS) ─────────────────────────────────────
 resource "aws_security_group" "rds" {
   name        = "${var.project}-${var.env}-sg-rds"
-  description = "SG para RDS PostgreSQL — solo acceso desde backend"
+  description = "SG para RDS PostgreSQL - solo acceso desde backend"
   vpc_id      = var.vpc_id
 
   # PostgreSQL SOLO desde el SG del backend

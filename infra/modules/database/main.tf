@@ -21,7 +21,7 @@ resource "aws_db_instance" "postgres" {
 
   # Engine
   engine         = "postgres"
-  engine_version = "15.10"
+  engine_version = "15"
   instance_class = var.instance_class   # db.t3.micro = Free Tier
 
   # Storage (Free Tier: 20 GB gp2)
@@ -39,8 +39,8 @@ resource "aws_db_instance" "postgres" {
   vpc_security_group_ids = [var.rds_sg_id]
   publicly_accessible    = false   # Solo accesible desde la VPC
 
-  # Backups (retener 7 días en DEV)
-  backup_retention_period = 7
+  # Backups (desactivado en DEV para cumplir con la Capa Gratuita)
+  backup_retention_period = 0
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
