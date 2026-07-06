@@ -598,14 +598,23 @@ export default function App() {
   };
 
   const handleAddOT = async (newOT: OT) => {
-    setOts(prev => [...prev, newOT]);
     try {
-      await fetchWithAuth('/api/ots', {
+      const response = await fetchWithAuth('/api/ots', {
         method: 'POST',
         body: JSON.stringify(newOT)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`No se pudo crear la OT: ${errorData.error || 'Error desconocido'}`);
+        return;
+      }
+
+      const created = await response.json();
+      setOts(prev => [...prev, created]);
     } catch (e) {
-      console.warn("OT guardada en caché local:", e);
+      console.warn("OT guardada en caché local (offline):", e);
+      setOts(prev => [...prev, newOT]);
     }
   };
 
@@ -1777,6 +1786,7 @@ export default function App() {
                 <VentasView 
                   clients={clients}
                   contracts={contracts}
+                  contratosComerciales={contratosNuevos}
                   ots={ots}
                   reports={[...reports, ...offlineQueue]}
                   onAddClient={handleAddClient}

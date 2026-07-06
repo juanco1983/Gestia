@@ -308,6 +308,7 @@ export default function ClientesContratosView({
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Descripción del Alcance</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Vigencia</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Responsable</th>
+                    <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Consumo / Saldo</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Estado</th>
                   </tr>
                 </thead>
@@ -339,6 +340,31 @@ export default function ClientesContratosView({
                       </td>
                       <td className="px-5 py-4">
                         <div className="text-xs font-bold text-slate-600">{contrato.comercial}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        {contrato.presupuesto_total_usd ? (() => {
+                          const presupuesto = contrato.presupuesto_total_usd;
+                          const saldo = contrato.saldo_disponible_usd ?? presupuesto;
+                          const consumo = presupuesto - saldo;
+                          const pct = presupuesto > 0 ? (consumo / presupuesto) * 100 : 0;
+                          
+                          let badgeClass = "bg-[#E6F7F4] text-[#00B594] border-[#00B594]/20";
+                          if (pct >= 95) badgeClass = "bg-rose-100 text-rose-600 border-rose-200";
+                          else if (pct >= 80) badgeClass = "bg-amber-100 text-amber-600 border-amber-200";
+                          
+                          return (
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded border ${badgeClass}`}>
+                                {pct.toFixed(0)}% CONSUMIDO
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-600">
+                                Saldo: ${saldo.toFixed(2)}
+                              </span>
+                            </div>
+                          );
+                        })() : (
+                          <span className="text-[10px] font-medium text-slate-400 italic">No definido</span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
