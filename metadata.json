@@ -1,0 +1,6 @@
+{
+  "name": "Mafort Technical Reports",
+  "description": "Technical specification and system dashboard for the Mafort technical service report automation platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

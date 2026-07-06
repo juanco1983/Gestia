@@ -1,0 +1,1315 @@
+{
+  "users": [
+    {
+      "id": "user_0",
+      "username": "Administrador General",
+      "email": "admin@mafort.pe",
+      "role": "Administrador",
+      "estado": "Activo",
+      "area": "Administración General",
+      "ultimoIngreso": "2026-06-30 00:19:55",
+      "creadoEn": "2026-01-01",
+      "password": "$2b$10$ylaqKwd2HK/VKRY9ZBVHR.ERdi7bsV60mrnCdPhNkFVzLBG6oAH3G",
+      "allowedModules": [
+        "Dashboard",
+        "Monitoreo",
+        "GestionOTs",
+        "ClientesContratos",
+        "Ventas",
+        "Tecnico",
+        "Supervisor",
+        "Cliente",
+        "Usuarios"
+      ]
+    },
+    {
+      "id": "user_1",
+      "username": "Coord. Ventas",
+      "email": "ventas@mafort.pe",
+      "role": "Ventas",
+      "estado": "Activo",
+      "area": "Planeamiento Comercial",
+      "ultimoIngreso": "2026-06-22 07:15",
+      "creadoEn": "2026-01-10",
+      "password": "$2b$10$ypfmYUi9nWtYWfT9h6Xp9O9mniUtISFqDsmcTXZm0gWAK8iKUN65e",
+      "allowedModules": [
+        "Dashboard",
+        "Monitoreo",
+        "GestionOTs",
+        "ClientesContratos",
+        "Ventas"
+      ]
+    },
+    {
+      "id": "user_2",
+      "username": "Carlos Ocsa",
+      "email": "tecnico@mafort.pe",
+      "role": "Tecnico",
+      "estado": "Activo",
+      "area": "Mantenimiento de Campo",
+      "ultimoIngreso": "2026-06-22 07:22",
+      "creadoEn": "2026-01-12",
+      "password": "$2b$10$yPFTws6m7UUQDOyK2GcsMeGoPIbuM3z0BpCvsDo0.OfYDwr2e838S",
+      "allowedModules": [
+        "Dashboard",
+        "Monitoreo",
+        "Tecnico"
+      ]
+    },
+    {
+      "id": "user_3",
+      "username": "Ing. Supervisor",
+      "email": "supervisor@mafort.pe",
+      "role": "Supervisor",
+      "estado": "Activo",
+      "area": "Control de Calidad (SLA)",
+      "ultimoIngreso": "2026-06-27 03:06:49",
+      "creadoEn": "2026-01-15",
+      "password": "$2b$10$/YnxGZhh9Pz3pQYzZ4HrzOW5WThNrWC7TD1KAz7tJ7VC8vyM1/1nq",
+      "allowedModules": [
+        "Supervisor",
+        "Monitoreo",
+        "GestionOTs"
+      ]
+    },
+    {
+      "id": "user_4",
+      "username": "Rep. Prosegur",
+      "email": "cliente@mafort.pe",
+      "role": "Cliente",
+      "estado": "Activo",
+      "area": "Seguridad y Operaciones",
+      "ultimoIngreso": "2026-06-22 06:45",
+      "creadoEn": "2026-02-01",
+      "password": "$2b$10$9gPRKi6AsyqEU1Lf6DVRtuuR75WhpBWNELDBsQo8ZlhNfhsPIBOKi",
+      "clientId": "client_3",
+      "allowedModules": [
+        "Dashboard",
+        "Monitoreo",
+        "Cliente"
+      ]
+    },
+    {
+      "id": "user_5",
+      "username": "Juan Córdova",
+      "email": "juan.cordova@materiagris.pe",
+      "role": "Tecnico",
+      "estado": "Activo",
+      "area": "Seguridad Eléctrica & Supervisor",
+      "ultimoIngreso": "2026-06-30 00:19:49",
+      "creadoEn": "2026-01-20",
+      "password": "$2b$10$wSMomC8CyrEVSuAExAq5iuSmGAwqRuqIHMAVVMQncFQgZd5F2Rete",
+      "allowedModules": [
+        "Tecnico"
+      ]
+    }
+  ],
+  "logs": [
+    {
+      "id": "log_1782778795911",
+      "timestamp": "2026-06-30 00:19:55",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778793069",
+      "timestamp": "2026-06-30 00:19:53",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778789904",
+      "timestamp": "2026-06-30 00:19:49",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778786482",
+      "timestamp": "2026-06-30 00:19:46",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490734244",
+      "timestamp": "2026-06-26 16:18:54",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490729995",
+      "timestamp": "2026-06-26 16:18:49",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490698851",
+      "timestamp": "2026-06-26 16:18:18",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490691116",
+      "timestamp": "2026-06-26 16:18:11",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489695891",
+      "timestamp": "2026-06-26 16:01:35",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489690675",
+      "timestamp": "2026-06-26 16:01:30",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489654717",
+      "timestamp": "2026-06-26 16:00:54",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489649663",
+      "timestamp": "2026-06-26 16:00:49",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488742253",
+      "timestamp": "2026-06-26 15:45:42",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488738616",
+      "timestamp": "2026-06-26 15:45:38",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488524180",
+      "timestamp": "2026-06-26 15:42:04",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488518942",
+      "timestamp": "2026-06-26 15:41:58",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488133893",
+      "timestamp": "2026-06-26 15:35:33",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488130735",
+      "timestamp": "2026-06-26 15:35:30",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488072396",
+      "timestamp": "2026-06-26 15:34:32",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488064828",
+      "timestamp": "2026-06-26 15:34:24",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486195265",
+      "timestamp": "2026-06-26 15:03:15",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486190697",
+      "timestamp": "2026-06-26 15:03:10",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486178827",
+      "timestamp": "2026-06-26 15:02:58",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486175662",
+      "timestamp": "2026-06-26 15:02:55",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483420811",
+      "timestamp": "2026-06-26 14:17:00",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483416802",
+      "timestamp": "2026-06-26 14:16:56",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483406117",
+      "timestamp": "2026-06-26 14:16:46",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483400664",
+      "timestamp": "2026-06-26 14:16:40",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483396550",
+      "timestamp": "2026-06-26 14:16:36",
+      "userEmail": "admin@mafort.pe",
+      "action": "EDITAR_USUARIO",
+      "details": "Modificación de metadatos del usuario catalogado id user_3. Nombre: Ing. Supervisor, Rol: Supervisor, Área: Control de Calidad (SLA), Módulos: [Supervisor, Monitoreo, GestionOTs]",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483369137",
+      "timestamp": "2026-06-26 14:16:09",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483364544",
+      "timestamp": "2026-06-26 14:16:04",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483354314",
+      "timestamp": "2026-06-26 14:15:54",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483350714",
+      "timestamp": "2026-06-26 14:15:50",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483343548",
+      "timestamp": "2026-06-26 14:15:43",
+      "userEmail": "admin@mafort.pe",
+      "action": "EDITAR_USUARIO",
+      "details": "Modificación de metadatos del usuario catalogado id user_3. Nombre: Ing. Supervisor, Rol: Supervisor, Área: Control de Calidad (SLA), Módulos: [Monitoreo, Supervisor]",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782482124970",
+      "timestamp": "2026-06-26 13:55:24",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338931401",
+      "timestamp": "2026-06-24 22:08:51",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338888994",
+      "timestamp": "2026-06-24 22:08:08",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338790870",
+      "timestamp": "2026-06-24 22:06:30",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338549774",
+      "timestamp": "2026-06-24 22:02:29",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338449302",
+      "timestamp": "2026-06-24 22:00:49",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338257990",
+      "timestamp": "2026-06-24 21:57:37",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338211954",
+      "timestamp": "2026-06-24 21:56:51",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338156510",
+      "timestamp": "2026-06-24 21:55:56",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337917123",
+      "timestamp": "2026-06-24 21:51:57",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337748274",
+      "timestamp": "2026-06-24 21:49:08",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337484350",
+      "timestamp": "2026-06-24 21:44:44",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337478679",
+      "timestamp": "2026-06-24 21:44:38",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1",
+      "timestamp": "2026-06-22 06:45:12",
+      "userEmail": "cliente@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Autenticación exitosa mediante acceso rápido",
+      "ipAddress": "192.168.10.45"
+    },
+    {
+      "id": "log_2",
+      "timestamp": "2026-06-22 07:10:04",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Autenticación exitosa IP certificada",
+      "ipAddress": "192.168.10.12"
+    },
+    {
+      "id": "log_3",
+      "timestamp": "2026-06-22 07:15:22",
+      "userEmail": "ventas@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Inicio de jornada operacional comercial",
+      "ipAddress": "192.168.10.20"
+    },
+    {
+      "id": "log_4",
+      "timestamp": "2026-06-22 07:22:15",
+      "userEmail": "tecnico@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Acceso móvil de personal técnico titular",
+      "ipAddress": "192.168.10.35"
+    }
+  ],
+  "clients": [
+    {
+      "id": "client_1",
+      "razonSocial": "Clínica Internacional",
+      "ruc": "20100112233",
+      "direccionSede": "Av. Garcilaso de la Vega 1420",
+      "distrito": "Cercado de Lima",
+      "contactoNombre": "Juan Córdova",
+      "contactoEmail": "juan.cordova@materiagris.pe",
+      "contactoTelefono": "994512903"
+    },
+    {
+      "id": "client_2",
+      "razonSocial": "Banco de Crédito del Perú",
+      "ruc": "20100047218",
+      "direccionSede": "Calle Centenario 156",
+      "distrito": "La Molina",
+      "contactoNombre": "Ing. Soporte BCP",
+      "contactoEmail": "bcp_soporte@bcp.com.pe",
+      "contactoTelefono": "987654321"
+    },
+    {
+      "id": "client_1782527554237",
+      "razonSocial": "MACADU Links SAC",
+      "ruc": "20100349061",
+      "direccionSede": "Luis Felipe de las Casas",
+      "distrito": "Ventanilla",
+      "contactoNombre": "Matteo Cordova",
+      "contactoEmail": "m.cordova@macadulinks.com",
+      "contactoTelefono": "989655592"
+    },
+    {
+      "id": "client_1782527812373",
+      "razonSocial": "Materia Gris SAC",
+      "ruc": "20600215532",
+      "direccionSede": "Domingo Orue",
+      "distrito": "SUrquillo",
+      "contactoNombre": "Carlos Durand",
+      "contactoEmail": "carlos.durand@materiagris.pe",
+      "contactoTelefono": "992441522"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "contra_1",
+      "clientId": "client_1",
+      "tipoEquipo": "UPS",
+      "visitasAnuales": 4,
+      "fechaInicio": "2026-01-01",
+      "fechaFin": "2026-12-31"
+    },
+    {
+      "id": "contra_2",
+      "clientId": "client_2",
+      "tipoEquipo": "Climatización de Precisión",
+      "visitasAnuales": 6,
+      "fechaInicio": "2026-02-15",
+      "fechaFin": "2027-02-14"
+    }
+  ],
+  "ots": [
+    {
+      "id": "OT-250",
+      "clientId": "client_2",
+      "tipoMantenimiento": "Preventivo",
+      "tipoEquipo": "Climatización de Precisión",
+      "potenciaKva": 50,
+      "fechaProgramada": "2026-06-30",
+      "tecnicoTitular": "Juan Córdova",
+      "estado": "Programada",
+      "tecnicoTitularId": "user_5"
+    },
+    {
+      "id": "OT-251",
+      "clientId": "client_1",
+      "tipoMantenimiento": "Emergencia",
+      "tipoEquipo": "UPS",
+      "potenciaKva": 30,
+      "fechaProgramada": "2026-07-05",
+      "tecnicoTitular": "Juan Córdova",
+      "estado": "Trabajo en Ejecución",
+      "tecnicoTitularId": "user_5",
+      "horaInicioServicio": "22:05"
+    },
+    {
+      "id": "OT-250-1",
+      "clientId": "client_2",
+      "tipoMantenimiento": "Preventivo",
+      "tipoEquipo": "UPS",
+      "potenciaKva": 30,
+      "fechaProgramada": "2026-06-30",
+      "tecnicoTitular": "",
+      "estado": "Creada",
+      "otFinancieraId": "otl_1"
+    },
+    {
+      "id": "OT-251-1",
+      "clientId": "client_1",
+      "tipoMantenimiento": "Correctivo",
+      "tipoEquipo": "UPS",
+      "potenciaKva": 30,
+      "fechaProgramada": "2026-07-05",
+      "tecnicoTitular": "",
+      "estado": "Creada",
+      "otFinancieraId": "otl_2"
+    },
+    {
+      "id": "OT-271-1",
+      "clientId": "client_1782527812373",
+      "tipoMantenimiento": "Preventivo",
+      "tipoEquipo": "UPS",
+      "potenciaKva": 30,
+      "fechaProgramada": "2026-06-27",
+      "tecnicoTitular": "Juan Córdova",
+      "estado": "En Revisión",
+      "otFinancieraId": "otl_1782529334514_1",
+      "horaProgramada": "09:00",
+      "tecnicoTitularId": "user_5",
+      "horaInicioServicio": "22:05"
+    }
+  ],
+  "reports": [],
+  "ordenesTrabajo": [
+    {
+      "id": "otl_1",
+      "anio": 2026,
+      "ot_marco": 250,
+      "ot": "250-1",
+      "mes": "JUN",
+      "fecha": "2026-06-30",
+      "nombre_solicitante": "Juan Córdova",
+      "razon_social": "Banco de Crédito del Perú",
+      "empresa": "BCP",
+      "descripcion": "Servicio de Mantenimiento Preventivo del Sistema de Climatización",
+      "n_cotizacion": "COT-2026-102",
+      "n_oc_os": "OC-4051",
+      "simbolo_moneda": "$",
+      "monto_marco_sin_igv": 5000,
+      "monto_marco_inc_igv": 5900,
+      "sub_importe_sin_igv": 5000,
+      "sub_importe_inc_igv": 5900,
+      "total_usd": 5000,
+      "anio_prog_facturacion": 2026,
+      "mes_prog_servicio": "JUN",
+      "mes_prog_facturacion": "SET",
+      "tipo_venta": "MANTENIMIENTO",
+      "pendiente": "POR EJECUTAR",
+      "estado": "POR FACTURAR",
+      "n_factura": "",
+      "nro_guia_informe": "",
+      "observacion": "Mantenimiento programado para fines de Junio",
+      "seguimiento": "Coordinado con el cliente.",
+      "tipo_contratacion": "CONTRATO",
+      "estatus": [],
+      "comercial": "Juan Córdova",
+      "creadoPor": "admin@mafort.pe",
+      "creadoEn": "2026-06-26",
+      "clientId": "client_2",
+      "comercialId": "user_5"
+    },
+    {
+      "id": "otl_2",
+      "anio": 2026,
+      "ot_marco": 251,
+      "ot": "251-1",
+      "mes": "JUL",
+      "fecha": "2026-07-05",
+      "nombre_solicitante": "Juan Córdova",
+      "razon_social": "Clínica Internacional",
+      "empresa": "CLINICA",
+      "descripcion": "Atención de Emergencia de Sistema de Energía Ininterrumpida UPS",
+      "n_cotizacion": "COT-2026-103",
+      "n_oc_os": "OC-4052",
+      "simbolo_moneda": "$",
+      "monto_marco_sin_igv": 3000,
+      "monto_marco_inc_igv": 3540,
+      "sub_importe_sin_igv": 3000,
+      "sub_importe_inc_igv": 3540,
+      "total_usd": 3000,
+      "anio_prog_facturacion": 2026,
+      "mes_prog_servicio": "JUL",
+      "mes_prog_facturacion": "JUL",
+      "tipo_venta": "REPARACION",
+      "pendiente": "POR EJECUTAR",
+      "estado": "POR FACTURAR",
+      "n_factura": "",
+      "nro_guia_informe": "",
+      "observacion": "Emergencia de UPS con baterías en mal estado",
+      "seguimiento": "Coordinado para inicio de Julio",
+      "tipo_contratacion": "CONTRATO",
+      "estatus": [],
+      "comercial": "Juan Córdova",
+      "creadoPor": "admin@mafort.pe",
+      "creadoEn": "2026-06-26",
+      "clientId": "client_1",
+      "comercialId": "user_5"
+    },
+    {
+      "id": "otl_1782529334514_1",
+      "anio": 2026,
+      "ot_marco": 271,
+      "ot": "271-1",
+      "mes": "JUN",
+      "fecha": "2026-06-27",
+      "nombre_solicitante": "Carlos Durand",
+      "razon_social": "Materia Gris SAC",
+      "clientId": "client_1782527812373",
+      "empresa": "MATERIA",
+      "descripcion": "LIMPIEZA DE COMPONENTES",
+      "n_cotizacion": "COT-2026-002",
+      "n_oc_os": "NO TIENE",
+      "simbolo_moneda": "$",
+      "monto_marco_sin_igv": 250000,
+      "monto_marco_inc_igv": 295000,
+      "sub_importe_sin_igv": 18000,
+      "sub_importe_inc_igv": 21240,
+      "total_usd": 18000,
+      "anio_prog_facturacion": 2026,
+      "mes_prog_servicio": "ENE",
+      "mes_prog_facturacion": "FEB",
+      "tipo_venta": "MANTENIMIENTO",
+      "pendiente": "POR EJECUTAR",
+      "estado": "POR FACTURAR",
+      "n_factura": "",
+      "nro_guia_informe": "",
+      "observacion": "",
+      "seguimiento": "",
+      "tipo_contratacion": "CONTRATO",
+      "estatus": [
+        {
+          "fecha": "2026-06-27",
+          "autor": "admin@mafort.pe",
+          "texto": "OT Marco #271 e inicio de línea 1 registrado por Administrador General."
+        }
+      ],
+      "comercial": "LIZ RIVEROS",
+      "creadoPor": "admin@mafort.pe",
+      "creadoEn": "2026-06-27",
+      "modificadoPor": "admin@mafort.pe",
+      "modificadoEn": "2026-06-27",
+      "comercialId": "user_1"
+    }
+  ],
+  "contratosNuevos": [
+    {
+      "id": "cont_250",
+      "cliente": "Banco de Crédito del Perú",
+      "ot_marco": 250,
+      "tipo_servicio": "CONTRATO",
+      "tipo_contract": "Climatización de Precisión 50HP",
+      "fecha_inicio": "2026-02-15",
+      "fecha_fin": "2027-02-14",
+      "estado": "VIGENTE",
+      "comercial": "Juan Córdova",
+      "comentarios": "Mantenimiento programado",
+      "clientId": "client_2",
+      "comercialId": "user_5"
+    },
+    {
+      "id": "cont_251",
+      "cliente": "Clínica Internacional",
+      "ot_marco": 251,
+      "tipo_servicio": "CONTRATO",
+      "tipo_contract": "Mantenimiento Preventivo y Emergencia UPS 30KVA",
+      "fecha_inicio": "2026-01-01",
+      "fecha_fin": "2026-12-31",
+      "estado": "VIGENTE",
+      "comercial": "Juan Córdova",
+      "comentarios": "Atención inmediata",
+      "clientId": "client_1",
+      "comercialId": "user_5"
+    },
+    {
+      "id": "contrato_1782528636680",
+      "clientId": "client_1782527812373",
+      "cliente": "Materia Gris SAC",
+      "ot_marco": 270,
+      "tipo_servicio": "CONTRATO",
+      "tipo_contrato": "alquiler UPS 3 KVA",
+      "fecha_inicio": "2026-08-01",
+      "fecha_fin": "2027-01-31",
+      "estado": "VIGENTE",
+      "comercialId": "user_1",
+      "comercial": "Coord. Ventas",
+      "comentarios": "Mantenimiento de rutina."
+    },
+    {
+      "id": "contrato_1782529193639",
+      "clientId": "client_1782527554237",
+      "cliente": "MACADU Links SAC",
+      "ot_marco": 271,
+      "tipo_servicio": "CONTRATO",
+      "tipo_contrato": "Alquiler UPS 80 KVA",
+      "fecha_inicio": "2027-01-01",
+      "fecha_fin": "2027-06-30",
+      "estado": "VIGENTE",
+      "comercialId": "user_1",
+      "comercial": "Coord. Ventas",
+      "comentarios": "Mantenimiento de Equipos"
+    }
+  ],
+  "targetVentas": [
+    {
+      "id": "t_1",
+      "anio": 2026,
+      "mes_num": 1,
+      "mes": "ENE",
+      "target_ventas_usd": 35000
+    },
+    {
+      "id": "t_2",
+      "anio": 2026,
+      "mes_num": 2,
+      "mes": "FEB",
+      "target_ventas_usd": 40000
+    },
+    {
+      "id": "t_3",
+      "anio": 2026,
+      "mes_num": 3,
+      "mes": "MAR",
+      "target_ventas_usd": 45000
+    },
+    {
+      "id": "t_4",
+      "anio": 2026,
+      "mes_num": 4,
+      "mes": "ABR",
+      "target_ventas_usd": 40000
+    },
+    {
+      "id": "t_5",
+      "anio": 2026,
+      "mes_num": 5,
+      "mes": "MAY",
+      "target_ventas_usd": 50000
+    },
+    {
+      "id": "t_6",
+      "anio": 2026,
+      "mes_num": 6,
+      "mes": "JUN",
+      "target_ventas_usd": 55000
+    },
+    {
+      "id": "t_7",
+      "anio": 2026,
+      "mes_num": 7,
+      "mes": "JUL",
+      "target_ventas_usd": 60000
+    },
+    {
+      "id": "t_8",
+      "anio": 2026,
+      "mes_num": 8,
+      "mes": "AGO",
+      "target_ventas_usd": 50000
+    },
+    {
+      "id": "t_9",
+      "anio": 2026,
+      "mes_num": 9,
+      "mes": "SET",
+      "target_ventas_usd": 45000
+    },
+    {
+      "id": "t_10",
+      "anio": 2026,
+      "mes_num": 10,
+      "mes": "OCT",
+      "target_ventas_usd": 50000
+    },
+    {
+      "id": "t_11",
+      "anio": 2026,
+      "mes_num": 11,
+      "mes": "NOV",
+      "target_ventas_usd": 55000
+    },
+    {
+      "id": "t_12",
+      "anio": 2026,
+      "mes_num": 12,
+      "mes": "DIC",
+      "target_ventas_usd": 65000
+    }
+  ],
+  "tipoCambio": 3.75,
+  "userLogs": [
+    {
+      "id": "log_1782778795911",
+      "timestamp": "2026-06-30 00:19:55",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778793069",
+      "timestamp": "2026-06-30 00:19:53",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778789904",
+      "timestamp": "2026-06-30 00:19:49",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782778786482",
+      "timestamp": "2026-06-30 00:19:46",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490734244",
+      "timestamp": "2026-06-26 16:18:54",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490729995",
+      "timestamp": "2026-06-26 16:18:49",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490698851",
+      "timestamp": "2026-06-26 16:18:18",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782490691116",
+      "timestamp": "2026-06-26 16:18:11",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489695891",
+      "timestamp": "2026-06-26 16:01:35",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489690675",
+      "timestamp": "2026-06-26 16:01:30",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489654717",
+      "timestamp": "2026-06-26 16:00:54",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782489649663",
+      "timestamp": "2026-06-26 16:00:49",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488742253",
+      "timestamp": "2026-06-26 15:45:42",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488738616",
+      "timestamp": "2026-06-26 15:45:38",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488524180",
+      "timestamp": "2026-06-26 15:42:04",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488518942",
+      "timestamp": "2026-06-26 15:41:58",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488133893",
+      "timestamp": "2026-06-26 15:35:33",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488130735",
+      "timestamp": "2026-06-26 15:35:30",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488072396",
+      "timestamp": "2026-06-26 15:34:32",
+      "userEmail": "juan.cordova@materiagris.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Tecnico",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782488064828",
+      "timestamp": "2026-06-26 15:34:24",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486195265",
+      "timestamp": "2026-06-26 15:03:15",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486190697",
+      "timestamp": "2026-06-26 15:03:10",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486178827",
+      "timestamp": "2026-06-26 15:02:58",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782486175662",
+      "timestamp": "2026-06-26 15:02:55",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483420811",
+      "timestamp": "2026-06-26 14:17:00",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483416802",
+      "timestamp": "2026-06-26 14:16:56",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483406117",
+      "timestamp": "2026-06-26 14:16:46",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483400664",
+      "timestamp": "2026-06-26 14:16:40",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483396550",
+      "timestamp": "2026-06-26 14:16:36",
+      "userEmail": "admin@mafort.pe",
+      "action": "EDITAR_USUARIO",
+      "details": "Modificación de metadatos del usuario catalogado id user_3. Nombre: Ing. Supervisor, Rol: Supervisor, Área: Control de Calidad (SLA), Módulos: [Supervisor, Monitoreo, GestionOTs]",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483369137",
+      "timestamp": "2026-06-26 14:16:09",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483364544",
+      "timestamp": "2026-06-26 14:16:04",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483354314",
+      "timestamp": "2026-06-26 14:15:54",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Supervisor",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483350714",
+      "timestamp": "2026-06-26 14:15:50",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782483343548",
+      "timestamp": "2026-06-26 14:15:43",
+      "userEmail": "admin@mafort.pe",
+      "action": "EDITAR_USUARIO",
+      "details": "Modificación de metadatos del usuario catalogado id user_3. Nombre: Ing. Supervisor, Rol: Supervisor, Área: Control de Calidad (SLA), Módulos: [Monitoreo, Supervisor]",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782482124970",
+      "timestamp": "2026-06-26 13:55:24",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338931401",
+      "timestamp": "2026-06-24 22:08:51",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338888994",
+      "timestamp": "2026-06-24 22:08:08",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338790870",
+      "timestamp": "2026-06-24 22:06:30",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338549774",
+      "timestamp": "2026-06-24 22:02:29",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338449302",
+      "timestamp": "2026-06-24 22:00:49",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338257990",
+      "timestamp": "2026-06-24 21:57:37",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338211954",
+      "timestamp": "2026-06-24 21:56:51",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782338156510",
+      "timestamp": "2026-06-24 21:55:56",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337917123",
+      "timestamp": "2026-06-24 21:51:57",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337748274",
+      "timestamp": "2026-06-24 21:49:08",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337484350",
+      "timestamp": "2026-06-24 21:44:44",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Ingreso validado al portal. Rol asignado: Administrador",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1782337478679",
+      "timestamp": "2026-06-24 21:44:38",
+      "userEmail": "admin@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Cierre de sesión seguro realizado exitosamente.",
+      "ipAddress": "192.168.10.15"
+    },
+    {
+      "id": "log_1",
+      "timestamp": "2026-06-22 06:45:12",
+      "userEmail": "cliente@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Autenticación exitosa mediante acceso rápido",
+      "ipAddress": "192.168.10.45"
+    },
+    {
+      "id": "log_2",
+      "timestamp": "2026-06-22 07:10:04",
+      "userEmail": "supervisor@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Autenticación exitosa IP certificada",
+      "ipAddress": "192.168.10.12"
+    },
+    {
+      "id": "log_3",
+      "timestamp": "2026-06-22 07:15:22",
+      "userEmail": "ventas@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Inicio de jornada operacional comercial",
+      "ipAddress": "192.168.10.20"
+    },
+    {
+      "id": "log_4",
+      "timestamp": "2026-06-22 07:22:15",
+      "userEmail": "tecnico@mafort.pe",
+      "action": "INICIO_SESION",
+      "details": "Acceso móvil de personal técnico titular",
+      "ipAddress": "192.168.10.35"
+    }
+  ]
+}

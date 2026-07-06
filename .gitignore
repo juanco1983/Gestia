@@ -1,0 +1,36 @@
+# Dependencias
+node_modules/
+
+# Build y distribución
+build/
+dist/
+coverage/
+
+# Variables de entorno — NUNCA subir al repo
+.env
+.env.local
+.env.*.local
+# Mantener el ejemplo como guía
+!.env.example
+
+# Prisma generado
+/src/generated/prisma
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+# Archivos de scripts utilitarios temporales
+src/fixApp.ts
+src/fixTecnico.ts
+src/utils/deleteOt003.ts
+src/utils/checkDb.ts

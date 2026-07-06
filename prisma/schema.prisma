@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String  @id
+  username       String
+  email          String  @unique
+  password       String
+  role           String
+  estado         String
+  area           String
+  ultimoIngreso  String?
+  creadoEn       String
+  clientId       String?
+  allowedModules Json?
+}
+
+model Client {
+  id               String @id
+  razonSocial      String
+  ruc              String
+  direccionSede    String
+  distrito         String
+  contactoNombre   String
+  contactoEmail    String
+  contactoTelefono String
+}
+
+model Contract {
+  id             String @id
+  clientId       String
+  tipoEquipo     String
+  visitasAnuales Int
+  fechaInicio    String
+  fechaFin       String
+}
+
+model OT {
+  id                        String  @id
+  clientId                  String
+  tipoMantenimiento         String
+  tipoEquipo                String
+  potenciaKva               Float
+  fechaProgramada           String
+  horaProgramada            String?
+  horaFinProgramada         String?
+  horaInicioServicio        String?
+  horaFinServicio           String?
+  tecnicoTitularId          String?
+  tecnicoApoyoId            String?
+  tecnicoTitular            String
+  tecnicoApoyo              String?
+  tecnicosAdicionalesIds    Json?
+  tecnicosAdicionalesNombres Json?
+  estado                    String
+  origen                    String?
+  otFinancieraId            String?
+}
+
+model TechnicalReport {
+  id                     String   @id
+  otId                   String   @unique
+  voltajeEntrada         Float
+  voltajeSalida          Float
+  indicadoresBateria     Json
+  observacionesDiagnostico String
+  comentariosAdicionales String
+  firmaCliente           String?
+  correccionesSupervisor String?
+  creadoEn               String
+  modificadoEn           String
+  offlineDirty           Boolean?
+  fotos                  Json     // Array of Base64 strings
+  
+  // PDF format specific fields
+  informeN               String?
+  hojaServicioN          String?
+  asunto                 String?
+  fechaServicio          String?
+  horaInicio             String?
+  tecnico1               String?
+  tecnico2               String?
+  antecedentes           String?
+  accionesRealizadas     Json?
+  pasos                  Json?
+  caracteristicas        Json?
+  fotosLabeled           Json?
+  medicionesEntrada      Json?
+  medicionesSalida       Json?
+  diagnosticoGabinete    Json?
+  revisionNormas         Json?
+  recomendaciones        Json?
+}
+
+model OrdenTrabajoLinea {
+  id                     String   @id
+  anio                   Int
+  ot_marco               Int
+  ot                     String
+  mes                    String
+  fecha                  String
+  nombre_solicitante     String
+  clientId               String?
+  razon_social           String
+  empresa                String
+  descripcion            String
+  n_cotizacion           String?
+  n_oc_os                String?
+  simbolo_moneda         String
+  monto_marco_sin_igv    Float
+  monto_marco_inc_igv    Float
+  sub_importe_sin_igv    Float
+  sub_importe_inc_igv    Float
+  total_usd              Float
+  anio_prog_facturacion  Float
+  mes_prog_servicio      String
+  mes_prog_facturacion   String
+  factura                String?
+  tipo_venta             String
+  comercial              String
+  comercialId            String?
+  area                   String?
+  periodo                String?
+  h2h_bcp                String?
+  pendiente              String
+  oc                     String?
+  estado                 String
+  fecha_facturacion      String?
+  vencimiento_factura    String?
+  monto_factura_inc_igv  Float?
+  pagado                 String?
+  fecha_pago             String?
+  dias_pago              Float?
+  detraccion             String?
+  fecha_detraccion       String?
+  dias_detraccion        Float?
+  bcp                    String?
+  listaParaFacturar      Boolean?
+  otTecnicaId            String?
+  estatus                Json?
+}
+
+model ContratoNuevo {
+  id                       String @id
+  anio                     Int?
+  n_contrato               String?
+  comercial                String?
+  comercialId              String?
+  cliente                  String?
+  clientId                 String?
+  detalle                  String?
+  monto_sin_igv            Float?
+  monto_inc_igv            Float?
+  monto_facturar_sin_igv   Float?
+  monto_facturar_inc_igv   Float?
+  monto_facturado_sin_igv  Float?
+  monto_facturado_inc_igv  Float?
+  por_facturar_sin_igv     Float?
+  por_facturar_inc_igv     Float?
+  monto_pagado_sin_igv     Float?
+  monto_pagado_inc_igv     Float?
+  pendiente_pago_sin_igv   Float?
+  pendiente_pago_inc_igv   Float?
+  vence                    String?
+  oc                       String?
+  h2h_bcp                  String?
+  estado                   String?
+  ot_marco                 Int?
+  tipo_servicio            String?
+  tipo_contract            String?
+  tipo_contrato            String?
+  fecha_inicio             String?
+  fecha_fin                String?
+  comentarios              String?
+}
+
+model TargetVenta {
+  id                String @id
+  anio              Int
+  mes_num           Int
+  mes               String
+  target_ventas_usd Float
+}
+
+model UserActivityLog {
+  id        String @id
+  timestamp String
+  userEmail String
+  action    String
+  details   String
+  ipAddress String
+}

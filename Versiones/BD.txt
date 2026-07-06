@@ -1,0 +1,6 @@
+credencilaes postgres
+
+
+Creación del archivo 
+docker-compose.yml
+: He escrito la configuración necesaria en la raíz del proyecto para levantar PostgreSQL 16 con el usuario postgres, contraseña mafort_secure_pass_2026 y la base de datos mafort_db.
