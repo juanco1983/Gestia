@@ -1,0 +1,89 @@
+##############################################
+# GitHub Actions: Terraform Apply
+# Se ejecuta en push directo a `dev` (auto-deploy DEV)
+# En `main`: requiere aprobación manual
+##############################################
+
+name: "🚀 Terraform Apply"
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'infra/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.15.7"
+  AWS_REGION: "us-east-1"
+
+jobs:
+  terraform-apply:
+    name: Apply (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+
+    # En la rama `main`: requiere aprobación manual de un revisor
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Terraform ────────────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # ── 3. Configurar credenciales AWS ────────────────────────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── 4. Determinar ambiente ────────────────────────────────────────────────
+      - name: Set environment
+        id: env
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "dir=infra/environments/prod" >> $GITHUB_OUTPUT
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          else
+            echo "dir=infra/environments/dev" >> $GITHUB_OUTPUT
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      # ── 5. Terraform Init ─────────────────────────────────────────────────────
+      - name: Terraform Init
+        working-directory: ${{ steps.env.outputs.dir }}
+        run: terraform init -input=false
+
+      # ── 6. Terraform Plan ─────────────────────────────────────────────────────
+      - name: Terraform Plan
+        working-directory: ${{ steps.env.outputs.dir }}
+        env:
+          TF_VAR_db_password:  ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_jwt_secret:   ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+        run: terraform plan -input=false -out=tfplan
+
+      # ── 7. Terraform Apply ────────────────────────────────────────────────────
+      - name: Terraform Apply
+        working-directory: ${{ steps.env.outputs.dir }}
+        env:
+          TF_VAR_db_password:  ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_jwt_secret:   ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+        run: terraform apply -auto-approve -input=false tfplan
+
+      # ── 8. Capturar outputs y mostrar URLs ────────────────────────────────────
+      - name: Show outputs
+        working-directory: ${{ steps.env.outputs.dir }}
+        run: |
+          echo "### ✅ Despliegue completado — ${{ steps.env.outputs.environment }}"
+          terraform output -json
