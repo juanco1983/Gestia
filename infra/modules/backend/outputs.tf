@@ -1,6 +1,6 @@
 output "beanstalk_endpoint" {
-  description = "URL del ambiente Elastic Beanstalk"
-  value       = "http://${aws_elastic_beanstalk_environment.dev.cname}"
+  description = "URL HTTPS (via CloudFront CDN) del backend Beanstalk"
+  value       = "https://${aws_cloudfront_distribution.backend.domain_name}"
 }
 
 output "beanstalk_app_name" {

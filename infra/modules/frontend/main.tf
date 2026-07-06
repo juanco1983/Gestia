@@ -28,6 +28,13 @@ resource "aws_amplify_app" "gestia" {
           - node_modules/**/*
   EOT
 
+  # Regla de proxy para redireccionar /api/* al backend Beanstalk (vía CloudFront HTTPS)
+  custom_rule {
+    source = "/api/<*>"
+    target = "${var.backend_url}/api/<*>"
+    status = "200"
+  }
+
   # Regla de rewrite para SPA (React Router)
   custom_rule {
     source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
