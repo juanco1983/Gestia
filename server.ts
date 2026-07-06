@@ -237,10 +237,44 @@ app.get("/api/ots", async (req, res) => {
 
 app.post("/api/ots", async (req, res) => {
   try {
-    const created = await prisma.oT.create({ data: req.body });
-    res.status(201).json(created);
+    const { contratoId, costo_estimado_usd, ...otData } = req.body;
+
+    if (contratoId && costo_estimado_usd) {
+      const contrato = await prisma.contratoNuevo.findUnique({
+        where: { id: contratoId }
+      });
+
+      if (!contrato) {
+        return res.status(404).json({ error: "Contrato no encontrado" });
+      }
+
+      const saldoActual = contrato.saldo_disponible_usd ?? contrato.presupuesto_total_usd ?? 0;
+      const costo = Number(costo_estimado_usd);
+
+      if (saldoActual < costo) {
+        return res.status(400).json({ error: "Saldo insuficiente en el contrato marco", saldoDisponible: saldoActual });
+      }
+
+      // Start transaction to create OT and deduct balance
+      const [createdOt, updatedContrato] = await prisma.$transaction([
+        prisma.oT.create({
+          data: { ...otData, contratoId, costo_estimado_usd: costo }
+        }),
+        prisma.contratoNuevo.update({
+          where: { id: contratoId },
+          data: { saldo_disponible_usd: saldoActual - costo }
+        })
+      ]);
+
+      return res.status(201).json(createdOt);
+    } else {
+      // Normal OT creation
+      const created = await prisma.oT.create({ data: req.body });
+      return res.status(201).json(created);
+    }
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    console.error("Error creating OT:", err);
+    res.status(500).json({ error: "Error al crear la OT" });
   }
 });
 

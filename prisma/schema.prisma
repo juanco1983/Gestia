@@ -64,6 +64,8 @@ model OT {
   estado                    String
   origen                    String?
   otFinancieraId            String?
+  costo_estimado_usd        Float?
+  contratoId                String?
 }
 
 model TechnicalReport {
@@ -181,6 +183,8 @@ model ContratoNuevo {
   fecha_inicio             String?
   fecha_fin                String?
   comentarios              String?
+  presupuesto_total_usd    Float?
+  saldo_disponible_usd     Float?
 }
 
 model TargetVenta {
