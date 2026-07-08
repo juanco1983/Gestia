@@ -1,9 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Sora", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-canvas: #F2F6F4;
+  --color-surface: #FFFFFF;
+  --color-ink: #16241F;
+  --color-ink-soft: #5B6B63;
+  --color-ink-mute: #8CA097;
+  --color-hairline: #E1E9E4;
+  --color-teal-brand: #0F9E82;
+  --color-teal-deep: #0B3B34;
+  --color-teal-mist: #E4F4EF;
+  --color-ai-brand: #6C6FE0;
+  --color-ai-mist: #EEEEFB;
 }
 
 /* Enforce the login typography (Inter) as the global default font for the entire application */
@@ -12,7 +24,7 @@ html, body, button, input, select, textarea {
 }
 
 html, body {
-  background-color: #EAEFEB;
+  background-color: #F2F6F4;
 }
 
 /* Beautiful custom scrollbars to match the pristine TeamHub design */
@@ -47,10 +59,24 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulseDash {
+  from {
+    stroke-dashoffset: 600;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-spin-slow {
   animation: spin 5s linear infinite;
+}
+
+.animate-pulse-line {
+  stroke-dasharray: 600;
+  animation: pulseDash 3.5s linear infinite;
 }

@@ -133,10 +133,10 @@ export default function DocumentFormat({ report, ot, client }: DocumentFormatPro
   );
 
   // Repeated Footer on pages
-  const PageFooter = () => (
+  const PageFooter = ({ pageNum }: { pageNum?: number }) => (
     <div className="border-t border-slate-300 pt-2 text-[7px] text-slate-400 text-center uppercase font-mono mt-auto shrink-0 leading-normal bg-white">
       Jr. Cerro Azul N° 597 Urb. San Ignacio de Monterrico LIMA - Santiago de Surco | Email: ventas@mafortservice.pe / ventas1@mafortservice.pe / ventas2@mafortservice.pe <br />
-      OFICINA: Telf. +511 5442114 / EMERGENCIAS: 999993709 / CEL. 998-194-696
+      OFICINA: Telf. +511 5442114 / EMERGENCIAS: 999993709 / CEL. 998-194-696 {pageNum ? `| PÁGINA ${pageNum}` : ''}
     </div>
   );
 
