@@ -10,7 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const JWT_SECRET = process.env.JWT_SECRET || "mafort_secret_token_key_123456";
+const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
 let connectionString = `${process.env.DATABASE_URL}`;
 const isAWS = connectionString.includes("amazonaws.com");
@@ -25,7 +25,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT: number = parseInt(process.env.PORT || "3000", 10);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -142,7 +142,7 @@ app.post("/api/users", async (req, res) => {
     
     newUser.password = newUser.password 
       ? bcrypt.hashSync(newUser.password.trim(), 10) 
-      : bcrypt.hashSync("mafort", 10);
+      : bcrypt.hashSync("gestia", 10);
     
     const createdUser = await prisma.user.create({ data: newUser });
     const { password, ...sanitized } = createdUser;
@@ -583,7 +583,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Mafort Backend System] Running securely on port ${PORT}`);
+    console.log(`[Gestia Backend System] Running securely on port ${PORT}`);
   });
 }
 

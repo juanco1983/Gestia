@@ -23,7 +23,7 @@ import {
   Minimize2,
   Search
 } from 'lucide-react';
-import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport } from '../types';
+import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport, Contrato } from '../types';
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
 

@@ -117,13 +117,23 @@ export default function TecnicoView({
 
   // Tables
   const [caracteristicas, setCaracteristicas] = useState<Record<string, string>>({});
-  const [medicionesEntrada, setMedicionesEntrada] = useState({
+  const [medicionesEntrada, setMedicionesEntrada] = useState<{
+    lnVoltaje: [string, string, string];
+    lnIntensidad: [string, string, string];
+    frecuencia: [string, string, string];
+    llVoltaje: [string, string, string];
+  }>({
     lnVoltaje: ["220", "220", "220"],
     lnIntensidad: ["0", "0", "0"],
     frecuencia: ["60.0", "60.0", "60.0"],
     llVoltaje: ["380", "380", "380"]
   });
-  const [medicionesSalida, setMedicionesSalida] = useState({
+  const [medicionesSalida, setMedicionesSalida] = useState<{
+    lnVoltaje: [string, string, string];
+    lnIntensidad: [string, string, string];
+    frecuencia: [string, string, string];
+    llVoltaje: [string, string, string];
+  }>({
     lnVoltaje: ["220", "220", "220"],
     lnIntensidad: ["0", "0", "0"],
     frecuencia: ["60.0", "60.0", "60.0"],
