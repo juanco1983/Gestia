@@ -93,23 +93,21 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#EAEFEB] flex flex-col items-center justify-between p-6 sm:p-10 font-sans select-none relative" id="mafort-login-wrapper">
+    <div className="min-h-[100dvh] bg-[#CBECE4] flex flex-col items-center justify-between p-6 sm:p-10 font-sans select-none relative" id="mafort-login-wrapper">
       
       {/* Centered Login Content Container */}
       <div className="w-full max-w-[460px] flex flex-col items-center my-auto">
         
-        {/* Top Institutional Sg Icon (Green Squircle with Landmark) */}
-        <div className="w-18 h-18 rounded-[22px] bg-[#00B594] flex items-center justify-center text-white shadow-lg mb-5" id="login-brand-icon">
-          <Landmark size={30} />
+        {/* GESTIA Logo Branding */}
+        <div className="flex flex-col items-center mb-6 w-full max-w-[280px]">
+          <img 
+            src="/logo.png" 
+            className="w-full h-auto object-contain select-none pointer-events-none drop-shadow-xs" 
+            alt="Gestia Logo" 
+          />
         </div>
 
-        {/* Brand/System Title */}
-        <h1 className="text-[21px] font-extrabold text-[#111827] tracking-tight text-center leading-tight">
-          Sistemas de informes tecnicos y Seguimiento
-        </h1>
-        <p className="text-xs text-slate-500 font-medium tracking-tight mt-1 mb-8">
-          Plataforma de Informes Técnicos
-        </p>
+
 
         {/* White Login Card */}
         <div className="w-full bg-white rounded-[28px] border border-slate-100 shadow-[0_15px_40px_rgba(148,163,184,0.06)] p-8 sm:p-10 text-left">

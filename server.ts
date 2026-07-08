@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer } from "vite";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import 'dotenv/config';
@@ -12,13 +12,20 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const JWT_SECRET = process.env.JWT_SECRET || "mafort_secret_token_key_123456";
 
-const connectionString = `${process.env.DATABASE_URL}`;
-const pool = new Pool({ connectionString });
+let connectionString = `${process.env.DATABASE_URL}`;
+const isAWS = connectionString.includes("amazonaws.com");
+if (isAWS) {
+  connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, "");
+}
+const pool = new Pool({ 
+  connectionString,
+  ssl: isAWS ? { rejectUnauthorized: false } : undefined
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -29,6 +36,10 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "healthy", database: "postgres_prisma" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy" });
 });
 
 function authenticateToken(req: any, res: any, next: any) {
@@ -408,16 +419,8 @@ app.post("/api/sync", async (req, res) => {
       }
     }
 
-    if (Array.isArray(users)) {
-      for (const su of users) {
-        const { password, ...rest } = su;
-        await prisma.user.upsert({
-          where: { id: su.id },
-          update: rest,
-          create: { ...rest, password: password || 'mafort' }
-        });
-      }
-    }
+    // Skip synchronization of users table from client body to prevent security issues and local cache overrides
+    // User accounts should only be managed via /api/users endpoints by authorized admins.
 
     if (Array.isArray(logs) && logs.length > 0) {
       // In old code this replaced all logs, but it's safer to just push missing ones. We'll skip complex merging and just createMany.
@@ -562,7 +565,8 @@ app.post("/api/config", (req, res) => {
 // ----------------------------------------
 
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "dev") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { 
         middlewareMode: true,
