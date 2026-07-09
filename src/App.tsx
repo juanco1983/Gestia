@@ -175,6 +175,9 @@ export default function App() {
 
   // Dashboard sub-tab switcher
   const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'monitoring'>('analytics');
+  
+  // Dashboard chart range switcher (Trimestral/Semestral)
+  const [dashboardRange, setDashboardRange] = useState<'trimestral' | 'semestral'>('trimestral');
 
   // Real-time online state
   const [isOnline, setIsOnline] = useState<boolean>(window.navigator.onLine);
@@ -1004,12 +1007,13 @@ export default function App() {
       { name: 'Finalizadas', count: grupoFinalizadas, fill: '#00B594' },
     ];
 
-    // Generar datos de los últimos 3 meses para la gráfica de áreas
-    const getUltimos3MesesData = () => {
+    // Generar datos históricos para la gráfica de áreas de acuerdo al rango seleccionado
+    const getHistoricoOtsData = (rango: 'trimestral' | 'semestral') => {
+      const cantidadMeses = rango === 'semestral' ? 6 : 3;
       const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const data = [];
       
-      for (let i = 2; i >= 0; i--) {
+      for (let i = cantidadMeses - 1; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -1043,9 +1047,9 @@ export default function App() {
       return data;
     };
 
-    const areaData = getUltimos3MesesData();
+    const areaData = getHistoricoOtsData(dashboardRange);
 
-    // Estadísticas acumuladas de los últimos 3 meses
+    // Estadísticas acumuladas de acuerdo al rango seleccionado
     const totalCompletadas3M = areaData.reduce((acc, curr) => acc + curr.Completadas, 0);
     const totalFacturadas3M = areaData.reduce((acc, curr) => acc + curr.Facturadas, 0);
     const totalPorFacturar3M = areaData.reduce((acc, curr) => acc + curr['Por Facturar'], 0);
@@ -1158,7 +1162,7 @@ export default function App() {
       alertas,
       todayStr
     };
-  }, [ots, reports, ordenesTrabajo, targetVentas, currentUser]);
+   }, [ots, reports, ordenesTrabajo, targetVentas, currentUser, dashboardRange]);
 
   const [pieView, setPieView] = useState<'servicio' | 'equipo'>('servicio');
   // ----------------------------------------
@@ -1544,9 +1548,35 @@ export default function App() {
           
           {/* Gráfica Principal (2/3) */}
           <div className="lg:col-span-2 w-full bg-white border border-slate-100/80 rounded-[24px] p-6 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-            <div>
-              <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Evolución de OTs (Últimos 3 Meses)</h4>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Desempeño mensual de órdenes completadas y facturación</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Evolución de OTs (Últimos {dashboardRange === 'semestral' ? '6' : '3'} Meses)</h4>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">Desempeño mensual de órdenes completadas y facturación</p>
+              </div>
+
+              {/* Selector de Rango Temporal */}
+              <div className="flex items-center self-start sm:self-center bg-slate-50 border border-slate-100 p-0.5 rounded-xl">
+                <button
+                  onClick={() => setDashboardRange('trimestral')}
+                  className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
+                    dashboardRange === 'trimestral'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-650'
+                  }`}
+                >
+                  Trimestral
+                </button>
+                <button
+                  onClick={() => setDashboardRange('semestral')}
+                  className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
+                    dashboardRange === 'semestral'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-650'
+                  }`}
+                >
+                  Semestral
+                </button>
+              </div>
             </div>
             
             <div className="h-[220px] mt-4">
@@ -1605,15 +1635,15 @@ export default function App() {
             {/* Tiles bajo la gráfica */}
             <div className="grid grid-cols-3 gap-3 mt-4 text-center">
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Completadas (3M):</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Completadas ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
                 <span className="text-xs font-black text-slate-800 block mt-0.5">{dashboardData.totalCompletadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#3B82F6] block font-mono">Facturadas (3M):</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#3B82F6] block font-mono">Facturadas ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
                 <span className="text-xs font-black text-[#3B82F6] block mt-0.5">{dashboardData.totalFacturadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#F59E0B] block font-mono">Por Facturar (3M):</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#F59E0B] block font-mono">Por Facturar ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
                 <span className="text-xs font-black text-[#F59E0B] block mt-0.5">{dashboardData.totalPorFacturar3M} OTs</span>
               </div>
             </div>
