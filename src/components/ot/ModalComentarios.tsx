@@ -42,7 +42,7 @@ export default function ModalComentarios({
         
         {/* Body (Comment history) */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1 bg-slate-50/30">
-          {linea.estatus.length === 0 ? (
+          {(!linea.estatus || linea.estatus.length === 0) ? (
             <div className="text-center py-12 space-y-2">
               <MessageSquare className="mx-auto text-slate-300" size={32} />
               <p className="text-xs text-slate-450 font-bold">No hay comentarios ni avances registrados para esta línea de OT.</p>
@@ -50,7 +50,7 @@ export default function ModalComentarios({
             </div>
           ) : (
             <div className="space-y-3">
-              {linea.estatus.map((est, index) => (
+              {(linea.estatus || []).map((est, index) => (
                 <div key={index} className="bg-white border border-slate-150/80 p-4 rounded-2xl text-xs space-y-2 text-left shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-center text-[10px]">
                     <span className="font-black text-[#00B594] bg-[#E6F7F4] px-2 py-0.5 rounded-md font-mono">{est.autor}</span>
