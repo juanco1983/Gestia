@@ -219,6 +219,21 @@ app.post("/api/clients", async (req, res) => {
   }
 });
 
+app.put("/api/clients/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const clientData = { ...req.body };
+    delete clientData.id;
+    const updated = await prisma.client.update({
+      where: { id },
+      data: clientData,
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar cliente" });
+  }
+});
+
 app.get("/api/contracts", async (req, res) => {
   try {
     res.json(await prisma.contract.findMany());

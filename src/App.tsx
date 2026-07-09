@@ -587,6 +587,18 @@ export default function App() {
     }
   };
 
+  const handleUpdateClient = async (updatedClient: Client) => {
+    setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+    try {
+      await fetchWithAuth(`/api/clients/${updatedClient.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedClient)
+      });
+    } catch (e) {
+      console.warn("Error al actualizar cliente en el servidor (actualizado localmente):", e);
+    }
+  };
+
   const handleAddContract = async (newContract: Contract) => {
     setContracts(prev => [...prev, newContract]);
     try {
@@ -1841,6 +1853,7 @@ export default function App() {
                   users={users}
                   currentUser={{ email: currentUser?.email || 'admin@gestia.com', username: currentUser?.username || 'Administrador' }}
                   onAddClient={handleAddClient}
+                  onUpdateClient={handleUpdateClient}
                   onAddContrato={handleAddContratoComercial}
                   onUpdateContrato={handleUpdateContratoComercial}
                 />
