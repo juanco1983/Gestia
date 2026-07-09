@@ -470,6 +470,201 @@ app.post("/api/sync", async (req, res) => {
   }
 });
 
+app.post("/api/seed-cloud-data", async (req, res) => {
+  try {
+    console.log(">>> Sembrando datos de prueba en la nube...");
+    
+    // Eliminar OTs de prueba anteriores (id empieza con OT-4)
+    await prisma.oT.deleteMany({
+      where: { id: { startsWith: 'OT-4' } }
+    });
+
+    // Eliminar cuotas financieras de prueba
+    await prisma.ordenTrabajoLinea.deleteMany({
+      where: {
+        id: {
+          in: [
+            ...Array.from({ length: 5 }, (_, i) => `otl_MAY_${i + 1}`),
+            ...Array.from({ length: 8 }, (_, i) => `otl_JUN_${i + 1}`),
+            ...Array.from({ length: 15 }, (_, i) => `otl_JUL_${i + 1}`)
+          ]
+        }
+      }
+    });
+
+    const clients = await prisma.client.findMany();
+    const clientId = clients[0]?.id || 'client_1';
+    const razonSocial = clients[0]?.razonSocial || 'Banco Interbank S.A.';
+    const empresa = clients[0]?.nombreCorto || 'INTERBANK';
+
+    let otCorrelativo = 400;
+
+    // Mayo: 5
+    for (let i = 1; i <= 5; i++) {
+      otCorrelativo++;
+      const finId = `otl_MAY_${i}`;
+      const opId = `OT-${otCorrelativo}`;
+      const day = 10 + i;
+
+      await prisma.ordenTrabajoLinea.create({
+        data: {
+          id: finId,
+          anio: 2026,
+          ot_marco: 1000 + i,
+          ot: `${otCorrelativo}`,
+          mes: 'MAY',
+          fecha: `2026-05-${day}`,
+          nombre_solicitante: 'María López',
+          clientId: clientId,
+          razon_social: razonSocial,
+          empresa: empresa,
+          descripcion: `Mantenimiento Preventivo Mensual UPS Mayo - Cuota #${i}`,
+          simbolo_moneda: '$',
+          monto_marco_sin_igv: 5000,
+          monto_marco_inc_igv: 5900,
+          sub_importe_sin_igv: 5000,
+          sub_importe_inc_igv: 5900,
+          total_usd: 5000,
+          anio_prog_facturacion: 2026,
+          mes_prog_servicio: 'MAY',
+          mes_prog_facturacion: 'MAY',
+          tipo_venta: 'MANTENIMIENTO',
+          comercial: 'María López',
+          pendiente: 'POR EJECUTAR',
+          estado: 'POR FACTURAR',
+          listaParaFacturar: true,
+          otTecnicaId: opId
+        }
+      });
+
+      await prisma.oT.create({
+        data: {
+          id: opId,
+          clientId: clientId,
+          tipoMantenimiento: 'Preventivo',
+          tipoEquipo: 'UPS',
+          potenciaKva: 30,
+          fechaProgramada: `2026-05-${day}`,
+          tecnicoTitular: '',
+          estado: 'Creada',
+          otFinancieraId: finId
+        }
+      });
+    }
+
+    // Junio: 8
+    for (let i = 1; i <= 8; i++) {
+      otCorrelativo++;
+      const finId = `otl_JUN_${i}`;
+      const opId = `OT-${otCorrelativo}`;
+      const day = 10 + i;
+
+      await prisma.ordenTrabajoLinea.create({
+        data: {
+          id: finId,
+          anio: 2026,
+          ot_marco: 2000 + i,
+          ot: `${otCorrelativo}`,
+          mes: 'JUN',
+          fecha: `2026-06-${day}`,
+          nombre_solicitante: 'María López',
+          clientId: clientId,
+          razon_social: razonSocial,
+          empresa: empresa,
+          descripcion: `Mantenimiento Preventivo Mensual UPS Junio - Cuota #${i}`,
+          simbolo_moneda: '$',
+          monto_marco_sin_igv: 5000,
+          monto_marco_inc_igv: 5900,
+          sub_importe_sin_igv: 5000,
+          sub_importe_inc_igv: 5900,
+          total_usd: 5000,
+          anio_prog_facturacion: 2026,
+          mes_prog_servicio: 'JUN',
+          mes_prog_facturacion: 'JUN',
+          tipo_venta: 'MANTENIMIENTO',
+          comercial: 'María López',
+          pendiente: 'POR EJECUTAR',
+          estado: 'POR FACTURAR',
+          listaParaFacturar: true,
+          otTecnicaId: opId
+        }
+      });
+
+      await prisma.oT.create({
+        data: {
+          id: opId,
+          clientId: clientId,
+          tipoMantenimiento: 'Preventivo',
+          tipoEquipo: 'UPS',
+          potenciaKva: 30,
+          fechaProgramada: `2026-06-${day}`,
+          tecnicoTitular: '',
+          estado: 'Creada',
+          otFinancieraId: finId
+        }
+      });
+    }
+
+    // Julio: 15
+    for (let i = 1; i <= 15; i++) {
+      otCorrelativo++;
+      const finId = `otl_JUL_${i}`;
+      const opId = `OT-${otCorrelativo}`;
+      const day = i <= 9 ? `0${i}` : `${i}`;
+
+      await prisma.ordenTrabajoLinea.create({
+        data: {
+          id: finId,
+          anio: 2026,
+          ot_marco: 3000 + i,
+          ot: `${otCorrelativo}`,
+          mes: 'JUL',
+          fecha: `2026-07-${day}`,
+          nombre_solicitante: 'María López',
+          clientId: clientId,
+          razon_social: razonSocial,
+          empresa: empresa,
+          descripcion: `Mantenimiento Preventivo Mensual UPS Julio - Cuota #${i}`,
+          simbolo_moneda: '$',
+          monto_marco_sin_igv: 5000,
+          monto_marco_inc_igv: 5900,
+          sub_importe_sin_igv: 5000,
+          sub_importe_inc_igv: 5900,
+          total_usd: 5000,
+          anio_prog_facturacion: 2026,
+          mes_prog_servicio: 'JUL',
+          mes_prog_facturacion: 'JUL',
+          tipo_venta: 'MANTENIMIENTO',
+          comercial: 'María López',
+          pendiente: 'POR EJECUTAR',
+          estado: 'POR FACTURAR',
+          listaParaFacturar: true,
+          otTecnicaId: opId
+        }
+      });
+
+      await prisma.oT.create({
+        data: {
+          id: opId,
+          clientId: clientId,
+          tipoMantenimiento: 'Preventivo',
+          tipoEquipo: 'UPS',
+          potenciaKva: 30,
+          fechaProgramada: `2026-07-${day}`,
+          tecnicoTitular: '',
+          estado: 'Creada',
+          otFinancieraId: finId
+        }
+      });
+    }
+
+    res.json({ success: true, message: "Datos sembrados exitosamente en la base de datos de la nube." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get("/api/ot-lineas", async (req, res) => {
   try {
     const rawLineas = await prisma.ordenTrabajoLinea.findMany();
