@@ -23,6 +23,7 @@ interface ClientesContratosViewProps {
   users?: User[];
   currentUser?: { email: string; username: string };
   onAddClient: (newClient: Client) => void;
+  onUpdateClient?: (updated: Client) => void;
   onAddContrato: (newContrato: Contrato) => void;
   onUpdateContrato?: (updated: Contrato) => void;
 }
@@ -33,18 +34,34 @@ export default function ClientesContratosView({
   users = [],
   currentUser,
   onAddClient,
+  onUpdateClient,
   onAddContrato,
   onUpdateContrato
 }: ClientesContratosViewProps) {
   const [activeTab, setActiveTab] = useState<'clientes' | 'contratos'>('clientes');
   const [searchQuery, setSearchQuery] = useState('');
+  const [clientViewMode, setClientViewMode] = useState<'grid' | 'list'>('grid');
   
   // Modal controllers
   const [showClientModal, setShowClientModal] = useState(false);
   const [showContratoModal, setShowContratoModal] = useState(false);
+  const [selectedClientForView, setSelectedClientForView] = useState<Client | null>(null);
+  const [isEditingClient, setIsEditingClient] = useState(false);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
+    razonSocial: '',
+    ruc: '',
+    direccionSede: '',
+    distrito: '',
+    contactoNombre: '',
+    contactoEmail: '',
+    contactoTelefono: ''
+  });
+
+  // Client edit form state
+  const [editClientForm, setEditClientForm] = useState({
+    id: '',
     razonSocial: '',
     ruc: '',
     direccionSede: '',
@@ -65,6 +82,25 @@ export default function ClientesContratosView({
     estado: 'VIGENTE' as const,
     comercialId: '',
     comentarios: ''
+  });
+
+  const [contratoViewMode, setContratoViewMode] = useState<'list' | 'grid'>('list');
+  const [selectedContratoForView, setSelectedContratoForView] = useState<Contrato | null>(null);
+  const [isEditingContrato, setIsEditingContrato] = useState(false);
+
+  const [editContratoForm, setEditContratoForm] = useState({
+    id: '',
+    clientId: '',
+    ot_marco: '',
+    tipo_servicio: 'CONTRATO',
+    tipo_contract: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    estado: 'VIGENTE' as 'VIGENTE' | 'TERMINADO' | 'ANULADO',
+    comercialId: '',
+    comentarios: '',
+    presupuesto_total_usd: '',
+    saldo_disponible_usd: ''
   });
 
   // Filter lists based on search query
@@ -112,6 +148,95 @@ export default function ClientesContratosView({
       contactoTelefono: ''
     });
     setShowClientModal(false);
+  };
+
+  const handleClientClick = (client: Client) => {
+    setSelectedClientForView(client);
+    setIsEditingClient(false);
+    setEditClientForm({
+      id: client.id,
+      razonSocial: client.razonSocial,
+      ruc: client.ruc,
+      direccionSede: client.direccionSede,
+      distrito: client.distrito,
+      contactoNombre: client.contactoNombre,
+      contactoEmail: client.contactoEmail,
+      contactoTelefono: client.contactoTelefono
+    });
+  };
+
+  const handleClientUpdateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editClientForm.razonSocial || !editClientForm.ruc) return;
+
+    const updatedClient: Client = {
+      id: editClientForm.id,
+      razonSocial: editClientForm.razonSocial.trim(),
+      ruc: editClientForm.ruc.trim(),
+      direccionSede: editClientForm.direccionSede.trim() || 'No especificada',
+      distrito: editClientForm.distrito.trim() || 'Lima',
+      contactoNombre: editClientForm.contactoNombre.trim() || 'No especificado',
+      contactoEmail: editClientForm.contactoEmail.trim() || 'No especificado',
+      contactoTelefono: editClientForm.contactoTelefono.trim() || 'No especificado'
+    };
+
+    if (onUpdateClient) {
+      onUpdateClient(updatedClient);
+    }
+    
+    setSelectedClientForView(null);
+    setIsEditingClient(false);
+  };
+
+  const handleContratoClick = (contrato: Contrato) => {
+    setSelectedContratoForView(contrato);
+    setIsEditingContrato(false);
+    setEditContratoForm({
+      id: contrato.id,
+      clientId: contrato.clientId || '',
+      ot_marco: contrato.ot_marco.toString(),
+      tipo_servicio: contrato.tipo_servicio,
+      tipo_contract: contrato.tipo_contrato,
+      fecha_inicio: contrato.fecha_inicio,
+      fecha_fin: contrato.fecha_fin,
+      estado: contrato.estado,
+      comercialId: contrato.comercialId || '',
+      comentarios: contrato.comentarios,
+      presupuesto_total_usd: contrato.presupuesto_total_usd !== undefined ? contrato.presupuesto_total_usd.toString() : '',
+      saldo_disponible_usd: contrato.saldo_disponible_usd !== undefined ? contrato.saldo_disponible_usd.toString() : ''
+    });
+  };
+
+  const handleContratoUpdateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editContratoForm.clientId || !editContratoForm.ot_marco) return;
+
+    const matchedClient = clients.find(c => c.id === editContratoForm.clientId);
+    const matchedComercial = users.find(u => u.id === editContratoForm.comercialId);
+
+    const updatedContrato: Contrato = {
+      id: editContratoForm.id,
+      clientId: editContratoForm.clientId,
+      cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
+      ot_marco: parseInt(editContratoForm.ot_marco) || 0,
+      tipo_servicio: editContratoForm.tipo_servicio,
+      tipo_contrato: editContratoForm.tipo_contract.trim() || 'Servicio General',
+      fecha_inicio: editContratoForm.fecha_inicio,
+      fecha_fin: editContratoForm.fecha_fin,
+      estado: editContratoForm.estado,
+      comercialId: editContratoForm.comercialId,
+      comercial: matchedComercial ? matchedComercial.username : 'Asignado General',
+      comentarios: editContratoForm.comentarios.trim() || '',
+      presupuesto_total_usd: editContratoForm.presupuesto_total_usd ? parseFloat(editContratoForm.presupuesto_total_usd) : undefined,
+      saldo_disponible_usd: editContratoForm.saldo_disponible_usd ? parseFloat(editContratoForm.saldo_disponible_usd) : undefined
+    };
+
+    if (onUpdateContrato) {
+      onUpdateContrato(updatedContrato);
+    }
+
+    setSelectedContratoForView(null);
+    setIsEditingContrato(false);
   };
 
   const handleContratoSubmit = (e: React.FormEvent) => {
@@ -212,40 +337,98 @@ export default function ClientesContratosView({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-xs w-full mb-2">
-          <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-          <input
-            type="text"
-            placeholder={activeTab === 'clientes' ? "Buscar por razón social, ruc, distrito..." : "Buscar por cliente, comercial, ot marco..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-55 border border-slate-200 rounded-2xl py-1.5 pl-9 pr-4 text-xs text-slate-750 focus:outline-none focus:ring-1 focus:ring-[#00B594]"
-          />
+        {/* Search & View Toggle */}
+        <div className="flex items-center gap-3 max-w-sm w-full mb-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+            <input
+              type="text"
+              placeholder={activeTab === 'clientes' ? "Buscar por razón social, ruc, distrito..." : "Buscar por cliente, comercial, ot marco..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-55 border border-slate-200 rounded-2xl py-1.5 pl-9 pr-4 text-xs text-slate-750 focus:outline-none focus:ring-1 focus:ring-[#00B594]"
+            />
+          </div>
+          {activeTab === 'clientes' ? (
+            <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setClientViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  clientViewMode === 'grid'
+                    ? 'bg-white text-[#00B594] shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+                title="Vista de Tarjetas"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientViewMode('list')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  clientViewMode === 'list'
+                    ? 'bg-white text-[#00B594] shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+                title="Vista de Lista"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setContratoViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  contratoViewMode === 'grid'
+                    ? 'bg-white text-[#00B594] shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+                title="Vista de Tarjetas"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setContratoViewMode('list')}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  contratoViewMode === 'list'
+                    ? 'bg-white text-[#00B594] shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+                title="Vista de Lista"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Content */}
       {activeTab === 'clientes' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredClients.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-slate-450 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-              <Building2 size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
-              <p className="text-xs font-bold">No se encontraron clientes.</p>
-              <p className="text-[10px] mt-1 text-slate-400">Intenta cambiar el criterio de búsqueda o registra uno nuevo.</p>
-            </div>
-          ) : (
-            filteredClients.map((client) => {
+        filteredClients.length === 0 ? (
+          <div className="py-12 text-center text-slate-450 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+            <Building2 size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
+            <p className="text-xs font-bold">No se encontraron clientes.</p>
+            <p className="text-[10px] mt-1 text-slate-400">Intenta cambiar el criterio de búsqueda o registra uno nuevo.</p>
+          </div>
+        ) : clientViewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredClients.map((client) => {
               // count active contracts
               const clientContracts = contratos.filter(c => c.cliente === client.razonSocial);
               return (
                 <div 
                   key={client.id} 
-                  className="bg-white border border-slate-150 rounded-3xl p-5 hover:border-[#00B594]/40 hover:shadow-md transition-all flex flex-col justify-between"
+                  onClick={() => handleClientClick(client)}
+                  className="bg-white border border-slate-150 rounded-3xl p-5 hover:border-[#00B594]/60 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-[#E6F7F4] transition-colors">
                         <Building2 size={18} className="text-[#00B594]" />
                       </div>
                       <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
@@ -253,7 +436,7 @@ export default function ClientesContratosView({
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-xs font-black text-slate-800 line-clamp-2" title={client.razonSocial}>
+                      <h3 className="text-xs font-black text-slate-800 line-clamp-2 group-hover:text-[#00B594] transition-colors" title={client.razonSocial}>
                         {client.razonSocial}
                       </h3>
                       <div className="flex items-center gap-1 text-[10px] text-slate-450 font-bold mt-1.5">
@@ -286,9 +469,61 @@ export default function ClientesContratosView({
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-150">
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Razón Social</th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">RUC</th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Dirección Sede / Distrito</th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Contacto</th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Email / Teléfono</th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Contratos</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredClients.map((client) => {
+                  const clientContracts = contratos.filter(c => c.cliente === client.razonSocial);
+                  return (
+                    <tr 
+                      key={client.id} 
+                      onClick={() => handleClientClick(client)}
+                      className="hover:bg-[#00B594]/5 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{client.razonSocial}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-[9px] font-black font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-150">
+                          {client.ruc}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="text-xs text-slate-700 font-bold">{client.direccionSede}</div>
+                        <div className="text-[10px] text-slate-400 font-semibold">{client.distrito}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="text-xs text-slate-700 font-bold">{client.contactoNombre}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="text-xs text-slate-600 font-mono select-all">{client.contactoEmail}</div>
+                        <div className="text-[10px] text-slate-500 font-mono font-bold">{client.contactoTelefono}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-md bg-[#E6F7F4] text-[#00B594] group-hover:bg-[#00B594] group-hover:text-white transition-all">
+                          {clientContracts.length} activo(s)
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="space-y-4">
           {filteredContratos.length === 0 ? (
@@ -296,6 +531,91 @@ export default function ClientesContratosView({
               <Briefcase size={40} className="mx-auto mb-3 opacity-30 text-slate-500" />
               <p className="text-xs font-bold">No se encontraron contratos registrados.</p>
               <p className="text-[10px] mt-1 text-slate-400">Intenta registrar un contrato o cambiar la consulta de búsqueda.</p>
+            </div>
+          ) : contratoViewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredContratos.map((contrato) => {
+                const presupuesto = contrato.presupuesto_total_usd;
+                const saldo = contrato.saldo_disponible_usd ?? presupuesto;
+                const consumo = presupuesto ? presupuesto - saldo : 0;
+                const pct = (presupuesto && presupuesto > 0) ? (consumo / presupuesto) * 100 : 0;
+                
+                let progressColor = "bg-[#00B594]";
+                if (pct >= 95) progressColor = "bg-rose-500";
+                else if (pct >= 80) progressColor = "bg-amber-500";
+
+                return (
+                  <div 
+                    key={contrato.id} 
+                    onClick={() => handleContratoClick(contrato)}
+                    className="bg-white border border-slate-150 rounded-3xl p-5 hover:border-[#00B594]/60 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-[#E6F7F4] transition-colors">
+                          <Briefcase size={18} className="text-[#00B594]" />
+                        </div>
+                        <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                          OT Marco #{contrato.ot_marco}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-slate-800 line-clamp-1 group-hover:text-[#00B594] transition-colors">
+                          {contrato.cliente}
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-650 border border-slate-150">
+                            {contrato.tipo_servicio}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold truncate max-w-xs">{contrato.tipo_contrato}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 space-y-2">
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-slate-400 font-semibold">Vigencia:</span>
+                          <span className="text-slate-700 font-bold font-mono text-[9px]">{contrato.fecha_inicio} al {contrato.fecha_fin}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-slate-400 font-semibold">Responsable:</span>
+                          <span className="text-slate-700 font-bold">{contrato.comercial}</span>
+                        </div>
+                      </div>
+
+                      {presupuesto ? (
+                        <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-450">Consumo ({pct.toFixed(0)}%):</span>
+                            <span className="text-slate-700">${consumo.toFixed(0)} / ${presupuesto.toFixed(0)}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className={`h-1.5 rounded-full ${progressColor} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                          </div>
+                          <div className="flex justify-between text-[9px] text-slate-400">
+                            <span>Saldo disponible:</span>
+                            <span className="font-mono font-bold text-slate-605">${saldo.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-3 border-t border-slate-100 text-[10px] text-slate-450 italic">
+                          Consumo / Saldo no definidos
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-400">Estado:</span>
+                      <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
+                        contrato.estado === 'VIGENTE'
+                          ? 'bg-[#E6F7F4] text-[#00B594]'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {contrato.estado}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-sm">
@@ -314,9 +634,13 @@ export default function ClientesContratosView({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredContratos.map((contrato) => (
-                    <tr key={contrato.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr 
+                      key={contrato.id} 
+                      onClick={() => handleContratoClick(contrato)}
+                      className="hover:bg-[#00B594]/5 transition-colors cursor-pointer group"
+                    >
                       <td className="px-5 py-4">
-                        <div className="text-xs font-black text-slate-800">{contrato.cliente}</div>
+                        <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{contrato.cliente}</div>
                       </td>
                       <td className="px-5 py-4">
                         <div className="text-xs font-extrabold font-mono text-slate-500">#{contrato.ot_marco}</div>
@@ -645,6 +969,496 @@ export default function ClientesContratosView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLE / EDICIÓN CLIENTE */}
+      {selectedClientForView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                <Building2 size={16} className="text-[#00B594]" />
+                {isEditingClient ? 'Editar Información del Cliente' : 'Ficha del Cliente'}
+              </h3>
+              <button 
+                onClick={() => setSelectedClientForView(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            {!isEditingClient ? (
+              /* MODO VISUALIZACIÓN */
+              <div className="p-6 space-y-6">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800">{selectedClientForView.razonSocial}</h4>
+                    <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block mt-1 border border-slate-200">
+                      RUC: {selectedClientForView.ruc}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-[#E6F7F4] rounded-2xl border border-[#00B594]/10">
+                    <Building2 size={24} className="text-[#00B594]" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Dirección Sede</span>
+                    <span className="text-xs text-slate-700 font-bold block">{selectedClientForView.direccionSede}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Distrito</span>
+                    <span className="text-xs text-slate-700 font-bold block">{selectedClientForView.distrito}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Nombre Contacto</span>
+                    <span className="text-xs text-slate-700 font-bold block">{selectedClientForView.contactoNombre}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Teléfono</span>
+                    <span className="text-xs text-slate-750 font-mono font-bold block">{selectedClientForView.contactoTelefono}</span>
+                  </div>
+                  <div className="col-span-full space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Email Contacto</span>
+                    <span className="text-xs text-slate-750 font-mono select-all font-semibold block text-slate-650">{selectedClientForView.contactoEmail}</span>
+                  </div>
+                </div>
+
+                {/* Lista de Contratos Activos del Cliente */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Contratos Asociados</h5>
+                  {(() => {
+                    const clientContracts = contratos.filter(c => c.cliente === selectedClientForView.razonSocial);
+                    if (clientContracts.length === 0) {
+                      return (
+                        <p className="text-[10px] text-slate-400 font-medium italic">No se registran contratos asociados a este cliente en el sistema.</p>
+                      );
+                    }
+                    return (
+                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        {clientContracts.map(contract => (
+                          <div key={contract.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-150 flex items-center justify-between text-xs">
+                            <div>
+                              <div className="font-black text-slate-800">OT Marco: #{contract.ot_marco}</div>
+                              <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{contract.tipo_contrato}</div>
+                              <div className="text-[9px] text-slate-450 font-medium mt-0.5">Vence: {contract.fecha_fin}</div>
+                            </div>
+                            <span className="text-[9px] font-extrabold font-mono px-2 py-0.5 rounded bg-[#E6F7F4] text-[#00B594] uppercase shrink-0">
+                              {contract.estado}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedClientForView(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingClient(true)}
+                    className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)] flex items-center gap-1.5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    Editar Datos
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* MODO EDICIÓN */
+              <form onSubmit={handleClientUpdateSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Razón Social Legal <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Repsol Data Center Perú S.A."
+                    value={editClientForm.razonSocial}
+                    onChange={(e) => setEditClientForm({ ...editClientForm, razonSocial: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">RUC (Identificación Tributaria) <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: 20100123456"
+                    maxLength={11}
+                    value={editClientForm.ruc}
+                    onChange={(e) => setEditClientForm({ ...editClientForm, ruc: e.target.value.replace(/\D/g, '') })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594] font-mono"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Dirección Sede</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Av. El Derby 150"
+                      value={editClientForm.direccionSede}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, direccionSede: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Distrito</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Santiago de Surco"
+                      value={editClientForm.distrito}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, distrito: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                    />
+                  </div>
+                </div>
+                <div className="border-t border-slate-100 pt-3 space-y-3">
+                  <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Datos del Contacto</h4>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nombre Contacto</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Ing. Carlos Mendoza"
+                      value={editClientForm.contactoNombre}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, contactoNombre: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Email Contacto</label>
+                      <input
+                        type="email"
+                        placeholder="Ej: carlos@repsol.pe"
+                        value={editClientForm.contactoEmail}
+                        onChange={(e) => setEditClientForm({ ...editClientForm, contactoEmail: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Teléfono</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: 998765432"
+                        value={editClientForm.contactoTelefono}
+                        onChange={(e) => setEditClientForm({ ...editClientForm, contactoTelefono: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingClient(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)]"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLE / EDICIÓN CONTRATO */}
+      {selectedContratoForView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                <Briefcase size={16} className="text-[#00B594]" />
+                {isEditingContrato ? 'Editar Información del Contrato' : 'Ficha del Contrato / Acuerdo'}
+              </h3>
+              <button 
+                onClick={() => setSelectedContratoForView(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            {!isEditingContrato ? (
+              /* MODO VISUALIZACIÓN */
+              <div className="p-6 space-y-6">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block border border-slate-200">
+                      OT Marco #{selectedContratoForView.ot_marco}
+                    </span>
+                    <h4 className="text-sm font-black text-slate-800 mt-1">{selectedContratoForView.cliente}</h4>
+                    <span className="text-[10px] text-slate-400 font-semibold inline-block mt-0.5">{selectedContratoForView.tipo_servicio} • {selectedContratoForView.tipo_contrato}</span>
+                  </div>
+                  <div className="p-3 bg-[#E6F7F4] rounded-2xl border border-[#00B594]/10 shrink-0">
+                    <Briefcase size={24} className="text-[#00B594]" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Fecha de Inicio</span>
+                    <span className="text-xs text-slate-700 font-bold block font-mono">{selectedContratoForView.fecha_inicio}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Fecha de Fin</span>
+                    <span className="text-xs text-slate-700 font-bold block font-mono">{selectedContratoForView.fecha_fin}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Responsable Comercial</span>
+                    <span className="text-xs text-slate-700 font-bold block">{selectedContratoForView.comercial}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Estado</span>
+                    <span className="text-xs font-bold block">
+                      <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
+                        selectedContratoForView.estado === 'VIGENTE' ? 'bg-[#E6F7F4] text-[#00B594]' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {selectedContratoForView.estado}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="col-span-full space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Comentarios / Alcance</span>
+                    <p className="text-xs text-slate-650 font-medium bg-slate-50 p-3 rounded-xl border border-slate-150 whitespace-pre-line leading-relaxed">
+                      {selectedContratoForView.comentarios || 'Sin comentarios adicionales.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sección Financiera (Consumo / Saldo) */}
+                {selectedContratoForView.presupuesto_total_usd && (
+                  <div className="pt-4 border-t border-slate-100 space-y-3">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Consumo Presupuestal</h5>
+                    {(() => {
+                      const presupuesto = selectedContratoForView.presupuesto_total_usd!;
+                      const saldo = selectedContratoForView.saldo_disponible_usd ?? presupuesto;
+                      const consumo = presupuesto - saldo;
+                      const pct = presupuesto > 0 ? (consumo / presupuesto) * 100 : 0;
+                      
+                      let progressColor = "bg-[#00B594]";
+                      if (pct >= 95) progressColor = "bg-rose-500";
+                      else if (pct >= 80) progressColor = "bg-amber-500";
+
+                      return (
+                        <div className="bg-slate-55 p-4 rounded-2xl border border-slate-150 space-y-2">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-slate-500">Porcentaje Consumido:</span>
+                            <span className="text-slate-800">{pct.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div className={`h-2 rounded-full ${progressColor} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
+                            <div>
+                              <span className="text-[9px] text-slate-400 block uppercase font-mono">Presupuesto</span>
+                              <span className="font-mono font-bold text-slate-800">${presupuesto.toFixed(2)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-slate-400 block uppercase font-mono">Consumido</span>
+                              <span className="font-mono font-bold text-slate-800">${consumo.toFixed(2)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-slate-400 block uppercase font-mono">Disponible</span>
+                              <span className="font-mono font-black text-[#00B594]">${saldo.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedContratoForView(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingContrato(true)}
+                    className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)] flex items-center gap-1.5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    Editar Contrato
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* MODO EDICIÓN */
+              <form onSubmit={handleContratoUpdateSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Asociar Cliente <span className="text-rose-500">*</span></label>
+                  <select
+                    required
+                    value={editContratoForm.clientId}
+                    onChange={(e) => setEditContratoForm({ ...editContratoForm, clientId: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-[#00B594]"
+                  >
+                    <option value="">Seleccione cliente...</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.razonSocial}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">OT Marco Padre <span className="text-rose-500">*</span></label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="Ej: 1105"
+                      value={editContratoForm.ot_marco}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, ot_marco: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
+                    <select
+                      value={editContratoForm.tipo_servicio}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_servicio: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                    >
+                      <option value="CONTRATO">CONTRATO</option>
+                      <option value="OC">ORDEN COMPRA (OC)</option>
+                      <option value="OS">ORDEN SERVICIO (OS)</option>
+                      <option value="CORREO">CORREO / ACUERDO</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Descripción del Alcance / Contrato <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Alquiler de UPS y visitas mensuales"
+                    value={editContratoForm.tipo_contract}
+                    onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_contract: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-sans"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Inicio</label>
+                    <input
+                      type="date"
+                      value={editContratoForm.fecha_inicio}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, fecha_inicio: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Fin</label>
+                    <input
+                      type="date"
+                      value={editContratoForm.fecha_fin}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, fecha_fin: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Responsable Comercial <span className="text-rose-500">*</span></label>
+                    <select
+                      required
+                      value={editContratoForm.comercialId}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, comercialId: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-[#00B594]"
+                    >
+                      <option value="">Seleccione comercial...</option>
+                      {users.filter(u => u.role === 'Ventas' && u.estado === 'Activo').map(u => (
+                        <option key={u.id} value={u.id}>{u.username}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado</label>
+                    <select
+                      value={editContratoForm.estado}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, estado: e.target.value as any })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                    >
+                      <option value="VIGENTE">VIGENTE</option>
+                      <option value="TERMINADO">TERMINADO</option>
+                      <option value="ANULADO">ANULADO</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Presupuesto Total (USD)</label>
+                    <input
+                      type="number"
+                      placeholder="Ej: 5000"
+                      value={editContratoForm.presupuesto_total_usd}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, presupuesto_total_usd: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Saldo Disponible (USD)</label>
+                    <input
+                      type="number"
+                      placeholder="Ej: 2500"
+                      value={editContratoForm.saldo_disponible_usd}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, saldo_disponible_usd: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Comentarios Adicionales</label>
+                  <textarea
+                    placeholder="Detalles del acuerdo, periodicidad de pagos, etc..."
+                    rows={2}
+                    value={editContratoForm.comentarios}
+                    onChange={(e) => setEditContratoForm({ ...editContratoForm, comentarios: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingContrato(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)]"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

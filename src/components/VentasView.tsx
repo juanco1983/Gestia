@@ -797,6 +797,14 @@ export default function VentasView({
             id="search-clients-input"
           />
         </div>
+
+        <button
+          onClick={openCreateOtModal}
+          className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer shadow-md transition-all self-start sm:self-auto"
+          id="btn-nueva-ot-ventas"
+        >
+          Nueva OT
+        </button>
       </div>
 
       {/* Grid of Master Lists */}
