@@ -505,15 +505,14 @@ export default function App() {
         // Intentamos sincronizar primero
         const syncSuccess = await handleSyncOffline();
         
-        // Si hay datos locales y la sincronización falló, NO cargamos del servidor
-        // para evitar que datos antiguos (o vacíos) sobrescriban el trabajo del usuario
-        const hasCriticalLocalData = offlineQueue.length > 0 || 
-                                     contracts.length > 0 || 
-                                     ordenesTrabajo.length > 0 ||
-                                     contratosNuevos.length > 0;
+        // Si hay cambios pendientes de sincronizar (cola offline) y la sincronización falló,
+        // NO cargamos del servidor para evitar que datos antiguos sobrescriban el trabajo del usuario.
+        // NOTA: Solo offlineQueue representa cambios reales pendientes. Los arrays como ordenesTrabajo
+        // pueden contener datos iniciales/seed que NO deben bloquear la carga del servidor.
+        const hasPendingOfflineChanges = offlineQueue.length > 0;
 
-        if (!syncSuccess && hasCriticalLocalData) {
-          console.warn(">>> ADVERTENCIA: Sincronización fallida y hay datos locales críticos. Abortando carga del servidor para proteger datos locales.");
+        if (!syncSuccess && hasPendingOfflineChanges) {
+          console.warn(">>> ADVERTENCIA: Sincronización fallida y hay cambios offline pendientes. Abortando carga del servidor para proteger datos locales.");
           return;
         }
 

@@ -445,14 +445,21 @@ app.post("/api/sync", async (req, res) => {
       }
     }
     
+    // Helper to map Prisma field 'factura' to frontend field 'n_factura'
+    const mapLineaToFrontend = (linea: any) => {
+      const { factura, ...rest } = linea;
+      return { ...rest, n_factura: factura || '', factura };
+    };
+
     // Return all data
+    const rawLineas = await prisma.ordenTrabajoLinea.findMany();
     res.json({
       success: true,
       ots: await prisma.oT.findMany(),
       reports: await prisma.technicalReport.findMany(),
       clients: await prisma.client.findMany(),
       contracts: await prisma.contract.findMany(),
-      ordenesTrabajo: await prisma.ordenTrabajoLinea.findMany(),
+      ordenesTrabajo: rawLineas.map(mapLineaToFrontend),
       contratosNuevos: await prisma.contratoNuevo.findMany(),
       users: await prisma.user.findMany(),
       logs: await prisma.userActivityLog.findMany()
@@ -465,7 +472,13 @@ app.post("/api/sync", async (req, res) => {
 
 app.get("/api/ot-lineas", async (req, res) => {
   try {
-    res.json(await prisma.ordenTrabajoLinea.findMany());
+    const rawLineas = await prisma.ordenTrabajoLinea.findMany();
+    // Map Prisma field 'factura' to frontend field 'n_factura'
+    const mapped = rawLineas.map((linea: any) => {
+      const { factura, ...rest } = linea;
+      return { ...rest, n_factura: factura || '', factura };
+    });
+    res.json(mapped);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }

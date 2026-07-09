@@ -203,7 +203,7 @@ export default function TablaOrdenesTrabajo({
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 10;
 
   // Memoized filter calculation (CRITICAL OPTIMIZATION for +10,500 records)
   const filteredLines = useMemo(() => {
@@ -579,9 +579,9 @@ export default function TablaOrdenesTrabajo({
                             title="Ver bitácora de estatus"
                           >
                             <MessageSquare size={13} />
-                            {line.estatus.length > 0 && (
+                            {(line.estatus?.length ?? 0) > 0 && (
                               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#00B594] text-white text-[7px] font-black rounded-full flex items-center justify-center">
-                                {line.estatus.length}
+                                {line.estatus?.length ?? 0}
                               </span>
                             )}
                           </button>
