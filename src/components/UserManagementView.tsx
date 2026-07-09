@@ -76,6 +76,10 @@ export default function UserManagementView({
   const [editRole, setEditRole] = useState<'Administrador' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente'>('Tecnico');
   const [editAllowedModules, setEditAllowedModules] = useState<string[]>([]);
 
+  // Password Reset state
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPasswordForReset, setNewPasswordForReset] = useState('');
+
   // Logs category filter
   const [logFilter, setLogFilter] = useState<string>('ALL');
 
@@ -182,7 +186,6 @@ export default function UserManagementView({
       allowedModules: editAllowedModules
     });
 
-    const affectedUser = users.find(u => u.id === userId);
     // Audit Log
     const newAuditLog: UserActivityLog = {
       id: `log_${Date.now()}`,
@@ -197,20 +200,35 @@ export default function UserManagementView({
     setEditingUserId(null);
   };
 
-  const handleResetPassword = (user: User) => {
-    onUpdateUser(user.id, { password: 'mafort' });
-    alert(`🔑 LLAVE DE SEGURIDAD REGENERADA:\nSe ha re-establecido la contraseña para "${user.username}". Deberá usar "mafort" en su próxima sesión.`);
-    
+  const startResetPassword = (user: User) => {
+    setResetPasswordUser(user);
+    setNewPasswordForReset('');
+  };
+
+  const saveNewPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPasswordUser) return;
+    if (!newPasswordForReset.trim()) {
+      alert("Por favor, ingrese la nueva contraseña.");
+      return;
+    }
+
+    onUpdateUser(resetPasswordUser.id, { password: newPasswordForReset.trim() });
+
     // Audit Log
     const newAuditLog: UserActivityLog = {
       id: `log_${Date.now()}`,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
       userEmail: currentUser.email,
       action: 'REINICIO_CONTRASENA',
-      details: `Regeneración manual de credenciales criptográficas para ${user.username} (${user.email})`,
+      details: `Actualización manual de credenciales de acceso (contraseña personalizada) para ${resetPasswordUser.username} (${resetPasswordUser.email})`,
       ipAddress: '192.168.10.15'
     };
     onAddLog(newAuditLog);
+
+    setResetPasswordUser(null);
+    setNewPasswordForReset('');
+    alert("🔑 Contraseña actualizada exitosamente.");
   };
 
   const sortedLogs = [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -245,7 +263,7 @@ export default function UserManagementView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
         
         {/* Left 2 Columns: Users Administration list */}
         <div className="lg:col-span-2 space-y-4">
@@ -260,171 +278,179 @@ export default function UserManagementView({
                   placeholder="Buscar usuario por nombre, email, área o rol..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-9 pr-3 text-xs text-slate-705 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-all font-sans"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-9 pr-3 text-xs text-slate-705 placeholder-slate-400 focus:outline-none focus:border-emerald-450 transition-all font-sans"
                   id="user-search-input"
                 />
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowAddForm(!showAddForm)}
+                onClick={() => setShowAddForm(true)}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-xs"
               >
                 <UserPlus size={14} />
-                <span>{showAddForm ? 'Ocultar Formulario' : 'Registrar Nuevo Operador'}</span>
+                <span>Registrar Nuevo Operador</span>
               </button>
             </div>
 
-            {/* Quick Create user Form component inline */}
+            {/* Formulario de Alta de Nuevo Colaborador como Modal Flotante */}
             {showAddForm && (
-              <form onSubmit={handleCreateUser} className="p-4 bg-slate-50/50 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                <div className="sm:col-span-2">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono">Alta de Nuevo Colaborador</h4>
-                  <p className="text-[10px] text-slate-500">Registre las credenciales y configure el área de asignación correspondiente.</p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1">Nombre Completo *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Ing. René Farfán"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1">Correo Corporativo *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="nombre@mafort.pe"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1">Rol Operativo *</label>
-                  <select
-                    value={newRole}
-                    onChange={(e) => handleRoleChange(e.target.value as any)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                  >
-                    <option value="Administrador">🔑 Administrador (Acceso Total)</option>
-                    <option value="Ventas">📞 Ventas (Gestión de SLAs)</option>
-                    <option value="Tecnico">👷 Técnico (Inspección y Medición)</option>
-                    <option value="Supervisor">🛡️ Supervisor (Control de Calidad)</option>
-                    <option value="Cliente">🏢 Cliente (Conformidades Presenciales)</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-2 bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="block text-[10px] uppercase font-mono text-slate-500 font-bold">Módulos de Acceso Permitidos *</span>
-                      <p className="text-[10px] text-slate-400">Seleccione los módulos que el usuario tendrá habilitados en su barra de navegación.</p>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200 text-left">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                        <UserPlus size={16} />
+                      </span>
+                      <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider font-mono">Alta de Nuevo Operador</h3>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setNewAllowedModules(AVAILABLE_MODULES.map(m => m.id))}
-                        className="text-[9px] font-mono text-slate-500 hover:text-emerald-500 font-bold underline cursor-pointer"
-                      >
-                        Marcar todos
-                      </button>
-                      <span className="text-slate-300">|</span>
-                      <button
-                        type="button"
-                        onClick={() => setNewAllowedModules([])}
-                        className="text-[9px] font-mono text-slate-500 hover:text-rose-500 font-bold underline cursor-pointer"
-                      >
-                        Desmarcar todos
-                      </button>
-                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowAddForm(false)}
+                      className="text-slate-400 hover:text-slate-650 font-bold text-sm cursor-pointer"
+                    >
+                      ✕
+                    </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200/60">
-                    {AVAILABLE_MODULES.map((m) => {
-                      const isChecked = newAllowedModules.includes(m.id);
-                      return (
-                        <label 
-                          key={m.id} 
-                          className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer select-none transition-all ${
-                            isChecked 
-                              ? 'bg-emerald-50/50 border-emerald-200 text-slate-800 font-semibold' 
-                              : 'bg-white border-slate-150 text-slate-600 hover:bg-slate-50'
-                          }`}
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Nombre Completo *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. René Farfán"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Correo Corporativo *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="nombre@mafort.pe"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Rol Operativo *</label>
+                        <select
+                          value={newRole}
+                          onChange={(e) => handleRoleChange(e.target.value as any)}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                         >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewAllowedModules([...newAllowedModules, m.id]);
-                              } else {
-                                setNewAllowedModules(newAllowedModules.filter(id => id !== m.id));
-                              }
-                            }}
-                            className="rounded text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5 border-slate-300 cursor-pointer"
-                          />
-                          <span className="text-xs font-semibold leading-tight">{m.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                          <option value="Administrador">🔑 Administrador</option>
+                          <option value="Ventas">📞 Ventas</option>
+                          <option value="Tecnico">👷 Técnico</option>
+                          <option value="Supervisor">🛡️ Supervisor</option>
+                          <option value="Cliente">🏢 Cliente</option>
+                        </select>
+                      </div>
 
-                <div>
-                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1">Área o Departamento *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Mantenimiento Energía / Telecom"
-                    value={newArea}
-                    onChange={(e) => setNewArea(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Área o Departamento *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej. Mantenimiento Energía"
+                          value={newArea}
+                          onChange={(e) => setNewArea(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1">Contraseña de Acceso *</label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Contraseña corporativa"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="block text-[10px] uppercase font-mono text-slate-500 font-bold">Módulos de Acceso Permitidos *</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNewAllowedModules(AVAILABLE_MODULES.map(m => m.id))}
+                            className="text-[9px] font-mono text-slate-500 hover:text-emerald-500 font-bold underline cursor-pointer"
+                          >
+                            Todos
+                          </button>
+                          <span className="text-slate-350">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewAllowedModules([])}
+                            className="text-[9px] font-mono text-slate-500 hover:text-rose-500 font-bold underline cursor-pointer"
+                          >
+                            Ninguno
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 max-h-36 overflow-y-auto">
+                        {AVAILABLE_MODULES.map((m) => {
+                          const isChecked = newAllowedModules.includes(m.id);
+                          return (
+                            <label 
+                              key={m.id} 
+                              className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer select-none transition-all ${
+                                isChecked 
+                                  ? 'bg-emerald-50/50 border-emerald-250 text-slate-800 font-semibold' 
+                                  : 'bg-white border-slate-150 text-slate-605 hover:bg-slate-55'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setNewAllowedModules([...newAllowedModules, m.id]);
+                                  } else {
+                                    setNewAllowedModules(newAllowedModules.filter(id => id !== m.id));
+                                  }
+                                }}
+                                className="rounded text-emerald-500 focus:ring-emerald-500 w-3 h-3 border-slate-300 cursor-pointer"
+                              />
+                              <span className="text-[11px] leading-tight">{m.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                <div className="flex items-center">
-                  <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-2 text-[10px] text-amber-850">
-                    💡 <strong>Seguridad:</strong> El nuevo usuario deberá autenticarse con este password para acceder al sistema.
-                  </div>
-                </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Contraseña de Acceso *</label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="Contraseña corporativa"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                      />
+                    </div>
 
-                <div className="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200/80">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddForm(false)}
-                    className="px-3.5 py-2 bg-slate-200 hover:bg-slate-350 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                  >
-                    <CheckCircle size={14} />
-                    <span>Guardar y Habilitar</span>
-                  </button>
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddForm(false)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                      >
+                        <CheckCircle size={14} />
+                        <span>Guardar y Habilitar</span>
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* Users Table */}
@@ -436,7 +462,7 @@ export default function UserManagementView({
                     <th className="p-4">Rol / Área</th>
                     <th className="p-4">Estado</th>
                     <th className="p-4">Último Ingreso</th>
-                    <th className="p-4 text-right">Firma / Ajustes</th>
+                    <th className="p-4 text-right">Ajustes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -448,7 +474,6 @@ export default function UserManagementView({
                     </tr>
                   ) : (
                     filteredUsers.map((user) => {
-                      const isEditing = editingUserId === user.id;
                       const isCurrentUser = user.email === currentUser.email;
 
                       return (
@@ -459,94 +484,30 @@ export default function UserManagementView({
                           }`}
                         >
                           <td className="p-4">
-                            {isEditing ? (
-                              <div className="space-y-1">
-                                <input
-                                  type="text"
-                                  value={editUsername}
-                                  onChange={(e) => setEditUsername(e.target.value)}
-                                  className="border border-slate-200 rounded-xl p-1.5 text-xs w-full focus:outline-none focus:border-emerald-450"
-                                />
-                                <span className="text-[10px] text-slate-455 font-mono block">{user.email}</span>
+                            <div>
+                              <div className="font-bold text-slate-800 flex items-center gap-1.5 leading-snug">
+                                <span>{user.username}</span>
+                                {isCurrentUser && (
+                                  <span className="text-[8px] bg-slate-800 text-white px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">SESIÓN</span>
+                                )}
                               </div>
-                            ) : (
-                              <div>
-                                <div className="font-bold text-slate-800 flex items-center gap-1.5 leading-snug">
-                                  <span>{user.username}</span>
-                                  {isCurrentUser && (
-                                    <span className="text-[8px] bg-slate-800 text-white px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">SESIÓN</span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">{user.email}</div>
-                              </div>
-                            )}
+                              <div className="text-[10px] text-slate-400 font-mono mt-0.5">{user.email}</div>
+                            </div>
                           </td>
 
                           <td className="p-4">
-                            {isEditing ? (
-                              <div className="space-y-1 min-w-[180px]">
-                                <select
-                                  value={editRole}
-                                  onChange={(e) => {
-                                    const role = e.target.value as any;
-                                    setEditRole(role);
-                                    setEditAllowedModules(getDefaultModulesForRole(role));
-                                  }}
-                                  className="border border-slate-200 rounded-xl p-1 text-xs w-full focus:outline-none"
-                                >
-                                  <option value="Administrador">Administrador</option>
-                                  <option value="Ventas">Ventas</option>
-                                  <option value="Tecnico">Tecnico</option>
-                                  <option value="Supervisor">Supervisor</option>
-                                  <option value="Cliente">Cliente</option>
-                                </select>
-                                <input
-                                  type="text"
-                                  value={editArea}
-                                  onChange={(e) => setEditArea(e.target.value)}
-                                  className="border border-slate-200 rounded-xl p-1 text-xs w-full focus:outline-none"
-                                  placeholder="Área de asignación"
-                                />
-
-                                {/* Module selection for editing */}
-                                <div className="mt-2 bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-1 max-h-40 overflow-y-auto">
-                                  <span className="text-[9px] font-mono font-bold text-slate-500 uppercase block">Módulos permitidos:</span>
-                                  {AVAILABLE_MODULES.map((m) => {
-                                    const checked = editAllowedModules.includes(m.id);
-                                    return (
-                                      <label key={m.id} className="flex items-center gap-1.5 text-[10px] text-slate-700 cursor-pointer hover:bg-slate-100 p-0.5 rounded transition-all">
-                                        <input
-                                          type="checkbox"
-                                          checked={checked}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setEditAllowedModules([...editAllowedModules, m.id]);
-                                            } else {
-                                              setEditAllowedModules(editAllowedModules.filter(id => id !== m.id));
-                                            }
-                                          }}
-                                          className="rounded text-emerald-500 focus:ring-emerald-500 w-3 h-3 cursor-pointer"
-                                        />
-                                        <span className="leading-none">{m.name}</span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                                  user.role === 'Administrador' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
-                                  user.role === 'Ventas' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                  user.role === 'Tecnico' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                                  user.role === 'Supervisor' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                  'bg-sky-50 text-sky-700 border border-sky-100'
-                                }`}>
-                                  {user.role}
-                                </span>
-                                <div className="text-[10px] text-slate-500 mt-0.5 font-sans">{user.area}</div>
-                              </div>
-                            )}
+                            <div>
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                user.role === 'Administrador' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                                user.role === 'Ventas' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                user.role === 'Tecnico' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                user.role === 'Supervisor' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                'bg-sky-50 text-sky-700 border border-sky-100'
+                              }`}>
+                                {user.role}
+                              </span>
+                              <div className="text-[10px] text-slate-500 mt-0.5 font-sans">{user.area}</div>
+                            </div>
                           </td>
 
                           <td className="p-4">
@@ -588,51 +549,32 @@ export default function UserManagementView({
 
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              {isEditing ? (
-                                <>
-                                  <button
-                                    onClick={() => setEditingUserId(null)}
-                                    className="bg-slate-200 text-slate-700 px-2 py-1 rounded-lg text-[10px] hover:bg-slate-350 font-bold transition-all cursor-pointer"
-                                  >
-                                    Atrás
-                                  </button>
-                                  <button
-                                    onClick={() => saveEdit(user.id)}
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-xs"
-                                  >
-                                    Guardar
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => startEdit(user)}
-                                    className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-                                    title="Modificar asignación o nombre"
-                                  >
-                                    <Edit2 size={13} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleResetPassword(user)}
-                                    className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-                                    title="Regenerar contraseña"
-                                  >
-                                    <Lock size={13} />
-                                  </button>
-                                  {onDeleteUser && !isCurrentUser && (
-                                    <button
-                                      onClick={() => {
-                                        if (confirm(`¿Está seguro de eliminar de forma permanente a ${user.username}? Esta acción auditará la baja.`)) {
-                                          onDeleteUser(user.id);
-                                        }
-                                      }}
-                                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-                                      title="Dar de baja operativa"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  )}
-                                </>
+                              <button
+                                onClick={() => startEdit(user)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                                title="Modificar asignación o nombre"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button
+                                onClick={() => startResetPassword(user)}
+                                className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                                title="Cambiar contraseña"
+                              >
+                                <Lock size={13} />
+                              </button>
+                              {onDeleteUser && !isCurrentUser && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`¿Está seguro de eliminar de forma permanente a ${user.username}? Esta acción auditará la baja.`)) {
+                                      onDeleteUser(user.id);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-605 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                                  title="Dar de baja operativa"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
                               )}
                             </div>
                           </td>
@@ -736,6 +678,217 @@ export default function UserManagementView({
         </div>
 
       </div>
+
+      {/* Modal Flotante de Edición de Usuario */}
+      {editingUserId !== null && (() => {
+        const userToEdit = users.find(u => u.id === editingUserId);
+        if (!userToEdit) return null;
+        
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200 text-left">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                    <Edit2 size={16} />
+                  </span>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider font-mono">Editar Configuración de Operador</h3>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setEditingUserId(null)}
+                  className="text-slate-400 hover:text-slate-650 font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="block text-[10px] uppercase font-mono text-slate-450 mb-1 font-bold">Correo Electrónico (No modificable)</span>
+                  <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs text-slate-500 font-mono">
+                    {userToEdit.email}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Nombre Completo *</label>
+                  <input
+                    type="text"
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-505 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Rol Operativo *</label>
+                    <select
+                      value={editRole}
+                      onChange={(e) => {
+                        const role = e.target.value as any;
+                        setEditRole(role);
+                        setEditAllowedModules(getDefaultModulesForRole(role));
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    >
+                      <option value="Administrador">🔑 Administrador</option>
+                      <option value="Ventas">📞 Ventas</option>
+                      <option value="Tecnico">👷 Técnico</option>
+                      <option value="Supervisor">🛡️ Supervisor</option>
+                      <option value="Cliente">🏢 Cliente</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Área o Departamento *</label>
+                    <input
+                      type="text"
+                      value={editArea}
+                      onChange={(e) => setEditArea(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="block text-[10px] uppercase font-mono text-slate-500 font-bold">Módulos de Acceso Permitidos *</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditAllowedModules(AVAILABLE_MODULES.map(m => m.id))}
+                        className="text-[9px] font-mono text-slate-500 hover:text-emerald-500 font-bold underline cursor-pointer"
+                      >
+                        Todos
+                      </button>
+                      <span className="text-slate-355">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditAllowedModules([])}
+                        className="text-[9px] font-mono text-slate-500 hover:text-rose-500 font-bold underline cursor-pointer"
+                      >
+                        Ninguno
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 max-h-36 overflow-y-auto">
+                    {AVAILABLE_MODULES.map((m) => {
+                      const isChecked = editAllowedModules.includes(m.id);
+                      return (
+                        <label 
+                          key={m.id} 
+                          className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer select-none transition-all ${
+                            isChecked 
+                              ? 'bg-emerald-50/50 border-emerald-255 text-slate-800 font-semibold' 
+                              : 'bg-white border-slate-150 text-slate-605 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditAllowedModules([...editAllowedModules, m.id]);
+                              } else {
+                                setEditAllowedModules(editAllowedModules.filter(id => id !== m.id));
+                              }
+                            }}
+                            className="rounded text-emerald-500 focus:ring-emerald-500 w-3 h-3 border-slate-300 cursor-pointer"
+                          />
+                          <span className="text-[11px] leading-tight">{m.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingUserId(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveEdit(editingUserId)}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                  >
+                    <CheckCircle size={14} />
+                    <span>Guardar Cambios</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Flotante de Cambio de Contraseña */}
+      {resetPasswordUser !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600">
+                  <Lock size={16} />
+                </span>
+                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider font-mono">Cambiar Contraseña</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setResetPasswordUser(null)}
+                className="text-slate-400 hover:text-slate-655 font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={saveNewPassword} className="space-y-4">
+              <div>
+                <span className="block text-[10px] uppercase font-mono text-slate-450 mb-1 font-bold">Colaborador</span>
+                <div className="font-bold text-slate-800 text-xs">
+                  {resetPasswordUser.username} <span className="font-normal text-slate-500 font-mono">({resetPasswordUser.email})</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-mono text-slate-500 mb-1 font-bold">Nueva Contraseña *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Ingrese la nueva contraseña de acceso"
+                  value={newPasswordForReset}
+                  onChange={(e) => setNewPasswordForReset(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordUser(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                >
+                  <CheckCircle size={14} />
+                  <span>Actualizar Contraseña</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
