@@ -83,7 +83,7 @@ function CircularProgress({ value, total, label, color = '#00B594', size = 42 }:
   );
 }
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend } from 'recharts';
 
 const getAppDefaultModulesForRole = (role: string): string[] => {
   if (role === 'Administrador') {
@@ -1004,6 +1004,52 @@ export default function App() {
       { name: 'Finalizadas', count: grupoFinalizadas, fill: '#00B594' },
     ];
 
+    // Generar datos de los últimos 3 meses para la gráfica de áreas
+    const getUltimos3MesesData = () => {
+      const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const data = [];
+      
+      for (let i = 2; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const prefix = `${yyyy}-${mm}`;
+        const nombreMes = `${nombresMeses[d.getMonth()]} ${yyyy}`;
+
+        // Filtrar OTs de este mes
+        const otsMes = ots.filter(o => o.fechaProgramada && o.fechaProgramada.startsWith(prefix));
+
+        const completadas = otsMes.filter(o => 
+          o.estado === 'Aprobada' || 
+          o.estado === 'Firmada' || 
+          o.estado === 'Facturada' || 
+          o.estado === 'Cerrada'
+        ).length;
+
+        const facturadas = otsMes.filter(o => o.estado === 'Facturada').length;
+
+        const porFacturar = otsMes.filter(o => 
+          o.estado === 'Aprobada' || 
+          o.estado === 'Firmada'
+        ).length;
+
+        data.push({
+          name: nombreMes,
+          Completadas: completadas,
+          Facturadas: facturadas,
+          'Por Facturar': porFacturar
+        });
+      }
+      return data;
+    };
+
+    const areaData = getUltimos3MesesData();
+
+    // Estadísticas acumuladas de los últimos 3 meses
+    const totalCompletadas3M = areaData.reduce((acc, curr) => acc + curr.Completadas, 0);
+    const totalFacturadas3M = areaData.reduce((acc, curr) => acc + curr.Facturadas, 0);
+    const totalPorFacturar3M = areaData.reduce((acc, curr) => acc + curr['Por Facturar'], 0);
+
     // Tiles bajo la gráfica
     // Tiempo promedio ciclo (días)
     let totalDias = 0;
@@ -1093,6 +1139,10 @@ export default function App() {
       informesPendientes,
       bypassActivosNoCerrados,
       barData,
+      areaData,
+      totalCompletadas3M,
+      totalFacturadas3M,
+      totalPorFacturar3M,
       tasaCierre: tasaEjecucion.toFixed(1),
       tiempoPromedio,
       sinTecnico,
@@ -1495,40 +1545,76 @@ export default function App() {
           {/* Gráfica Principal (2/3) */}
           <div className="lg:col-span-2 w-full bg-white border border-slate-100/80 rounded-[24px] p-6 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
             <div>
-              <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Flujo de OTs por Estado</h4>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Distribución general del pipeline operativo</p>
+              <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Evolución de OTs (Últimos 3 Meses)</h4>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Desempeño mensual de órdenes completadas y facturación</p>
             </div>
             
             <div className="h-[220px] mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dashboardData.barData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} width={90} />
-                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
-                    {dashboardData.barData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                <AreaChart data={dashboardData.areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorCompletadas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00B594" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#00B594" stopOpacity={0.01}/>
+                    </linearGradient>
+                    <linearGradient id="colorFacturadas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.01}/>
+                    </linearGradient>
+                    <linearGradient id="colorPorFacturar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.01}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', fontSize: '11px', fontFamily: 'sans-serif' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', fontFamily: 'sans-serif', paddingBottom: '10px' }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Completadas" 
+                    stroke="#00B594" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorCompletadas)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Facturadas" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorFacturadas)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Por Facturar" 
+                    stroke="#F59E0B" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorPorFacturar)" 
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
 
             {/* Tiles bajo la gráfica */}
             <div className="grid grid-cols-3 gap-3 mt-4 text-center">
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Cierre del Mes:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5">{dashboardData.tasaCierre}%</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Completadas (3M):</span>
+                <span className="text-xs font-black text-slate-800 block mt-0.5">{dashboardData.totalCompletadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Ciclo Promedio:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5"><span className="text-[#00B594]">{dashboardData.tiempoPromedio} días</span></span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#3B82F6] block font-mono">Facturadas (3M):</span>
+                <span className="text-xs font-black text-[#3B82F6] block mt-0.5">{dashboardData.totalFacturadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Sin Técnico:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5">
-                  <span className={dashboardData.sinTecnico > 0 ? "text-[#F59E0B]" : "text-[#00B594]"}>{dashboardData.sinTecnico} OTs</span>
-                </span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#F59E0B] block font-mono">Por Facturar (3M):</span>
+                <span className="text-xs font-black text-[#F59E0B] block mt-0.5">{dashboardData.totalPorFacturar3M} OTs</span>
               </div>
             </div>
           </div>
