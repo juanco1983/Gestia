@@ -1,8 +1,15 @@
 #!/usr/bin/env pwsh
 ##############################################
 # deploy-backend.ps1
-# Compila y despliega el backend Node.js a AWS Elastic Beanstalk
+# [DEPRECATED] - Despliegues manuales
+# Por favor NO USAR este script. Todos los despliegues de la aplicacion (Front, Back, BD)
+# ahora estan completamente automatizados via GitHub Actions (.github/workflows/app-deploy.yml)
+# Solo se mantiene como referencia temporal.
 ##############################################
+
+Write-Host "`n[WARNING] ESTE SCRIPT ESTA DEPRECADO." -ForegroundColor Red
+Write-Host "Realice sus despliegues haciendo merge o push a las ramas 'dev' o 'main' en GitHub." -ForegroundColor Yellow
+Write-Host "GitHub Actions automatizara el proceso completo.`n" -ForegroundColor Yellow
 
 $EnvName = "gestia-backend-dev"
 $AppName = "gestia-backend"
