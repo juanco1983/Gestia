@@ -79,6 +79,7 @@ export interface OT {
 export interface TechnicalReport {
   id: string;
   otId: string;
+  clientReportId?: string;
   voltajeEntrada: number;
   voltajeSalida: number;
   indicadoresBateria: {
@@ -243,6 +244,8 @@ export interface Contrato {
   visitasAnuales?: number;
   presupuesto_total_usd?: number;
   saldo_disponible_usd?: number;
+  saldo_actual_contrato?: number;
+  sobregiro?: boolean;
 }
 
 export interface TargetVentas {

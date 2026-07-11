@@ -10,7 +10,73 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
+
+// AWS S3 client initialization
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || "gestia-dev-photos";
+
+// Helper to convert base64 image strings and upload to AWS S3
+async function uploadBase64ToS3(base64Str: string, otId: string, index: string | number): Promise<string> {
+  const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error("Formato Base64 inválido");
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  // Whitelist MIME types
+  const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw new Error(`Tipo MIME no permitido: ${mimeType}`);
+  }
+
+  const buffer = Buffer.from(base64Data, "base64");
+  
+  // Size limit: 8MB (8388608 bytes)
+  if (buffer.length > 8388608) {
+    throw new Error("La imagen excede el límite de tamaño de 8MB");
+  }
+
+  let extension = "jpg";
+  if (mimeType === "image/png") extension = "png";
+  else if (mimeType === "image/webp") extension = "webp";
+  else if (mimeType === "image/svg+xml") extension = "svg";
+
+  const cleanOtId = otId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const timestamp = Date.now();
+  const key = `reports/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: mimeType,
+    })
+  );
+
+  return `/api/photos/${key}`;
+}
+
+// Helper to delete objects from S3 on transaction rollback
+async function deleteFromS3(relativeUrl: string): Promise<void> {
+  try {
+    const key = relativeUrl.replace("/api/photos/", "");
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+    console.log(`[Rollback S3] Objeto eliminado: ${key}`);
+  } catch (err) {
+    console.error(`[Rollback S3 ERROR] No se pudo eliminar ${relativeUrl}:`, err);
+  }
+}
 
 let connectionString = `${process.env.DATABASE_URL}`;
 const isAWS = connectionString.includes("amazonaws.com");
@@ -364,130 +430,202 @@ app.get("/api/reports", async (req, res) => {
   }
 });
 
-app.post("/api/reports", async (req, res) => {
+// Process and upload report photos (both labeled and flat arrays, and customer signature)
+async function processReportPhotos(report: any): Promise<{ report: any; uploadedUrls: string[] }> {
+  const uploadedUrls: string[] = [];
+  const clonedReport = JSON.parse(JSON.stringify(report));
+  const otId = clonedReport.otId || "UNKNOWN";
+
   try {
-    const report = req.body;
-    const { otId, ...data } = report;
-    const saved = await prisma.technicalReport.upsert({
-      where: { otId: report.otId },
-      update: data,
-      create: report
-    });
-    res.status(201).json(saved);
+    // 1. Process Labeled Photos
+    if (Array.isArray(clonedReport.fotosLabeled)) {
+      for (let i = 0; i < clonedReport.fotosLabeled.length; i++) {
+        const item = clonedReport.fotosLabeled[i];
+        if (item && typeof item.base64 === "string" && item.base64.startsWith("data:image/")) {
+          const s3Url = await uploadBase64ToS3(item.base64, otId, i);
+          uploadedUrls.push(s3Url);
+          item.base64 = s3Url;
+        }
+      }
+    }
+
+    // 2. Process Flat Photos Array
+    if (Array.isArray(clonedReport.fotos)) {
+      for (let i = 0; i < clonedReport.fotos.length; i++) {
+        const base64Str = clonedReport.fotos[i];
+        if (typeof base64Str === "string" && base64Str.startsWith("data:image/")) {
+          if (clonedReport.fotosLabeled && clonedReport.fotosLabeled[i] && clonedReport.fotosLabeled[i].base64.startsWith("/api/photos/")) {
+            clonedReport.fotos[i] = clonedReport.fotosLabeled[i].base64;
+          } else {
+            const s3Url = await uploadBase64ToS3(base64Str, otId, `flat-${i}`);
+            uploadedUrls.push(s3Url);
+            clonedReport.fotos[i] = s3Url;
+          }
+        }
+      }
+    }
+
+    // 3. Process Customer Signature
+    if (typeof clonedReport.firmaCliente === "string" && clonedReport.firmaCliente.startsWith("data:image/")) {
+      const s3Url = await uploadBase64ToS3(clonedReport.firmaCliente, otId, "firma");
+      uploadedUrls.push(s3Url);
+      clonedReport.firmaCliente = s3Url;
+    }
+
+    return { report: clonedReport, uploadedUrls };
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    for (const url of uploadedUrls) {
+      await deleteFromS3(url);
+    }
+    throw err;
+  }
+}
+
+app.post("/api/reports", async (req, res) => {
+  let uploadedUrls: string[] = [];
+  try {
+    const reportBody = req.body;
+    const { clientReportId, otId } = reportBody;
+
+    if (!otId) {
+      return res.status(400).json({ error: "otId es obligatorio" });
+    }
+
+    // Idempotency check: verify if report with same clientReportId was already sync'd
+    if (clientReportId) {
+      const existing = await prisma.technicalReport.findUnique({
+        where: { clientReportId }
+      });
+      if (existing) {
+        console.log(`[Idempotency] Reporte ${clientReportId} ya registrado en el servidor.`);
+        return res.status(200).json(existing);
+      }
+    }
+
+    // 1. S3 image upload before DB operations
+    const processed = await processReportPhotos(reportBody);
+    uploadedUrls = processed.uploadedUrls;
+    const finalReport = processed.report;
+
+    // 2. Prisma Database operations inside transaction
+    const { otId: finalOtId, ...cleanData } = finalReport;
+
+    const savedReport = await prisma.$transaction(async (tx) => {
+      const r = await tx.technicalReport.upsert({
+        where: { otId: finalOtId },
+        update: { ...cleanData, offlineDirty: false },
+        create: { ...finalReport, offlineDirty: false }
+      });
+
+      // Update OT status
+      await tx.oT.updateMany({
+        where: { id: finalOtId },
+        data: { estado: 'En Revisión' }
+      });
+
+      // Sync with financial line status
+      const lines = await tx.ordenTrabajoLinea.findMany({
+        where: {
+          OR: [
+            { ot: finalOtId },
+            { ot: finalOtId.replace('OT-', '') }
+          ]
+        }
+      });
+      for (const line of lines) {
+        const statusArray: any[] = Array.isArray(line.estatus) ? line.estatus : [];
+        const alreadyHasLog = statusArray.some((e: any) => e.texto && e.texto.includes("Informe Técnico enviado"));
+        if (!alreadyHasLog) {
+          statusArray.push({
+            fecha: new Date().toISOString().split("T")[0],
+            autor: "Sistema Automatizado",
+            texto: `Informe Técnico enviado para revisión. OT Técnica ${finalOtId}.`
+          });
+        }
+        await tx.ordenTrabajoLinea.update({
+          where: { id: line.id },
+          data: { estatus: statusArray }
+        });
+      }
+
+      return r;
+    });
+
+    res.status(201).json(savedReport);
+  } catch (err: any) {
+    console.error("Error al guardar reporte técnico:", err);
+    for (const url of uploadedUrls) {
+      await deleteFromS3(url);
+    }
+    res.status(500).json({ error: err.message || "Error al procesar el reporte técnico" });
   }
 });
 
-// Bulk offline sync
-app.post("/api/sync", async (req, res) => {
-  console.log(">>> SYNC REQUEST RECEIVED");
+// Image S3 Proxy Endpoint with authorization validation and path-traversal prevention
+app.get("/api/photos/*", async (req, res) => {
+  if (!(req as any).user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const user = (req as any).user;
+  const key = req.params[0];
+
+  // Regex check for safety
+  const pathRegex = /^reports\/OT-[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+
+  const otIdMatch = key.match(/^reports\/(OT-[\w-]+)\//);
+  if (!otIdMatch) {
+    return res.status(400).json({ error: "Formato de ruta inválido" });
+  }
+  const otId = otIdMatch[1];
+
   try {
-    const { reports, ots, clients, contracts, ordenesTrabajo, contratosNuevos, users, logs } = req.body;
-
-    if (Array.isArray(reports)) {
-      const cleanReports = reports.filter(r => r.otId !== 'OT-003' && r.id !== 'rpt_003');
-      for (const sr of cleanReports) {
-        const { otId, ...data } = sr;
-        await prisma.technicalReport.upsert({
-          where: { otId },
-          update: { ...data, offlineDirty: false },
-          create: { ...sr, offlineDirty: false }
-        });
-        await prisma.oT.updateMany({
-          where: { id: otId },
-          data: { estado: 'Sometido a Revisión' }
-        });
-      }
-    }
-
-    if (Array.isArray(ots)) {
-      const cleanOts = ots.filter(o => o.id !== 'OT-003');
-      for (const so of cleanOts) {
-        const existing = await prisma.oT.findUnique({ where: { id: so.id } });
-        if (existing) {
-          const serverAdvanced = ['Aprobada', 'Firmada', 'Facturada', 'Cerrada'].includes(existing.estado);
-          const clientAdvanced = ['Aprobada', 'Firmada', 'Facturada', 'Cerrada'].includes(so.estado);
-          const updateData = { ...so };
-          if (serverAdvanced && !clientAdvanced) {
-            updateData.estado = existing.estado;
-          }
-          await prisma.oT.update({ where: { id: so.id }, data: updateData });
-        } else {
-          await prisma.oT.create({ data: so });
-        }
-      }
-    }
-
-    if (Array.isArray(clients)) {
-      for (const sc of clients) {
-        await prisma.client.upsert({ where: { id: sc.id }, update: sc, create: sc });
-      }
-    }
-
-    if (Array.isArray(contracts)) {
-      for (const sc of contracts) {
-        await prisma.contract.upsert({ where: { id: sc.id }, update: sc, create: sc });
-      }
-    }
-
-    if (Array.isArray(ordenesTrabajo)) {
-      for (const sol of ordenesTrabajo) {
-        const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, anio_factura, mes_factura, fecha_factura, ...rest } = sol;
-        const insertData = { ...rest, factura: n_factura || null };
-        const existing = await prisma.ordenTrabajoLinea.findUnique({ where: { id: sol.id } });
-        if (existing) {
-          if (existing.estado === 'FACTURADO' && insertData.estado !== 'FACTURADO') {
-            insertData.estado = existing.estado;
-            insertData.pendiente = existing.pendiente;
-            insertData.factura = existing.factura;
-          }
-          await prisma.ordenTrabajoLinea.update({ where: { id: sol.id }, data: insertData });
-        } else {
-          await prisma.ordenTrabajoLinea.create({ data: insertData });
-        }
-      }
-    }
-
-    if (Array.isArray(contratosNuevos)) {
-      for (const scc of contratosNuevos) {
-        await prisma.contratoNuevo.upsert({ where: { id: scc.id }, update: scc, create: scc });
-      }
-    }
-
-    // Skip synchronization of users table from client body to prevent security issues and local cache overrides
-    // User accounts should only be managed via /api/users endpoints by authorized admins.
-
-    if (Array.isArray(logs) && logs.length > 0) {
-      // In old code this replaced all logs, but it's safer to just push missing ones. We'll skip complex merging and just createMany.
-      for (const l of logs) {
-        const exists = await prisma.userActivityLog.findUnique({ where: { id: l.id } });
-        if (!exists) await prisma.userActivityLog.create({ data: l });
-      }
-    }
-    
-    // Helper to map Prisma field 'factura' to frontend field 'n_factura'
-    const mapLineaToFrontend = (linea: any) => {
-      const { factura, ...rest } = linea;
-      return { ...rest, n_factura: factura || '', factura };
-    };
-
-    // Return all data
-    const rawLineas = await prisma.ordenTrabajoLinea.findMany();
-    res.json({
-      success: true,
-      ots: await prisma.oT.findMany(),
-      reports: await prisma.technicalReport.findMany(),
-      clients: await prisma.client.findMany(),
-      contracts: await prisma.contract.findMany(),
-      ordenesTrabajo: rawLineas.map(mapLineaToFrontend),
-      contratosNuevos: await prisma.contratoNuevo.findMany(),
-      users: await prisma.user.findMany(),
-      logs: await prisma.userActivityLog.findMany()
+    // 1. Fetch OT to validate permissions
+    const ot = await prisma.oT.findUnique({
+      where: { id: otId }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error parsing sync data" });
+
+    if (!ot) {
+      return res.status(404).json({ error: "Orden de trabajo asociada no encontrada" });
+    }
+
+    // 2. Role-based access validation
+    const isAllowed = 
+      ["Administrador", "Ventas", "Supervisor"].includes(user.role) ||
+      (user.role === "Tecnico" && (ot.tecnicoTitularId === user.id || ot.tecnicoApoyoId === user.id)) ||
+      (user.role === "Cliente" && ot.clientId === user.clientId);
+
+    if (!isAllowed) {
+      return res.status(403).json({ error: "Acceso denegado a este recurso" });
+    }
+
+    // 3. Fetch file stream from AWS S3
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+
+    // 4. Pipe stream response
+    res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (err: any) {
+    if (err.name === "NoSuchKey") {
+      return res.status(404).json({ error: "Imagen no encontrada en S3" });
+    }
+    console.error("Error al obtener imagen de S3:", err);
+    res.status(500).json({ error: "Error al recuperar recurso" });
   }
 });
 
@@ -562,12 +700,42 @@ app.get("/api/contratos-comerciales", async (req, res) => {
 
 app.post("/api/contratos-comerciales", async (req, res) => {
   try {
-    const newContrato = req.body;
-    if (!newContrato.id) newContrato.id = `cont_${Date.now()}`;
-    const created = await prisma.contratoNuevo.create({ data: newContrato });
+    const { tarifa_hora_tecnico, ...contratoData } = req.body;
+    if (!contratoData.id) contratoData.id = `cont_${Date.now()}`;
+
+    const totalUsd = typeof contratoData.presupuesto_total_usd === "number" 
+      ? contratoData.presupuesto_total_usd 
+      : (contratoData.presupuesto_total_usd ? parseFloat(contratoData.presupuesto_total_usd) : 0);
+
+    contratoData.presupuesto_total_usd = totalUsd;
+    contratoData.saldo_disponible_usd = totalUsd;
+    contratoData.saldo_actual_contrato = totalUsd;
+    contratoData.sobregiro = false;
+
+    const created = await prisma.$transaction(async (tx) => {
+      const c = await tx.contratoNuevo.create({ data: contratoData });
+      
+      const rateVal = typeof tarifa_hora_tecnico === "number" 
+        ? tarifa_hora_tecnico 
+        : (tarifa_hora_tecnico ? parseFloat(tarifa_hora_tecnico) : 0);
+
+      if (rateVal > 0) {
+        await tx.tarifarioContrato.create({
+          data: {
+            id: `tar_mo_init_${Date.now()}`,
+            contratoId: c.id,
+            concepto: "Hora Técnico",
+            precioUnitario: rateVal
+          }
+        });
+      }
+      return c;
+    });
+
     res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ error: "Error" });
+  } catch (err: any) {
+    console.error("Error al crear contrato comercial:", err.message);
+    res.status(500).json({ error: err.message || "Error al crear contrato comercial" });
   }
 });
 
@@ -605,8 +773,321 @@ app.get("/api/config", (req, res) => {
   res.json({ tipoCambio: 3.75 });
 });
 
-app.post("/api/config", (req, res) => {
-  res.json({ tipoCambio: req.body.tipoCambio || 3.75 });
+app.post("/api/admin/backfill-photos", async (req, res) => {
+  if (!(req as any).user || (req as any).user.role !== "Administrador") {
+    return res.status(403).json({ error: "Acceso restringido a administradores" });
+  }
+
+  console.log(">>> [BACKFILL ENDPOINT] Iniciando migración de imágenes a AWS S3...");
+  try {
+    const reports = await prisma.technicalReport.findMany();
+    let migratedCount = 0;
+    const details = [];
+
+    for (const r of reports) {
+      let changed = false;
+      let clonedFotos: any[] = Array.isArray(r.fotos) ? [...(r.fotos as any[])] : [];
+      let clonedFotosLabeled: any[] = Array.isArray(r.fotosLabeled) ? [...(r.fotosLabeled as any[])] : [];
+      let clonedFirma = r.firmaCliente;
+
+      // 1. Labeled Photos
+      for (let i = 0; i < clonedFotosLabeled.length; i++) {
+        const item = clonedFotosLabeled[i];
+        if (item && typeof item.base64 === "string" && item.base64.startsWith("data:image/")) {
+          try {
+            const s3Url = await uploadBase64ToS3(item.base64, r.otId, `labeled-${i}`);
+            item.base64 = s3Url;
+            changed = true;
+          } catch (e: any) {
+            console.error(`Error migrando foto labeled ${i} para OT ${r.otId}:`, e.message);
+          }
+        }
+      }
+
+      // 2. Flat Photos
+      for (let i = 0; i < clonedFotos.length; i++) {
+        const img = clonedFotos[i];
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          try {
+            if (clonedFotosLabeled[i] && typeof clonedFotosLabeled[i].base64 === "string" && clonedFotosLabeled[i].base64.startsWith("/api/photos/")) {
+              clonedFotos[i] = clonedFotosLabeled[i].base64;
+            } else {
+              const s3Url = await uploadBase64ToS3(img, r.otId, `flat-${i}`);
+              clonedFotos[i] = s3Url;
+            }
+            changed = true;
+          } catch (e: any) {
+            console.error(`Error migrando foto plana ${i} para OT ${r.otId}:`, e.message);
+          }
+        }
+      }
+
+      // 3. Firma Cliente
+      if (typeof clonedFirma === "string" && clonedFirma.startsWith("data:image/")) {
+        try {
+          const s3Url = await uploadBase64ToS3(clonedFirma, r.otId, "firma");
+          clonedFirma = s3Url;
+          changed = true;
+        } catch (e: any) {
+          console.error(`Error migrando firma para OT ${r.otId}:`, e.message);
+        }
+      }
+
+      if (changed) {
+        await prisma.technicalReport.update({
+          where: { id: r.id },
+          data: {
+            fotos: clonedFotos,
+            fotosLabeled: clonedFotosLabeled,
+            firmaCliente: clonedFirma
+          }
+        });
+        migratedCount++;
+        details.push({ otId: r.otId, status: "Migrado" });
+      }
+    }
+
+    res.json({ success: true, message: `Migración completada. ${migratedCount} reportes actualizados.`, details });
+  } catch (err: any) {
+    console.error("Fallo durante la migración HTTP de fotos:", err);
+    res.status(500).json({ error: "Error interno al ejecutar la migración", details: err.message });
+  }
+});
+
+app.post("/api/reports/liquidar", async (req, res) => {
+  const { idInforme } = req.body;
+  if (!idInforme) {
+    return res.status(400).json({ error: "idInforme es requerido" });
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const report = await tx.technicalReport.findUnique({
+        where: { id: idInforme }
+      });
+      if (!report) {
+        throw new Error("Informe técnico no encontrado");
+      }
+
+      const ots: any[] = await tx.$queryRawUnsafe(
+        `SELECT id, estado, "contratoId", "potenciaKva" FROM "OT" WHERE id = $1 FOR UPDATE`,
+        report.otId
+      );
+      const ot = ots[0];
+      if (!ot) {
+        throw new Error("Orden de Trabajo asociada no encontrada");
+      }
+
+      if (ot.estado === "Cerrada") {
+        return { status: "already_closed", message: "La Orden de Trabajo ya se encuentra cerrada" };
+      }
+
+      if (!ot.contratoId) {
+        throw new Error("La Orden de Trabajo no tiene un contrato asociado");
+      }
+
+      const contracts: any[] = await tx.$queryRawUnsafe(
+        `SELECT id, "saldo_actual_contrato", sobregiro FROM "ContratoNuevo" WHERE id = $1 FOR UPDATE`,
+        ot.contratoId
+      );
+      const contract = contracts[0];
+      if (!contract) {
+        throw new Error("Contrato asociado no encontrado en la base de datos");
+      }
+
+      const tarifarios = await tx.tarifarioContrato.findMany({
+        where: { contratoId: ot.contratoId }
+      });
+      const tarifaHoraMo = tarifarios.find(t => t.concepto === "Hora Técnico")?.precioUnitario || 0;
+
+      const horasTrabajadas = ot.potenciaKva || 0;
+      const costoManoObra = (horasTrabajadas || 8) * tarifaHoraMo;
+
+      const repuestos = await tx.repuestoUtilizado.findMany({
+        where: { reportId: idInforme }
+      });
+      const costoRepuestos = repuestos.reduce((acc, r) => acc + (r.cantidad * r.precioUnitarioSnapshot), 0);
+      const costoTotal = costoManoObra + costoRepuestos;
+
+      const saldoActual = contract.saldo_actual_contrato !== null ? contract.saldo_actual_contrato : 0;
+      const nuevoSaldo = saldoActual - costoTotal;
+      const esSobregiro = nuevoSaldo < 0;
+
+      await tx.$executeRawUnsafe(
+        `UPDATE "ContratoNuevo" SET "saldo_actual_contrato" = $1, sobregiro = $2 WHERE id = $3`,
+        nuevoSaldo,
+        esSobregiro,
+        ot.contratoId
+      );
+
+      await tx.oT.update({
+        where: { id: report.otId },
+        data: { estado: "Cerrada" }
+      });
+
+      return {
+        status: "success",
+        montoTotal: costoTotal,
+        nuevoSaldo,
+        sobregiro: esSobregiro
+      };
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    console.error("Error al liquidar reporte técnico:", err.message);
+    res.status(500).json({ error: err.message || "Error al liquidar el reporte técnico" });
+  }
+});
+
+app.post("/api/contratos/:id/ampliaciones", async (req, res) => {
+  const contratoId = req.params.id;
+  const { montoAmpliacion } = req.body;
+
+  if (typeof montoAmpliacion !== "number" || montoAmpliacion <= 0) {
+    return res.status(400).json({ error: "montoAmpliacion debe ser un número positivo" });
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const contract = await tx.contratoNuevo.findUnique({
+        where: { id: contratoId }
+      });
+      if (!contract) {
+        throw new Error("Contrato no encontrado");
+      }
+
+      const idAmpliacion = `amp_${Date.now()}`;
+      await tx.ampliacionContrato.create({
+        data: {
+          id: idAmpliacion,
+          contratoId,
+          montoAmpliacion,
+          creadoEn: new Date().toISOString()
+        }
+      });
+
+      const saldoActual = contract.saldo_actual_contrato !== null ? contract.saldo_actual_contrato : 0;
+      const nuevoSaldo = saldoActual + montoAmpliacion;
+      const presupuestoTotal = contract.presupuesto_total_usd !== null ? contract.presupuesto_total_usd : 0;
+      const nuevoPresupuesto = presupuestoTotal + montoAmpliacion;
+
+      await tx.contratoNuevo.update({
+        where: { id: contratoId },
+        data: {
+          saldo_actual_contrato: nuevoSaldo,
+          presupuesto_total_usd: nuevoPresupuesto,
+          sobregiro: nuevoSaldo >= 0 ? false : contract.sobregiro
+        }
+      });
+
+      return { success: true, nuevoSaldo, nuevoPresupuesto };
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/ots/validar-creacion", async (req, res) => {
+  const { contratoId, equipoModelo, serie } = req.body;
+
+  if (!contratoId || !equipoModelo || !serie) {
+    return res.status(400).json({ error: "contratoId, equipoModelo y serie son requeridos" });
+  }
+
+  try {
+    const contract = await prisma.contratoNuevo.findUnique({
+      where: { id: contratoId }
+    });
+
+    if (!contract) {
+      return res.json({ valido: false, motivo: "Contrato no encontrado" });
+    }
+
+    if (contract.saldo_actual_contrato !== null && contract.saldo_actual_contrato <= 0) {
+      return res.json({ valido: false, motivo: "El contrato no cuenta con saldo disponible" });
+    }
+
+    const equipo = await prisma.equipoContratado.findFirst({
+      where: {
+        contratoId,
+        equipoModelo,
+        serie
+      }
+    });
+
+    if (!equipo) {
+      return res.json({ valido: false, motivo: "El equipo no se encuentra bajo la cobertura de este contrato" });
+    }
+
+    res.json({ valido: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/contratos/:id/tarifario", async (req, res) => {
+  try {
+    const list = await prisma.tarifarioContrato.findMany({
+      where: { contratoId: req.params.id }
+    });
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/contratos/:id/tarifario", async (req, res) => {
+  const { concepto, precioUnitario } = req.body;
+  if (!concepto || typeof precioUnitario !== "number") {
+    return res.status(400).json({ error: "concepto y precioUnitario son requeridos" });
+  }
+  try {
+    const item = await prisma.tarifarioContrato.create({
+      data: {
+        id: `tar_${Date.now()}`,
+        contratoId: req.params.id,
+        concepto,
+        precioUnitario
+      }
+    });
+    res.json(item);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/contratos/:id/equipos", async (req, res) => {
+  try {
+    const list = await prisma.equipoContratado.findMany({
+      where: { contratoId: req.params.id }
+    });
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/contratos/:id/equipos", async (req, res) => {
+  const { equipoModelo, serie } = req.body;
+  if (!equipoModelo || !serie) {
+    return res.status(400).json({ error: "equipoModelo y serie son requeridos" });
+  }
+  try {
+    const item = await prisma.equipoContratado.create({
+      data: {
+        id: `eq_${Date.now()}`,
+        contratoId: req.params.id,
+        equipoModelo,
+        serie
+      }
+    });
+    res.json(item);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ----------------------------------------

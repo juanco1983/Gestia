@@ -204,7 +204,7 @@ export default function App() {
   useEffect(() => {
     if (isOnline) {
       console.log(">>> SINCRONIZANDO POR CAMBIO A MODO EN LÍNEA...");
-      handleSyncOffline();
+      syncPendingReports();
     }
   }, [isOnline]);
 
@@ -214,58 +214,26 @@ export default function App() {
   // Logout confirmation state
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Persistent States loaded from localStorage
-  const [clients, setClients] = useState<Client[]>(() => {
-    const local = localStorage.getItem('gestia_clients');
-    if (local) {
-      const parsed = JSON.parse(local);
-      const containsOldData = parsed.some((c: any) => 
-        c.razonSocial?.includes('Repsol') || 
-        c.razonSocial?.includes('San Pablo') || 
-        c.razonSocial?.includes('Prosegur')
-      );
-      if (!containsOldData && parsed.length > 0) return parsed;
-    }
-    return INITIAL_CLIENTS;
-  });
+  // Clean States (loaded dynamically from AWS Postgres database)
+  const [clients, setClients] = useState<Client[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
 
-  const [contracts, setContracts] = useState<Contract[]>(() => {
-    const local = localStorage.getItem('gestia_contracts');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error("Error parsing gestia_contracts from localStorage", e);
-      }
-    }
-    return INITIAL_CONTRACTS;
-  });
-
+  // Técnico Cache Exception: cache only assigned OTs for offline report drafting
   const [ots, setOts] = useState<OT[]>(() => {
-    const local = localStorage.getItem('gestia_ots');
+    const local = localStorage.getItem('gestia_ots_cache');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing gestia_ots from localStorage", e);
-      }
-    }
-    return INITIAL_OTS;
-  });
-
-  const [reports, setReports] = useState<TechnicalReport[]>(() => {
-    const local = localStorage.getItem('gestia_reports');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error("Error parsing gestia_reports from localStorage", e);
+        console.error("Error parsing gestia_ots_cache from localStorage", e);
       }
     }
     return [];
   });
 
-  // Offline buffer state queue
+  const [reports, setReports] = useState<TechnicalReport[]>([]);
+
+  // Offline buffer state queue (technician reports only)
   const [offlineQueue, setOfflineQueue] = useState<TechnicalReport[]>(() => {
     const local = localStorage.getItem('gestia_offline_queue');
     if (local) {
@@ -278,34 +246,9 @@ export default function App() {
     return [];
   });
 
-  const [ordenesTrabajo, setOrdenesTrabajo] = useState<OrdenTrabajoLinea[]>(() => {
-    const local = localStorage.getItem('gestia_ordenes_trabajo');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error("Error parsing gestia_ordenes_trabajo from localStorage", e);
-      }
-    }
-    return INITIAL_ORDENES_TRABAJO;
-  });
-
-  const [contratosNuevos, setContratosNuevos] = useState<Contrato[]>(() => {
-    const local = localStorage.getItem('gestia_contratos_nuevos');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error("Error parsing gestia_contratos_nuevos from localStorage", e);
-      }
-    }
-    return INITIAL_CONTRATOS_NUEVOS;
-  });
-
-  const [targetVentas, setTargetVentas] = useState<TargetVentas[]>(() => {
-    const local = localStorage.getItem('gestia_target_ventas');
-    return local ? JSON.parse(local) : INITIAL_TARGET_VENTAS;
-  });
+  const [ordenesTrabajo, setOrdenesTrabajo] = useState<OrdenTrabajoLinea[]>([]);
+  const [contratosNuevos, setContratosNuevos] = useState<Contrato[]>([]);
+  const [targetVentas, setTargetVentas] = useState<TargetVentas[]>([]);
 
   const [tipoCambio, setTipoCambio] = useState<number>(() => {
     const local = localStorage.getItem('gestia_tipo_cambio');
@@ -334,148 +277,6 @@ export default function App() {
   }, [userLogs]);
 
   useEffect(() => {
-    // Inject at least one unassigned OT ONLY if both local and server are empty and we are initialized
-    const hasUnassigned = ots.some(ot => ot.estado === OTStatus.CREADA || ot.estado === OTStatus.PENDIENTE_PROGRAMACION);
-    if (!hasUnassigned && ots.length === 0) {
-      const demoUnassigned: OT = {
-        id: `OT-${Math.floor(5000 + Math.random() * 999)}`,
-        clientId: 'client_2', // America Movil
-        tipoMantenimiento: ServiceType.PREVENTIVO,
-        tipoEquipo: EquipmentType.UPS,
-        potenciaKva: 30,
-        fechaProgramada: new Date().toISOString().split('T')[0],
-        tecnicoTitular: '', // unassigned
-        estado: OTStatus.CREADA
-      };
-      setOts(prev => [demoUnassigned, ...prev]);
-    }
-    localStorage.setItem('gestia_ots', JSON.stringify(ots));
-  }, [ots]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_clients', JSON.stringify(clients));
-  }, [clients]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_contracts', JSON.stringify(contracts));
-  }, [contracts]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_ots', JSON.stringify(ots));
-  }, [ots]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_reports', JSON.stringify(reports));
-  }, [reports]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_ordenes_trabajo', JSON.stringify(ordenesTrabajo));
-  }, [ordenesTrabajo]);
-
-  // Local/offline sync between ordenesTrabajo (financial/billing cuotas) and ots (operational tasks)
-  useEffect(() => {
-    let changed = false;
-    const updatedOts = [...ots];
-
-    ordenesTrabajo.forEach((linea) => {
-      if (linea.pendiente === 'POR EJECUTAR') {
-        const otId = `OT-${linea.ot}`;
-        const exists = updatedOts.some(ot => ot.id === otId || ot.otFinancieraId === linea.id);
-        if (!exists) {
-          // Find client matching razon_social
-          let clientId = linea.clientId || '';
-          if (!clientId && clients) {
-            const matched = clients.find(c => c.razonSocial === linea.razon_social);
-            if (matched) clientId = matched.id;
-            else if (clients.length > 0) clientId = clients[0].id;
-          }
-
-          let tipoMantenimiento = ServiceType.PREVENTIVO;
-          if (linea.tipo_venta === 'EMERGENCIA') {
-            tipoMantenimiento = ServiceType.EMERGENCIA;
-          } else if (linea.tipo_venta === 'REPARACION') {
-            tipoMantenimiento = ServiceType.CORRECTIVO;
-          }
-
-          const newOt: OT = {
-            id: otId,
-            clientId: clientId,
-            tipoMantenimiento: tipoMantenimiento,
-            tipoEquipo: EquipmentType.UPS,
-            potenciaKva: 30,
-            fechaProgramada: linea.fecha || new Date().toISOString().split('T')[0],
-            tecnicoTitular: '',
-            estado: OTStatus.CREADA,
-            otFinancieraId: linea.id
-          };
-          updatedOts.push(newOt);
-          changed = true;
-        } else {
-          // Sync existing fields if they changed
-          const idx = updatedOts.findIndex(ot => ot.id === otId || ot.otFinancieraId === linea.id);
-          if (idx !== -1) {
-            const existing = updatedOts[idx];
-            let localChanged = false;
-            
-            let clientId = linea.clientId || '';
-            if (!clientId && clients) {
-              const matched = clients.find(c => c.razonSocial === linea.razon_social);
-              if (matched) clientId = matched.id;
-            }
-
-            if (existing.clientId !== clientId && clientId) {
-              existing.clientId = clientId;
-              localChanged = true;
-            }
-            if (existing.fechaProgramada !== linea.fecha && linea.fecha) {
-              existing.fechaProgramada = linea.fecha;
-              localChanged = true;
-            }
-            let tipoMantenimiento = ServiceType.PREVENTIVO;
-            if (linea.tipo_venta === 'EMERGENCIA') {
-              tipoMantenimiento = ServiceType.EMERGENCIA;
-            } else if (linea.tipo_venta === 'REPARACION') {
-              tipoMantenimiento = ServiceType.CORRECTIVO;
-            }
-            if (existing.tipoMantenimiento !== tipoMantenimiento) {
-              existing.tipoMantenimiento = tipoMantenimiento;
-              localChanged = true;
-            }
-            if (!existing.otFinancieraId) {
-              existing.otFinancieraId = linea.id;
-              localChanged = true;
-            }
-
-            if (localChanged) {
-              updatedOts[idx] = existing;
-              changed = true;
-            }
-          }
-        }
-      } else if (linea.pendiente === 'ANULADO') {
-        const otId = `OT-${linea.ot}`;
-        const idx = updatedOts.findIndex(ot => ot.id === otId || ot.otFinancieraId === linea.id);
-        if (idx !== -1) {
-          updatedOts.splice(idx, 1);
-          changed = true;
-        }
-      }
-    });
-
-    if (changed) {
-      setOts(updatedOts);
-    }
-  }, [ordenesTrabajo, clients]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_contratos_nuevos', JSON.stringify(contratosNuevos));
-  }, [contratosNuevos]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_target_ventas', JSON.stringify(targetVentas));
-  }, [targetVentas]);
-
-  useEffect(() => {
     localStorage.setItem('gestia_offline_queue', JSON.stringify(offlineQueue));
   }, [offlineQueue]);
 
@@ -500,22 +301,6 @@ export default function App() {
   useEffect(() => {
     const loadFromBackend = async () => {
       try {
-        console.log(">>> INICIANDO CARGA: Verificando datos locales pendientes...");
-        
-        // Intentamos sincronizar primero
-        const syncSuccess = await handleSyncOffline();
-        
-        // Si hay cambios pendientes de sincronizar (cola offline) y la sincronización falló,
-        // NO cargamos del servidor para evitar que datos antiguos sobrescriban el trabajo del usuario.
-        // NOTA: Solo offlineQueue representa cambios reales pendientes. Los arrays como ordenesTrabajo
-        // pueden contener datos iniciales/seed que NO deben bloquear la carga del servidor.
-        const hasPendingOfflineChanges = offlineQueue.length > 0;
-
-        if (!syncSuccess && hasPendingOfflineChanges) {
-          console.warn(">>> ADVERTENCIA: Sincronización fallida y hay cambios offline pendientes. Abortando carga del servidor para proteger datos locales.");
-          return;
-        }
-
         console.log(">>> CARGANDO DATOS DEL SERVIDOR...");
         const [
           usersRes, logsRes, clientsRes, contractsRes, otsRes, reportsRes,
@@ -537,14 +322,24 @@ export default function App() {
         if (Array.isArray(logsRes)) setUserLogs(logsRes);
         if (Array.isArray(clientsRes)) setClients(clientsRes);
         if (Array.isArray(contractsRes)) setContracts(contractsRes);
-        if (Array.isArray(otsRes)) setOts(otsRes);
         if (Array.isArray(reportsRes)) setReports(reportsRes);
         if (Array.isArray(otLineasRes)) setOrdenesTrabajo(otLineasRes);
         if (Array.isArray(contratosComercialesRes)) setContratosNuevos(contratosComercialesRes);
         if (Array.isArray(targetVentasRes)) setTargetVentas(targetVentasRes);
         if (configRes && typeof configRes.tipoCambio === 'number') setTipoCambio(configRes.tipoCambio);
+
+        if (Array.isArray(otsRes)) {
+          setOts(otsRes);
+          // Cache assigned OTs for offline mode for technicians
+          if (currentUser) {
+            const assignedOts = currentUser.role === 'Tecnico' 
+              ? otsRes.filter((o: any) => o.tecnicoTitularId === currentUser.id || o.tecnicoApoyoId === currentUser.id)
+              : otsRes;
+            localStorage.setItem('gestia_ots_cache', JSON.stringify(assignedOts));
+          }
+        }
       } catch (error) {
-        console.error("Conexión local (utilizando caché local offline):", error);
+        console.error("Error al cargar los datos del servidor:", error);
       }
     };
     
@@ -554,8 +349,8 @@ export default function App() {
 
     // Auto-sync when coming back online
     const handleOnline = () => {
-      console.log("Conexión restablecida. Iniciando sincronización...");
-      handleSyncOffline();
+      console.log("Conexión restablecida. Iniciando sincronización de reportes...");
+      syncPendingReports();
     };
 
     window.addEventListener('online', handleOnline);
@@ -704,107 +499,73 @@ export default function App() {
   };
 
   const handleAddReport = async (newReport: TechnicalReport) => {
+    const reportWithId = {
+      ...newReport,
+      clientReportId: newReport.clientReportId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'report_' + Date.now())
+    };
+
     setReports(prev => {
-      const filtered = prev.filter(r => r.otId !== newReport.otId);
-      return [...filtered, newReport];
+      const filtered = prev.filter(r => r.otId !== reportWithId.otId);
+      return [...filtered, reportWithId];
     });
+
     try {
       await fetchWithAuth('/api/reports', {
         method: 'POST',
-        body: JSON.stringify(newReport)
+        body: JSON.stringify(reportWithId)
       });
     } catch (e) {
-      console.warn("Reporte guardado localmente:", e);
+      console.warn("Reporte guardado en local (error al enviar al servidor):", e);
     }
   };
 
   const handleSaveReportOffline = (report: TechnicalReport) => {
+    const reportWithId = {
+      ...report,
+      clientReportId: report.clientReportId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'report_' + Date.now())
+    };
+
     if (!isOnline) {
-      setOfflineQueue([...offlineQueue, report]);
+      setOfflineQueue(prev => [...prev.filter(r => r.otId !== reportWithId.otId), reportWithId]);
       setReports(prev => {
-        const filtered = prev.filter(r => r.otId !== report.otId);
-        return [...filtered, report];
+        const filtered = prev.filter(r => r.otId !== reportWithId.otId);
+        return [...filtered, reportWithId];
       });
     } else {
-      handleAddReport(report);
+      handleAddReport(reportWithId);
     }
   };
 
-  const handleSyncOffline = async () => {
-    // Si no hay nada que sincronizar, retornamos false para permitir la carga normal
-    const hasLocalChanges = offlineQueue.length > 0 || 
-                            clients.length > 0 || 
-                            contracts.length > 0 || 
-                            ots.length > 0 ||
-                            ordenesTrabajo.length > 0 ||
-                            contratosNuevos.length > 0;
-
-    if (!hasLocalChanges) {
-      console.log(">>> NO HAY CAMBIOS LOCALES PARA SINCRONIZAR.");
-      return false;
+  const syncPendingReports = async () => {
+    if (offlineQueue.length === 0) return;
+    if (!window.navigator.onLine) {
+      console.log(">>> NAVEGADOR SIN CONEXIÓN. Saltando sincronización de reportes.");
+      return;
     }
 
-    if (!isOnline) {
-      console.log(">>> EL MODO OFFLINE ESTÁ ACTIVADO. Saltando sincronización.");
-      return false;
-    }
+    console.log(`>>> SINCRONIZANDO ${offlineQueue.length} REPORTES TÉCNICOS PENDIENTES...`);
+    const remaining: TechnicalReport[] = [];
 
-    const syncPayload = {
-      reports: offlineQueue,
-      ots: ots,
-      clients: clients,
-      contracts: contracts,
-      ordenesTrabajo: ordenesTrabajo,
-      contratosNuevos: contratosNuevos,
-      users: users,
-      logs: userLogs
-    };
-    
-    console.log(">>> ENVIANDO PAYLOAD DE SINCRONIZACIÓN:", syncPayload);
-    
-    try {
-      const response = await fetchWithAuth('/api/sync', {
-        method: 'POST',
-        body: JSON.stringify(syncPayload)
-      });
-      const data = await response.json();
-      if (data.success) {
-        if (Array.isArray(data.reports)) setReports(data.reports);
-        if (Array.isArray(data.ots)) setOts(data.ots);
-        if (Array.isArray(data.clients)) setClients(data.clients);
-        if (Array.isArray(data.contracts)) setContracts(data.contracts);
-        if (Array.isArray(data.ordenesTrabajo)) setOrdenesTrabajo(data.ordenesTrabajo);
-        if (Array.isArray(data.contratosNuevos)) setContratosNuevos(data.contratosNuevos);
-        if (Array.isArray(data.users)) setUsers(data.users);
-        if (Array.isArray(data.logs)) setUserLogs(data.logs);
+    for (const report of offlineQueue) {
+      try {
+        const response = await fetchWithAuth('/api/reports', {
+          method: 'POST',
+          body: JSON.stringify(report)
+        });
         
-        setOfflineQueue([]);
-        console.log("Sincronización completa con el servidor exitosa.");
-        return true;
+        if (response.ok) {
+          console.log(`Reporte para OT ${report.otId} sincronizado con éxito.`);
+          setOts(prev => prev.map(o => o.id === report.otId ? { ...o, estado: OTStatus.EN_REVISION } : o));
+        } else {
+          remaining.push(report);
+        }
+      } catch (err) {
+        console.error(`Error al sincronizar reporte de OT ${report.otId}:`, err);
+        remaining.push(report);
       }
-    } catch (error) {
-      console.error("Fallo de conexión remota durante la sincronización:", error);
     }
 
-    // Fallback logic for reports if server is still down
-    let updatedOts = [...ots];
-    const syncedReports = offlineQueue.map(r => {
-      updatedOts = updatedOts.map(o => o.id === r.otId ? { ...o, estado: OTStatus.EN_REVISION } : o);
-      return { ...r, offlineDirty: false };
-    });
-
-    if (syncedReports.length > 0) {
-      setReports(prev => {
-        const nonSyncedOtsOfQueue = syncedReports.map(sr => sr.otId);
-        const filteredPrev = prev.filter(p => !nonSyncedOtsOfQueue.includes(p.otId));
-        return [...filteredPrev, ...syncedReports];
-      });
-      setOts(updatedOts);
-      setOfflineQueue([]);
-      alert(`🤝 COLA DE SINCRONIZACIÓN LOCAL: Se guardaron ${syncedReports.length} informes en el historial local.`);
-    }
-    
-    return false;
+    setOfflineQueue(remaining);
   };
 
   const handleAddUser = async (user: User) => {
@@ -1355,54 +1116,12 @@ export default function App() {
           {/* Connected/Offline toggles, profile & notifications */}
           <div className="flex items-center gap-4 shrink-0">
             
-            {/* Connectivity Pill with controllers */}
-            <div className="flex items-center bg-slate-100 rounded-full p-0.5 border border-slate-200/50">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOnline(true);
-                  handleAddLog({
-                    id: `log_${Date.now()}`,
-                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                    userEmail: currentUser.email,
-                    action: 'EDITAR_USUARIO',
-                    details: 'Sincronizador en la nube activado.',
-                    ipAddress: '127.0.0.1'
-                  });
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                  isOnline ? 'bg-[#10B981] text-white shadow-2xs' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Wifi size={10} />
-                <span>Conectado</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOnline(false);
-                  handleAddLog({
-                    id: `log_${Date.now()}`,
-                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                    userEmail: currentUser.email,
-                    action: 'EDITAR_USUARIO',
-                    details: 'Simulación de desconexión sin señal Wifi activada.',
-                    ipAddress: '127.0.0.1'
-                  });
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                  !isOnline ? 'bg-slate-500 text-white shadow-2xs' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <WifiOff size={10} />
-                <span>Offline</span>
-              </button>
-            </div>
+
 
             {/* Offline reports sync alert */}
             {offlineQueue.length > 0 && (
               <button
-                onClick={handleSyncOffline}
+                onClick={syncPendingReports}
                 className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1 rounded-lg text-[10px] font-mono font-black flex items-center gap-1 animate-pulse shrink-0 cursor-pointer"
               >
                 <RefreshCw size={10} />
