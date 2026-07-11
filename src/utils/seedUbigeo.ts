@@ -22,6 +22,14 @@ async function main() {
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
+  // Evitar volver a sembrar si ya existen datos en la base de datos
+  const distritosCount = await prisma.distrito.count();
+  if (distritosCount > 0) {
+    console.log(`Database already has ${distritosCount} districts. Skipping seed.`);
+    await prisma.$disconnect();
+    return;
+  }
+
   console.log('Seeding ALL Ubigeo data from ubigeo-peru package...');
 
   const data = ubigeos.inei;
