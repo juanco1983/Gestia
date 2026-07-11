@@ -55,6 +55,8 @@ export interface Contract {
 export interface OT {
   id: string;
   clientId: string;
+  contratoId?: string;
+  costo_estimado_usd?: number;
   tipoMantenimiento: ServiceType;
   tipoEquipo: EquipmentType;
   potenciaKva: number; // For determining photocount limit
@@ -239,6 +241,8 @@ export interface Contrato {
   // Phase 3: Merged technical contract fields
   tipoEquipo?: EquipmentType;
   visitasAnuales?: number;
+  presupuesto_total_usd?: number;
+  saldo_disponible_usd?: number;
 }
 
 export interface TargetVentas {

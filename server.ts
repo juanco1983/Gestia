@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer } from "vite";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import 'dotenv/config';
@@ -10,15 +10,22 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const JWT_SECRET = process.env.JWT_SECRET || "mafort_secret_token_key_123456";
+const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
-const connectionString = `${process.env.DATABASE_URL}`;
-const pool = new Pool({ connectionString });
+let connectionString = `${process.env.DATABASE_URL}`;
+const isAWS = connectionString.includes("amazonaws.com");
+if (isAWS) {
+  connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, "");
+}
+const pool = new Pool({ 
+  connectionString,
+  ssl: isAWS ? { rejectUnauthorized: false } : undefined
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-const PORT = 3000;
+const PORT: number = parseInt(process.env.PORT || "3000", 10);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -29,6 +36,10 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "healthy", database: "postgres_prisma" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy" });
 });
 
 function authenticateToken(req: any, res: any, next: any) {
@@ -131,7 +142,7 @@ app.post("/api/users", async (req, res) => {
     
     newUser.password = newUser.password 
       ? bcrypt.hashSync(newUser.password.trim(), 10) 
-      : bcrypt.hashSync("mafort", 10);
+      : bcrypt.hashSync("gestia", 10);
     
     const createdUser = await prisma.user.create({ data: newUser });
     const { password, ...sanitized } = createdUser;
@@ -208,6 +219,21 @@ app.post("/api/clients", async (req, res) => {
   }
 });
 
+app.put("/api/clients/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const clientData = { ...req.body };
+    delete clientData.id;
+    const updated = await prisma.client.update({
+      where: { id },
+      data: clientData,
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar cliente" });
+  }
+});
+
 app.get("/api/contracts", async (req, res) => {
   try {
     res.json(await prisma.contract.findMany());
@@ -237,10 +263,44 @@ app.get("/api/ots", async (req, res) => {
 
 app.post("/api/ots", async (req, res) => {
   try {
-    const created = await prisma.oT.create({ data: req.body });
-    res.status(201).json(created);
+    const { contratoId, costo_estimado_usd, ...otData } = req.body;
+
+    if (contratoId && costo_estimado_usd) {
+      const contrato = await prisma.contratoNuevo.findUnique({
+        where: { id: contratoId }
+      });
+
+      if (!contrato) {
+        return res.status(404).json({ error: "Contrato no encontrado" });
+      }
+
+      const saldoActual = contrato.saldo_disponible_usd ?? contrato.presupuesto_total_usd ?? 0;
+      const costo = Number(costo_estimado_usd);
+
+      if (saldoActual < costo) {
+        return res.status(400).json({ error: "Saldo insuficiente en el contrato marco", saldoDisponible: saldoActual });
+      }
+
+      // Start transaction to create OT and deduct balance
+      const [createdOt, updatedContrato] = await prisma.$transaction([
+        prisma.oT.create({
+          data: { ...otData, contratoId, costo_estimado_usd: costo }
+        }),
+        prisma.contratoNuevo.update({
+          where: { id: contratoId },
+          data: { saldo_disponible_usd: saldoActual - costo }
+        })
+      ]);
+
+      return res.status(201).json(createdOt);
+    } else {
+      // Normal OT creation
+      const created = await prisma.oT.create({ data: req.body });
+      return res.status(201).json(created);
+    }
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    console.error("Error creating OT:", err);
+    res.status(500).json({ error: "Error al crear la OT" });
   }
 });
 
@@ -344,7 +404,18 @@ app.post("/api/sync", async (req, res) => {
     if (Array.isArray(ots)) {
       const cleanOts = ots.filter(o => o.id !== 'OT-003');
       for (const so of cleanOts) {
-        await prisma.oT.upsert({ where: { id: so.id }, update: so, create: so });
+        const existing = await prisma.oT.findUnique({ where: { id: so.id } });
+        if (existing) {
+          const serverAdvanced = ['Aprobada', 'Firmada', 'Facturada', 'Cerrada'].includes(existing.estado);
+          const clientAdvanced = ['Aprobada', 'Firmada', 'Facturada', 'Cerrada'].includes(so.estado);
+          const updateData = { ...so };
+          if (serverAdvanced && !clientAdvanced) {
+            updateData.estado = existing.estado;
+          }
+          await prisma.oT.update({ where: { id: so.id }, data: updateData });
+        } else {
+          await prisma.oT.create({ data: so });
+        }
       }
     }
 
@@ -364,7 +435,17 @@ app.post("/api/sync", async (req, res) => {
       for (const sol of ordenesTrabajo) {
         const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, anio_factura, mes_factura, fecha_factura, ...rest } = sol;
         const insertData = { ...rest, factura: n_factura || null };
-        await prisma.ordenTrabajoLinea.upsert({ where: { id: sol.id }, update: insertData, create: insertData });
+        const existing = await prisma.ordenTrabajoLinea.findUnique({ where: { id: sol.id } });
+        if (existing) {
+          if (existing.estado === 'FACTURADO' && insertData.estado !== 'FACTURADO') {
+            insertData.estado = existing.estado;
+            insertData.pendiente = existing.pendiente;
+            insertData.factura = existing.factura;
+          }
+          await prisma.ordenTrabajoLinea.update({ where: { id: sol.id }, data: insertData });
+        } else {
+          await prisma.ordenTrabajoLinea.create({ data: insertData });
+        }
       }
     }
 
@@ -374,16 +455,8 @@ app.post("/api/sync", async (req, res) => {
       }
     }
 
-    if (Array.isArray(users)) {
-      for (const su of users) {
-        const { password, ...rest } = su;
-        await prisma.user.upsert({
-          where: { id: su.id },
-          update: rest,
-          create: { ...rest, password: password || 'mafort' }
-        });
-      }
-    }
+    // Skip synchronization of users table from client body to prevent security issues and local cache overrides
+    // User accounts should only be managed via /api/users endpoints by authorized admins.
 
     if (Array.isArray(logs) && logs.length > 0) {
       // In old code this replaced all logs, but it's safer to just push missing ones. We'll skip complex merging and just createMany.
@@ -393,14 +466,21 @@ app.post("/api/sync", async (req, res) => {
       }
     }
     
+    // Helper to map Prisma field 'factura' to frontend field 'n_factura'
+    const mapLineaToFrontend = (linea: any) => {
+      const { factura, ...rest } = linea;
+      return { ...rest, n_factura: factura || '', factura };
+    };
+
     // Return all data
+    const rawLineas = await prisma.ordenTrabajoLinea.findMany();
     res.json({
       success: true,
       ots: await prisma.oT.findMany(),
       reports: await prisma.technicalReport.findMany(),
       clients: await prisma.client.findMany(),
       contracts: await prisma.contract.findMany(),
-      ordenesTrabajo: await prisma.ordenTrabajoLinea.findMany(),
+      ordenesTrabajo: rawLineas.map(mapLineaToFrontend),
       contratosNuevos: await prisma.contratoNuevo.findMany(),
       users: await prisma.user.findMany(),
       logs: await prisma.userActivityLog.findMany()
@@ -413,7 +493,13 @@ app.post("/api/sync", async (req, res) => {
 
 app.get("/api/ot-lineas", async (req, res) => {
   try {
-    res.json(await prisma.ordenTrabajoLinea.findMany());
+    const rawLineas = await prisma.ordenTrabajoLinea.findMany();
+    // Map Prisma field 'factura' to frontend field 'n_factura'
+    const mapped = rawLineas.map((linea: any) => {
+      const { factura, ...rest } = linea;
+      return { ...rest, n_factura: factura || '', factura };
+    });
+    res.json(mapped);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -528,7 +614,8 @@ app.post("/api/config", (req, res) => {
 // ----------------------------------------
 
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "dev") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { 
         middlewareMode: true,
@@ -545,7 +632,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Mafort Backend System] Running securely on port ${PORT}`);
+    console.log(`[Gestia Backend System] Running securely on port ${PORT}`);
   });
 }
 

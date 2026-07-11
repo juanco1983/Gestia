@@ -1,0 +1,104 @@
+##############################################
+# GitHub Actions: Terraform Plan
+# Se ejecuta en cada Pull Request hacia dev o main
+# Solo muestra el plan — NO aplica cambios
+##############################################
+
+name: "🔍 Terraform Plan"
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - 'infra/**'
+
+permissions:
+  id-token: write    # Para OIDC con AWS
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.15.7"
+  AWS_REGION: "us-east-1"
+
+jobs:
+  terraform-plan:
+    name: Plan (${{ github.base_ref }})
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Terraform ────────────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # ── 3. Configurar credenciales AWS (OIDC — sin secrets de larga duración) ─
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── 4. Determinar ambiente según la rama destino ──────────────────────────
+      - name: Set environment
+        id: env
+        run: |
+          if [[ "${{ github.base_ref }}" == "main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "dir=infra/environments/prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "dir=infra/environments/dev" >> $GITHUB_OUTPUT
+          fi
+
+      # ── 5. Terraform Init ─────────────────────────────────────────────────────
+      - name: Terraform Init
+        working-directory: ${{ steps.env.outputs.dir }}
+        run: terraform init -input=false
+
+      # ── 6. Terraform Format Check ─────────────────────────────────────────────
+      - name: Terraform Format Check
+        working-directory: ${{ steps.env.outputs.dir }}
+        run: terraform fmt -check -recursive
+
+      # ── 7. Terraform Validate ─────────────────────────────────────────────────
+      - name: Terraform Validate
+        working-directory: ${{ steps.env.outputs.dir }}
+        run: terraform validate
+
+      # ── 8. Terraform Plan ─────────────────────────────────────────────────────
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ steps.env.outputs.dir }}
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_jwt_secret:  ${{ secrets.TF_VAR_JWT_SECRET }}
+          TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+        run: |
+          terraform plan -no-color -input=false -out=tfplan 2>&1 | tee plan_output.txt
+          echo "plan_exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      # ── 9. Comentar el plan en el PR ──────────────────────────────────────────
+      - name: Comment PR with plan
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ steps.env.outputs.dir }}/plan_output.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.substring(0, 60000) + '\n... [TRUNCADO]' : plan;
+            const body = `## 🏗️ Terraform Plan — Ambiente: \`${{ steps.env.outputs.environment }}\`
+            \`\`\`hcl
+            ${truncated}
+            \`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

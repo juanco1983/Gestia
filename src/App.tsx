@@ -83,7 +83,7 @@ function CircularProgress({ value, total, label, color = '#00B594', size = 42 }:
   );
 }
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend } from 'recharts';
 
 const getAppDefaultModulesForRole = (role: string): string[] => {
   if (role === 'Administrador') {
@@ -105,14 +105,14 @@ export default function App() {
   // Clear ALL mafort cache to prevent zombie data (offline queues, old states) from pushing to the server
   useEffect(() => {
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('mafort_') && key !== 'mafort_jwt_token' && key !== 'mafort_current_user') {
+      if (key.startsWith('gestia_') && key !== 'gestia_jwt_token' && key !== 'gestia_current_user') {
         localStorage.removeItem(key);
       }
     });
   }, []);
 
   const [users, setUsers] = useState<User[]>(() => {
-    const local = localStorage.getItem('mafort_users');
+    const local = localStorage.getItem('gestia_users');
     const parsed = local ? JSON.parse(local) : INITIAL_USERS;
     if (Array.isArray(parsed)) {
       let changed = false;
@@ -124,7 +124,7 @@ export default function App() {
         return u;
       });
       if (changed) {
-        localStorage.setItem('mafort_users', JSON.stringify(updated));
+        localStorage.setItem('gestia_users', JSON.stringify(updated));
       }
       return updated;
     }
@@ -133,18 +133,18 @@ export default function App() {
 
   // Dynamic security activity logs
   const [userLogs, setUserLogs] = useState<UserActivityLog[]>(() => {
-    const local = localStorage.getItem('mafort_user_logs');
+    const local = localStorage.getItem('gestia_user_logs');
     return local ? JSON.parse(local) : INITIAL_LOGS;
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const local = localStorage.getItem('mafort_current_user');
+    const local = localStorage.getItem('gestia_current_user');
     if (local) {
       try {
         const u = JSON.parse(local) as User;
         if (u && (!u.allowedModules || u.allowedModules.length === 0)) {
           u.allowedModules = getAppDefaultModulesForRole(u.role);
-          localStorage.setItem('mafort_current_user', JSON.stringify(u));
+          localStorage.setItem('gestia_current_user', JSON.stringify(u));
         }
         return u;
       } catch (e) {
@@ -154,13 +154,15 @@ export default function App() {
     return null;
   });
 
-  // Active view tab switcher
-  const [currentRole, setCurrentRole] = useState<'Dashboard' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente' | 'Usuarios' | 'GestionOTs' | 'ClientesContratos'>(() => {
-    const local = localStorage.getItem('mafort_current_user');
+  const [currentRole, setCurrentRole] = useState<'Dashboard' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente' | 'Usuarios' | 'GestionOTs' | 'ClientesContratos' | 'Monitoreo'>(() => {
+    const local = localStorage.getItem('gestia_current_user');
     if (local) {
       try {
         const u = JSON.parse(local) as User;
-        if (u && u.role) return u.role;
+        if (u && u.role) {
+          if (u.role === 'Administrador') return 'Dashboard';
+          return u.role as any;
+        }
       } catch (e) {
         // Fallback
       }
@@ -173,6 +175,9 @@ export default function App() {
 
   // Dashboard sub-tab switcher
   const [dashboardSubTab, setDashboardSubTab] = useState<'analytics' | 'monitoring'>('analytics');
+  
+  // Dashboard chart range switcher (Trimestral/Semestral)
+  const [dashboardRange, setDashboardRange] = useState<'trimestral' | 'semestral'>('trimestral');
 
   // Real-time online state
   const [isOnline, setIsOnline] = useState<boolean>(window.navigator.onLine);
@@ -211,7 +216,7 @@ export default function App() {
 
   // Persistent States loaded from localStorage
   const [clients, setClients] = useState<Client[]>(() => {
-    const local = localStorage.getItem('mafort_clients');
+    const local = localStorage.getItem('gestia_clients');
     if (local) {
       const parsed = JSON.parse(local);
       const containsOldData = parsed.some((c: any) => 
@@ -225,36 +230,36 @@ export default function App() {
   });
 
   const [contracts, setContracts] = useState<Contract[]>(() => {
-    const local = localStorage.getItem('mafort_contracts');
+    const local = localStorage.getItem('gestia_contracts');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_contracts from localStorage", e);
+        console.error("Error parsing gestia_contracts from localStorage", e);
       }
     }
     return INITIAL_CONTRACTS;
   });
 
   const [ots, setOts] = useState<OT[]>(() => {
-    const local = localStorage.getItem('mafort_ots');
+    const local = localStorage.getItem('gestia_ots');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_ots from localStorage", e);
+        console.error("Error parsing gestia_ots from localStorage", e);
       }
     }
     return INITIAL_OTS;
   });
 
   const [reports, setReports] = useState<TechnicalReport[]>(() => {
-    const local = localStorage.getItem('mafort_reports');
+    const local = localStorage.getItem('gestia_reports');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_reports from localStorage", e);
+        console.error("Error parsing gestia_reports from localStorage", e);
       }
     }
     return [];
@@ -262,70 +267,70 @@ export default function App() {
 
   // Offline buffer state queue
   const [offlineQueue, setOfflineQueue] = useState<TechnicalReport[]>(() => {
-    const local = localStorage.getItem('mafort_offline_queue');
+    const local = localStorage.getItem('gestia_offline_queue');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_offline_queue from localStorage", e);
+        console.error("Error parsing gestia_offline_queue from localStorage", e);
       }
     }
     return [];
   });
 
   const [ordenesTrabajo, setOrdenesTrabajo] = useState<OrdenTrabajoLinea[]>(() => {
-    const local = localStorage.getItem('mafort_ordenes_trabajo');
+    const local = localStorage.getItem('gestia_ordenes_trabajo');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_ordenes_trabajo from localStorage", e);
+        console.error("Error parsing gestia_ordenes_trabajo from localStorage", e);
       }
     }
     return INITIAL_ORDENES_TRABAJO;
   });
 
   const [contratosNuevos, setContratosNuevos] = useState<Contrato[]>(() => {
-    const local = localStorage.getItem('mafort_contratos_nuevos');
+    const local = localStorage.getItem('gestia_contratos_nuevos');
     if (local) {
       try {
         return JSON.parse(local);
       } catch (e) {
-        console.error("Error parsing mafort_contratos_nuevos from localStorage", e);
+        console.error("Error parsing gestia_contratos_nuevos from localStorage", e);
       }
     }
     return INITIAL_CONTRATOS_NUEVOS;
   });
 
   const [targetVentas, setTargetVentas] = useState<TargetVentas[]>(() => {
-    const local = localStorage.getItem('mafort_target_ventas');
+    const local = localStorage.getItem('gestia_target_ventas');
     return local ? JSON.parse(local) : INITIAL_TARGET_VENTAS;
   });
 
   const [tipoCambio, setTipoCambio] = useState<number>(() => {
-    const local = localStorage.getItem('mafort_tipo_cambio');
+    const local = localStorage.getItem('gestia_tipo_cambio');
     return local ? Number(local) : 3.75;
   });
 
   useEffect(() => {
-    localStorage.setItem('mafort_tipo_cambio', tipoCambio.toString());
+    localStorage.setItem('gestia_tipo_cambio', tipoCambio.toString());
   }, [tipoCambio]);
 
   // Sync state on change
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('mafort_current_user', JSON.stringify(currentUser));
+      localStorage.setItem('gestia_current_user', JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem('mafort_current_user');
+      localStorage.removeItem('gestia_current_user');
     }
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_users', JSON.stringify(users));
+    localStorage.setItem('gestia_users', JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_user_logs', JSON.stringify(userLogs));
+    localStorage.setItem('gestia_user_logs', JSON.stringify(userLogs));
   }, [userLogs]);
 
   useEffect(() => {
@@ -344,27 +349,27 @@ export default function App() {
       };
       setOts(prev => [demoUnassigned, ...prev]);
     }
-    localStorage.setItem('mafort_ots', JSON.stringify(ots));
+    localStorage.setItem('gestia_ots', JSON.stringify(ots));
   }, [ots]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_clients', JSON.stringify(clients));
+    localStorage.setItem('gestia_clients', JSON.stringify(clients));
   }, [clients]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_contracts', JSON.stringify(contracts));
+    localStorage.setItem('gestia_contracts', JSON.stringify(contracts));
   }, [contracts]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_ots', JSON.stringify(ots));
+    localStorage.setItem('gestia_ots', JSON.stringify(ots));
   }, [ots]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_reports', JSON.stringify(reports));
+    localStorage.setItem('gestia_reports', JSON.stringify(reports));
   }, [reports]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_ordenes_trabajo', JSON.stringify(ordenesTrabajo));
+    localStorage.setItem('gestia_ordenes_trabajo', JSON.stringify(ordenesTrabajo));
   }, [ordenesTrabajo]);
 
   // Local/offline sync between ordenesTrabajo (financial/billing cuotas) and ots (operational tasks)
@@ -463,19 +468,19 @@ export default function App() {
   }, [ordenesTrabajo, clients]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_contratos_nuevos', JSON.stringify(contratosNuevos));
+    localStorage.setItem('gestia_contratos_nuevos', JSON.stringify(contratosNuevos));
   }, [contratosNuevos]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_target_ventas', JSON.stringify(targetVentas));
+    localStorage.setItem('gestia_target_ventas', JSON.stringify(targetVentas));
   }, [targetVentas]);
 
   useEffect(() => {
-    localStorage.setItem('mafort_offline_queue', JSON.stringify(offlineQueue));
+    localStorage.setItem('gestia_offline_queue', JSON.stringify(offlineQueue));
   }, [offlineQueue]);
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('mafort_jwt_token');
+    const token = localStorage.getItem('gestia_jwt_token');
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -483,8 +488,8 @@ export default function App() {
     };
     const response = await fetch(url, { ...options, headers });
     if (response.status === 401) {
-      localStorage.removeItem('mafort_jwt_token');
-      localStorage.removeItem('mafort_current_user');
+      localStorage.removeItem('gestia_jwt_token');
+      localStorage.removeItem('gestia_current_user');
       setCurrentUser(null);
       throw new Error('Sesión expirada o inválida. Por favor inicie sesión.');
     }
@@ -500,15 +505,14 @@ export default function App() {
         // Intentamos sincronizar primero
         const syncSuccess = await handleSyncOffline();
         
-        // Si hay datos locales y la sincronización falló, NO cargamos del servidor
-        // para evitar que datos antiguos (o vacíos) sobrescriban el trabajo del usuario
-        const hasCriticalLocalData = offlineQueue.length > 0 || 
-                                     contracts.length > 0 || 
-                                     ordenesTrabajo.length > 0 ||
-                                     contratosNuevos.length > 0;
+        // Si hay cambios pendientes de sincronizar (cola offline) y la sincronización falló,
+        // NO cargamos del servidor para evitar que datos antiguos sobrescriban el trabajo del usuario.
+        // NOTA: Solo offlineQueue representa cambios reales pendientes. Los arrays como ordenesTrabajo
+        // pueden contener datos iniciales/seed que NO deben bloquear la carga del servidor.
+        const hasPendingOfflineChanges = offlineQueue.length > 0;
 
-        if (!syncSuccess && hasCriticalLocalData) {
-          console.warn(">>> ADVERTENCIA: Sincronización fallida y hay datos locales críticos. Abortando carga del servidor para proteger datos locales.");
+        if (!syncSuccess && hasPendingOfflineChanges) {
+          console.warn(">>> ADVERTENCIA: Sincronización fallida y hay cambios offline pendientes. Abortando carga del servidor para proteger datos locales.");
           return;
         }
 
@@ -585,6 +589,18 @@ export default function App() {
     }
   };
 
+  const handleUpdateClient = async (updatedClient: Client) => {
+    setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+    try {
+      await fetchWithAuth(`/api/clients/${updatedClient.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedClient)
+      });
+    } catch (e) {
+      console.warn("Error al actualizar cliente en el servidor (actualizado localmente):", e);
+    }
+  };
+
   const handleAddContract = async (newContract: Contract) => {
     setContracts(prev => [...prev, newContract]);
     try {
@@ -598,14 +614,23 @@ export default function App() {
   };
 
   const handleAddOT = async (newOT: OT) => {
-    setOts(prev => [...prev, newOT]);
     try {
-      await fetchWithAuth('/api/ots', {
+      const response = await fetchWithAuth('/api/ots', {
         method: 'POST',
         body: JSON.stringify(newOT)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`No se pudo crear la OT: ${errorData.error || 'Error desconocido'}`);
+        return;
+      }
+
+      const created = await response.json();
+      setOts(prev => [...prev, created]);
     } catch (e) {
-      console.warn("OT guardada en caché local:", e);
+      console.warn("OT guardada en caché local (offline):", e);
+      setOts(prev => [...prev, newOT]);
     }
   };
 
@@ -942,26 +967,26 @@ export default function App() {
 
     // Card 1: Pipeline de OTs Activas (excluye FACTURADA y CERRADA, filtrado por mes actual)
     const otsDelMes = ots.filter(o => o.fechaProgramada && o.fechaProgramada.startsWith(`${currentYear}-${currentMonthStr}`));
-    const otsActivas = otsDelMes.filter(o => o.estado !== 'FACTURADA' && o.estado !== 'CERRADA');
-    const otsObservadas = otsActivas.filter(o => o.estado === 'OBSERVADA').length;
+    const otsActivas = otsDelMes.filter(o => o.estado !== OTStatus.FACTURADA && o.estado !== OTStatus.CERRADA);
+    const otsObservadas = otsActivas.filter(o => o.estado === OTStatus.OBSERVADA).length;
 
     // Card 2: Visitas del Mes (Ejecutadas vs Programadas)
-    const ejecutadasDelMes = otsDelMes.filter(o => o.estado === 'FIRMADA' || o.estado === 'CERRADA' || o.estado === 'FACTURADA');
+    const ejecutadasDelMes = otsDelMes.filter(o => o.estado === OTStatus.FIRMADA || o.estado === OTStatus.CERRADA || o.estado === OTStatus.FACTURADA);
     const tasaEjecucion = otsDelMes.length > 0 ? (ejecutadasDelMes.length / otsDelMes.length) * 100 : 0;
     
     // Card 3: Informes Pendientes de Revisión
     const otsInformes = ots.filter(o => 
-      o.estado === 'INFORME_ENVIADO' || o.estado === 'EN_REVISION' || o.estado === 'OBSERVADA' || 
-      o.estado === 'CORREGIDA' || o.estado === 'APROBADA' || o.estado === 'FIRMADA'
+      o.estado === OTStatus.INFORME_ENVIADO || o.estado === OTStatus.EN_REVISION || o.estado === OTStatus.OBSERVADA || 
+      o.estado === OTStatus.CORREGIDA || o.estado === OTStatus.APROBADA || o.estado === OTStatus.FIRMADA
     );
-    const informesPendientes = ots.filter(o => o.estado === 'INFORME_ENVIADO' || o.estado === 'EN_REVISION');
+    const informesPendientes = ots.filter(o => o.estado === OTStatus.INFORME_ENVIADO || o.estado === OTStatus.EN_REVISION);
 
     // Card 4: Equipos en Bypass Activo
     const bypassActivos = reports.filter(r => r.indicadoresBateria?.bypassActivo === true);
     // Filtrar solo de OTs que no estén cerradas
     const bypassActivosNoCerrados = bypassActivos.filter(r => {
       const ot = ots.find(o => o.id === r.otId);
-      return ot && ot.estado !== 'CERRADA';
+      return ot && ot.estado !== OTStatus.CERRADA;
     });
 
     // Gráfica Principal (Flujo OTs por Estado)
@@ -981,13 +1006,60 @@ export default function App() {
       { name: 'Finalizadas', count: grupoFinalizadas, fill: '#00B594' },
     ];
 
+    // Generar datos históricos para la gráfica de áreas de acuerdo al rango seleccionado
+    const getHistoricoOtsData = (rango: 'trimestral' | 'semestral') => {
+      const cantidadMeses = rango === 'semestral' ? 6 : 3;
+      const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const data = [];
+      
+      for (let i = cantidadMeses - 1; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const prefix = `${yyyy}-${mm}`;
+        const nombreMes = `${nombresMeses[d.getMonth()]} ${yyyy}`;
+
+        // Filtrar OTs de este mes
+        const otsMes = ots.filter(o => o.fechaProgramada && o.fechaProgramada.startsWith(prefix));
+
+        const completadas = otsMes.filter(o => 
+          o.estado === 'Aprobada' || 
+          o.estado === 'Firmada' || 
+          o.estado === 'Facturada' || 
+          o.estado === 'Cerrada'
+        ).length;
+
+        const facturadas = otsMes.filter(o => o.estado === 'Facturada').length;
+
+        const porFacturar = otsMes.filter(o => 
+          o.estado === 'Aprobada' || 
+          o.estado === 'Firmada'
+        ).length;
+
+        data.push({
+          name: nombreMes,
+          Completadas: completadas,
+          Facturadas: facturadas,
+          'Por Facturar': porFacturar
+        });
+      }
+      return data;
+    };
+
+    const areaData = getHistoricoOtsData(dashboardRange);
+
+    // Estadísticas acumuladas de acuerdo al rango seleccionado
+    const totalCompletadas3M = areaData.reduce((acc, curr) => acc + curr.Completadas, 0);
+    const totalFacturadas3M = areaData.reduce((acc, curr) => acc + curr.Facturadas, 0);
+    const totalPorFacturar3M = areaData.reduce((acc, curr) => acc + curr['Por Facturar'], 0);
+
     // Tiles bajo la gráfica
     // Tiempo promedio ciclo (días)
     let totalDias = 0;
     let countDias = 0;
     ots.forEach(o => {
       if (o.estado === 'Firmada' || o.estado === 'Cerrada' || o.estado === 'Facturada') {
-         const creado = o.creadoEn ? new Date(o.creadoEn) : new Date(o.fechaProgramada); 
+         const creado = new Date(o.fechaProgramada); 
          if (!isNaN(creado.getTime())) {
              const diffTime = Math.abs(today.getTime() - creado.getTime());
              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -1019,7 +1091,7 @@ export default function App() {
     // Tarjeta Usuario: Métricas
     const misOtsHoy = ots.filter(o => o.tecnicoTitularId === currentUser?.id && o.fechaProgramada === todayStr).length;
     const misOtsSemana = ots.filter(o => o.tecnicoTitularId === currentUser?.id && o.fechaProgramada?.startsWith(`${currentYear}-${currentMonthStr}`)).length;
-    const infRevision = ots.filter(o => o.estado === 'EN_REVISION').length;
+    const infRevision = ots.filter(o => o.estado === OTStatus.EN_REVISION).length;
     
     const facturadoMes = ordenesTrabajo
       .filter(l => l.estado === 'FACTURADO' && (l.mes_prog_facturacion === currentMonthEs || l.mes === currentMonthEs))
@@ -1032,18 +1104,18 @@ export default function App() {
     const target = targetVentas.find(t => t.anio === currentYear && (t.mes_num === currentMonth || t.mes === currentMonthEs));
     const targetValor = target ? Number(target.target_ventas_usd) || 0 : 0;
 
-    const misOtsCliente = ots.filter(o => o.clientId === currentUser?.clientId && o.estado !== 'CERRADA').length;
+    const misOtsCliente = ots.filter(o => o.clientId === currentUser?.clientId && o.estado !== OTStatus.CERRADA).length;
 
     // Alertas
     const alertas = [];
-    const a1 = ots.filter(o => o.fechaProgramada === todayStr && o.estado === 'PROGRAMADA' && (!o.tecnicoTitularId || o.tecnicoTitularId === ''));
+    const a1 = ots.filter(o => o.fechaProgramada === todayStr && o.estado === OTStatus.PROGRAMADA && (!o.tecnicoTitularId || o.tecnicoTitularId === ''));
     if (a1.length > 0) alertas.push({ type: '🔴', text: `${a1.length} OTs de hoy PROGRAMADAS sin técnico asignado` });
     
-    const a2 = ots.filter(o => o.estado === 'OBSERVADA');
+    const a2 = ots.filter(o => o.estado === OTStatus.OBSERVADA);
     if (a2.length > 0) alertas.push({ type: '🟠', text: `${a2.length} OTs OBSERVADAS esperando corrección` });
     
     const a3 = ots.filter(o => {
-      if (o.estado !== 'INFORME_PENDIENTE') return false;
+      if (o.estado !== OTStatus.INFORME_PENDIENTE) return false;
       const progDate = new Date(o.fechaProgramada);
       if (isNaN(progDate.getTime())) return false;
       const diffDays = (today.getTime() - progDate.getTime()) / (1000*3600*24);
@@ -1057,7 +1129,7 @@ export default function App() {
     const a4 = ordenesTrabajo.filter(l => l.estado === 'POR FACTURAR' && (l.mes_prog_facturacion === prevMonthEs || l.mes === prevMonthEs));
     if (a4.length > 0) alertas.push({ type: '🟡', text: `${a4.length} OTs por facturar del mes anterior (${prevMonthEs})` });
     
-    const a5 = ots.filter(o => o.estado === 'FIRMADA' && o.listaParaFacturar !== true);
+    const a5 = ots.filter(o => o.estado === OTStatus.FIRMADA && (o as any).listaParaFacturar !== true);
     if (a5.length > 0) alertas.push({ type: '🟢', text: `${a5.length} OTs FIRMADAS esperando visto bueno financiero` });
 
     return {
@@ -1070,6 +1142,10 @@ export default function App() {
       informesPendientes,
       bypassActivosNoCerrados,
       barData,
+      areaData,
+      totalCompletadas3M,
+      totalFacturadas3M,
+      totalPorFacturar3M,
       tasaCierre: tasaEjecucion.toFixed(1),
       tiempoPromedio,
       sinTecnico,
@@ -1085,7 +1161,7 @@ export default function App() {
       alertas,
       todayStr
     };
-  }, [ots, reports, ordenesTrabajo, targetVentas, currentUser]);
+   }, [ots, reports, ordenesTrabajo, targetVentas, currentUser, dashboardRange]);
 
   const [pieView, setPieView] = useState<'servicio' | 'equipo'>('servicio');
   // ----------------------------------------
@@ -1132,29 +1208,35 @@ export default function App() {
   const otsAprobadas = statsOts.filter(o => o.estado === OTStatus.APROBADA || o.estado === OTStatus.FIRMADA).length;
 
   return (
-    <div className="min-h-[100dvh] bg-[#EAEFEB] flex font-sans text-slate-800" id="mafort-app-wrapper">
+    <div className="min-h-[100dvh] bg-canvas flex font-sans text-slate-800" id="mafort-app-wrapper">
       
       {/* 1. LEFT SIDEBAR (Sticky full-height pane) */}
-      <aside className={`bg-white flex flex-col justify-between shrink-0 h-[100dvh] sticky top-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[260px] border-r border-slate-100/80 shadow-[0_10px_30px_rgba(148,163,184,0.04)]' : 'w-0 border-r-0 overflow-hidden'}`} id="sidebar-panel">
-        <div className="flex flex-col pt-6 px-4">
+      <aside className={`bg-teal-deep text-[#DDEFE9] flex flex-col justify-between shrink-0 h-[100dvh] sticky top-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[248px]' : 'w-0 overflow-hidden'}`} id="sidebar-panel">
+        <div className="flex flex-col pt-5 px-4 overflow-y-auto flex-1">
           
-          {/* Sidebar Header / Brand */}
-          <div className="flex items-center gap-3 mb-8 px-2 select-none">
-            <div className="w-10 h-10 rounded-2xl bg-[#00B594] flex items-center justify-center text-white font-black text-lg shadow-[0_4px_12px_rgba(0,181,148,0.25)]">
-              <Activity className="text-white" size={20} strokeWidth={2.5} />
-            </div>
-            <div className="text-left">
-              <h2 className="text-sm font-black text-slate-900 tracking-tight leading-none">
-                TeamHub
+          {/* Sidebar Header / Brand (GESTIA) */}
+          <div className="flex items-center gap-3 pb-5 pt-1 px-1.5 select-none text-left">
+            <svg className="w-8.5 h-8.5 shrink-0" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="19" stroke="#7FE6C6" strokeWidth="1.6" opacity="0.6"/>
+              <path d="M12 22 L17 14 L21 24 L25 16 L29 22" stroke="#7FE6C6" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            </svg>
+            <div className="leading-tight">
+              <h2 className="font-display font-semibold text-[16px] text-white tracking-[0.08em] uppercase">
+                GESTIA
               </h2>
-              <span className="text-[9px] font-black text-[#94A3B8] font-mono tracking-wider mt-1 block">
-                MAFORT CONECTADO
+              <span className="text-[9px] font-normal text-[#8FCBB8] font-mono tracking-widest mt-0.5 block">
+                SISTEMA · CONECTADO
               </span>
             </div>
           </div>
 
+          {/* Mini pulse wave */}
+          <svg className="w-full h-[22px] mb-4.5 opacity-90 flex-none" viewBox="0 0 220 22" preserveAspectRatio="none">
+            <path className="stroke-[#7FE6C6] stroke-[1.6px] fill-none stroke-linecap-round" d="M0 11 L60 11 L70 3 L80 19 L90 11 L220 11" />
+          </svg>
+
           {/* Navigation Items */}
-          <nav className="space-y-1">
+          <nav className="space-y-0.5 flex-1">
             {APP_MODULES.filter(link => {
               if (currentUser.allowedModules && currentUser.allowedModules.length > 0) {
                 return currentUser.allowedModules.includes(link.id);
@@ -1164,39 +1246,62 @@ export default function App() {
                 return currentUser.role === 'Ventas';
               }
               if (link.id === 'Usuarios') {
-                return currentUser.role === 'Administrador';
+                return false;
               }
               return link.id === 'Dashboard' || link.id === 'Monitoreo' || link.id === currentUser.role;
             }).map((link) => {
               const isSelected = currentRole === link.id || (link.id === 'Usuarios' && currentRole === 'Usuarios');
-              let badgeCount: number | undefined;
+              let badgeCount: number | string | undefined;
               if (link.id === 'Supervisor') {
-                badgeCount = reports.filter(r => r.estado === 'EN_REVISION').length;
+                badgeCount = ots.filter(o => o.estado === OTStatus.EN_REVISION).length;
               } else if (link.id === 'Tecnico') {
                 badgeCount = users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo').length;
               } else if (link.id === 'Usuarios') {
                 badgeCount = users.filter(u => u.estado === 'Activo').length;
+              } else if (link.id === 'ClientesContratos') {
+                badgeCount = 'CRM';
+              } else if (link.id === 'Monitoreo') {
+                badgeCount = 'Agenda';
+              } else if (link.id === 'GestionOTs') {
+                badgeCount = 'SLA';
+              } else if (link.id === 'Ventas') {
+                badgeCount = 'Ventas';
               } else if (link.id === 'Cliente') {
                 badgeCount = 0;
               }
+              
+              const isDefaultBadgeText = typeof badgeCount === 'string';
+
               return (
                 <button
                   key={link.id}
                   onClick={() => setCurrentRole(link.id as any)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all text-left cursor-pointer group ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-all text-left cursor-pointer relative group ${
                     isSelected 
-                      ? '!bg-[#00B594] !text-white shadow-[0_4px_14px_rgba(0,181,148,0.22)]' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/80'
+                      ? 'bg-white/9 text-white font-medium' 
+                      : 'text-[#B9DACE] hover:text-white hover:bg-white/6'
                   }`}
-                  style={isSelected ? { backgroundColor: '#00B594', color: '#ffffff' } : undefined}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={`${isSelected ? '!text-white' : link.iconColor} shrink-0`}>
-                      {link.icon}
+                  {/* Left indicator bar for active item */}
+                  {isSelected && (
+                    <span className="absolute left-[-16px] top-2 bottom-2 w-[3px] rounded-r bg-[#7FE6C6]" />
+                  )}
+                  
+                  <span className={`${isSelected ? 'text-white' : 'text-[#B9DACE]'} shrink-0`}>
+                    {link.icon}
+                  </span>
+                  
+                  <span className="truncate">{link.displayLabel}</span>
+                  
+                  {badgeCount !== undefined && (
+                    <span className={`ml-auto text-[10.5px] font-mono py-0.5 px-2 rounded-full ${
+                      isSelected 
+                        ? 'bg-[#7FE6C6] text-[#083329] font-semibold' 
+                        : 'bg-white/10 text-[#CFEBE1]'
+                    }`}>
+                      {badgeCount}
                     </span>
-                    <span className={isSelected ? '!text-white' : 'text-slate-700 font-medium'}>{link.displayLabel}</span>
-                  </div>
-                  {link.badge(isSelected, badgeCount)}
+                  )}
                 </button>
               );
             })}
@@ -1205,13 +1310,13 @@ export default function App() {
         </div>
 
         {/* Sidebar Bottom: Logout */}
-        <div className="p-4 border-t border-slate-100/80">
+        <div className="p-4 border-t border-white/8 flex-none">
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50/50 transition-all cursor-pointer text-left"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] text-[#B9DACE] hover:text-white hover:bg-white/6 transition-all cursor-pointer text-left"
           >
-            <LogOut size={16} className="text-rose-500 shrink-0" />
-            <span>Cerrar Sesión (Salir)</span>
+            <LogOut size={15} className="shrink-0" />
+            <span>Cerrar sesión</span>
           </button>
         </div>
 
@@ -1234,13 +1339,16 @@ export default function App() {
             </button>
 
             {/* Search Input bar */}
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3.5 top-2.5 text-slate-400" size={14} />
+            <div className="flex-1 max-w-[460px] flex items-center gap-2.5 bg-white border border-hairline rounded-[11px] px-3.5 h-[42px] text-ink-mute text-[13.5px]">
+              <Search size={15} className="text-ink-mute shrink-0" strokeWidth={2} />
               <input
                 type="text"
-                placeholder="Buscar órdenes de UPS, contratos, SLAs..."
-                className="w-full bg-[#F3F4F6] border border-transparent hover:border-slate-300 focus:border-slate-300 rounded-full pl-10 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition-all font-sans"
+                placeholder="Buscar órdenes de UPS, contratos, SLAs…"
+                className="w-full bg-transparent border-none text-ink placeholder-ink-mute focus:outline-none text-[13.5px] font-sans"
               />
+              <kbd className="ml-auto font-mono text-[10.5px] bg-canvas border border-hairline rounded-[5px] px-1.5 py-0.5 text-ink-mute select-none">
+                ⌘K
+              </kbd>
             </div>
           </div>
 
@@ -1306,7 +1414,7 @@ export default function App() {
             <div className="flex items-center gap-2 text-slate-400">
               <button 
                 type="button"
-                onClick={() => alert(`🔔 Notificaciones de SLA Mafort: Cuenta con ${otsRevision} órdenes de trabajo pendientes de firma o revisión en el servidor.`)}
+                onClick={() => alert(`🔔 Notificaciones de SLA Gestia: Cuenta con ${otsRevision} órdenes de trabajo pendientes de firma o revisión en el servidor.`)}
                 className="p-1.5 bg-white hover:bg-slate-50 text-slate-500 rounded-lg border border-slate-200 relative hover:text-slate-700 cursor-pointer"
               >
                 <Bell size={14} />
@@ -1321,7 +1429,7 @@ export default function App() {
                   {currentUser.username}
                 </span>
                 <span className="text-[9px] text-[#10B981] font-extrabold tracking-wider block mt-0.5 uppercase font-sans">
-                  {currentUser.role === 'Usuarios' ? 'SEGURIDAD' : currentUser.role.toUpperCase()} •
+                  {(currentUser.role as string) === 'Usuarios' ? 'SEGURIDAD' : currentUser.role.toUpperCase()} •
                 </span>
               </div>
               
@@ -1360,7 +1468,7 @@ export default function App() {
         <div className="space-y-1.5">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block font-mono">Pipeline OTs Activas</span>
           <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-slate-900 leading-none">{dashboardData.otsActivas.length}</span>
+            <span className="text-2.5xl font-mono font-medium text-slate-900 leading-none">{dashboardData.otsActivas.length}</span>
             <span className="text-[10.5px] text-slate-400 font-bold leading-none font-sans">en ejecución</span>
           </div>
           <div className="flex items-center gap-2">
@@ -1380,7 +1488,7 @@ export default function App() {
         <div className="space-y-1.5">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block font-mono">Visitas del Mes</span>
           <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-slate-900 leading-none">{dashboardData.ejecutadasDelMes.length}</span>
+            <span className="text-2.5xl font-mono font-medium text-slate-900 leading-none">{dashboardData.ejecutadasDelMes.length}</span>
             <span className="text-[10.5px] text-slate-400 font-bold leading-none font-sans">ejecutadas</span>
           </div>
           <p className="text-[11px] text-slate-400">{dashboardData.ejecutadasDelMes.length} ejecutadas de {dashboardData.otsDelMes.length} programadas</p>
@@ -1397,7 +1505,7 @@ export default function App() {
         <div className="space-y-1.5">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block font-mono">Informes Pendientes</span>
           <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-slate-900 leading-none">{dashboardData.informesPendientes.length}</span>
+            <span className="text-2.5xl font-mono font-medium text-slate-900 leading-none">{dashboardData.informesPendientes.length}</span>
             <span className="text-[10.5px] text-amber-500 font-bold leading-none font-sans">en revisión</span>
           </div>
           <div className="flex items-center gap-2">
@@ -1415,7 +1523,7 @@ export default function App() {
         <div className="space-y-1.5">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block font-mono">Bypass Activo</span>
           <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-slate-900 leading-none">{dashboardData.bypassActivosNoCerrados.length}</span>
+            <span className="text-2.5xl font-mono font-medium text-slate-900 leading-none">{dashboardData.bypassActivosNoCerrados.length}</span>
             <span className={dashboardData.bypassActivosNoCerrados.length > 0 ? "text-[10.5px] text-rose-500 font-bold leading-none font-sans" : "text-[10.5px] text-[#00B594] font-bold leading-none font-sans"}>
               {dashboardData.bypassActivosNoCerrados.length > 0 ? "Crítico" : "OK"}
             </span>
@@ -1439,41 +1547,103 @@ export default function App() {
           
           {/* Gráfica Principal (2/3) */}
           <div className="lg:col-span-2 w-full bg-white border border-slate-100/80 rounded-[24px] p-6 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-            <div>
-              <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Flujo de OTs por Estado</h4>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Distribución general del pipeline operativo</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">Evolución de OTs (Últimos {dashboardRange === 'semestral' ? '6' : '3'} Meses)</h4>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">Desempeño mensual de órdenes completadas y facturación</p>
+              </div>
+
+              {/* Selector de Rango Temporal */}
+              <div className="flex items-center self-start sm:self-center bg-slate-50 border border-slate-100 p-0.5 rounded-xl">
+                <button
+                  onClick={() => setDashboardRange('trimestral')}
+                  className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
+                    dashboardRange === 'trimestral'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-650'
+                  }`}
+                >
+                  Trimestral
+                </button>
+                <button
+                  onClick={() => setDashboardRange('semestral')}
+                  className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
+                    dashboardRange === 'semestral'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-650'
+                  }`}
+                >
+                  Semestral
+                </button>
+              </div>
             </div>
             
             <div className="h-[220px] mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dashboardData.barData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} width={90} />
-                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
-                    {dashboardData.barData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                <AreaChart data={dashboardData.areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorCompletadas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00B594" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#00B594" stopOpacity={0.01}/>
+                    </linearGradient>
+                    <linearGradient id="colorFacturadas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.01}/>
+                    </linearGradient>
+                    <linearGradient id="colorPorFacturar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.01}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', fontSize: '11px', fontFamily: 'sans-serif' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', fontFamily: 'sans-serif', paddingBottom: '10px' }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Completadas" 
+                    stroke="#00B594" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorCompletadas)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Facturadas" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorFacturadas)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Por Facturar" 
+                    stroke="#F59E0B" 
+                    strokeWidth={2.5} 
+                    fillOpacity={1} 
+                    fill="url(#colorPorFacturar)" 
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
 
             {/* Tiles bajo la gráfica */}
             <div className="grid grid-cols-3 gap-3 mt-4 text-center">
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Cierre del Mes:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5">{dashboardData.tasaCierre}%</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Completadas ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
+                <span className="text-xs font-black text-slate-800 block mt-0.5">{dashboardData.totalCompletadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Ciclo Promedio:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5"><span className="text-[#00B594]">{dashboardData.tiempoPromedio} días</span></span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#3B82F6] block font-mono">Facturadas ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
+                <span className="text-xs font-black text-[#3B82F6] block mt-0.5">{dashboardData.totalFacturadas3M} OTs</span>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl py-2.5">
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-450 block font-mono">Sin Técnico:</span>
-                <span className="text-xs font-black text-slate-800 block mt-0.5">
-                  <span className={dashboardData.sinTecnico > 0 ? "text-[#F59E0B]" : "text-[#00B594]"}>{dashboardData.sinTecnico} OTs</span>
-                </span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#F59E0B] block font-mono">Por Facturar ({dashboardRange === 'semestral' ? '6M' : '3M'}):</span>
+                <span className="text-xs font-black text-[#F59E0B] block mt-0.5">{dashboardData.totalPorFacturar3M} OTs</span>
               </div>
             </div>
           </div>
@@ -1542,7 +1712,7 @@ export default function App() {
             <div className="mt-6 pt-4 border-t border-slate-100 space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-400 font-mono text-[9.5px] uppercase tracking-wider">Rol de Seguridad</span>
-                <span className="font-black text-[#00B594] font-mono">{currentUser.role === 'Usuarios' ? 'Seguridad' : currentUser.role}</span>
+                <span className="font-black text-[#00B594] font-mono">{(currentUser.role as string) === 'Usuarios' ? 'Seguridad' : currentUser.role}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-400 font-mono text-[9.5px] uppercase tracking-wider">Área Operativa</span>
@@ -1719,6 +1889,39 @@ export default function App() {
             </table>
           </div>
         </div>
+        
+        {/* Copiloto IA Strip Footer */}
+        <div className="flex items-center gap-5 bg-gradient-to-r from-ai-mist to-white border border-[#DCDCF6] rounded-2xl p-4.5 mt-4 text-left shadow-2xs">
+          <div className="w-9.5 h-9.5 rounded-xl bg-ai-brand flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2">
+              <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
+              <circle cx="12" cy="12" r="3.4"/>
+            </svg>
+          </div>
+          <div>
+            <h4 className="font-display font-semibold text-[13.5px] text-[#33337A] leading-tight">Copiloto de operaciones</h4>
+            <p className="text-[12.5px] text-[#54548E] mt-0.5">
+              {currentUser.role === 'Tecnico' ? "Detecté 2 OTs programadas para ti esta semana. Recuerda llenar los informes antes del vencimiento del SLA." :
+               currentUser.role === 'Supervisor' ? "Hay 1 informe técnico sometido a revisión. Puedo sugerir observaciones comunes según el tipo de bypass." :
+               "Detecté 2 OTs sin técnico con vencimiento de SLA en 48h. Puedo sugerir la mejor asignación según carga y zona."}
+            </p>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => {
+              if (currentUser.role === 'Tecnico') {
+                setCurrentRole('Tecnico' as any);
+              } else if (currentUser.role === 'Supervisor') {
+                setCurrentRole('Supervisor' as any);
+              } else {
+                setCurrentRole('GestionOTs' as any);
+              }
+            }} 
+            className="ml-auto bg-ai-brand hover:bg-[#5b5ebc] text-white border-none py-2 px-4 rounded-lg text-xs font-semibold cursor-pointer shrink-0 transition-colors"
+          >
+            Ver sugerencia
+          </button>
+        </div>
       </>
   </div>
 )}
@@ -1743,7 +1946,7 @@ export default function App() {
                   lineas={ordenesTrabajo}
                   clients={clients}
                   targetVentas={targetVentas}
-                  currentUser={{ email: currentUser?.email || 'admin@mafort.com', username: currentUser?.username || 'Administrador' }}
+                  currentUser={{ email: currentUser?.email || 'admin@gestia.com', username: currentUser?.username || 'Administrador' }}
                   onAddLinea={handleAddOtLinea}
                   onUpdateLinea={handleUpdateOtLinea}
                   tipoCambio={tipoCambio}
@@ -1763,8 +1966,9 @@ export default function App() {
                   clients={clients}
                   contratos={contratosNuevos}
                   users={users}
-                  currentUser={{ email: currentUser?.email || 'admin@mafort.com', username: currentUser?.username || 'Administrador' }}
+                  currentUser={{ email: currentUser?.email || 'admin@gestia.com', username: currentUser?.username || 'Administrador' }}
                   onAddClient={handleAddClient}
+                  onUpdateClient={handleUpdateClient}
                   onAddContrato={handleAddContratoComercial}
                   onUpdateContrato={handleUpdateContratoComercial}
                 />
@@ -1777,6 +1981,7 @@ export default function App() {
                 <VentasView 
                   clients={clients}
                   contracts={contracts}
+                  contratosComerciales={contratosNuevos}
                   ots={ots}
                   reports={[...reports, ...offlineQueue]}
                   onAddClient={handleAddClient}
@@ -1865,7 +2070,7 @@ export default function App() {
               </div>
               <div>
                 <h4 className="font-bold text-slate-850 text-sm">Cerrar Sesión Activa</h4>
-                <p className="text-[10px] text-slate-450 uppercase font-mono tracking-wide">Mafort Hub & Control de Calidad</p>
+                <p className="text-[10px] text-slate-450 uppercase font-mono tracking-wide">Gestia Hub & Control de Calidad</p>
               </div>
             </div>
 

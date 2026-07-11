@@ -23,7 +23,7 @@ import {
   Minimize2,
   Search
 } from 'lucide-react';
-import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport } from '../types';
+import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport, Contrato } from '../types';
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
 
@@ -62,6 +62,7 @@ function CircularProgress({ value, max, text, colorClass, trailColorClass = "str
 interface VentasViewProps {
   clients: Client[];
   contracts: Contract[];
+  contratosComerciales?: Contrato[];
   ots: OT[];
   reports: TechnicalReport[];
   onAddClient: (client: Client) => void;
@@ -73,6 +74,7 @@ interface VentasViewProps {
 export default function VentasView({
   clients,
   contracts,
+  contratosComerciales = [],
   ots,
   reports,
   onAddClient,
@@ -121,6 +123,8 @@ export default function VentasView({
   const [otForm, setOtForm] = useState({
     id: '',
     clientId: '',
+    contratoId: '',
+    costo_estimado_usd: 0,
     tipoMantenimiento: ServiceType.PREVENTIVO,
     tipoEquipo: EquipmentType.UPS,
     potenciaKva: 50,
@@ -192,6 +196,8 @@ export default function VentasView({
       const newOT: OT = {
         id: cleanId,
         clientId: otForm.clientId,
+        contratoId: otForm.contratoId || undefined,
+        costo_estimado_usd: otForm.costo_estimado_usd || undefined,
         tipoMantenimiento: otForm.tipoMantenimiento,
         tipoEquipo: otForm.tipoEquipo,
         potenciaKva: Number(otForm.potenciaKva),
@@ -211,6 +217,8 @@ export default function VentasView({
     setOtForm({
       id: ot.id,
       clientId: ot.clientId,
+      contratoId: ot.contratoId || '',
+      costo_estimado_usd: ot.costo_estimado_usd || 0,
       tipoMantenimiento: ot.tipoMantenimiento,
       tipoEquipo: ot.tipoEquipo,
       potenciaKva: ot.potenciaKva,
@@ -227,6 +235,8 @@ export default function VentasView({
     setOtForm({
       id: `OT-${Math.floor(4000 + Math.random() * 999)}`,
       clientId: '',
+      contratoId: '',
+      costo_estimado_usd: 0,
       tipoMantenimiento: ServiceType.PREVENTIVO,
       tipoEquipo: EquipmentType.UPS,
       potenciaKva: 50,
@@ -787,6 +797,14 @@ export default function VentasView({
             id="search-clients-input"
           />
         </div>
+
+        <button
+          onClick={openCreateOtModal}
+          className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer shadow-md transition-all self-start sm:self-auto"
+          id="btn-nueva-ot-ventas"
+        >
+          Nueva OT
+        </button>
       </div>
 
       {/* Grid of Master Lists */}
@@ -1351,6 +1369,35 @@ export default function VentasView({
                   onChange={(e) => setOtForm({...otForm, id: e.target.value})} 
                   className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-slate-800"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-500 font-bold block">Contrato Marco (Opcional)</label>
+                  <select 
+                    value={otForm.contratoId} 
+                    onChange={(e) => setOtForm({...otForm, contratoId: e.target.value})} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm"
+                  >
+                    <option value="">-- Sin Contrato --</option>
+                    {contratosComerciales.filter(c => c.clientId === otForm.clientId).map(c => (
+                      <option key={c.id} value={c.id}>Contrato #{c.ot_marco} (Saldo: ${c.saldo_disponible_usd ?? c.presupuesto_total_usd ?? 0})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-500 font-bold block">Costo a descontar (USD)</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    step="0.01"
+                    disabled={!otForm.contratoId}
+                    placeholder={otForm.contratoId ? "Monto USD" : "Requiere contrato"}
+                    value={otForm.costo_estimado_usd || ''} 
+                    onChange={(e) => setOtForm({...otForm, costo_estimado_usd: Number(e.target.value)})} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm disabled:opacity-50"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
