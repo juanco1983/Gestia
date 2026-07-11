@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   FileText, 
@@ -56,7 +56,9 @@ export default function ClientesContratosView({
     distrito: '',
     contactoNombre: '',
     contactoEmail: '',
-    contactoTelefono: ''
+    contactoTelefono: '',
+    pais: '',
+    provincia: ''
   });
 
   // Client edit form state
@@ -68,8 +70,46 @@ export default function ClientesContratosView({
     distrito: '',
     contactoNombre: '',
     contactoEmail: '',
-    contactoTelefono: ''
+    contactoTelefono: '',
+    pais: '',
+    provincia: ''
   });
+
+  // Ubigeo state
+  const [paises, setPaises] = useState<any[]>([]);
+  const [provincias, setProvincias] = useState<any[]>([]);
+  const [distritos, setDistritos] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/ubigeo/paises')
+      .then(r => r.json())
+      .then(data => setPaises(data || []))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const activePais = showClientModal ? clientForm.pais : editClientForm.pais;
+    if (activePais) {
+      fetch(`/api/ubigeo/provincias?paisId=${activePais}`)
+        .then(r => r.json())
+        .then(data => setProvincias(data || []))
+        .catch(console.error);
+    } else {
+      setProvincias([]);
+    }
+  }, [clientForm.pais, editClientForm.pais, showClientModal]);
+
+  useEffect(() => {
+    const activeProv = showClientModal ? clientForm.provincia : editClientForm.provincia;
+    if (activeProv) {
+      fetch(`/api/ubigeo/distritos?provinciaId=${activeProv}`)
+        .then(r => r.json())
+        .then(data => setDistritos(data || []))
+        .catch(console.error);
+    } else {
+      setDistritos([]);
+    }
+  }, [clientForm.provincia, editClientForm.provincia, showClientModal]);
 
   // Contrato form state
   const [contratoForm, setContratoForm] = useState({
@@ -134,7 +174,9 @@ export default function ClientesContratosView({
       distrito: clientForm.distrito.trim() || 'Lima',
       contactoNombre: clientForm.contactoNombre.trim() || 'No especificado',
       contactoEmail: clientForm.contactoEmail.trim() || 'No especificado',
-      contactoTelefono: clientForm.contactoTelefono.trim() || 'No especificado'
+      contactoTelefono: clientForm.contactoTelefono.trim() || 'No especificado',
+      pais: clientForm.pais || '',
+      provincia: clientForm.provincia || ''
     };
 
     onAddClient(newClient);
@@ -145,7 +187,9 @@ export default function ClientesContratosView({
       distrito: '',
       contactoNombre: '',
       contactoEmail: '',
-      contactoTelefono: ''
+      contactoTelefono: '',
+      pais: '',
+      provincia: ''
     });
     setShowClientModal(false);
   };
@@ -161,7 +205,9 @@ export default function ClientesContratosView({
       distrito: client.distrito,
       contactoNombre: client.contactoNombre,
       contactoEmail: client.contactoEmail,
-      contactoTelefono: client.contactoTelefono
+      contactoTelefono: client.contactoTelefono,
+      pais: client.pais || '',
+      provincia: client.provincia || ''
     });
   };
 
@@ -177,7 +223,9 @@ export default function ClientesContratosView({
       distrito: editClientForm.distrito.trim() || 'Lima',
       contactoNombre: editClientForm.contactoNombre.trim() || 'No especificado',
       contactoEmail: editClientForm.contactoEmail.trim() || 'No especificado',
-      contactoTelefono: editClientForm.contactoTelefono.trim() || 'No especificado'
+      contactoTelefono: editClientForm.contactoTelefono.trim() || 'No especificado',
+      pais: editClientForm.pais || '',
+      provincia: editClientForm.provincia || ''
     };
 
     if (onUpdateClient) {
@@ -750,22 +798,47 @@ export default function ClientesContratosView({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">País</label>
+                  <select
+                    value={clientForm.pais}
+                    onChange={(e) => setClientForm({ ...clientForm, pais: e.target.value, provincia: '', distrito: '' })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                  >
+                    <option value="">Seleccione país</option>
+                    {paises.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Provincia</label>
+                  <select
+                    value={clientForm.provincia}
+                    onChange={(e) => setClientForm({ ...clientForm, provincia: e.target.value, distrito: '' })}
+                    disabled={!clientForm.pais}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 disabled:bg-slate-50 focus:outline-none"
+                  >
+                    <option value="">Seleccione provincia</option>
+                    {provincias.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Distrito</label>
+                  <select
+                    value={clientForm.distrito}
+                    onChange={(e) => setClientForm({ ...clientForm, distrito: e.target.value })}
+                    disabled={!clientForm.provincia}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 disabled:bg-slate-50 focus:outline-none"
+                  >
+                    <option value="">Seleccione distrito</option>
+                    {distritos.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Dirección Sede</label>
                   <input
                     type="text"
                     placeholder="Ej: Av. El Derby 150"
                     value={clientForm.direccionSede}
                     onChange={(e) => setClientForm({ ...clientForm, direccionSede: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Distrito</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Santiago de Surco"
-                    value={clientForm.distrito}
-                    onChange={(e) => setClientForm({ ...clientForm, distrito: e.target.value })}
                     className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
                   />
                 </div>
@@ -1103,22 +1176,47 @@ export default function ClientesContratosView({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">País</label>
+                    <select
+                      value={editClientForm.pais}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, pais: e.target.value, provincia: '', distrito: '' })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                    >
+                      <option value="">Seleccione país</option>
+                      {paises.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Provincia</label>
+                    <select
+                      value={editClientForm.provincia}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, provincia: e.target.value, distrito: '' })}
+                      disabled={!editClientForm.pais}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 disabled:bg-slate-50 focus:outline-none"
+                    >
+                      <option value="">Seleccione provincia</option>
+                      {provincias.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Distrito</label>
+                    <select
+                      value={editClientForm.distrito}
+                      onChange={(e) => setEditClientForm({ ...editClientForm, distrito: e.target.value })}
+                      disabled={!editClientForm.provincia}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 disabled:bg-slate-50 focus:outline-none"
+                    >
+                      <option value="">Seleccione distrito</option>
+                      {distritos.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div>
                     <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Dirección Sede</label>
                     <input
                       type="text"
                       placeholder="Ej: Av. El Derby 150"
                       value={editClientForm.direccionSede}
                       onChange={(e) => setEditClientForm({ ...editClientForm, direccionSede: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Distrito</label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Santiago de Surco"
-                      value={editClientForm.distrito}
-                      onChange={(e) => setEditClientForm({ ...editClientForm, distrito: e.target.value })}
                       className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
                     />
                   </div>
