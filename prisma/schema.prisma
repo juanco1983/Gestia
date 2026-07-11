@@ -33,6 +33,8 @@ model Client {
   contactoNombre   String
   contactoEmail    String
   contactoTelefono String
+  pais             String?
+  provincia        String?
 }
 
 model Contract {
@@ -203,3 +205,25 @@ model UserActivityLog {
   details   String
   ipAddress String
 }
+
+model Pais {
+  id        String      @id
+  nombre    String
+  provincias Provincia[]
+}
+
+model Provincia {
+  id        String      @id
+  nombre    String
+  paisId    String
+  pais      Pais        @relation(fields: [paisId], references: [id], onDelete: Cascade)
+  distritos Distrito[]
+}
+
+model Distrito {
+  id          String      @id
+  nombre      String
+  provinciaId String
+  provincia   Provincia   @relation(fields: [provinciaId], references: [id], onDelete: Cascade)
+}
+

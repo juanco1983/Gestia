@@ -41,6 +41,8 @@ export interface Client {
   contactoNombre: string;
   contactoEmail: string;
   contactoTelefono: string;
+  pais?: string;
+  provincia?: string;
 }
 
 export interface Contract {

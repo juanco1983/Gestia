@@ -200,6 +200,34 @@ app.post("/api/logs", async (req, res) => {
   }
 });
 
+app.get("/api/ubigeo/paises", async (req, res) => {
+  try {
+    res.json(await prisma.pais.findMany({ orderBy: { nombre: 'asc' } }));
+  } catch (err) {
+    res.status(500).json({ error: "Error" });
+  }
+});
+
+app.get("/api/ubigeo/provincias", async (req, res) => {
+  try {
+    const { paisId } = req.query;
+    const whereClause = paisId ? { paisId: String(paisId) } : {};
+    res.json(await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+  } catch (err) {
+    res.status(500).json({ error: "Error" });
+  }
+});
+
+app.get("/api/ubigeo/distritos", async (req, res) => {
+  try {
+    const { provinciaId } = req.query;
+    const whereClause = provinciaId ? { provinciaId: String(provinciaId) } : {};
+    res.json(await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+  } catch (err) {
+    res.status(500).json({ error: "Error" });
+  }
+});
+
 app.get("/api/clients", async (req, res) => {
   try {
     res.json(await prisma.client.findMany());
