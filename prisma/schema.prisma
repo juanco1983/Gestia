@@ -71,7 +71,6 @@ model OT {
 model TechnicalReport {
   id                     String   @id
   otId                   String   @unique
-  clientReportId         String?  @unique
   voltajeEntrada         Float
   voltajeSalida          Float
   indicadoresBateria     Json
@@ -186,37 +185,6 @@ model ContratoNuevo {
   comentarios              String?
   presupuesto_total_usd    Float?
   saldo_disponible_usd     Float?
-  saldo_actual_contrato    Float?
-  sobregiro                Boolean? @default(false)
-}
-
-model TarifarioContrato {
-  id             String  @id
-  contratoId     String
-  concepto       String
-  precioUnitario Float
-}
-
-model AmpliacionContrato {
-  id              String   @id
-  contratoId      String
-  montoAmpliacion Float
-  creadoEn        String
-}
-
-model EquipoContratado {
-  id           String @id
-  contratoId   String
-  equipoModelo String
-  serie        String
-}
-
-model RepuestoUtilizado {
-  id                     String @id
-  reportId               String
-  concepto               String
-  cantidad               Int
-  precioUnitarioSnapshot Float
 }
 
 model TargetVenta {

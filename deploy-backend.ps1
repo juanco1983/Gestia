@@ -52,7 +52,6 @@ $ProdPackage = @{
         "@prisma/adapter-pg" = "^7.8.0"
         "@prisma/client" = "^7.8.0"
         "bcryptjs" = "^3.0.3"
-        "@aws-sdk/client-s3" = "^3.712.0"
         "dotenv" = "^17.2.3"
         "express" = "^4.21.2"
         "jsonwebtoken" = "^9.0.3"
@@ -61,7 +60,7 @@ $ProdPackage = @{
     }
 } | ConvertTo-Json -Depth 5
 [System.IO.File]::WriteAllText("$DeployDir/package.json", $ProdPackage, (New-Object System.Text.UTF8Encoding $false))
-[System.IO.File]::WriteAllText("$DeployDir/Procfile", "web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/server.cjs", (New-Object System.Text.UTF8Encoding $false))
+[System.IO.File]::WriteAllText("$DeployDir/Procfile", "web: npx prisma generate && npx prisma db push && node dist/server.cjs", (New-Object System.Text.UTF8Encoding $false))
 Copy-Item "prisma.config.js" "$DeployDir/prisma.config.js"
 if (Test-Path ".ebextensions") { Copy-Item -Recurse ".ebextensions" "$DeployDir/.ebextensions" }
 

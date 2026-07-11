@@ -41,15 +41,6 @@ export default function ClientesContratosView({
   const [activeTab, setActiveTab] = useState<'clientes' | 'contratos'>('clientes');
   const [searchQuery, setSearchQuery] = useState('');
   const [clientViewMode, setClientViewMode] = useState<'grid' | 'list'>('grid');
-
-  // FSM states
-  const [tarifario, setTarifario] = useState<any[]>([]);
-  const [equipos, setEquipos] = useState<any[]>([]);
-  const [montoAmpliacionInput, setMontoAmpliacionInput] = useState('');
-  const [nuevoConceptoTarifario, setNuevoConceptoTarifario] = useState('');
-  const [nuevoPrecioTarifario, setNuevoPrecioTarifario] = useState('');
-  const [nuevoEquipoModelo, setNuevoEquipoModelo] = useState('');
-  const [nuevoEquipoSerie, setNuevoEquipoSerie] = useState('');
   
   // Modal controllers
   const [showClientModal, setShowClientModal] = useState(false);
@@ -90,9 +81,7 @@ export default function ClientesContratosView({
     fecha_fin: '',
     estado: 'VIGENTE' as const,
     comercialId: '',
-    comentarios: '',
-    presupuesto_total_usd: '',
-    tarifa_hora_tecnico: ''
+    comentarios: ''
   });
 
   const [contratoViewMode, setContratoViewMode] = useState<'list' | 'grid'>('list');
@@ -202,23 +191,6 @@ export default function ClientesContratosView({
   const handleContratoClick = (contrato: Contrato) => {
     setSelectedContratoForView(contrato);
     setIsEditingContrato(false);
-    setMontoAmpliacionInput('');
-    setNuevoConceptoTarifario('');
-    setNuevoPrecioTarifario('');
-    setNuevoEquipoModelo('');
-    setNuevoEquipoSerie('');
-
-    // Fetch Tarifario and Equipos
-    fetch(`/api/contratos/${contrato.id}/tarifario`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setTarifario(data); })
-      .catch(err => console.error("Error cargando tarifario:", err));
-
-    fetch(`/api/contratos/${contrato.id}/equipos`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setEquipos(data); })
-      .catch(err => console.error("Error cargando equipos cubiertos:", err));
-
     setEditContratoForm({
       id: contrato.id,
       clientId: contrato.clientId || '',
@@ -274,7 +246,7 @@ export default function ClientesContratosView({
     const matchedClient = clients.find(c => c.id === contratoForm.clientId);
     const matchedComercial = users.find(u => u.id === contratoForm.comercialId);
 
-    const newContrato: any = {
+    const newContrato: Contrato = {
       id: `contrato_${Date.now()}`,
       clientId: contratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
@@ -286,12 +258,7 @@ export default function ClientesContratosView({
       estado: contratoForm.estado,
       comercialId: contratoForm.comercialId,
       comercial: matchedComercial ? matchedComercial.username : 'Asignado General',
-      comentarios: contratoForm.comentarios.trim() || '',
-      presupuesto_total_usd: contratoForm.presupuesto_total_usd ? parseFloat(contratoForm.presupuesto_total_usd) : undefined,
-      saldo_disponible_usd: contratoForm.presupuesto_total_usd ? parseFloat(contratoForm.presupuesto_total_usd) : undefined,
-      saldo_actual_contrato: contratoForm.presupuesto_total_usd ? parseFloat(contratoForm.presupuesto_total_usd) : undefined,
-      sobregiro: false,
-      tarifa_hora_tecnico: contratoForm.tarifa_hora_tecnico ? parseFloat(contratoForm.tarifa_hora_tecnico) : undefined
+      comentarios: contratoForm.comentarios.trim() || ''
     };
 
     onAddContrato(newContrato);
@@ -304,109 +271,9 @@ export default function ClientesContratosView({
       fecha_fin: '',
       estado: 'VIGENTE',
       comercialId: '',
-      comentarios: '',
-      presupuesto_total_usd: '',
-      tarifa_hora_tecnico: ''
+      comentarios: ''
     });
     setShowContratoModal(false);
-  };
-
-  const handleAgregarTarifa = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedContratoForView || !nuevoConceptoTarifario || !nuevoPrecioTarifario) return;
-
-    try {
-      const res = await fetch(`/api/contratos/${selectedContratoForView.id}/tarifario`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          concepto: nuevoConceptoTarifario.trim(),
-          precioUnitario: parseFloat(nuevoPrecioTarifario)
-        })
-      });
-      if (res.ok) {
-        const newItem = await res.json();
-        setTarifario([...tarifario, newItem]);
-        setNuevoConceptoTarifario('');
-        setNuevoPrecioTarifario('');
-      } else {
-        const errData = await res.json();
-        alert(`Error: ${errData.error || 'No se pudo agregar la tarifa'}`);
-      }
-    } catch (err: any) {
-      alert(`Error de red: ${err.message}`);
-    }
-  };
-
-  const handleAgregarEquipo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedContratoForView || !nuevoEquipoModelo || !nuevoEquipoSerie) return;
-
-    try {
-      const res = await fetch(`/api/contratos/${selectedContratoForView.id}/equipos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          equipoModelo: nuevoEquipoModelo.trim(),
-          serie: nuevoEquipoSerie.trim()
-        })
-      });
-      if (res.ok) {
-        const newItem = await res.json();
-        setEquipos([...equipos, newItem]);
-        setNuevoEquipoModelo('');
-        setNuevoEquipoSerie('');
-      } else {
-        const errData = await res.json();
-        alert(`Error: ${errData.error || 'No se pudo registrar el equipo'}`);
-      }
-    } catch (err: any) {
-      alert(`Error de red: ${err.message}`);
-    }
-  };
-
-  const handleAplicarAmpliacion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedContratoForView || !montoAmpliacionInput) return;
-
-    const monto = parseFloat(montoAmpliacionInput);
-    if (isNaN(monto) || monto <= 0) {
-      alert("Por favor ingrese un monto válido positivo");
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/contratos/${selectedContratoForView.id}/ampliaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoAmpliacion: monto })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        alert("Ampliación aplicada con éxito");
-        
-        // Actualizar contrato en la vista en tiempo real
-        const updatedContrato = {
-          ...selectedContratoForView,
-          saldo_disponible_usd: data.nuevoSaldo,
-          presupuesto_total_usd: data.nuevoPresupuesto,
-          saldo_actual_contrato: data.nuevoSaldo,
-          sobregiro: data.nuevoSaldo >= 0 ? false : selectedContratoForView.sobregiro
-        };
-        setSelectedContratoForView(updatedContrato);
-        
-        // Actualizar en la lista de contratos principal
-        if (onUpdateContrato) {
-          onUpdateContrato(updatedContrato);
-        }
-        setMontoAmpliacionInput('');
-      } else {
-        const errData = await res.json();
-        alert(`Error: ${errData.error || 'No se pudo aplicar la ampliación'}`);
-      }
-    } catch (err: any) {
-      alert(`Error de red: ${err.message}`);
-    }
   };
 
   return (
@@ -1075,28 +942,6 @@ export default function ClientesContratosView({
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Presupuesto Inicial (USD)</label>
-                  <input
-                    type="number"
-                    placeholder="Ej: 50000"
-                    value={contratoForm.presupuesto_total_usd}
-                    onChange={(e) => setContratoForm({ ...contratoForm, presupuesto_total_usd: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tarifa Hora Técnico (USD)</label>
-                  <input
-                    type="number"
-                    placeholder="Ej: 50"
-                    value={contratoForm.tarifa_hora_tecnico}
-                    onChange={(e) => setContratoForm({ ...contratoForm, tarifa_hora_tecnico: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Comentarios Adicionales</label>
                 <textarea
@@ -1338,7 +1183,7 @@ export default function ClientesContratosView({
       {/* MODAL DETALLE / EDICIÓN CONTRATO */}
       {selectedContratoForView && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100 my-8">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
                 <Briefcase size={16} className="text-[#00B594]" />
@@ -1441,152 +1286,6 @@ export default function ClientesContratosView({
                     })()}
                   </div>
                 )}
-
-                {/* Alerta de Sobregiro */}
-                {selectedContratoForView.sobregiro && (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                    <AlertCircle className="text-rose-500 shrink-0" size={16} />
-                    <span>¡Este contrato se encuentra en sobregiro presupuestal! Por favor aplique una ampliación de presupuesto.</span>
-                  </div>
-                )}
-
-                {/* Formulario de Ampliación de Saldo */}
-                <div className="pt-4 border-t border-slate-100 space-y-2">
-                  <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Aplicar Ampliación de Presupuesto</h5>
-                  <form onSubmit={handleAplicarAmpliacion} className="flex gap-2">
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      placeholder="Monto en USD (ej. 5000)"
-                      value={montoAmpliacionInput}
-                      onChange={(e) => setMontoAmpliacionInput(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] font-mono"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-[#00B594] hover:bg-[#009b7e] text-white text-[10px] font-black px-4 rounded-xl shadow-sm transition-colors cursor-pointer"
-                    >
-                      Ampliar Saldo
-                    </button>
-                  </form>
-                </div>
-
-                {/* Tarifario Contractual */}
-                <div className="pt-4 border-t border-slate-100 space-y-3">
-                  <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Tarifario Contractual</h5>
-                  
-                  <div className="max-h-36 overflow-y-auto border border-slate-150 rounded-xl">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-[10px] text-slate-400 font-bold uppercase font-mono">
-                          <th className="py-2 px-3">Concepto / Repuesto</th>
-                          <th className="py-2 px-3 text-right">Precio (USD)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tarifario.length === 0 ? (
-                          <tr>
-                            <td colSpan={2} className="py-3 px-3 text-center text-slate-400 font-medium italic">Sin tarifas configuradas</td>
-                          </tr>
-                        ) : (
-                          tarifario.map((t, idx) => (
-                            <tr key={t.id || idx} className="border-b border-slate-100 hover:bg-slate-50">
-                              <td className="py-2 px-3 font-semibold text-slate-700">{t.concepto}</td>
-                              <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">${t.precioUnitario.toFixed(2)}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <form onSubmit={handleAgregarTarifa} className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Concepto (ej. Hora Técnico)"
-                      value={nuevoConceptoTarifario}
-                      onChange={(e) => setNuevoConceptoTarifario(e.target.value)}
-                      className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-[#00B594]"
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        required
-                        step="0.01"
-                        min="0"
-                        placeholder="Precio (USD)"
-                        value={nuevoPrecioTarifario}
-                        onChange={(e) => setNuevoPrecioTarifario(e.target.value)}
-                        className="w-24 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-[#00B594] font-mono"
-                      />
-                      <button
-                        type="submit"
-                        className="bg-[#00B594] hover:bg-[#009b7e] text-white p-2 rounded-xl shrink-0 cursor-pointer flex items-center justify-center shadow-sm"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Cobertura de Equipos */}
-                <div className="pt-4 border-t border-slate-100 space-y-3">
-                  <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Equipos Cubiertos (Cobertura)</h5>
-                  
-                  <div className="max-h-36 overflow-y-auto border border-slate-150 rounded-xl">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-[10px] text-slate-400 font-bold uppercase font-mono">
-                          <th className="py-2 px-3">Modelo</th>
-                          <th className="py-2 px-3">Número de Serie</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {equipos.length === 0 ? (
-                          <tr>
-                            <td colSpan={2} className="py-3 px-3 text-center text-slate-400 font-medium italic">Sin cobertura de equipos registrada</td>
-                          </tr>
-                        ) : (
-                          equipos.map((eq, idx) => (
-                            <tr key={eq.id || idx} className="border-b border-slate-100 hover:bg-slate-50">
-                              <td className="py-2 px-3 font-semibold text-slate-700">{eq.equipoModelo}</td>
-                              <td className="py-2 px-3 font-mono text-slate-650">{eq.serie}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <form onSubmit={handleAgregarEquipo} className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Modelo (ej. UPS Vertiv)"
-                      value={nuevoEquipoModelo}
-                      onChange={(e) => setNuevoEquipoModelo(e.target.value)}
-                      className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-[#00B594]"
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        required
-                        placeholder="N/S (Serie)"
-                        value={nuevoEquipoSerie}
-                        onChange={(e) => setNuevoEquipoSerie(e.target.value)}
-                        className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-[#00B594]"
-                      />
-                      <button
-                        type="submit"
-                        className="bg-[#00B594] hover:bg-[#009b7e] text-white p-2 rounded-xl shrink-0 cursor-pointer flex items-center justify-center shadow-sm"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  </form>
-                </div>
 
                 <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
                   <button
