@@ -1,0 +1,123 @@
+name: "🚀 App Deploy (EB)"
+
+on:
+  push:
+    branches: [dev, main]
+    paths-ignore:
+      - 'infra/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: "us-east-1"
+  APP_NAME: "gestia-backend"
+  S3_BUCKET: "elasticbeanstalk-us-east-1-325580897755"
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Determinar ambiente EB
+        id: env
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "eb_env=gestia-backend-prod" >> $GITHUB_OUTPUT
+          else
+            echo "eb_env=gestia-backend-dev" >> $GITHUB_OUTPUT
+          fi
+          
+          # Generar un label único para la versión
+          VERSION_LABEL="v-$(date +'%Y%m%d-%H%M%S')-${GITHUB_SHA::7}"
+          echo "version_label=$VERSION_LABEL" >> $GITHUB_OUTPUT
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Prisma Generate
+        run: npx prisma generate
+
+      - name: Build Application (Frontend + Backend)
+        run: npm run build
+
+      - name: Prepare Deployment Package
+        run: |
+          mkdir eb-deploy-temp
+          mkdir eb-deploy-temp/prisma
+          
+          # Copiar archivos compilados
+          cp -r dist eb-deploy-temp/
+          rm -f eb-deploy-temp/dist/backend-deploy.zip || true
+          
+          # Copiar esquema y configuraciones
+          cp prisma/schema.prisma eb-deploy-temp/prisma/
+          cp prisma.config.js eb-deploy-temp/ || true
+          if [ -d ".ebextensions" ]; then cp -r .ebextensions eb-deploy-temp/; fi
+
+          # Generar package.json de producción
+          cat <<EOF > eb-deploy-temp/package.json
+          {
+            "name": "gestia-backend-prod",
+            "version": "1.0.0",
+            "private": true,
+            "type": "module",
+            "scripts": {
+              "start": "node dist/server.cjs"
+            },
+            "dependencies": {
+              "@google/genai": "^2.4.0",
+              "@prisma/adapter-pg": "^7.8.0",
+              "@prisma/client": "^7.8.0",
+              "bcryptjs": "^3.0.3",
+              "dotenv": "^17.2.3",
+              "express": "^4.21.2",
+              "jsonwebtoken": "^9.0.3",
+              "pg": "^8.22.0",
+              "prisma": "^7.8.0"
+            }
+          }
+          EOF
+
+          # Generar Procfile (maneja la migración de la DB en el startup de EC2)
+          echo "web: npx prisma generate && npx prisma db push && node dist/server.cjs" > eb-deploy-temp/Procfile
+
+          # Comprimir en formato ZIP
+          cd eb-deploy-temp
+          zip -r ../deploy.zip .
+          cd ..
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload Package to S3
+        run: |
+          aws s3 cp deploy.zip s3://${{ env.S3_BUCKET }}/${{ steps.env.outputs.version_label }}.zip
+
+      - name: Create EB Application Version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ env.APP_NAME }} \
+            --version-label ${{ steps.env.outputs.version_label }} \
+            --source-bundle S3Bucket=${{ env.S3_BUCKET }},S3Key=${{ steps.env.outputs.version_label }}.zip
+
+      - name: Update EB Environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name ${{ steps.env.outputs.eb_env }} \
+            --version-label ${{ steps.env.outputs.version_label }}
