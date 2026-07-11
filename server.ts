@@ -9,9 +9,73 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
+// AWS S3 client initialization
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || "gestia-dev-photos";
+
+// Helper to convert base64 image strings and upload to AWS S3
+async function uploadBase64ToS3(base64Str: string, otId: string, index: string | number): Promise<string> {
+  const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error("Formato Base64 inválido");
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  // Whitelist MIME types
+  const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw new Error(`Tipo MIME no permitido: ${mimeType}`);
+  }
+
+  const buffer = Buffer.from(base64Data, "base64");
+  
+  // Size limit: 8MB (8388608 bytes)
+  if (buffer.length > 8388608) {
+    throw new Error("La imagen excede el límite de tamaño de 8MB");
+  }
+
+  let extension = "jpg";
+  if (mimeType === "image/png") extension = "png";
+  else if (mimeType === "image/webp") extension = "webp";
+  else if (mimeType === "image/svg+xml") extension = "svg";
+
+  const cleanOtId = otId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const timestamp = Date.now();
+  const key = `reports/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: mimeType,
+    })
+  );
+
+  return `/api/photos/${key}`;
+}
+
+// Helper to delete objects from S3 on transaction rollback
+async function deleteFromS3(relativeUrl: string): Promise<void> {
+  try {
+    const key = relativeUrl.replace("/api/photos/", "");
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+    console.log(`[Rollback S3] Objeto eliminado: ${key}`);
+  } catch (err) {
+    console.error(`[Rollback S3 ERROR] No se pudo eliminar ${relativeUrl}:`, err);
+  }
+}
 let connectionString = `${process.env.DATABASE_URL}`;
 const isAWS = connectionString.includes("amazonaws.com");
 if (isAWS) {
@@ -391,19 +455,145 @@ app.get("/api/reports", async (req, res) => {
     res.status(500).json({ error: "Error" });
   }
 });
+async function processReportPhotos(report: any): Promise<{ report: any; uploadedUrls: string[] }> {
+  const uploadedUrls: string[] = [];
+  const clonedReport = JSON.parse(JSON.stringify(report));
+  const otId = clonedReport.otId || "UNKNOWN";
+
+  try {
+    if (Array.isArray(clonedReport.fotosLabeled)) {
+      for (let i = 0; i < clonedReport.fotosLabeled.length; i++) {
+        const item = clonedReport.fotosLabeled[i];
+        if (item && typeof item.base64 === "string" && item.base64.startsWith("data:image/")) {
+          const s3Url = await uploadBase64ToS3(item.base64, otId, i);
+          uploadedUrls.push(s3Url);
+          item.base64 = s3Url;
+        }
+      }
+    }
+
+    if (Array.isArray(clonedReport.fotos)) {
+      for (let i = 0; i < clonedReport.fotos.length; i++) {
+        const base64Str = clonedReport.fotos[i];
+        if (typeof base64Str === "string" && base64Str.startsWith("data:image/")) {
+          if (clonedReport.fotosLabeled && clonedReport.fotosLabeled[i] && clonedReport.fotosLabeled[i].base64.startsWith("/api/photos/")) {
+            clonedReport.fotos[i] = clonedReport.fotosLabeled[i].base64;
+          } else {
+            const s3Url = await uploadBase64ToS3(base64Str, otId, `flat-${i}`);
+            uploadedUrls.push(s3Url);
+            clonedReport.fotos[i] = s3Url;
+          }
+        }
+      }
+    }
+
+    if (typeof clonedReport.firmaCliente === "string" && clonedReport.firmaCliente.startsWith("data:image/")) {
+      const s3Url = await uploadBase64ToS3(clonedReport.firmaCliente, otId, "firma");
+      uploadedUrls.push(s3Url);
+      clonedReport.firmaCliente = s3Url;
+    }
+
+    return { report: clonedReport, uploadedUrls };
+  } catch (err) {
+    for (const url of uploadedUrls) {
+      await deleteFromS3(url);
+    }
+    throw err;
+  }
+}
 
 app.post("/api/reports", async (req, res) => {
+  let uploadedUrls: string[] = [];
   try {
-    const report = req.body;
-    const { otId, ...data } = report;
+    const reportBody = req.body;
+    const { otId, ...data } = reportBody;
+
+    if (!otId) {
+      return res.status(400).json({ error: "otId es obligatorio" });
+    }
+
+    // Process and upload photos to S3
+    const processed = await processReportPhotos(reportBody);
+    uploadedUrls = processed.uploadedUrls;
+    const finalReport = processed.report;
+    const { otId: finalOtId, ...cleanData } = finalReport;
+
     const saved = await prisma.technicalReport.upsert({
-      where: { otId: report.otId },
-      update: data,
-      create: report
+      where: { otId: finalOtId },
+      update: { ...cleanData, offlineDirty: false },
+      create: { ...finalReport, offlineDirty: false }
     });
+
     res.status(201).json(saved);
-  } catch (err) {
-    res.status(500).json({ error: "Error" });
+  } catch (err: any) {
+    console.error("Error al guardar reporte técnico:", err);
+    // Rollback uploads if DB save fails
+    for (const url of uploadedUrls) {
+      await deleteFromS3(url);
+    }
+    res.status(500).json({ error: err.message || "Error al procesar el reporte técnico" });
+  }
+});
+
+app.get("/api/photos/*", async (req: any, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const user = req.user;
+  const key = req.params[0];
+
+  // Validate path pattern
+  const pathRegex = /^reports\/OT-[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+
+  const otIdMatch = key.match(/^reports\/(OT-[\w-]+)\//);
+  if (!otIdMatch) {
+    return res.status(400).json({ error: "Formato de ruta inválido" });
+  }
+  const otId = otIdMatch[1];
+
+  try {
+    const ot = await prisma.oT.findUnique({
+      where: { id: otId }
+    });
+    if (!ot) {
+      return res.status(404).json({ error: "Orden de trabajo asociada no encontrada" });
+    }
+
+    const isAllowed = 
+      ["Administrador", "Ventas", "Supervisor"].includes(user.role) ||
+      (user.role === "Tecnico" && (ot.tecnicoTitularId === user.id || ot.tecnicoApoyoId === user.id)) ||
+      (user.role === "Cliente" && ot.clientId === user.clientId);
+
+    if (!isAllowed) {
+      return res.status(403).json({ error: "Acceso denegado a este recurso" });
+    }
+
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+
+    res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (err: any) {
+    if (err.name === "NoSuchKey") {
+      return res.status(404).json({ error: "Imagen no encontrada en S3" });
+    }
+    console.error("Error al obtener imagen de S3:", err);
+    res.status(500).json({ error: "Error al recuperar recurso" });
   }
 });
 
@@ -416,11 +606,22 @@ app.post("/api/sync", async (req, res) => {
     if (Array.isArray(reports)) {
       const cleanReports = reports.filter(r => r.otId !== 'OT-003' && r.id !== 'rpt_003');
       for (const sr of cleanReports) {
-        const { otId, ...data } = sr;
+        let reportToSave = sr;
+        let s3Failed = false;
+
+        try {
+          const processed = await processReportPhotos(sr);
+          reportToSave = processed.report;
+        } catch (s3Error) {
+          console.error(`Error processing S3 photos for report in sync (OT: ${sr.otId}):`, s3Error);
+          s3Failed = true;
+        }
+
+        const { otId, ...data } = reportToSave;
         await prisma.technicalReport.upsert({
           where: { otId },
-          update: { ...data, offlineDirty: false },
-          create: { ...sr, offlineDirty: false }
+          update: { ...data, offlineDirty: s3Failed },
+          create: { ...reportToSave, offlineDirty: s3Failed }
         });
         await prisma.oT.updateMany({
           where: { id: otId },
