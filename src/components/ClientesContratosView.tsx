@@ -165,7 +165,7 @@ export default function ClientesContratosView({
     );
   });
 
-  const handleClientSubmit = (e: React.FormEvent) => {
+  const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientForm.razonSocial || !clientForm.ruc) return;
 
@@ -192,21 +192,44 @@ export default function ClientesContratosView({
       contactos: clientForm.contactos || []
     };
 
-    onAddClient(newClient);
-    setClientForm({
-      id: '',
-      razonSocial: '',
-      ruc: '',
-      direccionSede: '',
-      distrito: '',
-      contactoNombre: '',
-      contactoEmail: '',
-      contactoTelefono: '',
-      pais: '',
-      provincia: '',
-      contactos: []
-    });
-    setShowClientModal(false);
+    try {
+      await onAddClient(newClient);
+      alert("🎉 ¡Cliente registrado con éxito en la base de datos!");
+      setClientForm({
+        id: '',
+        razonSocial: '',
+        ruc: '',
+        direccionSede: '',
+        distrito: '',
+        contactoNombre: '',
+        contactoEmail: '',
+        contactoTelefono: '',
+        pais: '',
+        provincia: '',
+        contactos: []
+      });
+      setShowClientModal(false);
+    } catch (err: any) {
+      if (err.message === "offline") {
+        alert("☁️ ¡Guardado en caché local! Se sincronizará automáticamente cuando vuelva la conexión.");
+        setClientForm({
+          id: '',
+          razonSocial: '',
+          ruc: '',
+          direccionSede: '',
+          distrito: '',
+          contactoNombre: '',
+          contactoEmail: '',
+          contactoTelefono: '',
+          pais: '',
+          provincia: '',
+          contactos: []
+        });
+        setShowClientModal(false);
+      } else {
+        alert("⚠️ No se pudo registrar el cliente: " + (err.message || "Error desconocido"));
+      }
+    }
   };
 
   const handleClientClick = (client: Client) => {
@@ -227,7 +250,7 @@ export default function ClientesContratosView({
     });
   };
 
-  const handleClientUpdateSubmit = (e: React.FormEvent) => {
+  const handleClientUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editClientForm.razonSocial || !editClientForm.ruc) return;
 
@@ -246,11 +269,24 @@ export default function ClientesContratosView({
     };
 
     if (onUpdateClient) {
-      onUpdateClient(updatedClient);
+      try {
+        await onUpdateClient(updatedClient);
+        alert("🎉 ¡Cliente actualizado con éxito en la base de datos!");
+        setSelectedClientForView(updatedClient);
+        setIsEditingClient(false);
+      } catch (err: any) {
+        if (err.message === "offline") {
+          alert("☁️ ¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.");
+          setSelectedClientForView(updatedClient);
+          setIsEditingClient(false);
+        } else {
+          alert("⚠️ No se pudo actualizar el cliente: " + (err.message || "Error desconocido"));
+        }
+      }
+    } else {
+      setSelectedClientForView(null);
+      setIsEditingClient(false);
     }
-    
-    setSelectedClientForView(null);
-    setIsEditingClient(false);
   };
 
   const handleContratoClick = (contrato: Contrato) => {
@@ -272,7 +308,7 @@ export default function ClientesContratosView({
     });
   };
 
-  const handleContratoUpdateSubmit = (e: React.FormEvent) => {
+  const handleContratoUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editContratoForm.clientId || !editContratoForm.ot_marco) return;
 
@@ -297,14 +333,27 @@ export default function ClientesContratosView({
     };
 
     if (onUpdateContrato) {
-      onUpdateContrato(updatedContrato);
+      try {
+        await onUpdateContrato(updatedContrato);
+        alert("🎉 ¡Contrato comercial actualizado con éxito!");
+        setSelectedContratoForView(updatedContrato);
+        setIsEditingContrato(false);
+      } catch (err: any) {
+        if (err.message === "offline") {
+          alert("☁️ ¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.");
+          setSelectedContratoForView(updatedContrato);
+          setIsEditingContrato(false);
+        } else {
+          alert("⚠️ No se pudo actualizar el contrato: " + (err.message || "Error desconocido"));
+        }
+      }
+    } else {
+      setSelectedContratoForView(null);
+      setIsEditingContrato(false);
     }
-
-    setSelectedContratoForView(null);
-    setIsEditingContrato(false);
   };
 
-  const handleContratoSubmit = (e: React.FormEvent) => {
+  const handleContratoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contratoForm.clientId || !contratoForm.ot_marco) return;
 
@@ -326,18 +375,38 @@ export default function ClientesContratosView({
       comentarios: contratoForm.comentarios.trim() || ''
     };
 
-    onAddContrato(newContrato);
-    setContratoForm({
-      clientId: '',
-      ot_marco: '',
-      tipo_servicio: 'CONTRATO',
-      tipo_contract: '',
-      fecha_inicio: '',
-      fecha_fin: '',
-      estado: 'VIGENTE',
-      comercialId: '',
-      comentarios: ''
-    });
+    try {
+      await onAddContrato(newContrato);
+      alert("🎉 ¡Contrato comercial registrado con éxito!");
+      setContratoForm({
+        clientId: '',
+        ot_marco: '',
+        tipo_servicio: 'CONTRATO',
+        tipo_contract: '',
+        fecha_inicio: '',
+        fecha_fin: '',
+        estado: 'VIGENTE',
+        comercialId: '',
+        comentarios: ''
+      });
+    } catch (err: any) {
+      if (err.message === "offline") {
+        alert("☁️ ¡Guardado en caché local! Se sincronizará automáticamente cuando vuelva la conexión.");
+        setContratoForm({
+          clientId: '',
+          ot_marco: '',
+          tipo_servicio: 'CONTRATO',
+          tipo_contract: '',
+          fecha_inicio: '',
+          fecha_fin: '',
+          estado: 'VIGENTE',
+          comercialId: '',
+          comentarios: ''
+        });
+      } else {
+        alert("⚠️ No se pudo registrar el contrato: " + (err.message || "Error desconocido"));
+      }
+    }
   };
 
   const renderAdditionalContactsForm = (
