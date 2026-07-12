@@ -425,8 +425,22 @@ export default function ClientesContratosView({
     const matchedClient = clients.find(c => c.id === contratoForm.clientId);
     const matchedComercial = users.find(u => u.id === contratoForm.comercialId);
 
+    const finalContractId = matchedClient ? generateContractCode(matchedClient, contratos) : `contrato_${Date.now()}`;
+
+    // Validate uniqueness
+    const isDuplicate = contratos.some(co => co.id.toUpperCase() === finalContractId.toUpperCase());
+    if (isDuplicate) {
+      setAlertState({
+        show: true,
+        type: 'error',
+        title: 'Código Duplicado',
+        message: `El código de contrato '${finalContractId}' ya existe en el sistema.`
+      });
+      return;
+    }
+
     const newContrato: Contrato = {
-      id: `contrato_${Date.now()}`,
+      id: finalContractId,
       clientId: contratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
       ot_marco: parseInt(contratoForm.ot_marco) || 0,
@@ -622,6 +636,40 @@ export default function ClientesContratosView({
     for (const c of existingClients) {
       if (c.id && c.id.startsWith(prefix + suffix)) {
         const parts = c.id.split(suffix);
+        const numPart = parseInt(parts[1], 10);
+        if (!isNaN(numPart) && numPart > maxSeq) {
+          maxSeq = numPart;
+        }
+      }
+    }
+
+    const nextSeq = String(maxSeq + 1).padStart(3, '0');
+    return `${prefix}${suffix}${nextSeq}`;
+  };
+
+  const generateContractCode = (client: Client, existingContratos: Contrato[]): string => {
+    if (!client) return "";
+    let prefix = "";
+    const match = client.id.match(/^([A-Z0-9]+)-CL-\d+$/i);
+    if (match) {
+      prefix = match[1].toUpperCase();
+    } else {
+      const cleanName = client.razonSocial.trim().toUpperCase().replace(/[^A-Z0-9\s-]/g, '');
+      const words = cleanName.split(/[\s-]+/).filter(w => w.length > 0);
+      if (words.length >= 2) {
+        prefix = words[0][0] + words[1][0];
+      } else if (words.length === 1 && words[0].length >= 2) {
+        prefix = words[0].substring(0, 2);
+      } else {
+        prefix = "CO";
+      }
+    }
+
+    const suffix = "-CO-";
+    let maxSeq = 0;
+    for (const co of existingContratos) {
+      if (co.id && co.id.startsWith(prefix + suffix)) {
+        const parts = co.id.split(suffix);
         const numPart = parseInt(parts[1], 10);
         if (!isNaN(numPart) && numPart > maxSeq) {
           maxSeq = numPart;
@@ -922,6 +970,7 @@ export default function ClientesContratosView({
                         <h3 className="text-xs font-black text-slate-800 line-clamp-1 group-hover:text-[#00B594] transition-colors">
                           {contrato.cliente}
                         </h3>
+                        <div className="text-[9px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-650 border border-slate-150">
                             {contrato.tipo_servicio}
@@ -1000,6 +1049,7 @@ export default function ClientesContratosView({
                     >
                       <td className="px-5 py-4">
                         <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{contrato.cliente}</div>
+                        <div className="text-[10px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
                       </td>
                       <td className="px-5 py-4">
                         <div className="text-xs font-extrabold font-mono text-slate-500">#{contrato.ot_marco}</div>
@@ -1256,6 +1306,22 @@ export default function ClientesContratosView({
                   ))}
                 </select>
               </div>
+              {(() => {
+                const selectedClientForContract = clients.find(c => c.id === contratoForm.clientId);
+                const generatedContractCode = selectedClientForContract ? generateContractCode(selectedClientForContract, contratos) : '';
+                return (
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código de Contrato</label>
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Se generará al seleccionar un cliente"
+                      value={generatedContractCode}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-500 font-mono focus:outline-none cursor-not-allowed"
+                    />
+                  </div>
+                );
+              })()}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">OT Marco Padre <span className="text-rose-500">*</span></label>
@@ -1667,9 +1733,14 @@ export default function ClientesContratosView({
               <div className="p-6 space-y-6">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block border border-slate-200">
-                      OT Marco #{selectedContratoForView.ot_marco}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block border border-slate-200">
+                        OT Marco #{selectedContratoForView.ot_marco}
+                      </span>
+                      <span className="text-[9px] font-extrabold uppercase font-mono bg-emerald-50 text-[#00B594] px-2 py-0.5 rounded-full inline-block border border-[#00B594]/20">
+                        Código: {selectedContratoForView.id}
+                      </span>
+                    </div>
                     <h4 className="text-sm font-black text-slate-800 mt-1">{selectedContratoForView.cliente}</h4>
                     <span className="text-[10px] text-slate-400 font-semibold inline-block mt-0.5">{selectedContratoForView.tipo_servicio} • {selectedContratoForView.tipo_contrato}</span>
                   </div>
@@ -1679,6 +1750,10 @@ export default function ClientesContratosView({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Código Contrato</span>
+                    <span className="text-xs text-[#00B594] font-mono font-bold block">{selectedContratoForView.id}</span>
+                  </div>
                   <div className="space-y-1">
                     <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Fecha de Inicio</span>
                     <span className="text-xs text-slate-700 font-bold block font-mono">{selectedContratoForView.fecha_inicio}</span>
