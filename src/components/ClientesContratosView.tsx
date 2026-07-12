@@ -50,6 +50,7 @@ export default function ClientesContratosView({
 
   // Client form state
   const [clientForm, setClientForm] = useState({
+    id: '',
     razonSocial: '',
     ruc: '',
     direccionSede: '',
@@ -168,8 +169,17 @@ export default function ClientesContratosView({
     e.preventDefault();
     if (!clientForm.razonSocial || !clientForm.ruc) return;
 
+    const finalId = clientForm.id.trim().toUpperCase() || generateClientCode(clientForm.razonSocial.trim(), clients);
+
+    // Validate uniqueness in frontend list
+    const isDuplicate = clients.some(c => c.id.toUpperCase() === finalId.toUpperCase());
+    if (isDuplicate) {
+      alert(`El código de cliente '${finalId}' ya existe en el sistema. Por favor, modifíquelo o asigne uno único.`);
+      return;
+    }
+
     const newClient: Client = {
-      id: `client_${Date.now()}`,
+      id: finalId,
       razonSocial: clientForm.razonSocial.trim(),
       ruc: clientForm.ruc.trim(),
       direccionSede: clientForm.direccionSede.trim() || 'No especificada',
@@ -184,6 +194,7 @@ export default function ClientesContratosView({
 
     onAddClient(newClient);
     setClientForm({
+      id: '',
       razonSocial: '',
       ruc: '',
       direccionSede: '',
@@ -425,6 +436,52 @@ export default function ClientesContratosView({
         )}
       </div>
     );
+  };
+
+  const generateClientCode = (name: string, existingClients: Client[]): string => {
+    if (!name) return "";
+    const cleanName = name.trim().toUpperCase().replace(/[^A-Z0-9\s-]/g, '');
+    const words = cleanName.split(/[\s-]+/).filter(w => w.length > 0);
+
+    let prefix = "";
+    if (words.length >= 2) {
+      prefix = words[0][0] + words[1][0];
+    } else if (words.length === 1) {
+      const word = words[0];
+      const prefixes = ["INTER", "TELE", "MICRO", "MEGA", "SUPER", "MINI", "MULTI", "COOP", "TRANS", "AUTO", "MUNI", "CORP"];
+      let foundPrefix = false;
+      for (const p of prefixes) {
+        if (word.startsWith(p) && word.length > p.length) {
+          prefix = p[0] + word[p.length];
+          foundPrefix = true;
+          break;
+        }
+      }
+      if (!foundPrefix) {
+        if (word.length >= 2) {
+          prefix = word.substring(0, 2);
+        } else {
+          prefix = word + "X";
+        }
+      }
+    } else {
+      prefix = "CL";
+    }
+
+    const suffix = "-CL-";
+    let maxSeq = 0;
+    for (const c of existingClients) {
+      if (c.id && c.id.startsWith(prefix + suffix)) {
+        const parts = c.id.split(suffix);
+        const numPart = parseInt(parts[1], 10);
+        if (!isNaN(numPart) && numPart > maxSeq) {
+          maxSeq = numPart;
+        }
+      }
+    }
+
+    const nextSeq = String(maxSeq + 1).padStart(3, '0');
+    return `${prefix}${suffix}${nextSeq}`;
   };
 
   return (
@@ -876,6 +933,17 @@ export default function ClientesContratosView({
               </button>
             </div>
             <form onSubmit={handleClientSubmit} className="p-6 space-y-4">
+               <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código de Cliente <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Auto-generado (Ej: CS-CL-001)"
+                  value={clientForm.id}
+                  onChange={(e) => setClientForm({ ...clientForm, id: e.target.value.toUpperCase() })}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594] font-mono"
+                />
+              </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Razón Social Legal <span className="text-rose-500">*</span></label>
                 <input
@@ -883,7 +951,11 @@ export default function ClientesContratosView({
                   required
                   placeholder="Ej: Repsol Data Center Perú S.A."
                   value={clientForm.razonSocial}
-                  onChange={(e) => setClientForm({ ...clientForm, razonSocial: e.target.value })}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const code = generateClientCode(name, clients);
+                    setClientForm({ ...clientForm, razonSocial: name, id: code });
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594]"
                 />
               </div>
@@ -1176,6 +1248,9 @@ export default function ClientesContratosView({
                     <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block mt-1 border border-slate-200">
                       RUC: {selectedClientForView.ruc}
                     </span>
+                    <span className="text-[9px] font-extrabold uppercase font-mono bg-emerald-50 text-[#00B594] px-2 py-0.5 rounded-full inline-block mt-1 ml-1.5 border border-[#00B594]/20">
+                      Código: {selectedClientForView.id}
+                    </span>
                   </div>
                   <div className="p-3 bg-[#E6F7F4] rounded-2xl border border-[#00B594]/10">
                     <Building2 size={24} className="text-[#00B594]" />
@@ -1279,6 +1354,15 @@ export default function ClientesContratosView({
             ) : (
               /* MODO EDICIÓN */
               <form onSubmit={handleClientUpdateSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código de Cliente</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={editClientForm.id}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-500 font-mono focus:outline-none cursor-not-allowed"
+                  />
+                </div>
                 <div>
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Razón Social Legal <span className="text-rose-500">*</span></label>
                   <input

@@ -303,11 +303,21 @@ app.get("/api/clients", async (req, res) => {
 app.post("/api/clients", async (req, res) => {
   try {
     const newClient = req.body;
-    if (!newClient.id) newClient.id = `client_${Date.now()}`;
+    if (!newClient.id) {
+      newClient.id = `client_${Date.now()}`;
+    } else {
+      const existing = await prisma.client.findUnique({
+        where: { id: newClient.id }
+      });
+      if (existing) {
+        return res.status(400).json({ error: `El código de cliente '${newClient.id}' ya está registrado.` });
+      }
+    }
     const created = await prisma.client.create({ data: newClient });
     res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ error: "Error" });
+  } catch (err: any) {
+    console.error("Error al crear cliente:", err);
+    res.status(500).json({ error: "Error al crear cliente" });
   }
 });
 
