@@ -43,6 +43,7 @@ export interface Client {
   contactoTelefono: string;
   pais?: string;
   provincia?: string;
+  contactos?: Array<{ nombre: string; email: string; telefono: string }>;
 }
 
 export interface Contract {

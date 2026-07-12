@@ -35,6 +35,7 @@ model Client {
   contactoTelefono String
   pais             String?
   provincia        String?
+  contactos        Json?
 }
 
 model Contract {
