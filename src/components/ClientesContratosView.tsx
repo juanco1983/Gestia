@@ -934,14 +934,13 @@ export default function ClientesContratosView({
             </div>
             <form onSubmit={handleClientSubmit} className="p-6 space-y-4">
                <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código de Cliente <span className="text-rose-500">*</span></label>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código de Cliente</label>
                 <input
                   type="text"
-                  required
-                  placeholder="Auto-generado (Ej: CS-CL-001)"
+                  disabled
+                  placeholder="Se generará al escribir la Razón Social"
                   value={clientForm.id}
-                  onChange={(e) => setClientForm({ ...clientForm, id: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594] font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-500 font-mono focus:outline-none cursor-not-allowed"
                 />
               </div>
               <div>
