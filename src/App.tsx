@@ -578,26 +578,47 @@ export default function App() {
 
   // DB Handlers
   const handleAddClient = async (newClient: Client) => {
-    setClients(prev => [...prev, newClient]);
     try {
-      await fetchWithAuth('/api/clients', {
+      const response = await fetchWithAuth('/api/clients', {
         method: 'POST',
         body: JSON.stringify(newClient)
       });
-    } catch (e) {
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error en el servidor al registrar el cliente.");
+      }
+      const created = await response.json();
+      setClients(prev => [...prev, created]);
+      return true;
+    } catch (e: any) {
+      if (e.message && (e.message.includes("registrar") || e.message.includes("servidor") || e.message.includes("Sesión expirada"))) {
+        throw e;
+      }
+      setClients(prev => [...prev, newClient]);
       console.warn("Cliente guardado en caché local:", e);
+      throw new Error("offline");
     }
   };
 
   const handleUpdateClient = async (updatedClient: Client) => {
-    setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
     try {
-      await fetchWithAuth(`/api/clients/${updatedClient.id}`, {
+      const response = await fetchWithAuth(`/api/clients/${updatedClient.id}`, {
         method: 'PUT',
         body: JSON.stringify(updatedClient)
       });
-    } catch (e) {
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar el cliente.");
+      }
+      setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+      return true;
+    } catch (e: any) {
+      if (e.message && (e.message.includes("actualizar") || e.message.includes("Sesión expirada"))) {
+        throw e;
+      }
+      setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
       console.warn("Error al actualizar cliente en el servidor (actualizado localmente):", e);
+      throw new Error("offline");
     }
   };
 
@@ -916,26 +937,47 @@ export default function App() {
   };
 
   const handleAddContratoComercial = async (newContrato: any) => {
-    setContratosNuevos(prev => [newContrato, ...prev]);
     try {
-      await fetchWithAuth('/api/contratos-comerciales', {
+      const response = await fetchWithAuth('/api/contratos-comerciales', {
         method: 'POST',
         body: JSON.stringify(newContrato)
       });
-    } catch (e) {
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al crear el contrato comercial.");
+      }
+      const created = await response.json();
+      setContratosNuevos(prev => [created, ...prev]);
+      return true;
+    } catch (e: any) {
+      if (e.message && (e.message.includes("crear") || e.message.includes("Sesión expirada"))) {
+        throw e;
+      }
+      setContratosNuevos(prev => [newContrato, ...prev]);
       console.warn("Contrato comercial guardado localmente:", e);
+      throw new Error("offline");
     }
   };
 
   const handleUpdateContratoComercial = async (updated: any) => {
-    setContratosNuevos(prev => prev.map(c => c.id === updated.id ? updated : c));
     try {
-      await fetchWithAuth(`/api/contratos-comerciales/${updated.id}`, {
+      const response = await fetchWithAuth(`/api/contratos-comerciales/${updated.id}`, {
         method: 'PUT',
         body: JSON.stringify(updated)
       });
-    } catch (e) {
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar el contrato comercial.");
+      }
+      setContratosNuevos(prev => prev.map(c => c.id === updated.id ? updated : c));
+      return true;
+    } catch (e: any) {
+      if (e.message && (e.message.includes("actualizar") || e.message.includes("Sesión expirada"))) {
+        throw e;
+      }
+      setContratosNuevos(prev => prev.map(c => c.id === updated.id ? updated : c));
       console.warn("Contrato comercial actualizado localmente:", e);
+      throw new Error("offline");
     }
   };
 
