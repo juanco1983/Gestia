@@ -78,6 +78,7 @@ jobs:
               "start": "node dist/server.cjs"
             },
             "dependencies": {
+              "@aws-sdk/client-s3": "^3.712.0",
               "@google/genai": "^2.4.0",
               "@prisma/adapter-pg": "^7.8.0",
               "@prisma/client": "^7.8.0",
