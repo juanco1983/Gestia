@@ -187,6 +187,10 @@ model ContratoNuevo {
   comentarios              String?
   presupuesto_total_usd    Float?
   saldo_disponible_usd     Float?
+  monto_original           Float?
+  moneda                   String?
+  pdf_url                  String?
+  ampliaciones             ContratoAmpliacion[]
 }
 
 model TargetVenta {
@@ -225,5 +229,22 @@ model Distrito {
   nombre      String
   provinciaId String
   provincia   Provincia   @relation(fields: [provinciaId], references: [id], onDelete: Cascade)
+}
+
+model TipoContrato {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model ContratoAmpliacion {
+  id             String        @id @default(uuid())
+  contratoId     String
+  contrato       ContratoNuevo @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  monto          Float
+  fecha_inicio   String
+  fecha_fin      String
+  adenda_pdf_url String?
+  comentarios    String?
+  creadoEn       DateTime      @default(now())
 }
 

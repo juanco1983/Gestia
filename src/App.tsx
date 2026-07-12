@@ -969,7 +969,8 @@ export default function App() {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.error || "Error al actualizar el contrato comercial.");
       }
-      setContratosNuevos(prev => prev.map(c => c.id === updated.id ? updated : c));
+      const serverUpdated = await response.json();
+      setContratosNuevos(prev => prev.map(c => c.id === updated.id ? serverUpdated : c));
       return true;
     } catch (e: any) {
       if (e.message && (e.message.includes("actualizar") || e.message.includes("Sesión expirada"))) {

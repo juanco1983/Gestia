@@ -62,6 +62,16 @@ export default function ClientesContratosView({
   const [showContratoModal, setShowContratoModal] = useState(false);
   const [selectedClientForView, setSelectedClientForView] = useState<Client | null>(null);
   const [isEditingClient, setIsEditingClient] = useState(false);
+  const [showAmpliacionModal, setShowAmpliacionModal] = useState(false);
+  const [ampliacionForm, setAmpliacionForm] = useState({
+    monto: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    comentarios: '',
+    adenda_pdf_base64: '',
+    adenda_pdf_name: ''
+  });
+  const [ampliacionLoading, setAmpliacionLoading] = useState(false);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
@@ -97,6 +107,14 @@ export default function ClientesContratosView({
   const [paises, setPaises] = useState<any[]>([]);
   const [provincias, setProvincias] = useState<any[]>([]);
   const [distritos, setDistritos] = useState<any[]>([]);
+  const [tipoContratos, setTipoContratos] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/tipo-contratos')
+      .then(r => r.json())
+      .then(data => setTipoContratos(data || []))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     fetch('/api/ubigeo/paises')
@@ -134,11 +152,16 @@ export default function ClientesContratosView({
     clientId: '',
     tipo_servicio: 'CONTRATO',
     tipo_contract: '',
+    tipo_contrato: '',
     fecha_inicio: '',
     fecha_fin: '',
     estado: 'VIGENTE' as const,
     comercialId: '',
-    comentarios: ''
+    comentarios: '',
+    monto_original: '',
+    moneda: 'USD',
+    pdf_base64: '',
+    pdf_name: ''
   });
 
   const [contratoViewMode, setContratoViewMode] = useState<'list' | 'grid'>('list');
@@ -150,13 +173,18 @@ export default function ClientesContratosView({
     clientId: '',
     tipo_servicio: 'CONTRATO',
     tipo_contract: '',
+    tipo_contrato: '',
     fecha_inicio: '',
     fecha_fin: '',
     estado: 'VIGENTE' as 'VIGENTE' | 'TERMINADO' | 'ANULADO',
     comercialId: '',
     comentarios: '',
     presupuesto_total_usd: '',
-    saldo_disponible_usd: ''
+    saldo_disponible_usd: '',
+    monto_original: '',
+    moneda: 'USD',
+    pdf_base64: '',
+    pdf_name: ''
   });
 
   // Filter lists based on search query
@@ -344,13 +372,18 @@ export default function ClientesContratosView({
       clientId: contrato.clientId || '',
       tipo_servicio: contrato.tipo_servicio,
       tipo_contract: contrato.tipo_contrato,
+      tipo_contrato: contrato.tipo_contrato,
       fecha_inicio: contrato.fecha_inicio,
       fecha_fin: contrato.fecha_fin,
       estado: contrato.estado,
       comercialId: contrato.comercialId || '',
       comentarios: contrato.comentarios,
       presupuesto_total_usd: contrato.presupuesto_total_usd !== undefined ? contrato.presupuesto_total_usd.toString() : '',
-      saldo_disponible_usd: contrato.saldo_disponible_usd !== undefined ? contrato.saldo_disponible_usd.toString() : ''
+      saldo_disponible_usd: contrato.saldo_disponible_usd !== undefined ? contrato.saldo_disponible_usd.toString() : '',
+      monto_original: contrato.monto_original !== undefined ? contrato.monto_original.toString() : '',
+      moneda: contrato.moneda || 'USD',
+      pdf_base64: '',
+      pdf_name: ''
     });
   };
 
@@ -366,7 +399,7 @@ export default function ClientesContratosView({
       clientId: editContratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
       tipo_servicio: editContratoForm.tipo_servicio,
-      tipo_contrato: editContratoForm.tipo_contract.trim() || 'Servicio General',
+      tipo_contrato: editContratoForm.tipo_contrato || editContratoForm.tipo_contract.trim() || 'SERVICIO',
       fecha_inicio: editContratoForm.fecha_inicio,
       fecha_fin: editContratoForm.fecha_fin,
       estado: editContratoForm.estado,
@@ -374,8 +407,15 @@ export default function ClientesContratosView({
       comercial: matchedComercial ? matchedComercial.username : 'Asignado General',
       comentarios: editContratoForm.comentarios.trim() || '',
       presupuesto_total_usd: editContratoForm.presupuesto_total_usd ? parseFloat(editContratoForm.presupuesto_total_usd) : undefined,
-      saldo_disponible_usd: editContratoForm.saldo_disponible_usd ? parseFloat(editContratoForm.saldo_disponible_usd) : undefined
-    };
+      saldo_disponible_usd: editContratoForm.saldo_disponible_usd ? parseFloat(editContratoForm.saldo_disponible_usd) : undefined,
+      monto_original: editContratoForm.monto_original ? parseFloat(editContratoForm.monto_original) : 0,
+      moneda: editContratoForm.moneda || 'USD',
+      // Pass base64 fields to allow upload handler to catch them
+      ...(editContratoForm.pdf_base64 ? {
+        pdf_base64: editContratoForm.pdf_base64,
+        pdf_name: editContratoForm.pdf_name
+      } : {})
+    } as any;
 
     if (onUpdateContrato) {
       try {
@@ -439,14 +479,21 @@ export default function ClientesContratosView({
       clientId: contratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
       tipo_servicio: contratoForm.tipo_servicio,
-      tipo_contrato: contratoForm.tipo_contract.trim() || 'Servicio General',
+      tipo_contrato: contratoForm.tipo_contrato || contratoForm.tipo_contract.trim() || 'SERVICIO',
       fecha_inicio: contratoForm.fecha_inicio || new Date().toISOString().split('T')[0],
       fecha_fin: contratoForm.fecha_fin || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
       estado: contratoForm.estado,
       comercialId: contratoForm.comercialId,
       comercial: matchedComercial ? matchedComercial.username : 'Asignado General',
-      comentarios: contratoForm.comentarios.trim() || ''
-    };
+      comentarios: contratoForm.tipo_contract.trim() ? `[${contratoForm.tipo_contract.trim()}] ${contratoForm.comentarios.trim()}` : contratoForm.comentarios.trim() || '',
+      monto_original: contratoForm.monto_original ? parseFloat(contratoForm.monto_original) : 0,
+      moneda: contratoForm.moneda || 'USD',
+      // Pass base64 fields to allow upload handler to catch them
+      ...(contratoForm.pdf_base64 ? {
+        pdf_base64: contratoForm.pdf_base64,
+        pdf_name: contratoForm.pdf_name
+      } : {})
+    } as any;
 
     try {
       await onAddContrato(newContrato);
@@ -460,11 +507,16 @@ export default function ClientesContratosView({
         clientId: '',
         tipo_servicio: 'CONTRATO',
         tipo_contract: '',
+        tipo_contrato: '',
         fecha_inicio: '',
         fecha_fin: '',
         estado: 'VIGENTE',
         comercialId: '',
-        comentarios: ''
+        comentarios: '',
+        monto_original: '',
+        moneda: 'USD',
+        pdf_base64: '',
+        pdf_name: ''
       });
     } catch (err: any) {
       if (err.message === "offline") {
@@ -478,11 +530,16 @@ export default function ClientesContratosView({
           clientId: '',
           tipo_servicio: 'CONTRATO',
           tipo_contract: '',
+          tipo_contrato: '',
           fecha_inicio: '',
           fecha_fin: '',
           estado: 'VIGENTE',
           comercialId: '',
-          comentarios: ''
+          comentarios: '',
+          monto_original: '',
+          moneda: 'USD',
+          pdf_base64: '',
+          pdf_name: ''
         });
       } else {
         setAlertState({
@@ -492,6 +549,110 @@ export default function ClientesContratosView({
           message: 'No se pudo registrar el contrato: ' + (err.message || "Error desconocido")
         });
       }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      setAlertState({
+        show: true,
+        type: 'error',
+        title: 'Archivo no Soportado',
+        message: 'Solo se admiten documentos en formato PDF.'
+      });
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      if (isEdit) {
+        setEditContratoForm(prev => ({
+          ...prev,
+          pdf_base64: base64,
+          pdf_name: file.name
+        }));
+      } else {
+        setContratoForm(prev => ({
+          ...prev,
+          pdf_base64: base64,
+          pdf_name: file.name
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdendaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setAlertState({
+        show: true,
+        type: 'error',
+        title: 'Archivo no Soportado',
+        message: 'Solo se admiten documentos en formato PDF.'
+      });
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setAmpliacionForm(prev => ({ ...prev, adenda_pdf_base64: base64, adenda_pdf_name: file.name }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAmpliacionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedContratoForView) return;
+    setAmpliacionLoading(true);
+    try {
+      const payload = {
+        monto: parseFloat(ampliacionForm.monto),
+        fecha_inicio: ampliacionForm.fecha_inicio,
+        fecha_fin: ampliacionForm.fecha_fin,
+        comentarios: ampliacionForm.comentarios,
+        ...(ampliacionForm.adenda_pdf_base64 ? {
+          adenda_pdf_base64: ampliacionForm.adenda_pdf_base64,
+          adenda_pdf_name: ampliacionForm.adenda_pdf_name
+        } : {})
+      };
+      const response = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Error al registrar ampliación.');
+      }
+      const updatedContrato = await response.json();
+      // Server returns the full updated contract including new ampliacion
+      setSelectedContratoForView(updatedContrato);
+      setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' });
+      setShowAmpliacionModal(false);
+      setAlertState({
+        show: true,
+        type: 'success',
+        title: 'Ampliación Registrada',
+        message: '¡La adenda fue registrada y el monto total fue actualizado.'
+      });
+    } catch (err: any) {
+      setAlertState({
+        show: true,
+        type: 'error',
+        title: 'Error al Registrar',
+        message: err.message || 'Error desconocido al registrar la ampliación.'
+      });
+    } finally {
+      setAmpliacionLoading(false);
     }
   };
 
@@ -1307,7 +1468,7 @@ export default function ClientesContratosView({
                   </div>
                 );
               })()}
-              <div>
+               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
                 <select
                   value={contratoForm.tipo_servicio}
@@ -1321,6 +1482,20 @@ export default function ClientesContratosView({
                 </select>
               </div>
               <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo de Contrato <span className="text-rose-500">*</span></label>
+                <select
+                  required
+                  value={contratoForm.tipo_contrato}
+                  onChange={(e) => setContratoForm({ ...contratoForm, tipo_contrato: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                >
+                  <option value="">Seleccione tipo...</option>
+                  {tipoContratos.map(t => (
+                    <option key={t.id} value={t.name}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Descripción del Alcance / Contrato <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
@@ -1329,6 +1504,41 @@ export default function ClientesContratosView({
                   value={contratoForm.tipo_contract}
                   onChange={(e) => setContratoForm({ ...contratoForm, tipo_contract: e.target.value })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto del Contrato <span className="text-rose-500">*</span></label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    min="0"
+                    placeholder="Ej: 5000.00"
+                    value={contratoForm.monto_original}
+                    onChange={(e) => setContratoForm({ ...contratoForm, monto_original: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Moneda</label>
+                  <select
+                    value={contratoForm.moneda}
+                    onChange={(e) => setContratoForm({ ...contratoForm, moneda: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                  >
+                    <option value="PEN">Soles (S/.)</option>
+                    <option value="USD">Dólares ($)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Contrato Digitalizado (PDF)</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleFileChange(e, false)}
+                  className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#E6F7F4] file:text-[#00B594] hover:file:bg-[#d0f2eb]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1753,6 +1963,113 @@ export default function ClientesContratosView({
                   </div>
                 </div>
 
+                {/* Monto del Contrato */}
+                {(selectedContratoForView.monto_original !== undefined && selectedContratoForView.monto_original !== null) && (() => {
+                  const moneda = selectedContratoForView.moneda || 'USD';
+                  const symbol = moneda === 'PEN' ? 'S/.' : '$';
+                  const sumaAdendas = (selectedContratoForView.ampliaciones || []).reduce((acc, a) => acc + a.monto, 0);
+                  const montoTotal = (selectedContratoForView.monto_original || 0) + sumaAdendas;
+                  return (
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                      <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Monto Contractual</h5>
+                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-100 grid grid-cols-3 gap-3 text-center">
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-mono">Monto Original</span>
+                          <span className="font-mono font-bold text-slate-700 text-xs">{symbol} {(selectedContratoForView.monto_original || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-mono">Adendas</span>
+                          <span className="font-mono font-bold text-amber-600 text-xs">{symbol} {sumaAdendas.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 block uppercase font-mono">Total Vigente</span>
+                          <span className="font-mono font-black text-[#00B594] text-sm">{symbol} {montoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* PDF del Contrato */}
+                {selectedContratoForView.pdf_url && (
+                  <div className="pt-4 border-t border-slate-100 space-y-2">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Documento del Contrato</h5>
+                    <a
+                      href={`/api/contracts/files/${encodeURIComponent(selectedContratoForView.pdf_url)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#E6F7F4] hover:bg-[#d0f2eb] text-[#00B594] font-bold rounded-xl text-xs transition-colors border border-[#00B594]/20"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      Ver Contrato Digitalizado (PDF)
+                    </a>
+                  </div>
+                )}
+
+                {/* Historial de Ampliaciones */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">
+                      Ampliaciones / Adendas
+                      {(selectedContratoForView.ampliaciones || []).length > 0 && (
+                        <span className="ml-2 bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono">
+                          {selectedContratoForView.ampliaciones!.length}
+                        </span>
+                      )}
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => setShowAmpliacionModal(true)}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Registrar Ampliación
+                    </button>
+                  </div>
+                  {(selectedContratoForView.ampliaciones || []).length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic font-mono">Sin ampliaciones registradas.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedContratoForView.ampliaciones!.map((amp, idx) => {
+                        const moneda = selectedContratoForView.moneda || 'USD';
+                        const symbol = moneda === 'PEN' ? 'S/.' : '$';
+                        return (
+                          <div key={amp.id} className="bg-amber-50 border border-amber-100 rounded-xl p-3 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-extrabold font-mono text-amber-700 uppercase">Adenda #{idx + 1}</span>
+                              <span className="font-mono font-black text-amber-700 text-xs">{symbol} {amp.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-mono uppercase">Inicio Adenda</span>
+                                <span className="text-[10px] text-slate-700 font-bold font-mono">{amp.fecha_inicio}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-mono uppercase">Fin Adenda</span>
+                                <span className="text-[10px] text-slate-700 font-bold font-mono">{amp.fecha_fin}</span>
+                              </div>
+                            </div>
+                            {amp.comentarios && (
+                              <p className="text-[10px] text-slate-500 italic">{amp.comentarios}</p>
+                            )}
+                            {amp.adenda_pdf_url && (
+                              <a
+                                href={`/api/contracts/files/${encodeURIComponent(amp.adenda_pdf_url)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-amber-700 hover:text-amber-900 font-bold underline underline-offset-2"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                Ver Adenda PDF
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Sección Financiera (Consumo / Saldo) */}
                 {selectedContratoForView.presupuesto_total_usd && (
                   <div className="pt-4 border-t border-slate-100 space-y-3">
@@ -1845,6 +2162,20 @@ export default function ClientesContratosView({
                   </select>
                 </div>
                 <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo de Contrato <span className="text-rose-500">*</span></label>
+                  <select
+                    required
+                    value={editContratoForm.tipo_contrato}
+                    onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_contrato: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                  >
+                    <option value="">Seleccione tipo...</option>
+                    {tipoContratos.map(t => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Descripción del Alcance / Contrato <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
@@ -1854,6 +2185,44 @@ export default function ClientesContratosView({
                     onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_contract: e.target.value })}
                     className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-sans"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto del Contrato <span className="text-rose-500">*</span></label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      min="0"
+                      placeholder="Ej: 5000.00"
+                      value={editContratoForm.monto_original}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, monto_original: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Moneda</label>
+                    <select
+                      value={editContratoForm.moneda}
+                      onChange={(e) => setEditContratoForm({ ...editContratoForm, moneda: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                    >
+                      <option value="PEN">Soles (S/.)</option>
+                      <option value="USD">Dólares ($)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Actualizar Contrato Digitalizado (PDF)</label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => handleFileChange(e, true)}
+                    className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#E6F7F4] file:text-[#00B594] hover:file:bg-[#d0f2eb]"
+                  />
+                  {editContratoForm.pdf_name && (
+                    <p className="text-[10px] text-emerald-600 font-semibold mt-1">Listo para subir: {editContratoForm.pdf_name}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1996,6 +2365,110 @@ export default function ClientesContratosView({
                 Entendido
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL AMPLIACIÓN */}
+      {showAmpliacionModal && selectedContratoForView && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
+              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Registrar Ampliación — Adenda
+              </h3>
+              <button onClick={() => setShowAmpliacionModal(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">&times;</button>
+            </div>
+            <form onSubmit={handleAmpliacionSubmit} className="p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+                <span className="text-[9px] font-extrabold uppercase font-mono text-amber-600">Contrato</span>
+                <p className="text-xs font-bold text-slate-800">{selectedContratoForView.id} — {selectedContratoForView.cliente}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto Adenda <span className="text-rose-500">*</span></label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="0.00"
+                    value={ampliacionForm.monto}
+                    onChange={(e) => setAmpliacionForm(p => ({ ...p, monto: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Moneda</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={selectedContratoForView.moneda === 'PEN' ? 'Soles (S/.)' : 'Dólares ($)'}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-500 font-mono cursor-not-allowed"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Inicio <span className="text-rose-500">*</span></label>
+                  <input
+                    type="date"
+                    required
+                    value={ampliacionForm.fecha_inicio}
+                    onChange={(e) => setAmpliacionForm(p => ({ ...p, fecha_inicio: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Fin <span className="text-rose-500">*</span></label>
+                  <input
+                    type="date"
+                    required
+                    value={ampliacionForm.fecha_fin}
+                    onChange={(e) => setAmpliacionForm(p => ({ ...p, fecha_fin: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Comentarios / Justificación</label>
+                <textarea
+                  rows={3}
+                  placeholder="Ej: Ampliación por servicios adicionales solicitados por el cliente..."
+                  value={ampliacionForm.comentarios}
+                  onChange={(e) => setAmpliacionForm(p => ({ ...p, comentarios: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none focus:border-amber-400 resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Adenda Digitalizada (PDF)</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleAdendaFileChange}
+                  className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100"
+                />
+                {ampliacionForm.adenda_pdf_name && (
+                  <p className="text-[10px] text-amber-600 font-semibold mt-1">Listo: {ampliacionForm.adenda_pdf_name}</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowAmpliacionModal(false); setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' }); }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={ampliacionLoading}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-black rounded-xl text-xs cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  {ampliacionLoading ? 'Guardando...' : 'Registrar Adenda'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

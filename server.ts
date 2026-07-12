@@ -791,9 +791,96 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
   }
 });
 
+async function uploadContractBase64ToS3(base64Str: string, contractId: string, filename: string): Promise<string> {
+  const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error("Formato Base64 inválido");
+  }
+
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  const allowedMimeTypes = ["application/pdf"];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw new Error(`Tipo de archivo no permitido: ${mimeType}. Solo se admiten archivos PDF.`);
+  }
+
+  const buffer = Buffer.from(base64Data, "base64");
+  
+  if (buffer.length > 15728640) {
+    throw new Error("El archivo excede el límite de tamaño de 15MB");
+  }
+
+  const cleanContractId = contractId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const timestamp = Date.now();
+  const cleanFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  const key = `contracts/${cleanContractId}/${timestamp}-${cleanFilename}`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: mimeType,
+    })
+  );
+
+  return `/api/contracts/files/${key}`;
+}
+
+app.get("/api/contracts/files/*", async (req: any, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const key = req.params[0];
+  const pathRegex = /^contracts\/[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  if (!isAllowed) {
+    return res.status(403).json({ error: "Acceso denegado a este recurso" });
+  }
+
+  try {
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+
+    res.setHeader("Content-Type", s3Response.ContentType || "application/pdf");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    if (s3Response.ContentType === "application/pdf") {
+      res.setHeader("Content-Disposition", `inline; filename="${key.split('/').pop()}"`);
+    }
+    res.setHeader("Cache-Control", "private, max-age=3600");
+
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (error: any) {
+    console.error("Error retrieving contract document:", error);
+    res.status(404).json({ error: "Archivo no encontrado" });
+  }
+});
+
+app.get("/api/tipo-contratos", async (req, res) => {
+  try {
+    res.json(await prisma.tipoContrato.findMany({ orderBy: { name: 'asc' } }));
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener tipos de contrato" });
+  }
+});
+
 app.get("/api/contratos-comerciales", async (req, res) => {
   try {
-    res.json(await prisma.contratoNuevo.findMany());
+    res.json(await prisma.contratoNuevo.findMany({ include: { ampliaciones: true } }));
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -801,24 +888,67 @@ app.get("/api/contratos-comerciales", async (req, res) => {
 
 app.post("/api/contratos-comerciales", async (req, res) => {
   try {
-    const newContrato = req.body;
+    const { pdf_base64, pdf_name, ...newContrato } = req.body;
     if (!newContrato.id) newContrato.id = `cont_${Date.now()}`;
-    const created = await prisma.contratoNuevo.create({ data: newContrato });
+    if (pdf_base64 && pdf_name) {
+      newContrato.pdf_url = await uploadContractBase64ToS3(pdf_base64, newContrato.id, pdf_name);
+    }
+    const created = await prisma.contratoNuevo.create({ 
+      data: newContrato,
+      include: { ampliaciones: true }
+    });
     res.status(201).json(created);
-  } catch (err) {
-    res.status(500).json({ error: "Error" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error" });
   }
 });
 
 app.put("/api/contratos-comerciales/:id", async (req, res) => {
   try {
+    const { pdf_base64, pdf_name, ...body } = req.body;
+    if (pdf_base64 && pdf_name) {
+      body.pdf_url = await uploadContractBase64ToS3(pdf_base64, req.params.id, pdf_name);
+    }
     const updated = await prisma.contratoNuevo.update({
       where: { id: req.params.id },
-      data: req.body
+      data: body,
+      include: { ampliaciones: true }
     });
     res.json(updated);
-  } catch (err) {
-    res.status(404).json({ error: "No encontrado" });
+  } catch (err: any) {
+    res.status(404).json({ error: err.message || "No encontrado" });
+  }
+});
+
+app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { monto, fecha_inicio, fecha_fin, comentarios, adenda_pdf_base64, adenda_pdf_name } = req.body;
+    
+    let adenda_pdf_url: string | undefined;
+    if (adenda_pdf_base64 && adenda_pdf_name) {
+      adenda_pdf_url = await uploadContractBase64ToS3(adenda_pdf_base64, id, adenda_pdf_name);
+    }
+
+    await prisma.contratoAmpliacion.create({
+      data: {
+        contratoId: id,
+        monto: parseFloat(monto) || 0,
+        fecha_inicio,
+        fecha_fin,
+        adenda_pdf_url,
+        comentarios
+      }
+    });
+
+    const updatedContract = await prisma.contratoNuevo.findUnique({
+      where: { id },
+      include: { ampliaciones: true }
+    });
+    res.status(201).json(updatedContract);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Error al agregar ampliación" });
   }
 });
 
@@ -852,7 +982,23 @@ app.post("/api/config", (req, res) => {
 // VITE OR STATIC FILE FALLBACK
 // ----------------------------------------
 
+async function seedTipoContratos() {
+  try {
+    const count = await prisma.tipoContrato.count();
+    if (count === 0) {
+      const types = ['ALQUILER', 'MANTENIMIENTO', 'SERVICIO', 'SUMINISTRO', 'EMERGENCIA', 'INSTALACION', 'REPARACION', 'PROYECTO', 'ANULADO'];
+      await prisma.tipoContrato.createMany({
+        data: types.map(t => ({ name: t }))
+      });
+      console.log("[Seeder] Sembrado de TipoContrato finalizado.");
+    }
+  } catch (err) {
+    console.error("Error al sembrar TipoContrato:", err);
+  }
+}
+
 async function startServer() {
+  await seedTipoContratos();
   if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "dev") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
