@@ -1381,7 +1381,7 @@ export default function VentasView({
                   >
                     <option value="">-- Sin Contrato --</option>
                     {contratosComerciales.filter(c => c.clientId === otForm.clientId).map(c => (
-                      <option key={c.id} value={c.id}>Contrato #{c.ot_marco} (Saldo: ${c.saldo_disponible_usd ?? c.presupuesto_total_usd ?? 0})</option>
+                      <option key={c.id} value={c.id}>Contrato: {c.id} - {c.tipo_contrato} (Saldo: ${c.saldo_disponible_usd ?? c.presupuesto_total_usd ?? 0})</option>
                     ))}
                   </select>
                 </div>
