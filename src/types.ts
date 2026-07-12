@@ -232,7 +232,6 @@ export interface Contrato {
   id: string;
   clientId?: string; // Phase 4: References Client.id
   cliente: string; // Replaced by clientId, kept for compatibility
-  ot_marco: number;
   tipo_servicio: string;
   tipo_contrato: string;
   fecha_inicio: string;

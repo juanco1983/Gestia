@@ -132,7 +132,6 @@ export default function ClientesContratosView({
   // Contrato form state
   const [contratoForm, setContratoForm] = useState({
     clientId: '',
-    ot_marco: '',
     tipo_servicio: 'CONTRATO',
     tipo_contract: '',
     fecha_inicio: '',
@@ -149,7 +148,6 @@ export default function ClientesContratosView({
   const [editContratoForm, setEditContratoForm] = useState({
     id: '',
     clientId: '',
-    ot_marco: '',
     tipo_servicio: 'CONTRATO',
     tipo_contract: '',
     fecha_inicio: '',
@@ -175,8 +173,7 @@ export default function ClientesContratosView({
     return (
       clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       co.tipo_contrato.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      comercialName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      co.ot_marco.toString().includes(searchQuery)
+      comercialName.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
@@ -345,7 +342,6 @@ export default function ClientesContratosView({
     setEditContratoForm({
       id: contrato.id,
       clientId: contrato.clientId || '',
-      ot_marco: contrato.ot_marco.toString(),
       tipo_servicio: contrato.tipo_servicio,
       tipo_contract: contrato.tipo_contrato,
       fecha_inicio: contrato.fecha_inicio,
@@ -360,7 +356,7 @@ export default function ClientesContratosView({
 
   const handleContratoUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editContratoForm.clientId || !editContratoForm.ot_marco) return;
+    if (!editContratoForm.clientId) return;
 
     const matchedClient = clients.find(c => c.id === editContratoForm.clientId);
     const matchedComercial = users.find(u => u.id === editContratoForm.comercialId);
@@ -369,7 +365,6 @@ export default function ClientesContratosView({
       id: editContratoForm.id,
       clientId: editContratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
-      ot_marco: parseInt(editContratoForm.ot_marco) || 0,
       tipo_servicio: editContratoForm.tipo_servicio,
       tipo_contrato: editContratoForm.tipo_contract.trim() || 'Servicio General',
       fecha_inicio: editContratoForm.fecha_inicio,
@@ -420,7 +415,7 @@ export default function ClientesContratosView({
 
   const handleContratoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contratoForm.clientId || !contratoForm.ot_marco) return;
+    if (!contratoForm.clientId) return;
 
     const matchedClient = clients.find(c => c.id === contratoForm.clientId);
     const matchedComercial = users.find(u => u.id === contratoForm.comercialId);
@@ -443,7 +438,6 @@ export default function ClientesContratosView({
       id: finalContractId,
       clientId: contratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
-      ot_marco: parseInt(contratoForm.ot_marco) || 0,
       tipo_servicio: contratoForm.tipo_servicio,
       tipo_contrato: contratoForm.tipo_contract.trim() || 'Servicio General',
       fecha_inicio: contratoForm.fecha_inicio || new Date().toISOString().split('T')[0],
@@ -464,7 +458,6 @@ export default function ClientesContratosView({
       });
       setContratoForm({
         clientId: '',
-        ot_marco: '',
         tipo_servicio: 'CONTRATO',
         tipo_contract: '',
         fecha_inicio: '',
@@ -483,7 +476,6 @@ export default function ClientesContratosView({
         });
         setContratoForm({
           clientId: '',
-          ot_marco: '',
           tipo_servicio: 'CONTRATO',
           tipo_contract: '',
           fecha_inicio: '',
@@ -962,9 +954,6 @@ export default function ClientesContratosView({
                         <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-[#E6F7F4] transition-colors">
                           <Briefcase size={18} className="text-[#00B594]" />
                         </div>
-                        <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-                          OT Marco #{contrato.ot_marco}
-                        </span>
                       </div>
                       <div>
                         <h3 className="text-xs font-black text-slate-800 line-clamp-1 group-hover:text-[#00B594] transition-colors">
@@ -1031,7 +1020,6 @@ export default function ClientesContratosView({
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-150">
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Cliente</th>
-                    <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">OT Marco</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Tipo Documento</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Descripción del Alcance</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Vigencia</th>
@@ -1050,9 +1038,6 @@ export default function ClientesContratosView({
                       <td className="px-5 py-4">
                         <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{contrato.cliente}</div>
                         <div className="text-[10px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="text-xs font-extrabold font-mono text-slate-500">#{contrato.ot_marco}</div>
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-[9px] font-black font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-150">
@@ -1322,31 +1307,18 @@ export default function ClientesContratosView({
                   </div>
                 );
               })()}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">OT Marco Padre <span className="text-rose-500">*</span></label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Ej: 1105"
-                    value={contratoForm.ot_marco}
-                    onChange={(e) => setContratoForm({ ...contratoForm, ot_marco: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
-                  <select
-                    value={contratoForm.tipo_servicio}
-                    onChange={(e) => setContratoForm({ ...contratoForm, tipo_servicio: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
-                  >
-                    <option value="CONTRATO">CONTRATO</option>
-                    <option value="OC">ORDEN COMPRA (OC)</option>
-                    <option value="OS">ORDEN SERVICIO (OS)</option>
-                    <option value="CORREO">CORREO / ACUERDO</option>
-                  </select>
-                </div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
+                <select
+                  value={contratoForm.tipo_servicio}
+                  onChange={(e) => setContratoForm({ ...contratoForm, tipo_servicio: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                >
+                  <option value="CONTRATO">CONTRATO</option>
+                  <option value="OC">ORDEN COMPRA (OC)</option>
+                  <option value="OS">ORDEN SERVICIO (OS)</option>
+                  <option value="CORREO">CORREO / ACUERDO</option>
+                </select>
               </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Descripción del Alcance / Contrato <span className="text-rose-500">*</span></label>
@@ -1539,7 +1511,7 @@ export default function ClientesContratosView({
                         {clientContracts.map(contract => (
                           <div key={contract.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-150 flex items-center justify-between text-xs">
                             <div>
-                              <div className="font-black text-slate-800">OT Marco: #{contract.ot_marco}</div>
+                              <div className="font-black text-slate-800">Contrato: {contract.id}</div>
                               <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{contract.tipo_contrato}</div>
                               <div className="text-[9px] text-slate-450 font-medium mt-0.5">Vence: {contract.fecha_fin}</div>
                             </div>
@@ -1734,9 +1706,6 @@ export default function ClientesContratosView({
                 <div className="flex justify-between items-start gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[9px] font-extrabold uppercase font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full inline-block border border-slate-200">
-                        OT Marco #{selectedContratoForView.ot_marco}
-                      </span>
                       <span className="text-[9px] font-extrabold uppercase font-mono bg-emerald-50 text-[#00B594] px-2 py-0.5 rounded-full inline-block border border-[#00B594]/20">
                         Código: {selectedContratoForView.id}
                       </span>
@@ -1862,31 +1831,18 @@ export default function ClientesContratosView({
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">OT Marco Padre <span className="text-rose-500">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      placeholder="Ej: 1105"
-                      value={editContratoForm.ot_marco}
-                      onChange={(e) => setEditContratoForm({ ...editContratoForm, ot_marco: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
-                    <select
-                      value={editContratoForm.tipo_servicio}
-                      onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_servicio: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
-                    >
-                      <option value="CONTRATO">CONTRATO</option>
-                      <option value="OC">ORDEN COMPRA (OC)</option>
-                      <option value="OS">ORDEN SERVICIO (OS)</option>
-                      <option value="CORREO">CORREO / ACUERDO</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
+                  <select
+                    value={editContratoForm.tipo_servicio}
+                    onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_servicio: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
+                  >
+                    <option value="CONTRATO">CONTRATO</option>
+                    <option value="OC">ORDEN COMPRA (OC)</option>
+                    <option value="OS">ORDEN SERVICIO (OS)</option>
+                    <option value="CORREO">CORREO / ACUERDO</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Descripción del Alcance / Contrato <span className="text-rose-500">*</span></label>
