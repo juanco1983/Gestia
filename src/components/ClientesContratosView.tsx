@@ -58,7 +58,8 @@ export default function ClientesContratosView({
     contactoEmail: '',
     contactoTelefono: '',
     pais: '',
-    provincia: ''
+    provincia: '',
+    contactos: [] as Array<{ nombre: string; email: string; telefono: string }>
   });
 
   // Client edit form state
@@ -72,7 +73,8 @@ export default function ClientesContratosView({
     contactoEmail: '',
     contactoTelefono: '',
     pais: '',
-    provincia: ''
+    provincia: '',
+    contactos: [] as Array<{ nombre: string; email: string; telefono: string }>
   });
 
   // Ubigeo state
@@ -176,7 +178,8 @@ export default function ClientesContratosView({
       contactoEmail: clientForm.contactoEmail.trim() || 'No especificado',
       contactoTelefono: clientForm.contactoTelefono.trim() || 'No especificado',
       pais: clientForm.pais || '',
-      provincia: clientForm.provincia || ''
+      provincia: clientForm.provincia || '',
+      contactos: clientForm.contactos || []
     };
 
     onAddClient(newClient);
@@ -189,7 +192,8 @@ export default function ClientesContratosView({
       contactoEmail: '',
       contactoTelefono: '',
       pais: '',
-      provincia: ''
+      provincia: '',
+      contactos: []
     });
     setShowClientModal(false);
   };
@@ -207,7 +211,8 @@ export default function ClientesContratosView({
       contactoEmail: client.contactoEmail,
       contactoTelefono: client.contactoTelefono,
       pais: client.pais || '',
-      provincia: client.provincia || ''
+      provincia: client.provincia || '',
+      contactos: client.contactos || []
     });
   };
 
@@ -225,7 +230,8 @@ export default function ClientesContratosView({
       contactoEmail: editClientForm.contactoEmail.trim() || 'No especificado',
       contactoTelefono: editClientForm.contactoTelefono.trim() || 'No especificado',
       pais: editClientForm.pais || '',
-      provincia: editClientForm.provincia || ''
+      provincia: editClientForm.provincia || '',
+      contactos: editClientForm.contactos || []
     };
 
     if (onUpdateClient) {
@@ -321,7 +327,104 @@ export default function ClientesContratosView({
       comercialId: '',
       comentarios: ''
     });
-    setShowContratoModal(false);
+  };
+
+  const renderAdditionalContactsForm = (
+    formState: any,
+    setFormState: React.Dispatch<React.SetStateAction<any>>
+  ) => {
+    const addContact = () => {
+      const current = formState.contactos || [];
+      setFormState({
+        ...formState,
+        contactos: [...current, { nombre: '', email: '', telefono: '' }]
+      });
+    };
+
+    const removeContact = (index: number) => {
+      const current = formState.contactos || [];
+      const updated = current.filter((_, i) => i !== index);
+      setFormState({
+        ...formState,
+        contactos: updated
+      });
+    };
+
+    const updateContact = (index: number, field: string, value: string) => {
+      const current = formState.contactos || [];
+      const updated = current.map((c, i) => i === index ? { ...c, [field]: value } : c);
+      setFormState({
+        ...formState,
+        contactos: updated
+      });
+    };
+
+    const contacts = formState.contactos || [];
+
+    return (
+      <div className="border-t border-slate-100 pt-3 space-y-3">
+        <div className="flex justify-between items-center">
+          <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Contactos Adicionales</h4>
+          <button
+            type="button"
+            onClick={addContact}
+            className="text-[9px] font-black uppercase text-[#00B594] hover:text-[#009b7e] cursor-pointer flex items-center gap-1 font-mono bg-transparent border-none outline-none"
+          >
+            + Agregar
+          </button>
+        </div>
+
+        {contacts.length === 0 ? (
+          <p className="text-[10px] text-slate-400 font-medium italic">No hay contactos adicionales definidos.</p>
+        ) : (
+          <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+            {contacts.map((contact: any, idx: number) => (
+              <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative">
+                <button
+                  type="button"
+                  onClick={() => removeContact(idx)}
+                  className="absolute top-2 right-2 text-slate-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none flex items-center justify-center p-1"
+                >
+                  <Trash2 size={12} />
+                </button>
+                <div>
+                  <label className="text-[8px] font-extrabold uppercase text-slate-400 block mb-0.5 font-mono">Nombre</label>
+                  <input
+                    type="text"
+                    placeholder="Nombre completo"
+                    value={contact.nombre}
+                    onChange={(e) => updateContact(idx, 'nombre', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[8px] font-extrabold uppercase text-slate-400 block mb-0.5 font-mono">Email</label>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={contact.email}
+                      onChange={(e) => updateContact(idx, 'email', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[8px] font-extrabold uppercase text-slate-400 block mb-0.5 font-mono">Teléfono</label>
+                    <input
+                      type="text"
+                      placeholder="Teléfono"
+                      value={contact.telefono}
+                      onChange={(e) => updateContact(idx, 'telefono', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none font-sans"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -878,6 +981,7 @@ export default function ClientesContratosView({
                   </div>
                 </div>
               </div>
+              {renderAdditionalContactsForm(clientForm, setClientForm)}
 
               <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
                 <button
@@ -1101,6 +1205,30 @@ export default function ClientesContratosView({
                   </div>
                 </div>
 
+                {selectedClientForView.contactos && selectedClientForView.contactos.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100 space-y-2">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Contactos Adicionales</h5>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                      {selectedClientForView.contactos.map((c, idx) => (
+                        <div key={idx} className="p-2.5 bg-slate-50 border border-slate-150 rounded-2xl grid grid-cols-2 gap-2 text-xs">
+                          <div className="col-span-full">
+                            <span className="text-[8px] font-extrabold uppercase text-slate-400 block font-mono">Nombre</span>
+                            <span className="font-bold text-slate-800">{c.nombre || 'Sin nombre'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-extrabold uppercase text-slate-400 block font-mono">Email</span>
+                            <span className="font-semibold text-slate-600 font-mono break-all">{c.email || 'Sin email'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-extrabold uppercase text-slate-400 block font-mono">Teléfono</span>
+                            <span className="font-bold text-slate-800 font-mono">{c.telefono || 'Sin teléfono'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Lista de Contratos Activos del Cliente */}
                 <div className="pt-4 border-t border-slate-100 space-y-3">
                   <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Contratos Asociados</h5>
@@ -1256,6 +1384,7 @@ export default function ClientesContratosView({
                     </div>
                   </div>
                 </div>
+                {renderAdditionalContactsForm(editClientForm, setEditClientForm)}
 
                 <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
                   <button
