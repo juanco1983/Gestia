@@ -13,7 +13,9 @@ import {
   TrendingUp,
   MapPin,
   CheckCircle2,
-  Trash2
+  Trash2,
+  XCircle,
+  Cloud
 } from 'lucide-react';
 import { Client, Contrato, User } from '../types';
 
@@ -41,6 +43,19 @@ export default function ClientesContratosView({
   const [activeTab, setActiveTab] = useState<'clientes' | 'contratos'>('clientes');
   const [searchQuery, setSearchQuery] = useState('');
   const [clientViewMode, setClientViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Custom Alert Modal Controller
+  const [alertState, setAlertState] = useState<{
+    show: boolean;
+    type: 'success' | 'error' | 'offline';
+    title: string;
+    message: string;
+  }>({
+    show: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   
   // Modal controllers
   const [showClientModal, setShowClientModal] = useState(false);
@@ -174,7 +189,12 @@ export default function ClientesContratosView({
     // Validate uniqueness in frontend list
     const isDuplicate = clients.some(c => c.id.toUpperCase() === finalId.toUpperCase());
     if (isDuplicate) {
-      alert(`El código de cliente '${finalId}' ya existe en el sistema. Por favor, modifíquelo o asigne uno único.`);
+      setAlertState({
+        show: true,
+        type: 'error',
+        title: 'Código Duplicado',
+        message: `El código de cliente '${finalId}' ya existe en el sistema. Por favor, asigne uno único.`
+      });
       return;
     }
 
@@ -194,7 +214,12 @@ export default function ClientesContratosView({
 
     try {
       await onAddClient(newClient);
-      alert("🎉 ¡Cliente registrado con éxito en la base de datos!");
+      setAlertState({
+        show: true,
+        type: 'success',
+        title: 'Registro Exitoso',
+        message: '¡El cliente ha sido registrado con éxito en la base de datos!'
+      });
       setClientForm({
         id: '',
         razonSocial: '',
@@ -211,7 +236,12 @@ export default function ClientesContratosView({
       setShowClientModal(false);
     } catch (err: any) {
       if (err.message === "offline") {
-        alert("☁️ ¡Guardado en caché local! Se sincronizará automáticamente cuando vuelva la conexión.");
+        setAlertState({
+          show: true,
+          type: 'offline',
+          title: 'Guardado Offline',
+          message: '¡El cliente se guardó en la caché local! Se sincronizará automáticamente cuando vuelva la conexión.'
+        });
         setClientForm({
           id: '',
           razonSocial: '',
@@ -227,7 +257,12 @@ export default function ClientesContratosView({
         });
         setShowClientModal(false);
       } else {
-        alert("⚠️ No se pudo registrar el cliente: " + (err.message || "Error desconocido"));
+        setAlertState({
+          show: true,
+          type: 'error',
+          title: 'Error de Registro',
+          message: 'No se pudo registrar el cliente: ' + (err.message || "Error desconocido")
+        });
       }
     }
   };
@@ -271,16 +306,31 @@ export default function ClientesContratosView({
     if (onUpdateClient) {
       try {
         await onUpdateClient(updatedClient);
-        alert("🎉 ¡Cliente actualizado con éxito en la base de datos!");
+        setAlertState({
+          show: true,
+          type: 'success',
+          title: 'Actualización Exitosa',
+          message: '¡El cliente ha sido actualizado con éxito en la base de datos!'
+        });
         setSelectedClientForView(updatedClient);
         setIsEditingClient(false);
       } catch (err: any) {
         if (err.message === "offline") {
-          alert("☁️ ¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.");
+          setAlertState({
+            show: true,
+            type: 'offline',
+            title: 'Actualización Local',
+            message: '¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.'
+          });
           setSelectedClientForView(updatedClient);
           setIsEditingClient(false);
         } else {
-          alert("⚠️ No se pudo actualizar el cliente: " + (err.message || "Error desconocido"));
+          setAlertState({
+            show: true,
+            type: 'error',
+            title: 'Error de Actualización',
+            message: 'No se pudo actualizar el cliente: ' + (err.message || "Error desconocido")
+          });
         }
       }
     } else {
@@ -335,16 +385,31 @@ export default function ClientesContratosView({
     if (onUpdateContrato) {
       try {
         await onUpdateContrato(updatedContrato);
-        alert("🎉 ¡Contrato comercial actualizado con éxito!");
+        setAlertState({
+          show: true,
+          type: 'success',
+          title: 'Actualización Exitosa',
+          message: '¡El contrato comercial ha sido actualizado con éxito!'
+        });
         setSelectedContratoForView(updatedContrato);
         setIsEditingContrato(false);
       } catch (err: any) {
         if (err.message === "offline") {
-          alert("☁️ ¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.");
+          setAlertState({
+            show: true,
+            type: 'offline',
+            title: 'Actualización Local',
+            message: '¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.'
+          });
           setSelectedContratoForView(updatedContrato);
           setIsEditingContrato(false);
         } else {
-          alert("⚠️ No se pudo actualizar el contrato: " + (err.message || "Error desconocido"));
+          setAlertState({
+            show: true,
+            type: 'error',
+            title: 'Error de Actualización',
+            message: 'No se pudo actualizar el contrato: ' + (err.message || "Error desconocido")
+          });
         }
       }
     } else {
@@ -377,7 +442,12 @@ export default function ClientesContratosView({
 
     try {
       await onAddContrato(newContrato);
-      alert("🎉 ¡Contrato comercial registrado con éxito!");
+      setAlertState({
+        show: true,
+        type: 'success',
+        title: 'Registro Exitoso',
+        message: '¡El contrato comercial ha sido registrado con éxito!'
+      });
       setContratoForm({
         clientId: '',
         ot_marco: '',
@@ -391,7 +461,12 @@ export default function ClientesContratosView({
       });
     } catch (err: any) {
       if (err.message === "offline") {
-        alert("☁️ ¡Guardado en caché local! Se sincronizará automáticamente cuando vuelva la conexión.");
+        setAlertState({
+          show: true,
+          type: 'offline',
+          title: 'Guardado Offline',
+          message: '¡El contrato se guardó en la caché local! Se sincronizará automáticamente cuando vuelva la conexión.'
+        });
         setContratoForm({
           clientId: '',
           ot_marco: '',
@@ -404,7 +479,12 @@ export default function ClientesContratosView({
           comentarios: ''
         });
       } else {
-        alert("⚠️ No se pudo registrar el contrato: " + (err.message || "Error desconocido"));
+        setAlertState({
+          show: true,
+          type: 'error',
+          title: 'Error de Registro',
+          message: 'No se pudo registrar el contrato: ' + (err.message || "Error desconocido")
+        });
       }
     }
   };
@@ -1844,6 +1924,47 @@ export default function ClientesContratosView({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* GESTIA CUSTOM NOTIFICATION ALERT MODAL */}
+      {alertState.show && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-notification-modal">
+          <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
+            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                alertState.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-500' :
+                alertState.type === 'error' ? 'bg-rose-50 border border-rose-100 text-rose-500' :
+                'bg-sky-50 border border-sky-100 text-sky-500'
+              }`}>
+                {alertState.type === 'success' ? <CheckCircle2 size={18} /> :
+                 alertState.type === 'error' ? <XCircle size={18} /> :
+                 <Cloud size={18} />}
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-850 text-sm">{alertState.title}</h4>
+                <p className="text-[9px] text-slate-400 uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              {alertState.message}
+            </p>
+
+            <div className="flex items-center justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setAlertState(prev => ({ ...prev, show: false }))}
+                className={`px-5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                  alertState.type === 'success' ? 'bg-[#00B594] hover:bg-[#009b7e] text-white shadow-sm' :
+                  alertState.type === 'error' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' :
+                  'bg-slate-800 hover:bg-slate-900 text-white shadow-sm'
+                }`}
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
