@@ -647,7 +647,8 @@ export default function ClientesContratosView({
                       <h3 className="text-xs font-black text-slate-800 line-clamp-2 group-hover:text-[#00B594] transition-colors" title={client.razonSocial}>
                         {client.razonSocial}
                       </h3>
-                      <div className="flex items-center gap-1 text-[10px] text-slate-450 font-bold mt-1.5">
+                      <div className="text-[9px] text-[#00B594] font-mono font-bold mt-0.5">{client.id}</div>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-450 font-bold mt-1">
                         <MapPin size={10} className="text-slate-400 shrink-0" />
                         <span>{client.direccionSede}, {client.distrito}</span>
                       </div>
@@ -703,6 +704,7 @@ export default function ClientesContratosView({
                     >
                       <td className="px-5 py-4">
                         <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{client.razonSocial}</div>
+                        <div className="text-[10px] text-[#00B594] font-mono font-bold mt-0.5">{client.id}</div>
                       </td>
                       <td className="px-5 py-4">
                         <span className="text-[9px] font-black font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-150">
@@ -1257,6 +1259,10 @@ export default function ClientesContratosView({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Código Cliente</span>
+                    <span className="text-xs text-[#00B594] font-mono font-bold block">{selectedClientForView.id}</span>
+                  </div>
                   <div className="space-y-1">
                     <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Dirección Sede</span>
                     <span className="text-xs text-slate-700 font-bold block">{selectedClientForView.direccionSede}</span>
