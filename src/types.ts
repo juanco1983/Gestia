@@ -228,6 +228,17 @@ export interface OrdenTrabajoLinea {
   listaParaFacturar?: boolean; // Phase 6: Indica si la OT ya fue firmada
 }
 
+export interface ContratoAmpliacion {
+  id: string;
+  contratoId: string;
+  monto: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  adenda_pdf_url?: string;
+  comentarios?: string;
+  creadoEn: string;
+}
+
 export interface Contrato {
   id: string;
   clientId?: string; // Phase 4: References Client.id
@@ -240,6 +251,10 @@ export interface Contrato {
   comercialId?: string; // Phase 4: References User.id (Ventas)
   comercial: string; // Replaced by comercialId, kept for compatibility
   comentarios: string;
+  monto_original?: number;
+  moneda?: string;
+  pdf_url?: string;
+  ampliaciones?: ContratoAmpliacion[];
   // Phase 3: Merged technical contract fields
   tipoEquipo?: EquipmentType;
   visitasAnuales?: number;
