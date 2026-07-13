@@ -29,6 +29,7 @@ export default function EquipoPickerModal({
   const [equiposAsignados, setEquiposAsignados] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // New equipment form
@@ -68,9 +69,12 @@ export default function EquipoPickerModal({
 
   async function handleAssign(equipoId: string) {
     setActionLoading(equipoId);
+    setErrorMsg('');
     try {
       await onAssign(equipoId);
       setEquiposLibres(prev => prev.filter(e => e.id !== equipoId));
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al asignar equipo');
     } finally {
       setActionLoading(null);
     }
@@ -79,12 +83,14 @@ export default function EquipoPickerModal({
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setActionLoading('new');
+    setErrorMsg('');
     try {
       let especificacionesParsed: Record<string, any> | undefined;
       if (newEquipo.especificaciones) {
         try { especificacionesParsed = JSON.parse(newEquipo.especificaciones); } catch { }
       }
       const created = await onCreate({
+        contratoId,
         tipo: newEquipo.tipo,
         marca: newEquipo.marca || undefined,
         modelo: newEquipo.modelo || undefined,
@@ -96,6 +102,8 @@ export default function EquipoPickerModal({
       });
       await onAssign(created.id);
       setNewEquipo({ tipo: 'UPS', marca: '', modelo: '', serie: '', potenciaKva: '', ubicacion: '', estado: 'Operativo', especificaciones: '' });
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al crear o asignar equipo');
     } finally {
       setActionLoading(null);
     }
@@ -127,6 +135,13 @@ export default function EquipoPickerModal({
             Crear Nuevo
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-2.5 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span className="text-[10px] text-rose-700 font-bold font-mono">{errorMsg}</span>
+          </div>
+        )}
 
         {tab === 'buscar' ? (
           <div className="p-6 space-y-3">
