@@ -1292,8 +1292,8 @@ export default function VentasView({
 
       {/* New Contract Modal */}
       {showContractModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden my-8">
             <div className="px-5 py-4 bg-slate-950 text-white flex justify-between items-center">
               <h3 className="text-sm font-bold font-mono flex items-center gap-2">
                 <FilePlus size={16} className="text-indigo-400" />
