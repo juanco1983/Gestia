@@ -247,6 +247,7 @@ export interface Contrato {
   tipo_contrato: string;
   fecha_inicio: string;
   fecha_fin: string;
+  fecha_fin_original?: string;
   estado: 'VIGENTE' | 'TERMINADO' | 'ANULADO';
   comercialId?: string; // Phase 4: References User.id (Ventas)
   comercial: string; // Replaced by comercialId, kept for compatibility

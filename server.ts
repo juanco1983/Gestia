@@ -930,6 +930,8 @@ app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
       adenda_pdf_url = await uploadContractBase64ToS3(adenda_pdf_base64, id, adenda_pdf_name);
     }
 
+    const contrato = await prisma.contratoNuevo.findUnique({ where: { id } });
+
     await prisma.contratoAmpliacion.create({
       data: {
         contratoId: id,
@@ -939,6 +941,15 @@ app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
         adenda_pdf_url,
         comentarios
       }
+    });
+
+    const updateData: any = { fecha_fin };
+    if (contrato && !contrato.fecha_fin_original) {
+      updateData.fecha_fin_original = contrato.fecha_fin;
+    }
+    await prisma.contratoNuevo.update({
+      where: { id },
+      data: updateData
     });
 
     const updatedContract = await prisma.contratoNuevo.findUnique({
