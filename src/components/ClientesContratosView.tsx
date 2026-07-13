@@ -1405,7 +1405,9 @@ export default function ClientesContratosView({
 
       {/* MODAL CLIENTE */}
       {showClientModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -1559,11 +1561,14 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
-      {/* MODAL CONTRATO */}
+    {/* MODAL CONTRATO */}
       {showContratoModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -1758,7 +1763,8 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* MODAL DETALLE / EDICIÓN CLIENTE */}
       {selectedClientForView && (
@@ -2584,7 +2590,9 @@ export default function ClientesContratosView({
       )}
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 z-[59] bg-slate-900/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -2723,7 +2731,8 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* MODAL EQUIPO PICKER */}
       {showEquipoPicker && selectedContratoForView && (
