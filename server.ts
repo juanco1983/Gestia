@@ -1018,14 +1018,29 @@ app.get("/api/equipos/:id", async (req: any, res) => {
 
 app.post("/api/equipos", async (req: any, res) => {
   try {
-    const { fotos, ...data } = req.body;
-      if (!data.codigo && data.contratoId) {
-        data.codigo = await generateEquipoCodigo(data.contratoId);
+    const body = req.body;
+    let codigo = body.codigo;
+    if (!codigo) {
+      codigo = body.contratoId
+        ? await generateEquipoCodigo(body.contratoId)
+        : `EQ-${Date.now()}`;
+    }
+    const created = await prisma.equipo.create({
+      data: {
+        codigo,
+        tipo: body.tipo,
+        marca: body.marca,
+        modelo: body.modelo,
+        serie: body.serie,
+        potenciaKva: body.potenciaKva ? parseFloat(body.potenciaKva) : undefined,
+        ubicacion: body.ubicacion,
+        estado: body.estado || 'Operativo',
+        clienteId: body.clienteId,
+        contratoId: body.contratoId,
+        fotos: body.fotos,
+        especificaciones: body.especificaciones
       }
-      if (!data.codigo) {
-        data.codigo = `EQ-${Date.now()}`;
-      }
-    const created = await prisma.equipo.create({ data });
+    });
     res.status(201).json(created);
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Error al crear equipo" });
