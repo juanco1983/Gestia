@@ -2067,6 +2067,65 @@ export default function ClientesContratosView({
                   </div>
                 </div>
 
+                {/* Equipos Asociados */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">
+                      Equipos Asociados
+                      {contratoEquipos.length > 0 && (
+                        <span className="ml-2 bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono">
+                          {contratoEquipos.length}
+                        </span>
+                      )}
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
+                      className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Asignar Equipo
+                    </button>
+                  </div>
+                  {equiposLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#00B594] border-t-transparent"></div>
+                    </div>
+                  ) : contratoEquipos.length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic font-mono">Sin equipos asociados a este contrato.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {contratoEquipos.map(eq => {
+                        const estadoColors: Record<string, string> = {
+                          'Operativo': 'bg-emerald-100 text-emerald-700',
+                          'En almacén': 'bg-blue-100 text-blue-700',
+                          'En reparación': 'bg-amber-100 text-amber-700',
+                          'En observación': 'bg-orange-100 text-orange-700',
+                          'Baja': 'bg-red-100 text-red-700',
+                        };
+                        return (
+                          <div
+                            key={eq.id}
+                            onClick={() => setSelectedEquipoId(eq.id)}
+                            className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-1.5 hover:bg-teal-100/50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-extrabold font-mono text-teal-700">{eq.codigo}</span>
+                                <span className={`text-[8px] font-extrabold uppercase font-mono px-1.5 py-0.5 rounded-full ${estadoColors[eq.estado] || 'bg-slate-100 text-slate-600'}`}>
+                                  {eq.estado}
+                                </span>
+                              </div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                            </div>
+                            <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Monto del Contrato */}
                 {(selectedContratoForView.monto_original !== undefined && selectedContratoForView.monto_original !== null) && (() => {
                   const moneda = selectedContratoForView.moneda || 'USD';
@@ -2177,65 +2236,6 @@ export default function ClientesContratosView({
                                 Ver Adenda PDF
                               </a>
                             )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Equipos Asociados */}
-                <div className="pt-4 border-t border-slate-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">
-                      Equipos Asociados
-                      {contratoEquipos.length > 0 && (
-                        <span className="ml-2 bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono">
-                          {contratoEquipos.length}
-                        </span>
-                      )}
-                    </h5>
-                    <button
-                      type="button"
-                      onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
-                      className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                      Asignar Equipo
-                    </button>
-                  </div>
-                  {equiposLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#00B594] border-t-transparent"></div>
-                    </div>
-                  ) : contratoEquipos.length === 0 ? (
-                    <p className="text-[10px] text-slate-400 italic font-mono">Sin equipos asociados a este contrato.</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {contratoEquipos.map(eq => {
-                        const estadoColors: Record<string, string> = {
-                          'Operativo': 'bg-emerald-100 text-emerald-700',
-                          'En almacén': 'bg-blue-100 text-blue-700',
-                          'En reparación': 'bg-amber-100 text-amber-700',
-                          'En observación': 'bg-orange-100 text-orange-700',
-                          'Baja': 'bg-red-100 text-red-700',
-                        };
-                        return (
-                          <div
-                            key={eq.id}
-                            onClick={() => setSelectedEquipoId(eq.id)}
-                            className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-1.5 hover:bg-teal-100/50 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-extrabold font-mono text-teal-700">{eq.codigo}</span>
-                                <span className={`text-[8px] font-extrabold uppercase font-mono px-1.5 py-0.5 rounded-full ${estadoColors[eq.estado] || 'bg-slate-100 text-slate-600'}`}>
-                                  {eq.estado}
-                                </span>
-                              </div>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
-                            </div>
-                            <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
                           </div>
                         );
                       })}

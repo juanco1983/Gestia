@@ -947,6 +947,31 @@ app.get("/api/equipos/files/*", async (req: any, res) => {
   }
 });
 
+// Helper to auto-generate equipment code: {contratoId}-E{seq} or {contratoId}-A{adendaNum}-E{seq}
+async function generateEquipoCodigo(contratoId: string, adendaCodigo?: string): Promise<string> {
+  let prefix: string;
+  if (adendaCodigo) {
+    const adendaMatch = adendaCodigo.match(/-A(\d+)$/);
+    const adendaSuffix = adendaMatch ? `-A${adendaMatch[1]}` : '';
+    prefix = `${contratoId}${adendaSuffix}`;
+  } else {
+    prefix = contratoId;
+  }
+  const existing = await prisma.equipo.findMany({
+    where: { codigo: { startsWith: `${prefix}-E` } },
+    select: { codigo: true }
+  });
+  let maxSeq = 0;
+  for (const e of existing) {
+    const match = e.codigo.match(/-E(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxSeq) maxSeq = num;
+    }
+  }
+  return `${prefix}-E${maxSeq + 1}`;
+}
+
 // ----- Equipment endpoints -----
 app.get("/api/equipos", async (req: any, res) => {
   try {
@@ -994,6 +1019,9 @@ app.get("/api/equipos/:id", async (req: any, res) => {
 app.post("/api/equipos", async (req: any, res) => {
   try {
     const { fotos, ...data } = req.body;
+    if (!data.codigo && data.contratoId) {
+      data.codigo = await generateEquipoCodigo(data.contratoId);
+    }
     const created = await prisma.equipo.create({ data });
     res.status(201).json(created);
   } catch (err: any) {
@@ -1032,9 +1060,18 @@ app.post("/api/contracts/:id/equipos", async (req: any, res) => {
       res.status(400).json({ error: "equipoId es requerido" });
       return;
     }
+    const existing = await prisma.equipo.findUnique({ where: { id: equipoId } });
+    if (!existing) {
+      res.status(404).json({ error: "Equipo no encontrado" });
+      return;
+    }
+    const updateData: any = { contratoId: id };
+    if (!existing.codigo) {
+      updateData.codigo = await generateEquipoCodigo(id);
+    }
     const updated = await prisma.equipo.update({
       where: { id: equipoId },
-      data: { contratoId: id }
+      data: updateData
     });
     res.json(updated);
   } catch (err: any) {
@@ -1059,22 +1096,29 @@ app.delete("/api/contracts/:contratoId/equipos/:equipoId", async (req: any, res)
 // Track equipment included in a specific adenda (ampliacion)
 app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req: any, res) => {
   try {
-    const { adendaId } = req.params;
+    const { contratoId, adendaId } = req.params;
     const { equipoId } = req.body;
     if (!equipoId) {
       res.status(400).json({ error: "equipoId es requerido" });
       return;
     }
+    // Get the adenda's codigo to build the equipment code prefix
+    const adenda = await prisma.contratoAmpliacion.findUnique({ where: { id: adendaId } });
+    if (!adenda) {
+      res.status(404).json({ error: "Adenda no encontrada" });
+      return;
+    }
     const pivote = await prisma.equipoAmpliacion.create({
-      data: {
-        adendaId,
-        equipoId
-      }
+      data: { adendaId, equipoId }
     });
-    // Also set the contratoId on the equipo if not already set
+    const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
+    const updateData: any = { contratoId };
+    if (!equipo?.codigo) {
+      updateData.codigo = await generateEquipoCodigo(contratoId, adenda.codigo);
+    }
     await prisma.equipo.update({
       where: { id: equipoId },
-      data: { contratoId: req.params.contratoId }
+      data: updateData
     });
     res.status(201).json(pivote);
   } catch (err: any) {

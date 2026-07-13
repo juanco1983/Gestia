@@ -33,7 +33,6 @@ export default function EquipoPickerModal({
 
   // New equipment form
   const [newEquipo, setNewEquipo] = useState({
-    codigo: '',
     tipo: 'UPS',
     marca: '',
     modelo: '',
@@ -86,7 +85,6 @@ export default function EquipoPickerModal({
         try { especificacionesParsed = JSON.parse(newEquipo.especificaciones); } catch { }
       }
       const created = await onCreate({
-        codigo: newEquipo.codigo,
         tipo: newEquipo.tipo,
         marca: newEquipo.marca || undefined,
         modelo: newEquipo.modelo || undefined,
@@ -97,7 +95,7 @@ export default function EquipoPickerModal({
         especificaciones: especificacionesParsed
       });
       await onAssign(created.id);
-      setNewEquipo({ codigo: '', tipo: 'UPS', marca: '', modelo: '', serie: '', potenciaKva: '', ubicacion: '', estado: 'Operativo', especificaciones: '' });
+      setNewEquipo({ tipo: 'UPS', marca: '', modelo: '', serie: '', potenciaKva: '', ubicacion: '', estado: 'Operativo', especificaciones: '' });
     } finally {
       setActionLoading(null);
     }
@@ -214,16 +212,6 @@ export default function EquipoPickerModal({
           /* Crear Nuevo Equipo */
           <form onSubmit={handleCreate} className="p-6 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código *</label>
-                <input
-                  required
-                  placeholder="Ej: UPS-CL001"
-                  value={newEquipo.codigo}
-                  onChange={(e) => setNewEquipo(p => ({ ...p, codigo: e.target.value.toUpperCase() }))}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] text-slate-800 focus:outline-none focus:border-[#00B594] font-mono"
-                />
-              </div>
               <div>
                 <label className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo *</label>
                 <select
