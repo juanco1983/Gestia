@@ -82,6 +82,7 @@ export default function ClientesContratosView({
   const [showEquipoPicker, setShowEquipoPicker] = useState(false);
   const [selectedEquipoId, setSelectedEquipoId] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<'contrato' | 'adenda'>('contrato');
+  const [adendaPendingEquipos, setAdendaPendingEquipos] = useState<Equipo[]>([]);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
@@ -636,6 +637,7 @@ export default function ClientesContratosView({
     setShowAmpliacionModal(false);
     setEditingAmpliacionId(null);
     setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' });
+    setAdendaPendingEquipos([]);
   };
 
   const handleAmpliacionSubmit = async (e: React.FormEvent) => {
@@ -671,6 +673,24 @@ export default function ClientesContratosView({
       // Server returns the full updated contract including new ampliacion
       setSelectedContratoForView(updatedContrato);
       onUpdateContrato?.(updatedContrato);
+
+      // After adenda created/updated, associate pending equipos
+      if (adendaPendingEquipos.length > 0) {
+        const adendaId = isEditing ? editingAmpliacionId! : updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
+        if (adendaId) {
+          await Promise.allSettled(
+            adendaPendingEquipos.map(eq =>
+              fetch(`/api/contracts/${selectedContratoForView!.id}/ampliaciones/${adendaId}/equipos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ equipoId: eq.id })
+              })
+            )
+          );
+        }
+        await loadEquipos(selectedContratoForView!.id);
+      }
+
       handleCloseAmpliacionModal();
       setAlertState({
         show: true,
@@ -744,6 +764,19 @@ export default function ClientesContratosView({
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error('Error al actualizar equipo');
+  }
+
+  async function handleAddEquipoToAdenda(equipoId: string) {
+    if (!selectedContratoForView) return;
+    // Assign to contrato first
+    const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipoId })
+    });
+    if (!res.ok) throw new Error('Error al asignar equipo a la adenda');
+    const equipo = await res.json();
+    setAdendaPendingEquipos(prev => [...prev, equipo]);
   }
 
   const renderAdditionalContactsForm = (
@@ -2625,6 +2658,44 @@ export default function ClientesContratosView({
                   <p className="text-[10px] text-amber-600 font-semibold mt-1">Listo: {ampliacionForm.adenda_pdf_name}</p>
                 )}
               </div>
+
+              {/* Equipos incorporados por esta adenda */}
+              <div className="pt-2 border-t border-amber-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-extrabold uppercase text-amber-600 font-mono">Equipos incorporados</span>
+                  <button
+                    type="button"
+                    onClick={() => { setPickerMode('adenda'); setShowEquipoPicker(true); }}
+                    className="px-2.5 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-lg text-[9px] cursor-pointer flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar Equipo
+                  </button>
+                </div>
+                {adendaPendingEquipos.length === 0 ? (
+                  <p className="text-[9px] text-slate-400 italic font-mono">Ningún equipo asignado a esta adenda aún.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {adendaPendingEquipos.map(eq => (
+                      <div key={eq.id} className="flex items-center justify-between bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[9px] font-bold text-teal-700 font-mono truncate">{eq.codigo || '—'}</span>
+                          <span className="text-[8px] text-slate-500 truncate">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAdendaPendingEquipos(prev => prev.filter(e => e.id !== eq.id))}
+                          className="text-rose-400 hover:text-rose-600 shrink-0 ml-2"
+                          title="Quitar"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   type="button"
@@ -2653,7 +2724,7 @@ export default function ClientesContratosView({
           mode={pickerMode}
           existingIds={contratoEquipos.map(e => e.id)}
           onClose={() => setShowEquipoPicker(false)}
-          onAssign={handleAsignarEquipo}
+          onAssign={pickerMode === 'adenda' ? handleAddEquipoToAdenda : handleAsignarEquipo}
           onCreate={handleCrearEquipo}
         />
       )}
