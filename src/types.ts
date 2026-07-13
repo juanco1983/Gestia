@@ -230,6 +230,7 @@ export interface OrdenTrabajoLinea {
 
 export interface ContratoAmpliacion {
   id: string;
+  codigo: string;
   contratoId: string;
   monto: number;
   fecha_inicio: string;

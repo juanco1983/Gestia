@@ -932,8 +932,12 @@ app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
 
     const contrato = await prisma.contratoNuevo.findUnique({ where: { id } });
 
+    const existingCount = await prisma.contratoAmpliacion.count({ where: { contratoId: id } });
+    const codigo = `${id}-A${existingCount + 1}`;
+
     await prisma.contratoAmpliacion.create({
       data: {
+        codigo,
         contratoId: id,
         monto: parseFloat(monto) || 0,
         fecha_inicio,
@@ -960,6 +964,55 @@ app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: err.message || "Error al agregar ampliación" });
+  }
+});
+
+app.put("/api/ampliaciones/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { monto, fecha_inicio, fecha_fin, comentarios, adenda_pdf_base64, adenda_pdf_name } = req.body;
+
+    const existing = await prisma.contratoAmpliacion.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Ampliación no encontrada" });
+      return;
+    }
+
+    const updateData: any = {};
+    if (monto !== undefined) updateData.monto = parseFloat(monto) || 0;
+    if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio;
+    if (fecha_fin !== undefined) updateData.fecha_fin = fecha_fin;
+    if (comentarios !== undefined) updateData.comentarios = comentarios;
+    if (adenda_pdf_base64 && adenda_pdf_name) {
+      updateData.adenda_pdf_url = await uploadContractBase64ToS3(adenda_pdf_base64, existing.contratoId, adenda_pdf_name);
+    }
+
+    await prisma.contratoAmpliacion.update({
+      where: { id },
+      data: updateData
+    });
+
+    // Update contract fecha_fin if this is the latest ampliacion
+    if (fecha_fin !== undefined) {
+      const allAmps = await prisma.contratoAmpliacion.findMany({
+        where: { contratoId: existing.contratoId },
+        orderBy: { creadoEn: 'desc' }
+      });
+      const contractFechaFin = allAmps.length > 0 ? allAmps[0].fecha_fin : fecha_fin;
+      await prisma.contratoNuevo.update({
+        where: { id: existing.contratoId },
+        data: { fecha_fin: contractFechaFin }
+      });
+    }
+
+    const updatedContract = await prisma.contratoNuevo.findUnique({
+      where: { id: existing.contratoId },
+      include: { ampliaciones: true }
+    });
+    res.json(updatedContract);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Error al actualizar ampliación" });
   }
 });
 
