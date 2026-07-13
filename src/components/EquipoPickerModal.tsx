@@ -255,6 +255,7 @@ export default function EquipoPickerModal({
               <div>
                 <span className="text-[8px] font-extrabold uppercase text-teal-500 font-mono">Código autogenerado</span>
                 <p className="text-xs font-mono font-bold text-teal-700">{nextCodigo}</p>
+                {mode === 'adenda' && <p className="text-[7px] text-teal-400 font-mono mt-0.5">Se actualizará con el nº de adenda al guardar</p>}
               </div>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00B594" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </div>

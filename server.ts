@@ -1113,7 +1113,10 @@ app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req
     });
     const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
     const updateData: any = { contratoId };
-    if (!equipo?.codigo) {
+    // Regenerate code with adenda prefix if it doesn't have it yet
+    const adendaMatch = adenda.codigo.match(/-A(\d+)$/);
+    const adendaSuffix = adendaMatch ? `-A${adendaMatch[1]}` : '';
+    if (!equipo?.codigo || !equipo.codigo.startsWith(`${contratoId}${adendaSuffix}-E`)) {
       updateData.codigo = await generateEquipoCodigo(contratoId, adenda.codigo);
     }
     await prisma.equipo.update({
