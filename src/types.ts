@@ -230,6 +230,7 @@ export interface OrdenTrabajoLinea {
 
 export interface ContratoAmpliacion {
   id: string;
+  codigo: string;
   contratoId: string;
   monto: number;
   fecha_inicio: string;
@@ -247,6 +248,7 @@ export interface Contrato {
   tipo_contrato: string;
   fecha_inicio: string;
   fecha_fin: string;
+  fecha_fin_original?: string;
   estado: 'VIGENTE' | 'TERMINADO' | 'ANULADO';
   comercialId?: string; // Phase 4: References User.id (Ventas)
   comercial: string; // Replaced by comercialId, kept for compatibility

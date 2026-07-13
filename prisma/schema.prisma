@@ -184,6 +184,7 @@ model ContratoNuevo {
   tipo_contrato            String?
   fecha_inicio             String?
   fecha_fin                String?
+  fecha_fin_original       String?
   comentarios              String?
   presupuesto_total_usd    Float?
   saldo_disponible_usd     Float?
@@ -238,6 +239,7 @@ model TipoContrato {
 
 model ContratoAmpliacion {
   id             String        @id @default(uuid())
+  codigo         String
   contratoId     String
   contrato       ContratoNuevo @relation(fields: [contratoId], references: [id], onDelete: Cascade)
   monto          Float

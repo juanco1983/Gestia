@@ -17,7 +17,7 @@ import {
   XCircle,
   Cloud
 } from 'lucide-react';
-import { Client, Contrato, User } from '../types';
+import { Client, Contrato, User, ContratoAmpliacion } from '../types';
 
 interface ClientesContratosViewProps {
   clients: Client[];
@@ -72,6 +72,7 @@ export default function ClientesContratosView({
     adenda_pdf_name: ''
   });
   const [ampliacionLoading, setAmpliacionLoading] = useState(false);
+  const [editingAmpliacionId, setEditingAmpliacionId] = useState<string | null>(null);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
@@ -608,10 +609,30 @@ export default function ClientesContratosView({
     reader.readAsDataURL(file);
   };
 
+  const handleEditAmpliacion = (amp: ContratoAmpliacion) => {
+    setAmpliacionForm({
+      monto: amp.monto.toString(),
+      fecha_inicio: amp.fecha_inicio,
+      fecha_fin: amp.fecha_fin,
+      comentarios: amp.comentarios || '',
+      adenda_pdf_base64: '',
+      adenda_pdf_name: ''
+    });
+    setEditingAmpliacionId(amp.id);
+    setShowAmpliacionModal(true);
+  };
+
+  const handleCloseAmpliacionModal = () => {
+    setShowAmpliacionModal(false);
+    setEditingAmpliacionId(null);
+    setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' });
+  };
+
   const handleAmpliacionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedContratoForView) return;
     setAmpliacionLoading(true);
+    const isEditing = !!editingAmpliacionId;
     try {
       const payload = {
         monto: parseFloat(ampliacionForm.monto),
@@ -623,33 +644,38 @@ export default function ClientesContratosView({
           adenda_pdf_name: ampliacionForm.adenda_pdf_name
         } : {})
       };
-      const response = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones`, {
-        method: 'POST',
+      const url = isEditing
+        ? `/api/ampliaciones/${editingAmpliacionId}`
+        : `/api/contracts/${selectedContratoForView.id}/ampliaciones`;
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Error al registrar ampliación.');
+        throw new Error(err.error || (isEditing ? 'Error al actualizar ampliación.' : 'Error al registrar ampliación.'));
       }
       const updatedContrato = await response.json();
       // Server returns the full updated contract including new ampliacion
       setSelectedContratoForView(updatedContrato);
-      setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' });
-      setShowAmpliacionModal(false);
+      onUpdateContrato?.(updatedContrato);
+      handleCloseAmpliacionModal();
       setAlertState({
         show: true,
         type: 'success',
-        title: 'Ampliación Registrada',
-        message: '¡La adenda fue registrada y el monto total fue actualizado.'
+        title: isEditing ? 'Ampliación Actualizada' : 'Ampliación Registrada',
+        message: isEditing
+          ? 'La adenda fue actualizada correctamente.'
+          : '¡La adenda fue registrada y el monto total fue actualizado.'
       });
     } catch (err: any) {
       setAlertState({
         show: true,
         type: 'error',
-        title: 'Error al Registrar',
-        message: err.message || 'Error desconocido al registrar la ampliación.'
+        title: isEditing ? 'Error al Actualizar' : 'Error al Registrar',
+        message: err.message || 'Error desconocido.'
       });
     } finally {
       setAmpliacionLoading(false);
@@ -1134,6 +1160,12 @@ export default function ClientesContratosView({
                           <span className="text-slate-400 font-semibold">Vigencia:</span>
                           <span className="text-slate-700 font-bold font-mono text-[9px]">{contrato.fecha_inicio} al {contrato.fecha_fin}</span>
                         </div>
+                        {contrato.fecha_fin_original && contrato.fecha_fin_original !== contrato.fecha_fin && (
+                          <div className="flex justify-between text-[9px]">
+                            <span className="text-slate-300 font-semibold">Original:</span>
+                            <span className="text-slate-400 font-mono">{contrato.fecha_fin_original}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-[10px]">
                           <span className="text-slate-400 font-semibold">Responsable:</span>
                           <span className="text-slate-700 font-bold">{contrato.comercial}</span>
@@ -1215,6 +1247,9 @@ export default function ClientesContratosView({
                         <div className="flex flex-col">
                           <span>Inicia: {contrato.fecha_inicio}</span>
                           <span>Termina: {contrato.fecha_fin}</span>
+                          {contrato.fecha_fin_original && contrato.fecha_fin_original !== contrato.fecha_fin && (
+                            <span className="text-[9px] text-slate-400">Original: {contrato.fecha_fin_original}</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-5 py-4">
@@ -1895,8 +1930,8 @@ export default function ClientesContratosView({
 
       {/* MODAL DETALLE / EDICIÓN CONTRATO */}
       {selectedContratoForView && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto pt-8">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
                 <Briefcase size={16} className="text-[#00B594]" />
@@ -1940,6 +1975,11 @@ export default function ClientesContratosView({
                   <div className="space-y-1">
                     <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Fecha de Fin</span>
                     <span className="text-xs text-slate-700 font-bold block font-mono">{selectedContratoForView.fecha_fin}</span>
+                    {selectedContratoForView.fecha_fin_original && selectedContratoForView.fecha_fin_original !== selectedContratoForView.fecha_fin && (
+                      <span className="text-[9px] text-slate-400 font-mono block">
+                        Original: {selectedContratoForView.fecha_fin_original}
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono">Responsable Comercial</span>
@@ -2036,8 +2076,18 @@ export default function ClientesContratosView({
                         return (
                           <div key={amp.id} className="bg-amber-50 border border-amber-100 rounded-xl p-3 space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-[9px] font-extrabold font-mono text-amber-700 uppercase">Adenda #{idx + 1}</span>
-                              <span className="font-mono font-black text-amber-700 text-xs">{symbol} {amp.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-[9px] font-extrabold font-mono text-amber-700 uppercase">{amp.codigo || `Adenda #${idx + 1}`}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditAmpliacion(amp)}
+                                  className="text-amber-500 hover:text-amber-700 cursor-pointer"
+                                  title="Editar adenda"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </button>
+                                <span className="font-mono font-black text-amber-700 text-xs">{symbol} {amp.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
@@ -2375,9 +2425,9 @@ export default function ClientesContratosView({
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                Registrar Ampliación — Adenda
+                {editingAmpliacionId ? 'Editar Ampliación — Adenda' : 'Registrar Ampliación — Adenda'}
               </h3>
-              <button onClick={() => setShowAmpliacionModal(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">&times;</button>
+              <button onClick={handleCloseAmpliacionModal} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">&times;</button>
             </div>
             <form onSubmit={handleAmpliacionSubmit} className="p-6 space-y-4">
               <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
@@ -2455,7 +2505,7 @@ export default function ClientesContratosView({
               <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => { setShowAmpliacionModal(false); setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' }); }}
+                  onClick={handleCloseAmpliacionModal}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
                 >
                   Cancelar
@@ -2465,7 +2515,7 @@ export default function ClientesContratosView({
                   disabled={ampliacionLoading}
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-black rounded-xl text-xs cursor-pointer shadow-sm flex items-center gap-1.5"
                 >
-                  {ampliacionLoading ? 'Guardando...' : 'Registrar Adenda'}
+                  {ampliacionLoading ? 'Guardando...' : editingAmpliacionId ? 'Actualizar Adenda' : 'Registrar Adenda'}
                 </button>
               </div>
             </form>
