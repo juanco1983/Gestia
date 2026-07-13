@@ -1019,9 +1019,12 @@ app.get("/api/equipos/:id", async (req: any, res) => {
 app.post("/api/equipos", async (req: any, res) => {
   try {
     const { fotos, ...data } = req.body;
-    if (!data.codigo && data.contratoId) {
-      data.codigo = await generateEquipoCodigo(data.contratoId);
-    }
+      if (!data.codigo && data.contratoId) {
+        data.codigo = await generateEquipoCodigo(data.contratoId);
+      }
+      if (!data.codigo) {
+        data.codigo = `EQ-${Date.now()}`;
+      }
     const created = await prisma.equipo.create({ data });
     res.status(201).json(created);
   } catch (err: any) {

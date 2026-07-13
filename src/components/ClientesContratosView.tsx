@@ -733,7 +733,10 @@ export default function ClientesContratosView({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ equipoId })
     });
-    if (!res.ok) throw new Error('Error al asignar equipo');
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al asignar equipo');
+    }
     await loadEquipos(selectedContratoForView.id);
   }
 
@@ -743,7 +746,10 @@ export default function ClientesContratosView({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Error al crear equipo');
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al crear equipo');
+    }
     return res.json();
   }
 
@@ -768,13 +774,15 @@ export default function ClientesContratosView({
 
   async function handleAddEquipoToAdenda(equipoId: string) {
     if (!selectedContratoForView) return;
-    // Assign to contrato first
     const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ equipoId })
     });
-    if (!res.ok) throw new Error('Error al asignar equipo a la adenda');
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al asignar equipo a la adenda');
+    }
     const equipo = await res.json();
     setAdendaPendingEquipos(prev => [...prev, equipo]);
   }
