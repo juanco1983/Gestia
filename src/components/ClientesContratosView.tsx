@@ -111,9 +111,9 @@ export default function ClientesContratosView({
 
   useEffect(() => {
     fetch('/api/tipo-contratos')
-      .then(r => r.json())
-      .then(data => setTipoContratos(data || []))
-      .catch(console.error);
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setTipoContratos(Array.isArray(data) ? data : []))
+      .catch(() => setTipoContratos([]));
   }, []);
 
   useEffect(() => {
