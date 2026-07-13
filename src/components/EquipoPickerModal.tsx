@@ -30,6 +30,7 @@ export default function EquipoPickerModal({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [nextCodigo, setNextCodigo] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // New equipment form
@@ -50,6 +51,30 @@ export default function EquipoPickerModal({
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [tab]);
+
+  useEffect(() => {
+    if (tab === 'crear') {
+      computeNextCodigo();
+    }
+  }, [tab]);
+
+  async function computeNextCodigo() {
+    try {
+      const res = await fetch(`/api/equipos?contratoId=${encodeURIComponent(contratoId)}`);
+      const equipos = await res.json();
+      let maxSeq = 0;
+      for (const eq of equipos) {
+        const m = eq.codigo?.match(/-E(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxSeq) maxSeq = n;
+        }
+      }
+      setNextCodigo(`${contratoId}-E${maxSeq + 1}`);
+    } catch {
+      setNextCodigo(`${contratoId}-E1`);
+    }
+  }
 
   async function loadEquipos() {
     setLoading(true);
@@ -226,6 +251,13 @@ export default function EquipoPickerModal({
         ) : (
           /* Crear Nuevo Equipo */
           <form onSubmit={handleCreate} className="p-6 space-y-3">
+            <div className="bg-teal-50 border border-teal-100 rounded-xl px-3.5 py-2.5 flex items-center justify-between">
+              <div>
+                <span className="text-[8px] font-extrabold uppercase text-teal-500 font-mono">Código autogenerado</span>
+                <p className="text-xs font-mono font-bold text-teal-700">{nextCodigo}</p>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00B594" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo *</label>
