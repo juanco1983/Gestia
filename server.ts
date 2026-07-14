@@ -367,6 +367,15 @@ app.post("/api/ots", async (req, res) => {
   try {
     const { contratoId, costo_estimado_usd, ...otData } = req.body;
 
+    // Auto-derive tipoEquipo and potenciaKva from Equipo if equipoId is set
+    if (otData.equipoId) {
+      const equipo = await prisma.equipo.findUnique({ where: { id: otData.equipoId } });
+      if (equipo) {
+        if (!otData.tipoEquipo) otData.tipoEquipo = equipo.tipo;
+        if (!otData.potenciaKva) otData.potenciaKva = equipo.potenciaKva;
+      }
+    }
+
     if (contratoId && costo_estimado_usd) {
       const contrato = await prisma.contratoNuevo.findUnique({
         where: { id: contratoId }
@@ -828,6 +837,39 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
   return `/api/contracts/files/${key}`;
 }
 
+// Helper to upload equipment photos (images) to S3 under equipo/ prefix
+async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index: string | number): Promise<string> {
+  const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error("Formato Base64 inválido");
+  }
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+  const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp"];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw new Error(`Tipo MIME no permitido: ${mimeType}`);
+  }
+  const buffer = Buffer.from(base64Data, "base64");
+  if (buffer.length > 8388608) {
+    throw new Error("La imagen excede el límite de tamaño de 8MB");
+  }
+  let extension = "jpg";
+  if (mimeType === "image/png") extension = "png";
+  else if (mimeType === "image/webp") extension = "webp";
+  const cleanEquipoId = equipoId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const timestamp = Date.now();
+  const key = `equipo/${cleanEquipoId}/${timestamp}-${index}.${extension}`;
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: mimeType,
+    })
+  );
+  return `/api/equipos/files/${key}`;
+}
+
 app.get("/api/contracts/files/*", async (req: any, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "No autorizado" });
@@ -867,6 +909,241 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
   } catch (error: any) {
     console.error("Error retrieving contract document:", error);
     res.status(404).json({ error: "Archivo no encontrado" });
+  }
+});
+
+// ----- Secure file serving for equipment photos -----
+app.get("/api/equipos/files/*", async (req: any, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+  const key = req.params[0];
+  const pathRegex = /^equipo\/[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  if (!isAllowed) {
+    return res.status(403).json({ error: "Acceso denegado a este recurso" });
+  }
+  try {
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+    res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (error: any) {
+    console.error("Error retrieving equipment photo:", error);
+    res.status(404).json({ error: "Archivo no encontrado" });
+  }
+});
+
+// Helper to auto-generate equipment code: {contratoId}-E{seq} or {contratoId}-A{adendaNum}-E{seq}
+async function generateEquipoCodigo(contratoId: string, adendaCodigo?: string): Promise<string> {
+  let prefix: string;
+  if (adendaCodigo) {
+    const adendaMatch = adendaCodigo.match(/-A(\d+)$/);
+    const adendaSuffix = adendaMatch ? `-A${adendaMatch[1]}` : '';
+    prefix = `${contratoId}${adendaSuffix}`;
+  } else {
+    prefix = contratoId;
+  }
+  const existing = await prisma.equipo.findMany({
+    where: { codigo: { startsWith: `${prefix}-E` } },
+    select: { codigo: true }
+  });
+  let maxSeq = 0;
+  for (const e of existing) {
+    const match = e.codigo.match(/-E(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxSeq) maxSeq = num;
+    }
+  }
+  return `${prefix}-E${maxSeq + 1}`;
+}
+
+// ----- Equipment endpoints -----
+app.get("/api/equipos", async (req: any, res) => {
+  try {
+    const { contratoId, clienteId, estado, tipo, q } = req.query;
+    const where: any = {};
+    if (contratoId) where.contratoId = contratoId;
+    if (clienteId) where.clienteId = clienteId;
+    if (estado) where.estado = estado;
+    if (tipo) where.tipo = tipo;
+    if (q) {
+      where.OR = [
+        { codigo: { contains: q, mode: 'insensitive' } },
+        { serie: { contains: q, mode: 'insensitive' } },
+        { marca: { contains: q, mode: 'insensitive' } },
+        { modelo: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    const equipos = await prisma.equipo.findMany({
+      where,
+      orderBy: { creadoEn: 'desc' },
+      include: { adensasOrigen: true }
+    });
+    res.json(equipos);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener equipos" });
+  }
+});
+
+app.get("/api/equipos/:id", async (req: any, res) => {
+  try {
+    const equipo = await prisma.equipo.findUnique({
+      where: { id: req.params.id },
+      include: { adensasOrigen: true }
+    });
+    if (!equipo) {
+      res.status(404).json({ error: "Equipo no encontrado" });
+      return;
+    }
+    res.json(equipo);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener equipo" });
+  }
+});
+
+app.post("/api/equipos", async (req: any, res) => {
+  try {
+    const body = req.body;
+    let codigo = body.codigo;
+    if (!codigo) {
+      codigo = body.contratoId
+        ? await generateEquipoCodigo(body.contratoId)
+        : `EQ-${Date.now()}`;
+    }
+    const created = await prisma.equipo.create({
+      data: {
+        codigo,
+        tipo: body.tipo,
+        marca: body.marca,
+        modelo: body.modelo,
+        serie: body.serie,
+        potenciaKva: body.potenciaKva ? parseFloat(body.potenciaKva) : undefined,
+        ubicacion: body.ubicacion,
+        estado: body.estado || 'Operativo',
+        clienteId: body.clienteId,
+        contratoId: body.contratoId,
+        fotos: body.fotos,
+        especificaciones: body.especificaciones
+      }
+    });
+    res.status(201).json(created);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al crear equipo" });
+  }
+});
+
+app.put("/api/equipos/:id", async (req: any, res) => {
+  try {
+    const { fotos, ...data } = req.body;
+    const updated = await prisma.equipo.update({
+      where: { id: req.params.id },
+      data
+    });
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al actualizar equipo" });
+  }
+});
+
+app.delete("/api/equipos/:id", async (req: any, res) => {
+  try {
+    await prisma.equipo.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al eliminar equipo" });
+  }
+});
+
+// Assign existing equipment to a contract
+app.post("/api/contracts/:id/equipos", async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { equipoId } = req.body;
+    if (!equipoId) {
+      res.status(400).json({ error: "equipoId es requerido" });
+      return;
+    }
+    const existing = await prisma.equipo.findUnique({ where: { id: equipoId } });
+    if (!existing) {
+      res.status(404).json({ error: "Equipo no encontrado" });
+      return;
+    }
+    const updateData: any = { contratoId: id };
+    if (!existing.codigo) {
+      updateData.codigo = await generateEquipoCodigo(id);
+    }
+    const updated = await prisma.equipo.update({
+      where: { id: equipoId },
+      data: updateData
+    });
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al asignar equipo al contrato" });
+  }
+});
+
+// Unassign (release) equipment from a contract
+app.delete("/api/contracts/:contratoId/equipos/:equipoId", async (req: any, res) => {
+  try {
+    const { equipoId } = req.params;
+    const updated = await prisma.equipo.update({
+      where: { id: equipoId },
+      data: { contratoId: null }
+    });
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al liberar equipo del contrato" });
+  }
+});
+
+// Track equipment included in a specific adenda (ampliacion)
+app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req: any, res) => {
+  try {
+    const { contratoId, adendaId } = req.params;
+    const { equipoId } = req.body;
+    if (!equipoId) {
+      res.status(400).json({ error: "equipoId es requerido" });
+      return;
+    }
+    // Get the adenda's codigo to build the equipment code prefix
+    const adenda = await prisma.contratoAmpliacion.findUnique({ where: { id: adendaId } });
+    if (!adenda) {
+      res.status(404).json({ error: "Adenda no encontrada" });
+      return;
+    }
+    const pivote = await prisma.equipoAmpliacion.create({
+      data: { adendaId, equipoId }
+    });
+    const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
+    const updateData: any = { contratoId };
+    // Regenerate code with adenda prefix if it doesn't have it yet
+    const adendaMatch = adenda.codigo.match(/-A(\d+)$/);
+    const adendaSuffix = adendaMatch ? `-A${adendaMatch[1]}` : '';
+    if (!equipo?.codigo || !equipo.codigo.startsWith(`${contratoId}${adendaSuffix}-E`)) {
+      updateData.codigo = await generateEquipoCodigo(contratoId, adenda.codigo);
+    }
+    await prisma.equipo.update({
+      where: { id: equipoId },
+      data: updateData
+    });
+    res.status(201).json(pivote);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al asociar equipo a adenda" });
   }
 });
 

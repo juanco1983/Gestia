@@ -53,6 +53,7 @@ model OT {
   tipoMantenimiento         String
   tipoEquipo                String
   potenciaKva               Float
+  equipoId                  String?
   fechaProgramada           String
   horaProgramada            String?
   horaFinProgramada         String?
@@ -192,6 +193,7 @@ model ContratoNuevo {
   moneda                   String?
   pdf_url                  String?
   ampliaciones             ContratoAmpliacion[]
+  equipos                  Equipo[]
 }
 
 model TargetVenta {
@@ -238,15 +240,47 @@ model TipoContrato {
 }
 
 model ContratoAmpliacion {
-  id             String        @id @default(uuid())
+  id             String              @id @default(uuid())
   codigo         String @default("")
   contratoId     String
-  contrato       ContratoNuevo @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  contrato       ContratoNuevo       @relation(fields: [contratoId], references: [id], onDelete: Cascade)
   monto          Float
   fecha_inicio   String
   fecha_fin      String
   adenda_pdf_url String?
   comentarios    String?
-  creadoEn       DateTime      @default(now())
+  creadoEn       DateTime            @default(now())
+  equiposAdenda  EquipoAmpliacion[]
+}
+
+model Equipo {
+  id              String            @id @default(uuid())
+  codigo          String            @unique
+  tipo            String
+  marca           String?
+  modelo          String?
+  serie           String?
+  potenciaKva     Float?
+  ubicacion       String?
+  clienteId       String?
+  contratoId      String?
+  contrato        ContratoNuevo?    @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+  estado          String            @default("Operativo")
+  fotos           Json?
+  especificaciones Json?
+  creadoEn        DateTime          @default(now())
+  actualizadoEn   DateTime          @updatedAt
+  adensasOrigen   EquipoAmpliacion[]
+}
+
+model EquipoAmpliacion {
+  id           String            @id @default(uuid())
+  adendaId     String
+  adenda       ContratoAmpliacion @relation(fields: [adendaId], references: [id], onDelete: Cascade)
+  equipoId     String
+  equipo       Equipo            @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+  creadoEn     DateTime          @default(now())
+
+  @@unique([adendaId, equipoId])
 }
 

@@ -60,6 +60,7 @@ export interface OT {
   clientId: string;
   contratoId?: string;
   costo_estimado_usd?: number;
+  equipoId?: string;
   tipoMantenimiento: ServiceType;
   tipoEquipo: EquipmentType;
   potenciaKva: number; // For determining photocount limit
@@ -238,6 +239,7 @@ export interface ContratoAmpliacion {
   adenda_pdf_url?: string;
   comentarios?: string;
   creadoEn: string;
+  equiposAdenda?: EquipoAmpliacion[];
 }
 
 export interface Contrato {
@@ -257,6 +259,7 @@ export interface Contrato {
   moneda?: string;
   pdf_url?: string;
   ampliaciones?: ContratoAmpliacion[];
+  equipos?: Equipo[];
   // Phase 3: Merged technical contract fields
   tipoEquipo?: EquipmentType;
   visitasAnuales?: number;
@@ -270,5 +273,33 @@ export interface TargetVentas {
   mes_num: number;
   mes: string;
   target_ventas_usd: number;
+}
+
+export type EquipoEstado = 'Operativo' | 'En reparación' | 'En observación' | 'Baja' | 'En almacén';
+
+export interface Equipo {
+  id: string;
+  codigo: string;
+  tipo: string;
+  marca?: string;
+  modelo?: string;
+  serie?: string;
+  potenciaKva?: number;
+  ubicacion?: string;
+  clienteId?: string;
+  contratoId?: string;
+  estado: EquipoEstado;
+  fotos?: string[];
+  especificaciones?: Record<string, any>;
+  creadoEn?: string;
+  actualizadoEn?: string;
+  adensasOrigen?: EquipoAmpliacion[];
+}
+
+export interface EquipoAmpliacion {
+  id: string;
+  adendaId: string;
+  equipoId: string;
+  creadoEn?: string;
 }
 

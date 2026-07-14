@@ -17,7 +17,9 @@ import {
   XCircle,
   Cloud
 } from 'lucide-react';
-import { Client, Contrato, User, ContratoAmpliacion } from '../types';
+import { Client, Contrato, User, ContratoAmpliacion, Equipo } from '../types';
+import EquipoPickerModal from './EquipoPickerModal';
+import EquipoDetailDrawer from './EquipoDetailDrawer';
 
 interface ClientesContratosViewProps {
   clients: Client[];
@@ -73,6 +75,14 @@ export default function ClientesContratosView({
   });
   const [ampliacionLoading, setAmpliacionLoading] = useState(false);
   const [editingAmpliacionId, setEditingAmpliacionId] = useState<string | null>(null);
+
+  // Equipment state
+  const [contratoEquipos, setContratoEquipos] = useState<Equipo[]>([]);
+  const [equiposLoading, setEquiposLoading] = useState(false);
+  const [showEquipoPicker, setShowEquipoPicker] = useState(false);
+  const [selectedEquipoId, setSelectedEquipoId] = useState<string | null>(null);
+  const [pickerMode, setPickerMode] = useState<'contrato' | 'adenda'>('contrato');
+  const [adendaPendingEquipos, setAdendaPendingEquipos] = useState<Equipo[]>([]);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
@@ -368,6 +378,7 @@ export default function ClientesContratosView({
   const handleContratoClick = (contrato: Contrato) => {
     setSelectedContratoForView(contrato);
     setIsEditingContrato(false);
+    loadEquipos(contrato.id);
     setEditContratoForm({
       id: contrato.id,
       clientId: contrato.clientId || '',
@@ -626,6 +637,7 @@ export default function ClientesContratosView({
     setShowAmpliacionModal(false);
     setEditingAmpliacionId(null);
     setAmpliacionForm({ monto: '', fecha_inicio: '', fecha_fin: '', comentarios: '', adenda_pdf_base64: '', adenda_pdf_name: '' });
+    setAdendaPendingEquipos([]);
   };
 
   const handleAmpliacionSubmit = async (e: React.FormEvent) => {
@@ -661,6 +673,24 @@ export default function ClientesContratosView({
       // Server returns the full updated contract including new ampliacion
       setSelectedContratoForView(updatedContrato);
       onUpdateContrato?.(updatedContrato);
+
+      // After adenda created/updated, associate pending equipos
+      if (adendaPendingEquipos.length > 0) {
+        const adendaId = isEditing ? editingAmpliacionId! : updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
+        if (adendaId) {
+          await Promise.allSettled(
+            adendaPendingEquipos.map(eq =>
+              fetch(`/api/contracts/${selectedContratoForView!.id}/ampliaciones/${adendaId}/equipos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ equipoId: eq.id })
+              })
+            )
+          );
+        }
+        await loadEquipos(selectedContratoForView!.id);
+      }
+
       handleCloseAmpliacionModal();
       setAlertState({
         show: true,
@@ -681,6 +711,81 @@ export default function ClientesContratosView({
       setAmpliacionLoading(false);
     }
   };
+
+  // Equipment handlers
+  async function loadEquipos(contratoId: string) {
+    setEquiposLoading(true);
+    try {
+      const res = await fetch(`/api/equipos?contratoId=${encodeURIComponent(contratoId)}`);
+      const data = await res.json();
+      setContratoEquipos(data || []);
+    } catch (err) {
+      console.error('Error loading equipos:', err);
+    } finally {
+      setEquiposLoading(false);
+    }
+  }
+
+  async function handleAsignarEquipo(equipoId: string) {
+    if (!selectedContratoForView) return;
+    const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipoId })
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al asignar equipo');
+    }
+    await loadEquipos(selectedContratoForView.id);
+  }
+
+  async function handleCrearEquipo(data: Partial<Equipo>): Promise<Equipo> {
+    const res = await fetch('/api/equipos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al crear equipo');
+    }
+    return res.json();
+  }
+
+  async function handleLiberarEquipo(equipoId: string) {
+    if (!selectedContratoForView) return;
+    const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos/${equipoId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Error al liberar equipo');
+    await loadEquipos(selectedContratoForView.id);
+    setSelectedEquipoId(null);
+  }
+
+  async function handleUpdateEquipo(equipoId: string, data: Partial<Equipo>) {
+    const res = await fetch(`/api/equipos/${equipoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Error al actualizar equipo');
+  }
+
+  async function handleAddEquipoToAdenda(equipoId: string) {
+    if (!selectedContratoForView) return;
+    const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipoId })
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Error al asignar equipo a la adenda');
+    }
+    const equipo = await res.json();
+    setAdendaPendingEquipos(prev => [...prev, equipo]);
+  }
 
   const renderAdditionalContactsForm = (
     formState: any,
@@ -1300,8 +1405,10 @@ export default function ClientesContratosView({
 
       {/* MODAL CLIENTE */}
       {showClientModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
+        <>
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
                 <Building2 size={16} className="text-[#00B594]" />
@@ -1454,11 +1561,14 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
-      {/* MODAL CONTRATO */}
+    {/* MODAL CONTRATO */}
       {showContratoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -1653,7 +1763,8 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* MODAL DETALLE / EDICIÓN CLIENTE */}
       {selectedClientForView && (
@@ -2001,6 +2112,65 @@ export default function ClientesContratosView({
                       {selectedContratoForView.comentarios || 'Sin comentarios adicionales.'}
                     </p>
                   </div>
+                </div>
+
+                {/* Equipos Asociados */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">
+                      Equipos Asociados
+                      {contratoEquipos.length > 0 && (
+                        <span className="ml-2 bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono">
+                          {contratoEquipos.length}
+                        </span>
+                      )}
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
+                      className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Asignar Equipo
+                    </button>
+                  </div>
+                  {equiposLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#00B594] border-t-transparent"></div>
+                    </div>
+                  ) : contratoEquipos.length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic font-mono">Sin equipos asociados a este contrato.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {contratoEquipos.map(eq => {
+                        const estadoColors: Record<string, string> = {
+                          'Operativo': 'bg-emerald-100 text-emerald-700',
+                          'En almacén': 'bg-blue-100 text-blue-700',
+                          'En reparación': 'bg-amber-100 text-amber-700',
+                          'En observación': 'bg-orange-100 text-orange-700',
+                          'Baja': 'bg-red-100 text-red-700',
+                        };
+                        return (
+                          <div
+                            key={eq.id}
+                            onClick={() => setSelectedEquipoId(eq.id)}
+                            className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-1.5 hover:bg-teal-100/50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-extrabold font-mono text-teal-700">{eq.codigo}</span>
+                                <span className={`text-[8px] font-extrabold uppercase font-mono px-1.5 py-0.5 rounded-full ${estadoColors[eq.estado] || 'bg-slate-100 text-slate-600'}`}>
+                                  {eq.estado}
+                                </span>
+                              </div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                            </div>
+                            <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Monto del Contrato */}
@@ -2420,8 +2590,10 @@ export default function ClientesContratosView({
       )}
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100">
+        <>
+          <div className="fixed inset-0 z-[59] bg-slate-900/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -2502,6 +2674,44 @@ export default function ClientesContratosView({
                   <p className="text-[10px] text-amber-600 font-semibold mt-1">Listo: {ampliacionForm.adenda_pdf_name}</p>
                 )}
               </div>
+
+              {/* Equipos incorporados por esta adenda */}
+              <div className="pt-2 border-t border-amber-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-extrabold uppercase text-amber-600 font-mono">Equipos incorporados</span>
+                  <button
+                    type="button"
+                    onClick={() => { setPickerMode('adenda'); setShowEquipoPicker(true); }}
+                    className="px-2.5 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-lg text-[9px] cursor-pointer flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar Equipo
+                  </button>
+                </div>
+                {adendaPendingEquipos.length === 0 ? (
+                  <p className="text-[9px] text-slate-400 italic font-mono">Ningún equipo asignado a esta adenda aún.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {adendaPendingEquipos.map(eq => (
+                      <div key={eq.id} className="flex items-center justify-between bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[9px] font-bold text-teal-700 font-mono truncate">{eq.codigo || '—'}</span>
+                          <span className="text-[8px] text-slate-500 truncate">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAdendaPendingEquipos(prev => prev.filter(e => e.id !== eq.id))}
+                          className="text-rose-400 hover:text-rose-600 shrink-0 ml-2"
+                          title="Quitar"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
                   type="button"
@@ -2521,7 +2731,29 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
+      </>
+    )}
+
+      {/* MODAL EQUIPO PICKER */}
+      {showEquipoPicker && selectedContratoForView && (
+        <EquipoPickerModal
+          contratoId={selectedContratoForView.id}
+          mode={pickerMode}
+          existingIds={contratoEquipos.map(e => e.id)}
+          onClose={() => setShowEquipoPicker(false)}
+          onAssign={pickerMode === 'adenda' ? handleAddEquipoToAdenda : handleAsignarEquipo}
+          onCreate={handleCrearEquipo}
+        />
       )}
+
+      {/* EQUIPO DETAIL DRAWER */}
+      <EquipoDetailDrawer
+        equipoId={selectedEquipoId}
+        contratoId={selectedContratoForView?.id || ''}
+        onClose={() => setSelectedEquipoId(null)}
+        onUnassign={handleLiberarEquipo}
+        onUpdate={handleUpdateEquipo}
+      />
     </div>
   );
 }
