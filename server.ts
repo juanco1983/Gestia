@@ -461,6 +461,60 @@ app.put("/api/ots/:id", async (req, res) => {
         }
       }
     }
+
+    // Auto-create ServicioEquipo when OT is signed/approved and has equipoId
+    if (updatedOt.equipoId && ["Conformidad Firmada (Listo para Facturar)", "Aprobada", "Firmada"].includes(updatedOt.estado)) {
+      const existingServices = await prisma.servicioEquipo.count({
+        where: { otId: updatedOt.id, equipoId: updatedOt.equipoId }
+      });
+      if (existingServices === 0) {
+        // Try to get report data for richer service record
+        let reportData: any = null;
+        try {
+          reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
+        } catch {}
+
+        // Derive estado_post intelligently from the technical report
+        // If revisionNormas.estadoOperativo === false, the equipment is in observation; else Operativo
+        let estadoPost = 'Operativo';
+        if (reportData?.revisionNormas) {
+          const normas = typeof reportData.revisionNormas === 'string'
+            ? JSON.parse(reportData.revisionNormas)
+            : reportData.revisionNormas;
+          if (normas?.estadoOperativo === false) {
+            estadoPost = 'En observación';
+          }
+        }
+        // Also check if there are corrections from supervisor (indicates issues found)
+        if (reportData?.correccionesSupervisor && estadoPost === 'Operativo') {
+          // Supervisor added notes but still approved — leave as Operativo (approved = fit for service)
+        }
+
+        await prisma.servicioEquipo.create({
+          data: {
+            equipoId: updatedOt.equipoId,
+            otId: updatedOt.id,
+            fecha: (updatedOt as any).horaInicioServicio
+              ? (updatedOt as any).horaInicioServicio.split('T')[0]
+              : updatedOt.fechaProgramada || new Date().toISOString().split('T')[0],
+            tipo: (updatedOt as any).tipoMantenimiento || 'Preventivo',
+            estado_post: estadoPost,
+            tecnicoTitular: (updatedOt as any).tecnicoTitular || 'Sistema',
+            hallazgos: reportData?.observacionesDiagnostico || null,
+            recomendaciones: reportData?.recomendaciones || null
+          }
+        });
+
+        // Sync equipo.estado if service left equipment in observation/repair
+        if (estadoPost !== 'Operativo') {
+          await prisma.equipo.update({
+            where: { id: updatedOt.equipoId },
+            data: { estado: estadoPost }
+          });
+        }
+      }
+    }
+
     res.json(updatedOt);
   } catch (err) {
     res.status(404).json({ error: "Orden de Trabajo no encontrada" });
@@ -1011,7 +1065,10 @@ app.get("/api/equipos", async (req: any, res) => {
     const equipos = await prisma.equipo.findMany({
       where,
       orderBy: { creadoEn: 'desc' },
-      include: { adensasOrigen: true }
+      include: {
+        adensasOrigen: true,
+        servicios: { take: 1, orderBy: { creadoEn: 'desc' } }
+      }
     });
     res.json(equipos);
   } catch (err: any) {
@@ -1023,7 +1080,7 @@ app.get("/api/equipos/:id", async (req: any, res) => {
   try {
     const equipo = await prisma.equipo.findUnique({
       where: { id: req.params.id },
-      include: { adensasOrigen: true }
+      include: { adensasOrigen: true, servicios: { orderBy: { creadoEn: 'desc' } } }
     });
     if (!equipo) {
       res.status(404).json({ error: "Equipo no encontrado" });
@@ -1085,6 +1142,50 @@ app.delete("/api/equipos/:id", async (req: any, res) => {
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Error al eliminar equipo" });
+  }
+});
+
+// GET service history for an equipment
+app.get("/api/equipos/:id/servicios", async (req: any, res) => {
+  try {
+    const servicios = await prisma.servicioEquipo.findMany({
+      where: { equipoId: req.params.id },
+      orderBy: { creadoEn: "desc" }
+    });
+    res.json(servicios);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener historial de servicios" });
+  }
+});
+
+// PUT update equipment status (with auto-register in service history)
+app.put("/api/equipos/:id/estado", async (req: any, res) => {
+  try {
+    const { estado, hallazgos, recomendaciones, tecnicoTitular, otId } = req.body;
+    if (!estado) {
+      res.status(400).json({ error: "Estado es requerido" });
+      return;
+    }
+    const equipo = await prisma.equipo.update({
+      where: { id: req.params.id },
+      data: { estado }
+    });
+    // Auto-register in service history
+    await prisma.servicioEquipo.create({
+      data: {
+        equipoId: req.params.id,
+        otId: otId || 'manual',
+        fecha: new Date().toISOString().split('T')[0],
+        tipo: 'Cambio de estado',
+        estado_post: estado,
+        tecnicoTitular: tecnicoTitular || 'Sistema',
+        hallazgos: hallazgos || null,
+        recomendaciones: recomendaciones || null
+      }
+    });
+    res.json(equipo);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al actualizar estado del equipo" });
   }
 });
 

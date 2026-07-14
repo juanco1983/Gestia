@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Equipo, EquipoEstado } from '../types';
+import { createPortal } from 'react-dom';
+import { Equipo, EquipoEstado, ServicioEquipo } from '../types';
 
 interface EquipoDetailDrawerProps {
   equipoId: string | null;
@@ -7,6 +8,7 @@ interface EquipoDetailDrawerProps {
   onClose: () => void;
   onUnassign?: (equipoId: string) => Promise<void>;
   onUpdate?: (equipoId: string, data: Partial<Equipo>) => Promise<void>;
+  onViewReporte?: (otId: string) => void;
 }
 
 const ESTADOS_EQUIPO: { value: EquipoEstado; color: string; bg: string }[] = [
@@ -17,18 +19,32 @@ const ESTADOS_EQUIPO: { value: EquipoEstado; color: string; bg: string }[] = [
   { value: 'Baja', color: 'text-red-700', bg: 'bg-red-100' },
 ];
 
-export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUnassign, onUpdate }: EquipoDetailDrawerProps) {
+export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUnassign, onUpdate, onViewReporte }: EquipoDetailDrawerProps) {
   const [equipo, setEquipo] = useState<Equipo | null>(null);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Equipo>>({});
   const [saveLoading, setSaveLoading] = useState(false);
+  const [servicios, setServicios] = useState<ServicioEquipo[]>([]);
 
   useEffect(() => {
     if (equipoId) {
       loadEquipo();
+      loadServicios();
     }
   }, [equipoId]);
+
+  async function loadServicios() {
+    if (!equipoId) return;
+    try {
+      const res = await fetch(`/api/equipos/${equipoId}/servicios`);
+      if (res.ok) {
+        setServicios(await res.json());
+      }
+    } catch (err) {
+      console.error('Error loading servicios:', err);
+    }
+  }
 
   async function loadEquipo() {
     if (!equipoId) return;
@@ -95,7 +111,9 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
 
   const estadoInfo = ESTADOS_EQUIPO.find(e => e.value === equipo?.estado);
 
-  return (
+  if (!equipoId) return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       {equipoId && (
@@ -287,6 +305,70 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
                       )}
                     </div>
 
+                    {/* Service History Timeline */}
+                    {servicios.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[9px] font-extrabold uppercase text-slate-400 block font-mono mb-3">Historial de Servicios</span>
+                        <div className="space-y-0">
+                          {servicios.map((svc, idx) => {
+                            const estadoBadgeColor: Record<string, string> = {
+                              'Operativo': 'bg-emerald-100 text-emerald-700',
+                              'En observación': 'bg-orange-100 text-orange-700',
+                              'En reparación': 'bg-amber-100 text-amber-700',
+                              'Baja': 'bg-red-100 text-red-700',
+                              'En almacén': 'bg-blue-100 text-blue-700',
+                            };
+                            return (
+                              <div key={svc.id} className="flex gap-3">
+                                <div className="flex flex-col items-center">
+                                  <div className={`w-2 h-2 rounded-full mt-1.5 ring-2 ${idx === 0 ? 'bg-[#00B594] ring-teal-200' : 'bg-slate-300 ring-slate-100'}`}></div>
+                                  {idx < servicios.length - 1 && <div className="w-px flex-1 bg-slate-200 my-0.5"></div>}
+                                </div>
+                                <div className={`pb-4 flex-1 ${idx < servicios.length - 1 ? '' : 'pb-0'}`}>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <p className="text-[10px] font-bold text-slate-700">
+                                        {svc.tipo}
+                                        <span className="text-[8px] text-slate-400 font-mono ml-2">{new Date(svc.fecha).toLocaleDateString('es-PE')}</span>
+                                      </p>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span className={`text-[7px] font-extrabold uppercase font-mono px-1.5 py-0.5 rounded-full ${estadoBadgeColor[svc.estado_post] || 'bg-slate-100 text-slate-600'}`}>
+                                          {svc.estado_post}
+                                        </span>
+                                        <span className="text-[8px] text-slate-500 font-mono">{svc.tecnicoTitular}</span>
+                                      </div>
+                                    </div>
+                                    {onViewReporte && svc.otId && svc.otId !== 'manual' && (
+                                      <button
+                                        onClick={() => onViewReporte(svc.otId)}
+                                        title={`Ver PDF del informe ${svc.otId}`}
+                                        className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-[#00B594] hover:text-white text-slate-500 rounded-lg text-[8px] font-bold font-mono transition-colors cursor-pointer"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                          <polyline points="14 2 14 8 20 8"/>
+                                          <line x1="16" y1="13" x2="8" y2="13"/>
+                                          <line x1="16" y1="17" x2="8" y2="17"/>
+                                          <polyline points="10 9 9 9 8 9"/>
+                                        </svg>
+                                        PDF
+                                      </button>
+                                    )}
+                                  </div>
+                                  {svc.hallazgos && (
+                                    <p className="text-[8px] text-slate-400 mt-0.5 italic">Hallazgos: {svc.hallazgos}</p>
+                                  )}
+                                  {svc.recomendaciones && (
+                                    <p className="text-[8px] text-slate-400 italic">Recomendaciones: {typeof svc.recomendaciones === 'string' ? svc.recomendaciones : Array.isArray(svc.recomendaciones) ? (svc.recomendaciones as string[]).slice(0, 2).join('; ') : ''}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex justify-end pt-2 border-t border-slate-100">
                       <button
                         onClick={startEditing}
@@ -305,6 +387,7 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
           </>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 }

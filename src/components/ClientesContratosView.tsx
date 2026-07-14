@@ -18,9 +18,10 @@ import {
   XCircle,
   Cloud
 } from 'lucide-react';
-import { Client, Contrato, User, ContratoAmpliacion, Equipo } from '../types';
+import { Client, Contrato, User, ContratoAmpliacion, Equipo, OT, TechnicalReport } from '../types';
 import EquipoPickerModal from './EquipoPickerModal';
 import EquipoDetailDrawer from './EquipoDetailDrawer';
+import DocumentFormat from './DocumentFormat';
 
 interface ClientesContratosViewProps {
   clients: Client[];
@@ -84,6 +85,12 @@ export default function ClientesContratosView({
   const [selectedEquipoId, setSelectedEquipoId] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<'contrato' | 'adenda'>('contrato');
   const [adendaPendingEquipos, setAdendaPendingEquipos] = useState<Equipo[]>([]);
+
+  // PDF report generation from equipment service history
+  const [pdfReporteOt, setPdfReporteOt] = useState<OT | null>(null);
+  const [pdfReporteReport, setPdfReporteReport] = useState<TechnicalReport | null>(null);
+  const [pdfReporteClient, setPdfReporteClient] = useState<Client | null>(null);
+  const [isGeneratingReportePdf, setIsGeneratingReportePdf] = useState(false);
 
   // Client form state
   const [clientForm, setClientForm] = useState({
@@ -783,6 +790,64 @@ export default function ClientesContratosView({
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error('Error al actualizar equipo');
+
+  }
+
+  // Handler: open PDF report for a specific OT from equipment history
+  async function handleVerReporte(otId: string) {
+    if (isGeneratingReportePdf) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('El navegador bloqueó la ventana emergente. Habilite los pop-ups para esta página.');
+      return;
+    }
+    try {
+      const [otRes, reportRes] = await Promise.all([
+        fetch(`/api/ots`),
+        fetch(`/api/reports`)
+      ]);
+      const allOts: OT[] = await otRes.json();
+      const allReports: TechnicalReport[] = await reportRes.json();
+      const ot = allOts.find(o => o.id === otId);
+      const report = allReports.find(r => r.otId === otId);
+      if (!ot) {
+        printWindow.close();
+        alert('No se encontró la Orden de Trabajo.');
+        return;
+      }
+      if (!report) {
+        printWindow.close();
+        alert('Esta OT aún no tiene informe técnico redactado.');
+        return;
+      }
+      const client = clients.find(c => c.id === ot.clientId) || null;
+      setIsGeneratingReportePdf(true);
+      setPdfReporteOt(ot);
+      setPdfReporteReport(report);
+      setPdfReporteClient(client);
+      setTimeout(() => {
+        try {
+          const element = document.getElementById('equipo-reporte-pdf-element');
+          if (!element) throw new Error('Contenedor PDF no encontrado');
+          const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+            .map(el => el.outerHTML).join('\n');
+          printWindow.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe ${otId}</title>${styles}<style>@media print{body{background:#fff!important;padding:0;margin:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}.no-print{display:none!important;}@page{size:A4 portrait;margin:12mm 10mm;}}</style></head><body>${element.innerHTML}</body></html>`);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => { printWindow.print(); }, 800);
+        } catch (e) {
+          printWindow.close();
+        } finally {
+          setIsGeneratingReportePdf(false);
+          setPdfReporteOt(null);
+          setPdfReporteReport(null);
+          setPdfReporteClient(null);
+        }
+      }, 500);
+    } catch (err) {
+      printWindow.close();
+      setIsGeneratingReportePdf(false);
+    }
   }
 
   async function handleAddEquipoToAdenda(equipoId: string) {
@@ -2187,6 +2252,11 @@ export default function ClientesContratosView({
                               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
                             </div>
                             <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
+                            {eq.servicios && eq.servicios.length > 0 && (
+                              <p className="text-[8px] text-teal-500 font-mono">
+                                Último servicio: {new Date(eq.servicios[0].fecha).toLocaleDateString('es-PE')}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
@@ -2777,7 +2847,22 @@ export default function ClientesContratosView({
         onClose={() => setSelectedEquipoId(null)}
         onUnassign={handleLiberarEquipo}
         onUpdate={handleUpdateEquipo}
+        onViewReporte={handleVerReporte}
       />
+
+      {/* Hidden container for PDF report generation from equipment history */}
+      {pdfReporteOt && pdfReporteReport && (
+        <div
+          id="equipo-reporte-pdf-element"
+          style={{ position: 'fixed', left: '-9999px', top: 0, width: '820px', zIndex: -1, background: 'white', pointerEvents: 'none' }}
+        >
+          <DocumentFormat
+            report={pdfReporteReport}
+            ot={pdfReporteOt}
+            client={pdfReporteClient || { id: '', razonSocial: 'Cliente', ruc: '', direccionSede: '', distrito: '', contactoNombre: '', contactoEmail: '', contactoTelefono: '' }}
+          />
+        </div>
+      )}
     </div>
   );
 }

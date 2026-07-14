@@ -294,12 +294,27 @@ export interface Equipo {
   creadoEn?: string;
   actualizadoEn?: string;
   adensasOrigen?: EquipoAmpliacion[];
+  servicios?: ServicioEquipo[];
 }
 
 export interface EquipoAmpliacion {
   id: string;
   adendaId: string;
   equipoId: string;
+  creadoEn?: string;
+}
+
+export interface ServicioEquipo {
+  id: string;
+  equipoId: string;
+  otId: string;
+  fecha: string;
+  tipo: string;
+  estado_post: string;
+  tecnicoTitular: string;
+  hallazgos?: string;
+  recomendaciones?: string;
+  fotos?: any;
   creadoEn?: string;
 }
 
