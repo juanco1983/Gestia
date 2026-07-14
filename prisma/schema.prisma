@@ -271,6 +271,7 @@ model Equipo {
   creadoEn        DateTime          @default(now())
   actualizadoEn   DateTime          @updatedAt
   adensasOrigen   EquipoAmpliacion[]
+  servicios       ServicioEquipo[]
 }
 
 model EquipoAmpliacion {
@@ -282,5 +283,22 @@ model EquipoAmpliacion {
   creadoEn     DateTime          @default(now())
 
   @@unique([adendaId, equipoId])
+}
+
+model ServicioEquipo {
+  id              String   @id @default(uuid())
+  equipoId        String
+  equipo          Equipo   @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+  otId            String
+  fecha           String
+  tipo            String
+  estado_post     String
+  tecnicoTitular  String
+  hallazgos       String?
+  recomendaciones String?
+  fotos           Json?
+  creadoEn        DateTime @default(now())
+
+  @@index([equipoId])
 }
 
