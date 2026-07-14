@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Building2, 
   FileText, 
@@ -1416,7 +1417,7 @@ export default function ClientesContratosView({
       )}
 
       {/* MODAL CLIENTE */}
-      {showClientModal && (
+      {showClientModal && createPortal(
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
           <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
@@ -1573,11 +1574,12 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      </>
+      </>,
+      document.body
     )}
 
     {/* MODAL CONTRATO */}
-      {showContratoModal && (
+      {showContratoModal && createPortal(
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
           <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
@@ -1775,11 +1777,12 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      </>
+      </>,
+      document.body
     )}
 
       {/* MODAL DETALLE / EDICIÓN CLIENTE */}
-      {selectedClientForView && (
+      {selectedClientForView && createPortal(
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -2051,11 +2054,12 @@ export default function ClientesContratosView({
             )}
           </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* MODAL DETALLE / EDICIÓN CONTRATO */}
-      {selectedContratoForView && (
+      {selectedContratoForView && createPortal(
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
           <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto pt-8">
@@ -2563,7 +2567,8 @@ export default function ClientesContratosView({
             )}
           </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* GESTIA CUSTOM NOTIFICATION ALERT MODAL */}
@@ -2607,7 +2612,7 @@ export default function ClientesContratosView({
         </div>
       )}
       {/* MODAL AMPLIACIÓN */}
-      {showAmpliacionModal && selectedContratoForView && (
+      {showAmpliacionModal && selectedContratoForView && createPortal(
         <>
           <div className="fixed inset-0 z-[59] bg-slate-900/50 backdrop-blur-sm" />
           <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 overflow-y-auto">
@@ -2749,7 +2754,8 @@ export default function ClientesContratosView({
             </form>
           </div>
         </div>
-      </>
+      </>,
+      document.body
     )}
 
       {/* MODAL EQUIPO PICKER */}

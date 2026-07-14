@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Equipo, EquipoEstado } from '../types';
 
 interface EquipoPickerModalProps {
@@ -140,7 +141,7 @@ export default function EquipoPickerModal({
     }
   }
 
-  return (
+  return createPortal(
     <>
     <div className="fixed inset-0 z-[69] bg-slate-900/50 backdrop-blur-sm" />
     <div className="fixed inset-0 z-[70] flex items-start justify-center p-4 overflow-y-auto">
@@ -372,6 +373,7 @@ export default function EquipoPickerModal({
         )}
       </div>
     </div>
-    </>
+    </>,
+    document.body
   );
 }

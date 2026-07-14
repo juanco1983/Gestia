@@ -698,8 +698,27 @@ app.post("/api/sync", async (req, res) => {
     }
 
     if (Array.isArray(contratosNuevos)) {
+      const allowedKeys = [
+        'id', 'anio', 'n_contrato', 'comercial', 'comercialId', 'cliente', 'clientId',
+        'detalle', 'monto_sin_igv', 'monto_inc_igv', 'monto_facturar_sin_igv', 'monto_facturar_inc_igv',
+        'monto_facturado_sin_igv', 'monto_facturado_inc_igv', 'por_facturar_sin_igv', 'por_facturar_inc_igv',
+        'monto_pagado_sin_igv', 'monto_pagado_inc_igv', 'pendiente_pago_sin_igv', 'pendiente_pago_inc_igv',
+        'vence', 'oc', 'h2h_bcp', 'estado', 'tipo_servicio', 'tipo_contract', 'tipo_contrato',
+        'fecha_inicio', 'fecha_fin', 'fecha_fin_original', 'comentarios', 'presupuesto_total_usd',
+        'saldo_disponible_usd', 'monto_original', 'moneda', 'pdf_url'
+      ];
       for (const scc of contratosNuevos) {
-        await prisma.contratoNuevo.upsert({ where: { id: scc.id }, update: scc, create: scc });
+        const sanitized: any = {};
+        for (const key of allowedKeys) {
+          if (scc[key] !== undefined) {
+            sanitized[key] = scc[key];
+          }
+        }
+        await prisma.contratoNuevo.upsert({
+          where: { id: scc.id },
+          update: sanitized,
+          create: sanitized
+        });
       }
     }
 
