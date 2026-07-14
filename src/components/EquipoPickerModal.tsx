@@ -59,8 +59,9 @@ export default function EquipoPickerModal({
   }, [tab]);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    const el = document.getElementById('main-workspace-content');
+    if (el) el.style.overflow = 'hidden';
+    return () => { if (el) el.style.overflow = ''; };
   }, []);
 
   async function computeNextCodigo() {

@@ -102,8 +102,8 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
         <div className="fixed inset-0 z-[65] bg-slate-900/30 backdrop-blur-sm" onClick={onClose}></div>
       )}
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 z-[66] h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transform transition-transform duration-300 ${equipoId ? 'translate-x-0' : 'translate-x-full'}`}>
-        {equipoId && (
+      {equipoId && (
+      <div className="fixed top-0 right-0 z-[66] h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 animate-slide-in-right">
           <>
             {/* Header */}
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -303,8 +303,8 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
               <div className="p-6 text-center text-slate-400 font-mono text-xs">Equipo no encontrado</div>
             )}
           </>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }

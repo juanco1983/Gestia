@@ -121,8 +121,9 @@ export default function ModalCrearOtMarco({
   };
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    const el = document.getElementById('main-workspace-content');
+    if (el) el.style.overflow = 'hidden';
+    return () => { if (el) el.style.overflow = ''; };
   }, []);
 
   return (

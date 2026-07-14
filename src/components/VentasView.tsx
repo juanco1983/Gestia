@@ -138,12 +138,14 @@ export default function VentasView({
 
   const anyModalOpen = showClientModal || showContractModal || showOtModal;
   useEffect(() => {
+    const el = document.getElementById('main-workspace-content');
+    if (!el) return;
     if (anyModalOpen) {
-      document.body.style.overflow = 'hidden';
+      el.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      el.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => { if (el) el.style.overflow = ''; };
   }, [anyModalOpen]);
 
   // Form submission handlers

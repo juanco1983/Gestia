@@ -181,12 +181,14 @@ export default function ClientesContratosView({
 
   const anyModalOpen = showClientModal || showContratoModal || showAmpliacionModal || showEquipoPicker || !!selectedClientForView || !!selectedContratoForView || !!selectedEquipoId;
   useEffect(() => {
+    const el = document.getElementById('main-workspace-content');
+    if (!el) return;
     if (anyModalOpen) {
-      document.body.style.overflow = 'hidden';
+      el.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      el.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => { if (el) el.style.overflow = ''; };
   }, [anyModalOpen]);
 
   const [editContratoForm, setEditContratoForm] = useState({
