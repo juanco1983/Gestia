@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   FileText, 
@@ -135,6 +135,18 @@ export default function VentasView({
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
+
+  const anyModalOpen = showClientModal || showContractModal || showOtModal;
+  useEffect(() => {
+    const el = document.getElementById('main-workspace-content');
+    if (!el) return;
+    if (anyModalOpen) {
+      el.style.overflow = 'hidden';
+    } else {
+      el.style.overflow = '';
+    }
+    return () => { if (el) el.style.overflow = ''; };
+  }, [anyModalOpen]);
 
   // Form submission handlers
   const handleClientSubmit = (e: React.FormEvent) => {
@@ -1238,7 +1250,9 @@ export default function VentasView({
 
       {/* New Client Modal */}
       {showClientModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40" />
+          <div className="fixed inset-0 flex items-start justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden my-8">
             <div className="px-5 py-4 bg-slate-950 text-white flex justify-between items-center">
               <h3 className="text-sm font-bold font-mono flex items-center gap-2">
@@ -1288,11 +1302,14 @@ export default function VentasView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* New Contract Modal */}
       {showContractModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40" />
+          <div className="fixed inset-0 flex items-start justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden my-8">
             <div className="px-5 py-4 bg-slate-950 text-white flex justify-between items-center">
               <h3 className="text-sm font-bold font-mono flex items-center gap-2">
@@ -1337,11 +1354,14 @@ export default function VentasView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* New OT Modal */}
       {showOtModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40" />
+          <div className="fixed inset-0 flex items-start justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden my-8">
             <div className="px-5 py-4 bg-slate-950 text-white flex justify-between items-center">
               <h3 className="text-sm font-bold font-mono flex items-center gap-2">
@@ -1455,7 +1475,8 @@ export default function VentasView({
             </form>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* Hidden container for PDF high-fidelity generation */}
       {pdfOt && (() => {
