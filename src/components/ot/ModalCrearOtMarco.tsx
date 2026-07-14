@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
 import { OrdenTrabajoLinea, Client } from '../../types';
 import { MESES_ESPANOL, TIPO_VENTA_VALUES, TIPO_CONTRATACION_VALUES } from '../../utils/otDefaults';
@@ -120,8 +120,15 @@ export default function ModalCrearOtMarco({
     onClose();
   };
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto" id="ot-modal-crear-marco">
+    <>
+    <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" id="ot-modal-crear-marco">
       <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-xl overflow-hidden border border-slate-100 my-8">
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
           <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -407,5 +414,6 @@ export default function ModalCrearOtMarco({
         </form>
       </div>
     </div>
+    </>
   );
 }

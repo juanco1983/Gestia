@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
 import { OrdenTrabajoLinea, Client } from '../../types';
 import { MESES_ESPANOL, ESTADO_VALUES, PENDIENTE_VALUES } from '../../utils/otDefaults';
@@ -50,8 +50,15 @@ export default function ModalEditarLinea({
     onClose();
   };
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto" id="ot-modal-editar-linea">
+    <>
+    <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" id="ot-modal-editar-linea">
       <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
           <div>
@@ -409,5 +416,6 @@ export default function ModalEditarLinea({
         </form>
       </div>
     </div>
+    </>
   );
 }

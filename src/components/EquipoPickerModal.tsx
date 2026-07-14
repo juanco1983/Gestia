@@ -58,6 +58,11 @@ export default function EquipoPickerModal({
     }
   }, [tab]);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   async function computeNextCodigo() {
     try {
       const res = await fetch(`/api/equipos?contratoId=${encodeURIComponent(contratoId)}`);
@@ -135,7 +140,9 @@ export default function EquipoPickerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+    <>
+    <div className="fixed inset-0 z-[69] bg-slate-900/50 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[70] flex items-start justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
         <div className="bg-gradient-to-r from-teal-50 to-emerald-50 px-6 py-4 border-b border-teal-100 flex items-center justify-between">
           <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -364,5 +371,6 @@ export default function EquipoPickerModal({
         )}
       </div>
     </div>
+    </>
   );
 }
