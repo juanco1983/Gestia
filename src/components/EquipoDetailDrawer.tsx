@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Equipo, EquipoEstado, ServicioEquipo } from '../types';
 
 interface EquipoDetailDrawerProps {
@@ -110,7 +111,9 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
 
   const estadoInfo = ESTADOS_EQUIPO.find(e => e.value === equipo?.estado);
 
-  return (
+  if (!equipoId) return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       {equipoId && (
@@ -384,6 +387,7 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
           </>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 }
