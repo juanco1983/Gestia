@@ -181,7 +181,6 @@ export default function ClientesContratosView({
   // Contrato form state
   const [contratoForm, setContratoForm] = useState({
     clientId: '',
-    tipo_servicio: 'CONTRATO',
     tipo_contract: '',
     tipo_contrato: '',
     fecha_inicio: '',
@@ -214,7 +213,6 @@ export default function ClientesContratosView({
   const [editContratoForm, setEditContratoForm] = useState({
     id: '',
     clientId: '',
-    tipo_servicio: 'CONTRATO',
     tipo_contract: '',
     tipo_contrato: '',
     fecha_inicio: '',
@@ -414,7 +412,6 @@ export default function ClientesContratosView({
     setEditContratoForm({
       id: contrato.id,
       clientId: contrato.clientId || '',
-      tipo_servicio: contrato.tipo_servicio,
       tipo_contract: contrato.tipo_contrato,
       tipo_contrato: contrato.tipo_contrato,
       fecha_inicio: contrato.fecha_inicio,
@@ -442,7 +439,6 @@ export default function ClientesContratosView({
       id: editContratoForm.id,
       clientId: editContratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
-      tipo_servicio: editContratoForm.tipo_servicio,
       tipo_contrato: editContratoForm.tipo_contrato || editContratoForm.tipo_contract.trim() || 'SERVICIO',
       fecha_inicio: editContratoForm.fecha_inicio,
       fecha_fin: editContratoForm.fecha_fin,
@@ -522,7 +518,6 @@ export default function ClientesContratosView({
       id: finalContractId,
       clientId: contratoForm.clientId,
       cliente: matchedClient ? matchedClient.razonSocial : 'Cliente General',
-      tipo_servicio: contratoForm.tipo_servicio,
       tipo_contrato: contratoForm.tipo_contrato || contratoForm.tipo_contract.trim() || 'SERVICIO',
       fecha_inicio: contratoForm.fecha_inicio || new Date().toISOString().split('T')[0],
       fecha_fin: contratoForm.fecha_fin || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
@@ -550,7 +545,6 @@ export default function ClientesContratosView({
       });
       setContratoForm({
         clientId: '',
-        tipo_servicio: 'CONTRATO',
         tipo_contract: '',
         tipo_contrato: '',
         fecha_inicio: '',
@@ -574,7 +568,6 @@ export default function ClientesContratosView({
         });
         setContratoForm({
           clientId: '',
-          tipo_servicio: 'CONTRATO',
           tipo_contract: '',
           tipo_contrato: '',
           fecha_inicio: '',
@@ -1401,9 +1394,6 @@ export default function ClientesContratosView({
                         </h3>
                         <div className="text-[9px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-650 border border-slate-150">
-                            {contrato.tipo_servicio}
-                          </span>
                           <span className="text-[10px] text-slate-400 font-semibold truncate max-w-xs">{contrato.tipo_contrato}</span>
                         </div>
                       </div>
@@ -1466,7 +1456,6 @@ export default function ClientesContratosView({
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-150">
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Cliente</th>
-                    <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Tipo Documento</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Descripción del Alcance</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Vigencia</th>
                     <th className="px-5 py-3 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider font-mono">Responsable</th>
@@ -1484,11 +1473,6 @@ export default function ClientesContratosView({
                       <td className="px-5 py-4">
                         <div className="text-xs font-black text-slate-800 group-hover:text-[#00B594] transition-colors">{contrato.cliente}</div>
                         <div className="text-[10px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-[9px] font-black font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-150">
-                          {contrato.tipo_servicio}
-                        </span>
                       </td>
                       <td className="px-5 py-4">
                         <div className="text-xs text-slate-600 font-semibold line-clamp-1 max-w-xs">{contrato.tipo_contrato}</div>
@@ -1762,19 +1746,6 @@ export default function ClientesContratosView({
                   </div>
                 );
               })()}
-               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
-                <select
-                  value={contratoForm.tipo_servicio}
-                  onChange={(e) => setContratoForm({ ...contratoForm, tipo_servicio: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
-                >
-                  <option value="CONTRATO">CONTRATO</option>
-                  <option value="OC">ORDEN COMPRA (OC)</option>
-                  <option value="OS">ORDEN SERVICIO (OS)</option>
-                  <option value="CORREO">CORREO / ACUERDO</option>
-                </select>
-              </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo de Contrato <span className="text-rose-500">*</span></label>
                 <select
@@ -2223,7 +2194,7 @@ export default function ClientesContratosView({
                       </span>
                     </div>
                     <h4 className="text-sm font-black text-slate-800 mt-1">{selectedContratoForView.cliente}</h4>
-                    <span className="text-[10px] text-slate-400 font-semibold inline-block mt-0.5">{selectedContratoForView.tipo_servicio} • {selectedContratoForView.tipo_contrato}</span>
+                    <span className="text-[10px] text-slate-400 font-semibold inline-block mt-0.5">{selectedContratoForView.tipo_contrato}</span>
                   </div>
                   <div className="p-3 bg-[#E6F7F4] rounded-2xl border border-[#00B594]/10 shrink-0">
                     <Briefcase size={24} className="text-[#00B594]" />
@@ -2503,7 +2474,6 @@ export default function ClientesContratosView({
                         setEditContratoForm({
                           id: selectedContratoForView.id,
                           clientId: selectedContratoForView.clientId || '',
-                          tipo_servicio: selectedContratoForView.tipo_servicio,
                           tipo_contract: selectedContratoForView.tipo_contrato,
                           tipo_contrato: selectedContratoForView.tipo_contrato,
                           fecha_inicio: selectedContratoForView.fecha_inicio,
@@ -2543,19 +2513,6 @@ export default function ClientesContratosView({
                     {clients.map(c => (
                       <option key={c.id} value={c.id}>{c.razonSocial}</option>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Tipo Contratación</label>
-                  <select
-                    value={editContratoForm.tipo_servicio}
-                    onChange={(e) => setEditContratoForm({ ...editContratoForm, tipo_servicio: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3.5 text-xs text-slate-800 focus:outline-none"
-                  >
-                    <option value="CONTRATO">CONTRATO</option>
-                    <option value="OC">ORDEN COMPRA (OC)</option>
-                    <option value="OS">ORDEN SERVICIO (OS)</option>
-                    <option value="CORREO">CORREO / ACUERDO</option>
                   </select>
                 </div>
                 <div>
