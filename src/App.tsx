@@ -1213,7 +1213,10 @@ export default function App() {
     return (
       <LoginView 
         users={users}
-        onLoginSuccess={(user) => {
+        onLoginSuccess={(user, token) => {
+          if (token) {
+            localStorage.setItem('gestia_jwt_token', token);
+          }
           const newAuditLog: UserActivityLog = {
             id: `log_${Date.now()}`,
             timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
