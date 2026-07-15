@@ -12,3 +12,6 @@
    - **NUNCA** se realiza el merge local a `dev` por parte del agente.
    - El usuario es el único responsable de aprobar y hacer el merge del PR en GitHub.
    - Una vez hecho el merge en GitHub hacia `dev`, se disparará automáticamente el pipeline CI/CD (GitHub Actions) que despliega la aplicación y la BD.
+
+4. **Descripción de Cambios**:
+   - Para cada rama creada (`feature/*` o `fix/*`), el agente debe documentar y proporcionar al usuario un detalle o resumen breve de los cambios realizados antes de solicitar la revisión.
