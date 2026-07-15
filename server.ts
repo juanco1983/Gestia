@@ -1350,7 +1350,7 @@ app.get("/api/contratos-comerciales", async (req, res) => {
 
 app.post("/api/contratos-comerciales", async (req, res) => {
   try {
-    const { pdf_base64, pdf_name, ...newContrato } = req.body;
+    const { pdf_base64, pdf_name, ampliaciones, equiposAdenda, equipos, ...newContrato } = req.body;
     if (!newContrato.id) newContrato.id = `cont_${Date.now()}`;
     if (pdf_base64 && pdf_name) {
       newContrato.pdf_url = await uploadContractBase64ToS3(pdf_base64, newContrato.id, pdf_name);
@@ -1367,7 +1367,7 @@ app.post("/api/contratos-comerciales", async (req, res) => {
 
 app.put("/api/contratos-comerciales/:id", async (req, res) => {
   try {
-    const { pdf_base64, pdf_name, ...body } = req.body;
+    const { pdf_base64, pdf_name, id, ampliaciones, equiposAdenda, equipos, ...body } = req.body;
     if (pdf_base64 && pdf_name) {
       body.pdf_url = await uploadContractBase64ToS3(pdf_base64, req.params.id, pdf_name);
     }
@@ -1378,7 +1378,8 @@ app.put("/api/contratos-comerciales/:id", async (req, res) => {
     });
     res.json(updated);
   } catch (err: any) {
-    res.status(404).json({ error: err.message || "No encontrado" });
+    console.error("Error al actualizar contrato:", err);
+    res.status(500).json({ error: err.message || "Error al actualizar el contrato" });
   }
 });
 
