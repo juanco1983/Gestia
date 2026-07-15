@@ -61,6 +61,18 @@ export default function ClientesContratosView({
     message: ''
   });
   
+  // Custom Confirmation Modal Controller
+  const [confirmState, setConfirmState] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    show: false,
+    title: '',
+    message: ''
+  });
+  
   // Modal controllers
   const [showClientModal, setShowClientModal] = useState(false);
   const [showContratoModal, setShowContratoModal] = useState(false);
@@ -653,6 +665,10 @@ export default function ClientesContratosView({
       adenda_pdf_name: ''
     });
     setEditingAmpliacionId(amp.id);
+    const existing = (amp.equiposAdenda || [])
+      .map(ea => ea.equipo)
+      .filter((eq): eq is Equipo => !!eq);
+    setAdendaPendingEquipos(existing);
     setShowAmpliacionModal(true);
   };
 
@@ -697,9 +713,9 @@ export default function ClientesContratosView({
       setSelectedContratoForView(updatedContrato);
       onUpdateContrato?.(updatedContrato);
 
-      // After adenda created/updated, associate pending equipos
-      if (adendaPendingEquipos.length > 0) {
-        const adendaId = isEditing ? editingAmpliacionId! : updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
+      // After adenda created, associate pending equipos (only for new adendas)
+      if (!isEditing && adendaPendingEquipos.length > 0) {
+        const adendaId = updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
         if (adendaId) {
           await Promise.allSettled(
             adendaPendingEquipos.map(eq =>
@@ -711,8 +727,8 @@ export default function ClientesContratosView({
             )
           );
         }
-        await loadEquipos(selectedContratoForView!.id);
       }
+      await loadEquipos(selectedContratoForView!.id);
 
       handleCloseAmpliacionModal();
       setAlertState({
@@ -761,6 +777,13 @@ export default function ClientesContratosView({
       throw new Error(errBody.error || 'Error al asignar equipo');
     }
     await loadEquipos(selectedContratoForView.id);
+
+    setAlertState({
+      show: true,
+      type: 'success',
+      title: 'Equipo Asignado',
+      message: 'El equipo ha sido asignado al contrato correctamente.'
+    });
   }
 
   async function handleCrearEquipo(data: Partial<Equipo>): Promise<Equipo> {
@@ -855,6 +878,8 @@ export default function ClientesContratosView({
 
   async function handleAddEquipoToAdenda(equipoId: string) {
     if (!selectedContratoForView) return;
+    
+    // Step 1: Assign to contract first
     const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -865,7 +890,49 @@ export default function ClientesContratosView({
       throw new Error(errBody.error || 'Error al asignar equipo a la adenda');
     }
     const equipo = await res.json();
+
+    // Step 2: If in edit mode, assign to adenda immediately in DB
+    if (editingAmpliacionId) {
+      const adendaRes = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones/${editingAmpliacionId}/equipos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ equipoId })
+      });
+      if (!adendaRes.ok) {
+        const errBody = await adendaRes.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Error al asociar equipo a la adenda');
+      }
+    }
+
     setAdendaPendingEquipos(prev => [...prev, equipo]);
+
+    // Show success alert
+    setAlertState({
+      show: true,
+      type: 'success',
+      title: 'Equipo Agregado',
+      message: 'El equipo ha sido asignado a la adenda exitosamente.'
+    });
+  }
+
+  async function handleRemoveEquipoFromAdenda(equipoId: string) {
+    if (editingAmpliacionId && selectedContratoForView) {
+      try {
+        const res = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones/${editingAmpliacionId}/equipos/${equipoId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Error al retirar equipo de la adenda');
+      } catch (err: any) {
+        setAlertState({
+          show: true,
+          type: 'error',
+          title: 'Error al Retirar',
+          message: err.message || 'No se pudo retirar el equipo de la adenda.'
+        });
+        return;
+      }
+    }
+    setAdendaPendingEquipos(prev => prev.filter(e => e.id !== equipoId));
   }
 
   const renderAdditionalContactsForm = (
@@ -2214,14 +2281,6 @@ export default function ClientesContratosView({
                         </span>
                       )}
                     </h5>
-                    <button
-                      type="button"
-                      onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
-                      className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                      Asignar Equipo
-                    </button>
                   </div>
                   {equiposLoading ? (
                     <div className="flex items-center justify-center py-4">
@@ -2252,7 +2311,9 @@ export default function ClientesContratosView({
                                   {eq.estado}
                                 </span>
                               </div>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                              <div className="flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                              </div>
                             </div>
                             <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
                             {eq.servicios && eq.servicios.length > 0 && (
@@ -2437,7 +2498,29 @@ export default function ClientesContratosView({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsEditingContrato(true)}
+                    onClick={() => {
+                      if (selectedContratoForView) {
+                        setEditContratoForm({
+                          id: selectedContratoForView.id,
+                          clientId: selectedContratoForView.clientId || '',
+                          tipo_servicio: selectedContratoForView.tipo_servicio,
+                          tipo_contract: selectedContratoForView.tipo_contrato,
+                          tipo_contrato: selectedContratoForView.tipo_contrato,
+                          fecha_inicio: selectedContratoForView.fecha_inicio,
+                          fecha_fin: selectedContratoForView.fecha_fin,
+                          estado: selectedContratoForView.estado,
+                          comercialId: selectedContratoForView.comercialId || '',
+                          comentarios: selectedContratoForView.comentarios || '',
+                          presupuesto_total_usd: selectedContratoForView.presupuesto_total_usd !== undefined && selectedContratoForView.presupuesto_total_usd !== null ? selectedContratoForView.presupuesto_total_usd.toString() : '',
+                          saldo_disponible_usd: selectedContratoForView.saldo_disponible_usd !== undefined && selectedContratoForView.saldo_disponible_usd !== null ? selectedContratoForView.saldo_disponible_usd.toString() : '',
+                          monto_original: selectedContratoForView.monto_original !== undefined && selectedContratoForView.monto_original !== null ? selectedContratoForView.monto_original.toString() : '',
+                          moneda: selectedContratoForView.moneda || 'USD',
+                          pdf_base64: '',
+                          pdf_name: ''
+                        });
+                      }
+                      setIsEditingContrato(true);
+                    }}
                     className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)] flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -2621,6 +2704,88 @@ export default function ClientesContratosView({
                   />
                 </div>
 
+                {/* Equipos Asociados (Modo Edición) */}
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">
+                      Equipos Asociados (Edición)
+                      {contratoEquipos.length > 0 && (
+                        <span className="ml-2 bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono">
+                          {contratoEquipos.length}
+                        </span>
+                      )}
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
+                      className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Asignar Equipo
+                    </button>
+                  </div>
+                  {equiposLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#00B594] border-t-transparent"></div>
+                    </div>
+                  ) : contratoEquipos.length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic font-mono">Sin equipos asociados a este contrato.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {contratoEquipos.map(eq => {
+                        const estadoColors: Record<string, string> = {
+                          'Operativo': 'bg-emerald-100 text-emerald-700',
+                          'En almacén': 'bg-blue-100 text-blue-700',
+                          'En reparación': 'bg-amber-100 text-amber-700',
+                          'En observación': 'bg-orange-100 text-orange-700',
+                          'Baja': 'bg-red-100 text-red-700',
+                        };
+                        return (
+                          <div
+                            key={eq.id}
+                            onClick={() => setSelectedEquipoId(eq.id)}
+                            className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-1.5 hover:bg-teal-100/50 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-extrabold font-mono text-teal-700">{eq.codigo}</span>
+                                <span className={`text-[8px] font-extrabold uppercase font-mono px-1.5 py-0.5 rounded-full ${estadoColors[eq.estado] || 'bg-slate-100 text-slate-600'}`}>
+                                  {eq.estado}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmState({
+                                      show: true,
+                                      title: 'Retirar Equipo',
+                                      message: `¿Seguro que desea retirar el equipo ${eq.codigo} del contrato?`,
+                                      onConfirm: () => handleLiberarEquipo(eq.id)
+                                    });
+                                  }}
+                                  className="p-1 hover:bg-rose-100 rounded text-rose-500 hover:text-rose-700 cursor-pointer transition-colors"
+                                  title="Retirar equipo del contrato"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
+                            {eq.servicios && eq.servicios.length > 0 && (
+                              <p className="text-[8px] text-teal-500 font-mono">
+                                Último servicio: {new Date(eq.servicios[0].fecha).toLocaleDateString('es-PE')}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
                   <button
                     type="button"
@@ -2687,6 +2852,51 @@ export default function ClientesContratosView({
         ) : null,
         document.body
       )}
+
+      {/* GESTIA CUSTOM CONFIRMATION MODAL */}
+      {createPortal(
+        confirmState.show ? (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-confirmation-modal">
+            <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-rose-50 border border-rose-100 text-rose-500">
+                  <XCircle size={18} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-850 text-sm">{confirmState.title}</h4>
+                  <p className="text-[9px] text-slate-400 uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                {confirmState.message}
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmState(prev => ({ ...prev, show: false }))}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmState(prev => ({ ...prev, show: false }));
+                    confirmState.onConfirm?.();
+                  }}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white shadow-sm cursor-pointer transition-all"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null,
+        document.body
+      )}
+
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && createPortal(
         <>
@@ -2799,7 +3009,14 @@ export default function ClientesContratosView({
                         </div>
                         <button
                           type="button"
-                          onClick={() => setAdendaPendingEquipos(prev => prev.filter(e => e.id !== eq.id))}
+                          onClick={() => {
+                            setConfirmState({
+                              show: true,
+                              title: 'Retirar de Adenda',
+                              message: `¿Seguro que desea retirar el equipo ${eq.codigo || ''} de esta adenda?`,
+                              onConfirm: () => handleRemoveEquipoFromAdenda(eq.id)
+                            });
+                          }}
                           className="text-rose-400 hover:text-rose-600 shrink-0 ml-2"
                           title="Quitar"
                         >

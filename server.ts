@@ -1279,6 +1279,44 @@ app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req
   }
 });
 
+// Remove (unassign) equipment from a specific adenda (ampliacion)
+app.delete("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos/:equipoId", async (req: any, res) => {
+  try {
+    const { contratoId, adendaId, equipoId } = req.params;
+    
+    // Delete pivot association
+    await prisma.equipoAmpliacion.deleteMany({
+      where: {
+        adendaId,
+        equipoId
+      }
+    });
+
+    // Unassign the equipment from the contract as well (since it is removed from this adenda)
+    // Check if the equipment is still associated with any other adendas for this contract
+    const otherAssociations = await prisma.equipoAmpliacion.findFirst({
+      where: {
+        equipoId,
+        adenda: {
+          contratoId
+        }
+      }
+    });
+
+    // If it has no other adenda associations, clear its contratoId
+    if (!otherAssociations) {
+      await prisma.equipo.update({
+        where: { id: equipoId },
+        data: { contratoId: null }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al retirar equipo de la adenda" });
+  }
+});
+
 app.get("/api/tipo-contratos", async (req, res) => {
   try {
     res.json(await prisma.tipoContrato.findMany({ orderBy: { name: 'asc' } }));
@@ -1287,9 +1325,21 @@ app.get("/api/tipo-contratos", async (req, res) => {
   }
 });
 
+const CONTRATO_NUEVO_INCLUDE = {
+  ampliaciones: {
+    include: {
+      equiposAdenda: {
+        include: {
+          equipo: true
+        }
+      }
+    }
+  }
+};
+
 app.get("/api/contratos-comerciales", async (req, res) => {
   try {
-    res.json(await prisma.contratoNuevo.findMany({ include: { ampliaciones: true } }));
+    res.json(await prisma.contratoNuevo.findMany({ include: CONTRATO_NUEVO_INCLUDE }));
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -1304,7 +1354,7 @@ app.post("/api/contratos-comerciales", async (req, res) => {
     }
     const created = await prisma.contratoNuevo.create({ 
       data: newContrato,
-      include: { ampliaciones: true }
+      include: CONTRATO_NUEVO_INCLUDE
     });
     res.status(201).json(created);
   } catch (err: any) {
@@ -1321,7 +1371,7 @@ app.put("/api/contratos-comerciales/:id", async (req, res) => {
     const updated = await prisma.contratoNuevo.update({
       where: { id: req.params.id },
       data: body,
-      include: { ampliaciones: true }
+      include: CONTRATO_NUEVO_INCLUDE
     });
     res.json(updated);
   } catch (err: any) {
@@ -1367,7 +1417,7 @@ app.post("/api/contracts/:id/ampliaciones", async (req, res) => {
 
     const updatedContract = await prisma.contratoNuevo.findUnique({
       where: { id },
-      include: { ampliaciones: true }
+      include: CONTRATO_NUEVO_INCLUDE
     });
     res.status(201).json(updatedContract);
   } catch (err: any) {
@@ -1416,7 +1466,7 @@ app.put("/api/ampliaciones/:id", async (req, res) => {
 
     const updatedContract = await prisma.contratoNuevo.findUnique({
       where: { id: existing.contratoId },
-      include: { ampliaciones: true }
+      include: CONTRATO_NUEVO_INCLUDE
     });
     res.json(updatedContract);
   } catch (err: any) {
