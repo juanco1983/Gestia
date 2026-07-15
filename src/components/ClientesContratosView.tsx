@@ -61,6 +61,18 @@ export default function ClientesContratosView({
     message: ''
   });
   
+  // Custom Confirmation Modal Controller
+  const [confirmState, setConfirmState] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({
+    show: false,
+    title: '',
+    message: ''
+  });
+  
   // Modal controllers
   const [showClientModal, setShowClientModal] = useState(false);
   const [showContratoModal, setShowContratoModal] = useState(false);
@@ -2312,9 +2324,12 @@ export default function ClientesContratosView({
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (confirm(`¿Seguro que desea retirar el equipo ${eq.codigo} del contrato?`)) {
-                                      handleLiberarEquipo(eq.id);
-                                    }
+                                    setConfirmState({
+                                      show: true,
+                                      title: 'Retirar Equipo',
+                                      message: `¿Seguro que desea retirar el equipo ${eq.codigo} del contrato?`,
+                                      onConfirm: () => handleLiberarEquipo(eq.id)
+                                    });
                                   }}
                                   className="p-1 hover:bg-rose-100 rounded text-rose-500 hover:text-rose-700 cursor-pointer transition-colors"
                                   title="Retirar equipo del contrato"
@@ -2757,6 +2772,51 @@ export default function ClientesContratosView({
         ) : null,
         document.body
       )}
+
+      {/* GESTIA CUSTOM CONFIRMATION MODAL */}
+      {createPortal(
+        confirmState.show ? (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-confirmation-modal">
+            <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-rose-50 border border-rose-100 text-rose-500">
+                  <XCircle size={18} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-850 text-sm">{confirmState.title}</h4>
+                  <p className="text-[9px] text-slate-400 uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                {confirmState.message}
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmState(prev => ({ ...prev, show: false }))}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmState(prev => ({ ...prev, show: false }));
+                    confirmState.onConfirm?.();
+                  }}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white shadow-sm cursor-pointer transition-all"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null,
+        document.body
+      )}
+
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && createPortal(
         <>
@@ -2869,7 +2929,14 @@ export default function ClientesContratosView({
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleRemoveEquipoFromAdenda(eq.id)}
+                          onClick={() => {
+                            setConfirmState({
+                              show: true,
+                              title: 'Retirar de Adenda',
+                              message: `¿Seguro que desea retirar el equipo ${eq.codigo || ''} de esta adenda?`,
+                              onConfirm: () => handleRemoveEquipoFromAdenda(eq.id)
+                            });
+                          }}
                           className="text-rose-400 hover:text-rose-600 shrink-0 ml-2"
                           title="Quitar"
                         >
