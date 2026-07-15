@@ -2498,7 +2498,29 @@ export default function ClientesContratosView({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsEditingContrato(true)}
+                    onClick={() => {
+                      if (selectedContratoForView) {
+                        setEditContratoForm({
+                          id: selectedContratoForView.id,
+                          clientId: selectedContratoForView.clientId || '',
+                          tipo_servicio: selectedContratoForView.tipo_servicio,
+                          tipo_contract: selectedContratoForView.tipo_contrato,
+                          tipo_contrato: selectedContratoForView.tipo_contrato,
+                          fecha_inicio: selectedContratoForView.fecha_inicio,
+                          fecha_fin: selectedContratoForView.fecha_fin,
+                          estado: selectedContratoForView.estado,
+                          comercialId: selectedContratoForView.comercialId || '',
+                          comentarios: selectedContratoForView.comentarios || '',
+                          presupuesto_total_usd: selectedContratoForView.presupuesto_total_usd !== undefined && selectedContratoForView.presupuesto_total_usd !== null ? selectedContratoForView.presupuesto_total_usd.toString() : '',
+                          saldo_disponible_usd: selectedContratoForView.saldo_disponible_usd !== undefined && selectedContratoForView.saldo_disponible_usd !== null ? selectedContratoForView.saldo_disponible_usd.toString() : '',
+                          monto_original: selectedContratoForView.monto_original !== undefined && selectedContratoForView.monto_original !== null ? selectedContratoForView.monto_original.toString() : '',
+                          moneda: selectedContratoForView.moneda || 'USD',
+                          pdf_base64: '',
+                          pdf_name: ''
+                        });
+                      }
+                      setIsEditingContrato(true);
+                    }}
                     className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-[0_3px_8px_rgba(0,181,148,0.15)] flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
