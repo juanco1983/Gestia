@@ -302,6 +302,7 @@ export interface EquipoAmpliacion {
   adendaId: string;
   equipoId: string;
   creadoEn?: string;
+  equipo?: Equipo;
 }
 
 export interface ServicioEquipo {

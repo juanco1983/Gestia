@@ -653,6 +653,10 @@ export default function ClientesContratosView({
       adenda_pdf_name: ''
     });
     setEditingAmpliacionId(amp.id);
+    const existing = (amp.equiposAdenda || [])
+      .map(ea => ea.equipo)
+      .filter((eq): eq is Equipo => !!eq);
+    setAdendaPendingEquipos(existing);
     setShowAmpliacionModal(true);
   };
 
@@ -697,9 +701,9 @@ export default function ClientesContratosView({
       setSelectedContratoForView(updatedContrato);
       onUpdateContrato?.(updatedContrato);
 
-      // After adenda created/updated, associate pending equipos
-      if (adendaPendingEquipos.length > 0) {
-        const adendaId = isEditing ? editingAmpliacionId! : updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
+      // After adenda created, associate pending equipos (only for new adendas)
+      if (!isEditing && adendaPendingEquipos.length > 0) {
+        const adendaId = updatedContrato.ampliaciones?.[updatedContrato.ampliaciones.length - 1]?.id;
         if (adendaId) {
           await Promise.allSettled(
             adendaPendingEquipos.map(eq =>
@@ -711,8 +715,8 @@ export default function ClientesContratosView({
             )
           );
         }
-        await loadEquipos(selectedContratoForView!.id);
       }
+      await loadEquipos(selectedContratoForView!.id);
 
       handleCloseAmpliacionModal();
       setAlertState({
@@ -761,6 +765,13 @@ export default function ClientesContratosView({
       throw new Error(errBody.error || 'Error al asignar equipo');
     }
     await loadEquipos(selectedContratoForView.id);
+
+    setAlertState({
+      show: true,
+      type: 'success',
+      title: 'Equipo Asignado',
+      message: 'El equipo ha sido asignado al contrato correctamente.'
+    });
   }
 
   async function handleCrearEquipo(data: Partial<Equipo>): Promise<Equipo> {
@@ -855,6 +866,8 @@ export default function ClientesContratosView({
 
   async function handleAddEquipoToAdenda(equipoId: string) {
     if (!selectedContratoForView) return;
+    
+    // Step 1: Assign to contract first
     const res = await fetch(`/api/contracts/${selectedContratoForView.id}/equipos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -865,7 +878,49 @@ export default function ClientesContratosView({
       throw new Error(errBody.error || 'Error al asignar equipo a la adenda');
     }
     const equipo = await res.json();
+
+    // Step 2: If in edit mode, assign to adenda immediately in DB
+    if (editingAmpliacionId) {
+      const adendaRes = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones/${editingAmpliacionId}/equipos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ equipoId })
+      });
+      if (!adendaRes.ok) {
+        const errBody = await adendaRes.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Error al asociar equipo a la adenda');
+      }
+    }
+
     setAdendaPendingEquipos(prev => [...prev, equipo]);
+
+    // Show success alert
+    setAlertState({
+      show: true,
+      type: 'success',
+      title: 'Equipo Agregado',
+      message: 'El equipo ha sido asignado a la adenda exitosamente.'
+    });
+  }
+
+  async function handleRemoveEquipoFromAdenda(equipoId: string) {
+    if (editingAmpliacionId && selectedContratoForView) {
+      try {
+        const res = await fetch(`/api/contracts/${selectedContratoForView.id}/ampliaciones/${editingAmpliacionId}/equipos/${equipoId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Error al retirar equipo de la adenda');
+      } catch (err: any) {
+        setAlertState({
+          show: true,
+          type: 'error',
+          title: 'Error al Retirar',
+          message: err.message || 'No se pudo retirar el equipo de la adenda.'
+        });
+        return;
+      }
+    }
+    setAdendaPendingEquipos(prev => prev.filter(e => e.id !== equipoId));
   }
 
   const renderAdditionalContactsForm = (
@@ -2252,7 +2307,22 @@ export default function ClientesContratosView({
                                   {eq.estado}
                                 </span>
                               </div>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`¿Seguro que desea retirar el equipo ${eq.codigo} del contrato?`)) {
+                                      handleLiberarEquipo(eq.id);
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-rose-100 rounded text-rose-500 hover:text-rose-700 cursor-pointer transition-colors"
+                                  title="Retirar equipo del contrato"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><polyline points="9 18 15 12 9 6"/></svg>
+                              </div>
                             </div>
                             <p className="text-[9px] text-slate-500">{eq.tipo}{eq.marca ? ` • ${eq.marca}` : ''}{eq.modelo ? ` • ${eq.modelo}` : ''}{eq.potenciaKva ? ` • ${eq.potenciaKva} KVA` : ''}</p>
                             {eq.servicios && eq.servicios.length > 0 && (
@@ -2799,7 +2869,7 @@ export default function ClientesContratosView({
                         </div>
                         <button
                           type="button"
-                          onClick={() => setAdendaPendingEquipos(prev => prev.filter(e => e.id !== eq.id))}
+                          onClick={() => handleRemoveEquipoFromAdenda(eq.id)}
                           className="text-rose-400 hover:text-rose-600 shrink-0 ml-2"
                           title="Quitar"
                         >
