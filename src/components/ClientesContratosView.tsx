@@ -529,6 +529,7 @@ export default function ClientesContratosView({
 
     try {
       await onAddContrato(newContrato);
+      setShowContratoModal(false);
       setAlertState({
         show: true,
         type: 'success',
@@ -552,6 +553,7 @@ export default function ClientesContratosView({
       });
     } catch (err: any) {
       if (err.message === "offline") {
+        setShowContratoModal(false);
         setAlertState({
           show: true,
           type: 'offline',
@@ -574,6 +576,7 @@ export default function ClientesContratosView({
           pdf_name: ''
         });
       } else {
+        setShowContratoModal(false);
         setAlertState({
           show: true,
           type: 'error',
@@ -2642,44 +2645,47 @@ export default function ClientesContratosView({
       )}
 
       {/* GESTIA CUSTOM NOTIFICATION ALERT MODAL */}
-      {alertState.show && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-notification-modal">
-          <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
-            <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                alertState.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-500' :
-                alertState.type === 'error' ? 'bg-rose-50 border border-rose-100 text-rose-500' :
-                'bg-sky-50 border border-sky-100 text-sky-500'
-              }`}>
-                {alertState.type === 'success' ? <CheckCircle2 size={18} /> :
-                 alertState.type === 'error' ? <XCircle size={18} /> :
-                 <Cloud size={18} />}
+      {createPortal(
+        alertState.show ? (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-notification-modal">
+            <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
+              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  alertState.type === 'success' ? 'bg-emerald-50 border border-emerald-100 text-emerald-500' :
+                  alertState.type === 'error' ? 'bg-rose-50 border border-rose-100 text-rose-500' :
+                  'bg-sky-50 border border-sky-100 text-sky-500'
+                }`}>
+                  {alertState.type === 'success' ? <CheckCircle2 size={18} /> :
+                   alertState.type === 'error' ? <XCircle size={18} /> :
+                   <Cloud size={18} />}
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-850 text-sm">{alertState.title}</h4>
+                  <p className="text-[9px] text-slate-400 uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-slate-850 text-sm">{alertState.title}</h4>
-                <p className="text-[9px] text-slate-400 uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+
+              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                {alertState.message}
+              </p>
+
+              <div className="flex items-center justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAlertState(prev => ({ ...prev, show: false }))}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                    alertState.type === 'success' ? 'bg-[#00B594] hover:bg-[#009b7e] text-white shadow-sm' :
+                    alertState.type === 'error' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' :
+                    'bg-slate-800 hover:bg-slate-900 text-white shadow-sm'
+                  }`}
+                >
+                  Entendido
+                </button>
               </div>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed font-sans">
-              {alertState.message}
-            </p>
-
-            <div className="flex items-center justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setAlertState(prev => ({ ...prev, show: false }))}
-                className={`px-5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                  alertState.type === 'success' ? 'bg-[#00B594] hover:bg-[#009b7e] text-white shadow-sm' :
-                  alertState.type === 'error' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm' :
-                  'bg-slate-800 hover:bg-slate-900 text-white shadow-sm'
-                }`}
-              >
-                Entendido
-              </button>
             </div>
           </div>
-        </div>
+        ) : null,
+        document.body
       )}
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && createPortal(
