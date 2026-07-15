@@ -58,8 +58,8 @@ export default function ModalEditarLinea({
 
   return (
     <>
-    <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" id="ot-modal-editar-linea">
+    <div className="fixed inset-0 z-[80] bg-slate-900/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[85] flex items-start justify-center p-4 overflow-y-auto" id="ot-modal-editar-linea">
       <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
           <div>
