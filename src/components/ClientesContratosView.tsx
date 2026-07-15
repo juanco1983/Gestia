@@ -2643,7 +2643,7 @@ export default function ClientesContratosView({
 
       {/* GESTIA CUSTOM NOTIFICATION ALERT MODAL */}
       {alertState.show && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" id="gestia-notification-modal">
+        <div className="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 font-sans" style={{ zIndex: 9999 }} id="gestia-notification-modal">
           <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left">
             <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -2684,8 +2684,8 @@ export default function ClientesContratosView({
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && createPortal(
         <>
-          <div className="fixed inset-0 z-[59] bg-slate-900/50 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" style={{ zIndex: 59 }} />
+          <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto" style={{ zIndex: 60 }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
