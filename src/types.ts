@@ -59,6 +59,7 @@ export interface OT {
   id: string;
   clientId: string;
   contratoId?: string;
+  adendaId?: string;
   costo_estimado_usd?: number;
   equipoId?: string;
   tipoMantenimiento: ServiceType;

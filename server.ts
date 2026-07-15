@@ -368,7 +368,7 @@ app.get("/api/ots", async (req, res) => {
 
 app.post("/api/ots", async (req, res) => {
   try {
-    const { contratoId, costo_estimado_usd, ...otData } = req.body;
+    const { contratoId, adendaId, costo_estimado_usd, ...otData } = req.body;
 
     // Auto-derive tipoEquipo and potenciaKva from Equipo if equipoId is set
     if (otData.equipoId) {
@@ -398,7 +398,7 @@ app.post("/api/ots", async (req, res) => {
       // Start transaction to create OT and deduct balance
       const [createdOt, updatedContrato] = await prisma.$transaction([
         prisma.oT.create({
-          data: { ...otData, contratoId, costo_estimado_usd: costo }
+          data: { ...otData, contratoId, adendaId: adendaId || null, costo_estimado_usd: costo }
         }),
         prisma.contratoNuevo.update({
           where: { id: contratoId },
@@ -409,7 +409,14 @@ app.post("/api/ots", async (req, res) => {
       return res.status(201).json(createdOt);
     } else {
       // Normal OT creation
-      const created = await prisma.oT.create({ data: req.body });
+      const created = await prisma.oT.create({ 
+        data: { 
+          ...otData, 
+          contratoId: contratoId || null, 
+          adendaId: adendaId || null, 
+          costo_estimado_usd: costo_estimado_usd ? Number(costo_estimado_usd) : null 
+        } 
+      });
       return res.status(201).json(created);
     }
   } catch (err) {

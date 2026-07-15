@@ -124,6 +124,8 @@ export default function VentasView({
     id: '',
     clientId: '',
     contratoId: '',
+    adendaId: '',
+    equipoId: '',
     costo_estimado_usd: 0,
     tipoMantenimiento: ServiceType.PREVENTIVO,
     tipoEquipo: EquipmentType.UPS,
@@ -132,6 +134,75 @@ export default function VentasView({
     tecnicoTitular: 'Carlos Ocsa',
     tecnicoApoyo: ''
   });
+
+  const [clientEquipos, setClientEquipos] = useState<any[]>([]);
+  const [isLoadingEquipos, setIsLoadingEquipos] = useState(false);
+
+  const getNextOtCode = (contratoId: string, adendaId: string | null) => {
+    if (!contratoId) return `OT-${Math.floor(4000 + Math.random() * 999)}`;
+    const contract = contratosComerciales.find(c => c.id === contratoId);
+    if (!contract) return `OT-${Math.floor(4000 + Math.random() * 999)}`;
+    
+    let baseCode = contract.id;
+    let countFilter = (o: OT) => o.contratoId === contratoId && !o.adendaId;
+    
+    if (adendaId) {
+      const adenda = contract.ampliaciones?.find(a => a.id === adendaId);
+      if (adenda) {
+        const adendaCode = adenda.codigo || 'A';
+        if (adendaCode.includes(contract.id)) {
+          baseCode = adendaCode;
+        } else {
+          baseCode = `${contract.id}-${adendaCode}`;
+        }
+      }
+      countFilter = (o: OT) => o.adendaId === adendaId;
+    }
+    
+    const count = ots.filter(countFilter).length;
+    const sequence = String(count + 1).padStart(3, '0');
+    return `OT-${baseCode}-${sequence}`;
+  };
+
+  const getFilteredEquipos = () => {
+    if (!otForm.contratoId) {
+      return clientEquipos;
+    }
+    if (otForm.adendaId) {
+      return clientEquipos.filter(eq => 
+        eq.adensasOrigen && eq.adensasOrigen.some((ao: any) => ao.adendaId === otForm.adendaId)
+      );
+    } else {
+      return clientEquipos.filter(eq => eq.contratoId === otForm.contratoId);
+    }
+  };
+
+  const handleLinkSelect = (val: string) => {
+    let newContratoId = '';
+    let newAdendaId = '';
+    
+    if (val.startsWith('contract_')) {
+      newContratoId = val.replace('contract_', '');
+    } else if (val.startsWith('adenda_')) {
+      newAdendaId = val.replace('adenda_', '');
+      const parent = contratosComerciales.find(c => 
+        c.ampliaciones?.some(a => a.id === newAdendaId)
+      );
+      if (parent) {
+        newContratoId = parent.id;
+      }
+    }
+    
+    const generatedId = getNextOtCode(newContratoId, newAdendaId || null);
+    
+    setOtForm(prev => ({
+      ...prev,
+      contratoId: newContratoId,
+      adendaId: newAdendaId,
+      id: generatedId,
+      equipoId: ''
+    }));
+  };
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -195,13 +266,17 @@ export default function VentasView({
           ...existingOT,
           id: otForm.id.trim() || existingOT.id,
           clientId: otForm.clientId,
+          contratoId: otForm.contratoId || undefined,
+          adendaId: otForm.adendaId || undefined,
+          equipoId: otForm.equipoId || undefined,
+          costo_estimado_usd: otForm.costo_estimado_usd || undefined,
           tipoMantenimiento: otForm.tipoMantenimiento,
           tipoEquipo: otForm.tipoEquipo,
           potenciaKva: Number(otForm.potenciaKva),
           fechaProgramada: otForm.fechaProgramada || existingOT.fechaProgramada,
           tecnicoTitular: otForm.tecnicoTitular,
           tecnicoApoyo: otForm.tecnicoApoyo || undefined,
-        });
+        } as any);
       }
     } else {
       const cleanId = otForm.id.trim() || `OT-${Math.floor(4000 + Math.random() * 999)}`;
@@ -209,6 +284,8 @@ export default function VentasView({
         id: cleanId,
         clientId: otForm.clientId,
         contratoId: otForm.contratoId || undefined,
+        adendaId: otForm.adendaId || undefined,
+        equipoId: otForm.equipoId || undefined,
         costo_estimado_usd: otForm.costo_estimado_usd || undefined,
         tipoMantenimiento: otForm.tipoMantenimiento,
         tipoEquipo: otForm.tipoEquipo,
@@ -217,7 +294,7 @@ export default function VentasView({
         tecnicoTitular: otForm.tecnicoTitular,
         tecnicoApoyo: otForm.tecnicoApoyo || undefined,
         estado: OTStatus.CREADA
-      };
+      } as any;
       onAddOT(newOT);
     }
     setShowOTModal(false);
@@ -230,6 +307,8 @@ export default function VentasView({
       id: ot.id,
       clientId: ot.clientId,
       contratoId: ot.contratoId || '',
+      adendaId: (ot as any).adendaId || '',
+      equipoId: ot.equipoId || '',
       costo_estimado_usd: ot.costo_estimado_usd || 0,
       tipoMantenimiento: ot.tipoMantenimiento,
       tipoEquipo: ot.tipoEquipo,
@@ -238,6 +317,21 @@ export default function VentasView({
       tecnicoTitular: ot.tecnicoTitular,
       tecnicoApoyo: ot.tecnicoApoyo || ''
     });
+
+    setClientEquipos([]);
+    if (ot.clientId) {
+      setIsLoadingEquipos(true);
+      fetch(`/api/equipos?clienteId=${encodeURIComponent(ot.clientId)}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          setClientEquipos(Array.isArray(data) ? data : []);
+          setIsLoadingEquipos(false);
+        })
+        .catch(err => {
+          console.error("Error fetching client equipments:", err);
+          setIsLoadingEquipos(false);
+        });
+    }
     setShowOTModal(true);
   };
 
@@ -245,9 +339,11 @@ export default function VentasView({
     setOtModalMode('create');
     setEditingOtId(null);
     setOtForm({
-      id: `OT-${Math.floor(4000 + Math.random() * 999)}`,
+      id: '',
       clientId: '',
       contratoId: '',
+      adendaId: '',
+      equipoId: '',
       costo_estimado_usd: 0,
       tipoMantenimiento: ServiceType.PREVENTIVO,
       tipoEquipo: EquipmentType.UPS,
@@ -256,17 +352,36 @@ export default function VentasView({
       tecnicoTitular: 'Carlos Ocsa',
       tecnicoApoyo: ''
     });
+    setClientEquipos([]);
     setShowOTModal(true);
   };
 
-  // Pre-load logic helper
   const handleClientSelectInOt = (clientId: string) => {
     const matchedContract = contracts.find(c => c.clientId === clientId);
     setOtForm(prev => ({
       ...prev,
       clientId,
+      contratoId: '',
+      adendaId: '',
+      equipoId: '',
+      id: '',
       tipoEquipo: matchedContract ? matchedContract.tipoEquipo : prev.tipoEquipo
     }));
+
+    setClientEquipos([]);
+    if (clientId) {
+      setIsLoadingEquipos(true);
+      fetch(`/api/equipos?clienteId=${encodeURIComponent(clientId)}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          setClientEquipos(Array.isArray(data) ? data : []);
+          setIsLoadingEquipos(false);
+        })
+        .catch(err => {
+          console.error("Error loading client equipments:", err);
+          setIsLoadingEquipos(false);
+        });
+    }
   };
 
   const handleDownloadPDF = async (selectedOt: OT) => {
@@ -1380,28 +1495,34 @@ export default function VentasView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-500 font-bold block">Código / ID de la OT (e.g. OT-250)</label>
+                <label className="text-slate-500 font-bold block">Código / ID de la OT (Autogenerado)</label>
                 <input 
                   type="text" 
-                  required
-                  placeholder="Ej: OT-250" 
+                  disabled
+                  placeholder="Se generará automáticamente al vincular" 
                   value={otForm.id} 
-                  onChange={(e) => setOtForm({...otForm, id: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-slate-800"
+                  className="w-full bg-slate-100 border border-slate-200 rounded p-2 text-sm font-bold text-slate-500 font-mono"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-500 font-bold block">Contrato Marco (Opcional)</label>
+                  <label className="text-slate-500 font-bold block">Vincular Contrato / Adenda</label>
                   <select 
-                    value={otForm.contratoId} 
-                    onChange={(e) => setOtForm({...otForm, contratoId: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm"
+                    value={otForm.adendaId ? `adenda_${otForm.adendaId}` : otForm.contratoId ? `contract_${otForm.contratoId}` : ''}
+                    onChange={(e) => handleLinkSelect(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-slate-800"
                   >
-                    <option value="">-- Sin Contrato --</option>
+                    <option value="">-- Sin Vincular --</option>
                     {contratosComerciales.filter(c => c.clientId === otForm.clientId).map(c => (
-                      <option key={c.id} value={c.id}>Contrato: {c.id} - {c.tipo_contrato} (Saldo: ${c.saldo_disponible_usd ?? c.presupuesto_total_usd ?? 0})</option>
+                      <React.Fragment key={c.id}>
+                        <option value={`contract_${c.id}`}>Contrato: {c.id} ({c.tipo_contrato})</option>
+                        {(c.ampliaciones || []).map(a => (
+                          <option key={a.id} value={`adenda_${a.id}`}>
+                            &nbsp;&nbsp;↳ Adenda: {a.codigo || 'S/N'} (Monto: ${a.monto})
+                          </option>
+                        ))}
+                      </React.Fragment>
                     ))}
                   </select>
                 </div>
@@ -1418,6 +1539,41 @@ export default function VentasView({
                     className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm disabled:opacity-50"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-500 font-bold block">Equipo Asignado</label>
+                {isLoadingEquipos ? (
+                  <div className="text-[10px] text-slate-400 font-mono animate-pulse">Cargando equipos del cliente...</div>
+                ) : (
+                  <select 
+                    required={!!otForm.contratoId}
+                    value={otForm.equipoId} 
+                    onChange={(e) => {
+                      const eqId = e.target.value;
+                      const eq = clientEquipos.find(x => x.id === eqId);
+                      setOtForm(prev => ({
+                        ...prev,
+                        equipoId: eqId,
+                        tipoEquipo: eq ? eq.tipo : prev.tipoEquipo,
+                        potenciaKva: eq && eq.potenciaKva ? eq.potenciaKva : prev.potenciaKva
+                      }));
+                    }} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-slate-800"
+                  >
+                    <option value="">-- Seleccione un Equipo --</option>
+                    {getFilteredEquipos().map(eq => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.codigo} - {eq.tipo} {eq.marca} ({eq.potenciaKva} KVA)
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {otForm.contratoId && getFilteredEquipos().length === 0 && !isLoadingEquipos && (
+                  <span className="text-[10px] text-amber-600 block mt-0.5 font-bold">
+                    ⚠️ No hay equipos registrados para este contrato/adenda.
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
