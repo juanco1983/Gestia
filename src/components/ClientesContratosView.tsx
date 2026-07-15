@@ -1484,8 +1484,8 @@ export default function ClientesContratosView({
       {/* MODAL CLIENTE */}
       {showClientModal && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[99] bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -1646,8 +1646,8 @@ export default function ClientesContratosView({
     {/* MODAL CONTRATO */}
       {showContratoModal && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[99] bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -1849,8 +1849,8 @@ export default function ClientesContratosView({
       {/* MODAL DETALLE / EDICIÓN CLIENTE */}
       {selectedClientForView && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[99] bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -2126,8 +2126,8 @@ export default function ClientesContratosView({
       {/* MODAL DETALLE / EDICIÓN CONTRATO */}
       {selectedContratoForView && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto pt-8">
+          <div className="fixed inset-0 z-[99] bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto pt-8">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100 my-8">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
@@ -2684,8 +2684,8 @@ export default function ClientesContratosView({
       {/* MODAL AMPLIACIÓN */}
       {showAmpliacionModal && selectedContratoForView && createPortal(
         <>
-          <div className="fixed inset-0 z-[59] bg-slate-900/50 backdrop-blur-sm" />
-          <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-[99] bg-slate-900/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-amber-100 flex items-center justify-between">
               <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
