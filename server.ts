@@ -1203,6 +1203,10 @@ app.post("/api/contracts/:id/equipos", async (req: any, res) => {
       res.status(404).json({ error: "Equipo no encontrado" });
       return;
     }
+    if (existing.contratoId && existing.contratoId !== id) {
+      res.status(400).json({ error: "El equipo ya está asignado a otro contrato. Debe ser liberado primero." });
+      return;
+    }
     const updateData: any = { contratoId: id };
     if (!existing.codigo) {
       updateData.codigo = await generateEquipoCodigo(id);
@@ -1241,6 +1245,15 @@ app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req
       return;
     }
     // Get the adenda's codigo to build the equipment code prefix
+    const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
+    if (!equipo) {
+      res.status(404).json({ error: "Equipo no encontrado" });
+      return;
+    }
+    if (equipo.contratoId && equipo.contratoId !== contratoId) {
+      res.status(400).json({ error: "El equipo ya está asignado a otro contrato. Debe ser liberado primero." });
+      return;
+    }
     const adenda = await prisma.contratoAmpliacion.findUnique({ where: { id: adendaId } });
     if (!adenda) {
       res.status(404).json({ error: "Adenda no encontrada" });
@@ -1249,7 +1262,6 @@ app.post("/api/contracts/:contratoId/ampliaciones/:adendaId/equipos", async (req
     const pivote = await prisma.equipoAmpliacion.create({
       data: { adendaId, equipoId }
     });
-    const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
     const updateData: any = { contratoId };
     // Regenerate code with adenda prefix if it doesn't have it yet
     const adendaMatch = adenda.codigo.match(/-A(\d+)$/);
