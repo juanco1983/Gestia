@@ -117,11 +117,11 @@ export default function EquipoDetailDrawer({ equipoId, contratoId, onClose, onUn
     <>
       {/* Backdrop */}
       {equipoId && (
-        <div className="fixed inset-0 z-[65] bg-slate-900/30 backdrop-blur-sm" onClick={onClose}></div>
+        <div className="fixed inset-0 z-[85] bg-slate-900/30 backdrop-blur-sm" onClick={onClose}></div>
       )}
       {/* Drawer */}
       {equipoId && (
-      <div className="fixed top-0 right-0 z-[66] h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 animate-slide-in-right">
+      <div className="fixed top-0 right-0 z-[90] h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 animate-slide-in-right">
           <>
             {/* Header */}
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
