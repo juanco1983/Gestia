@@ -757,7 +757,7 @@ app.post("/api/sync", async (req, res) => {
         'detalle', 'monto_sin_igv', 'monto_inc_igv', 'monto_facturar_sin_igv', 'monto_facturar_inc_igv',
         'monto_facturado_sin_igv', 'monto_facturado_inc_igv', 'por_facturar_sin_igv', 'por_facturar_inc_igv',
         'monto_pagado_sin_igv', 'monto_pagado_inc_igv', 'pendiente_pago_sin_igv', 'pendiente_pago_inc_igv',
-        'vence', 'oc', 'h2h_bcp', 'estado', 'tipo_servicio', 'tipo_contract', 'tipo_contrato',
+        'vence', 'oc', 'h2h_bcp', 'estado', 'tipo_contract', 'tipo_contrato',
         'fecha_inicio', 'fecha_fin', 'fecha_fin_original', 'comentarios', 'presupuesto_total_usd',
         'saldo_disponible_usd', 'monto_original', 'moneda', 'pdf_url'
       ];

@@ -180,7 +180,6 @@ model ContratoNuevo {
   oc                       String?
   h2h_bcp                  String?
   estado                   String?
-  tipo_servicio            String?
   tipo_contract            String?
   tipo_contrato            String?
   fecha_inicio             String?
