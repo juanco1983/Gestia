@@ -108,7 +108,10 @@ app.get("/health", (req, res) => {
 
 function authenticateToken(req: any, res: any, next: any) {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  let token = authHeader && authHeader.split(" ")[1];
+  if (!token && req.query.token) {
+    token = req.query.token as string;
+  }
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);

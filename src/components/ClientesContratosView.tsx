@@ -2331,7 +2331,7 @@ export default function ClientesContratosView({
                   <div className="pt-4 border-t border-slate-100 space-y-2">
                     <h5 className="text-[10px] font-extrabold uppercase tracking-wide text-[#00B594] font-mono">Documento del Contrato</h5>
                     <a
-                      href={`/api/contracts/files/${encodeURIComponent(selectedContratoForView.pdf_url)}`}
+                      href={`/api/contracts/files/${encodeURIComponent(selectedContratoForView.pdf_url)}${localStorage.getItem('gestia_jwt_token') ? `?token=${encodeURIComponent(localStorage.getItem('gestia_jwt_token') || '')}` : ''}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#E6F7F4] hover:bg-[#d0f2eb] text-[#00B594] font-bold rounded-xl text-xs transition-colors border border-[#00B594]/20"
@@ -2400,7 +2400,7 @@ export default function ClientesContratosView({
                             )}
                             {amp.adenda_pdf_url && (
                               <a
-                                href={`/api/contracts/files/${encodeURIComponent(amp.adenda_pdf_url)}`}
+                                href={`/api/contracts/files/${encodeURIComponent(amp.adenda_pdf_url)}${localStorage.getItem('gestia_jwt_token') ? `?token=${encodeURIComponent(localStorage.getItem('gestia_jwt_token') || '')}` : ''}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] text-amber-700 hover:text-amber-900 font-bold underline underline-offset-2"
