@@ -90,7 +90,7 @@ export default function EquipoPickerModal({
       if (searchQuery) params.set('q', searchQuery);
       const res = await fetch(`/api/equipos?${params.toString()}`);
       const all = await res.json();
-      setEquiposLibres(all.filter((e: Equipo) => !e.contratoId || !existingIds.includes(e.id)));
+      setEquiposLibres(all.filter((e: Equipo) => !e.contratoId && !existingIds.includes(e.id)));
       setEquiposAsignados(all.filter((e: Equipo) => e.contratoId === contratoId && !existingIds.includes(e.id)));
     } catch (err) {
       console.error('Error loading equipos:', err);
