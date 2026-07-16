@@ -2006,7 +2006,7 @@ export default function App() {
                 <OrdenesTrabajoView
                   lineas={ordenesTrabajo}
                   clients={clients}
-                  contratosComerciales={contratosComerciales}
+                  contratosComerciales={contratosNuevos}
                   targetVentas={targetVentas}
                   currentUser={{ email: currentUser?.email || 'admin@gestia.com', username: currentUser?.username || 'Administrador' }}
                   onAddLinea={handleAddOtLinea}
