@@ -406,7 +406,10 @@ export default function App() {
             fechaProgramada: linea.fecha || new Date().toISOString().split('T')[0],
             tecnicoTitular: '',
             estado: OTStatus.CREADA,
-            otFinancieraId: linea.id
+            otFinancieraId: linea.id,
+            contratoId: (linea as any).contratoId || undefined,
+            adendaId: (linea as any).adendaId || undefined,
+            equipoId: (linea as any).equipoId || undefined
           };
           updatedOts.push(newOt);
           changed = true;
@@ -443,6 +446,18 @@ export default function App() {
             }
             if (!existing.otFinancieraId) {
               existing.otFinancieraId = linea.id;
+              localChanged = true;
+            }
+            if (existing.contratoId !== (linea as any).contratoId) {
+              existing.contratoId = (linea as any).contratoId || undefined;
+              localChanged = true;
+            }
+            if ((existing as any).adendaId !== (linea as any).adendaId) {
+              (existing as any).adendaId = (linea as any).adendaId || undefined;
+              localChanged = true;
+            }
+            if (existing.equipoId !== (linea as any).equipoId) {
+              existing.equipoId = (linea as any).equipoId || undefined;
               localChanged = true;
             }
 
@@ -1991,6 +2006,7 @@ export default function App() {
                 <OrdenesTrabajoView
                   lineas={ordenesTrabajo}
                   clients={clients}
+                  contratosComerciales={contratosComerciales}
                   targetVentas={targetVentas}
                   currentUser={{ email: currentUser?.email || 'admin@gestia.com', username: currentUser?.username || 'Administrador' }}
                   onAddLinea={handleAddOtLinea}

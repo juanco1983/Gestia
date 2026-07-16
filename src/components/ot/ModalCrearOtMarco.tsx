@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
-import { OrdenTrabajoLinea, Client } from '../../types';
+import { OrdenTrabajoLinea, Client, Contrato, EquipmentType, ServiceType } from '../../types';
 import { MESES_ESPANOL, TIPO_VENTA_VALUES, TIPO_CONTRATACION_VALUES } from '../../utils/otDefaults';
 
 interface ModalCrearOtMarcoProps {
   clients: Client[];
+  contratosComerciales: Contrato[];
   lineas: OrdenTrabajoLinea[];
   currentUser: { email: string; username: string };
   tipoCambio: number;
@@ -14,6 +15,7 @@ interface ModalCrearOtMarcoProps {
 
 export default function ModalCrearOtMarco({
   clients,
+  contratosComerciales,
   lineas,
   currentUser,
   tipoCambio,
@@ -22,7 +24,6 @@ export default function ModalCrearOtMarco({
 }: ModalCrearOtMarcoProps) {
   const [marcoForm, setMarcoForm] = useState({
     anio: new Date().getFullYear(),
-    ot_marco: '',
     mes: MESES_ESPANOL[new Date().getMonth()],
     fecha: new Date().toISOString().split('T')[0],
     nombre_solicitante: '',
@@ -45,23 +46,86 @@ export default function ModalCrearOtMarco({
     tipo_contratacion: 'CONTRATO' as any,
     comercial: '',
     observacion: '',
-    seguimiento: ''
+    seguimiento: '',
+    contratoId: '',
+    adendaId: '',
+    equipoId: '',
+    ot: '' // auto generated unique code
   });
+
+  const [clientEquipos, setClientEquipos] = useState<any[]>([]);
+  const [isLoadingEquipos, setIsLoadingEquipos] = useState(false);
+
+  const getNextOtCode = (contratoId: string, adendaId: string | null) => {
+    if (!contratoId) return `OT-S_N-${Math.floor(4000 + Math.random() * 999)}-001`;
+    const contract = contratosComerciales.find(c => c.id === contratoId);
+    if (!contract) return `OT-S_N-${Math.floor(4000 + Math.random() * 999)}-001`;
+    
+    let baseCode = contract.id;
+    
+    if (adendaId) {
+      const adenda = contract.ampliaciones?.find(a => a.id === adendaId);
+      if (adenda) {
+        const adendaCode = adenda.codigo || 'A';
+        if (adendaCode.includes(contract.id)) {
+          baseCode = adendaCode;
+        } else {
+          baseCode = `${contract.id}-${adendaCode}`;
+        }
+      }
+    }
+    
+    return `OT-${baseCode}-001`; // First line is always 001
+  };
+
+  const getFilteredEquipos = () => {
+    if (!marcoForm.contratoId) {
+      return clientEquipos;
+    }
+    if (marcoForm.adendaId) {
+      return clientEquipos.filter(eq => 
+        eq.adensasOrigen && eq.adensasOrigen.some((ao: any) => ao.adendaId === marcoForm.adendaId)
+      );
+    } else {
+      return clientEquipos.filter(eq => eq.contratoId === marcoForm.contratoId);
+    }
+  };
+
+  const handleLinkSelect = (val: string) => {
+    let newContratoId = '';
+    let newAdendaId = '';
+    
+    if (val.startsWith('contract_')) {
+      newContratoId = val.replace('contract_', '');
+    } else if (val.startsWith('adenda_')) {
+      newAdendaId = val.replace('adenda_', '');
+      const parent = contratosComerciales.find(c => 
+        c.ampliaciones?.some(a => a.id === newAdendaId)
+      );
+      if (parent) {
+        newContratoId = parent.id;
+      }
+    }
+    
+    const generatedId = getNextOtCode(newContratoId, newAdendaId || null);
+    
+    setMarcoForm(prev => ({
+      ...prev,
+      contratoId: newContratoId,
+      adendaId: newAdendaId,
+      ot: generatedId,
+      equipoId: ''
+    }));
+  };
 
   const cleanString = (val: string) => val.trim().toUpperCase();
 
   const handleCreateMarcoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!marcoForm.ot_marco || !marcoForm.razon_social) return;
+    if (!marcoForm.razon_social) return;
 
-    const otMarcoNum = parseInt(marcoForm.ot_marco);
-    
-    // Check if OT Marco already exists (strict duplicate defense)
-    const exists = lineas.some(l => l.ot_marco === otMarcoNum);
-    if (exists) {
-      alert(`La OT Marco #${otMarcoNum} ya existe en el sistema.`);
-      return;
-    }
+    // Auto-generate ot_marco as next available unique integer
+    const otMarcoNum = Math.max(...lineas.map(l => l.ot_marco), 0) + 1;
 
     // Auto-generate line correlative -1
     const subSinIgv = Number(marcoForm.sub_importe_sin_igv) || 0;
@@ -75,7 +139,7 @@ export default function ModalCrearOtMarco({
       id: `otl_${Date.now()}_1`,
       anio: Number(marcoForm.anio) || new Date().getFullYear(),
       ot_marco: otMarcoNum,
-      ot: `${otMarcoNum}-1`,
+      ot: marcoForm.ot || `OT-${otMarcoNum}-1`,
       mes: cleanString(marcoForm.mes),
       fecha: marcoForm.fecha,
       nombre_solicitante: marcoForm.nombre_solicitante.trim(),
@@ -108,12 +172,15 @@ export default function ModalCrearOtMarco({
         {
           fecha: new Date().toISOString().split('T')[0],
           autor: currentUser.email,
-          texto: `OT Marco #${otMarcoNum} e inicio de línea 1 registrado por ${currentUser.username}.`
+          texto: `OT Marco #${otMarcoNum} (${marcoForm.ot || `OT-${otMarcoNum}-1`}) e inicio de línea 1 registrado por ${currentUser.username}.`
         }
       ],
       comercial: marcoForm.comercial.trim(),
       creadoPor: currentUser.email,
-      creadoEn: new Date().toISOString().split('T')[0]
+      creadoEn: new Date().toISOString().split('T')[0],
+      contratoId: marcoForm.contratoId || undefined,
+      adendaId: marcoForm.adendaId || undefined,
+      equipoId: marcoForm.equipoId || undefined
     };
 
     onAddLinea(firstLine);
@@ -161,14 +228,13 @@ export default function ModalCrearOtMarco({
                 />
               </div>
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nro OT Marco <span className="text-rose-500">*</span></label>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Código OT (Autogenerado)</label>
                 <input
-                  type="number"
-                  required
-                  placeholder="Ej: 1109"
-                  value={marcoForm.ot_marco}
-                  onChange={(e) => setMarcoForm({ ...marcoForm, ot_marco: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:ring-1 focus:ring-[#00B594] font-mono font-bold"
+                  type="text"
+                  disabled
+                  placeholder="Se autogenerará al vincular"
+                  value={marcoForm.ot}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl py-2 px-3 text-slate-500 font-mono font-bold"
                 />
               </div>
               <div>
@@ -196,8 +262,27 @@ export default function ModalCrearOtMarco({
                       ...marcoForm,
                       razon_social: s,
                       empresa: clientObj ? clientObj.razonSocial.split(' ')[0].toUpperCase() : '',
-                      nombre_solicitante: clientObj ? clientObj.contactoNombre : ''
+                      nombre_solicitante: clientObj ? clientObj.contactoNombre : '',
+                      contratoId: '',
+                      adendaId: '',
+                      ot: '',
+                      equipoId: ''
                     });
+                    
+                    setClientEquipos([]);
+                    if (clientObj) {
+                      setIsLoadingEquipos(true);
+                      fetch(`/api/equipos?clienteId=${encodeURIComponent(clientObj.id)}`)
+                        .then(r => r.ok ? r.json() : [])
+                        .then(data => {
+                          setClientEquipos(Array.isArray(data) ? data : []);
+                          setIsLoadingEquipos(false);
+                        })
+                        .catch(err => {
+                          console.error("Error loading client equipments:", err);
+                          setIsLoadingEquipos(false);
+                        });
+                    }
                   }}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-[#00B594] transition-all"
                 >
@@ -214,6 +299,58 @@ export default function ModalCrearOtMarco({
                   onChange={(e) => setMarcoForm({ ...marcoForm, empresa: e.target.value })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Vincular Contrato / Adenda</label>
+                <select
+                  value={marcoForm.adendaId ? `adenda_${marcoForm.adendaId}` : marcoForm.contratoId ? `contract_${marcoForm.contratoId}` : ''}
+                  onChange={(e) => handleLinkSelect(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-[#00B594] transition-all font-bold"
+                >
+                  <option value="">-- Sin Vincular --</option>
+                  {contratosComerciales.filter(c => {
+                    const clientObj = clients.find(cl => cl.razonSocial === marcoForm.razon_social);
+                    return c.clientId === clientObj?.id;
+                  }).map(c => (
+                    <React.Fragment key={c.id}>
+                      <option value={`contract_${c.id}`}>Contrato: {c.id} ({c.tipo_contrato})</option>
+                      {(c.ampliaciones || []).map(a => (
+                        <option key={a.id} value={`adenda_${a.id}`}>
+                          &nbsp;&nbsp;↳ Adenda: {a.codigo || 'S/N'} (Monto: ${a.monto})
+                        </option>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Equipo Asignado</label>
+                {isLoadingEquipos ? (
+                  <div className="text-[10px] text-slate-400 font-mono animate-pulse mt-2">Cargando equipos...</div>
+                ) : (
+                  <select
+                    required={!!marcoForm.contratoId}
+                    value={marcoForm.equipoId}
+                    onChange={(e) => setMarcoForm({ ...marcoForm, equipoId: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:outline-none focus:border-[#00B594] transition-all font-bold"
+                  >
+                    <option value="">-- Seleccione un Equipo --</option>
+                    {getFilteredEquipos().map(eq => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.codigo} - {eq.tipo} {eq.marca} ({eq.potenciaKva} KVA)
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {marcoForm.contratoId && getFilteredEquipos().length === 0 && !isLoadingEquipos && (
+                  <span className="text-[9px] text-amber-600 block mt-0.5 font-bold">
+                    ⚠️ Sin equipos registrados en contrato/adenda.
+                  </span>
+                )}
               </div>
             </div>
 
