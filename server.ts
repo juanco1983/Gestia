@@ -1061,16 +1061,31 @@ app.get("/api/equipos", async (req: any, res) => {
     const { contratoId, clienteId, estado, tipo, q } = req.query;
     const where: any = {};
     if (contratoId) where.contratoId = contratoId;
-    if (clienteId) where.clienteId = clienteId;
+    if (clienteId) {
+      where.OR = [
+        { clienteId: clienteId },
+        { contrato: { clientId: clienteId } }
+      ];
+    }
     if (estado) where.estado = estado;
     if (tipo) where.tipo = tipo;
     if (q) {
-      where.OR = [
+      const searchOR = [
         { codigo: { contains: q, mode: 'insensitive' } },
         { serie: { contains: q, mode: 'insensitive' } },
         { marca: { contains: q, mode: 'insensitive' } },
         { modelo: { contains: q, mode: 'insensitive' } },
       ];
+      if (where.OR) {
+        const clientOR = where.OR;
+        delete where.OR;
+        where.AND = [
+          { OR: clientOR },
+          { OR: searchOR }
+        ];
+      } else {
+        where.OR = searchOR;
+      }
     }
     const equipos = await prisma.equipo.findMany({
       where,
