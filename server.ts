@@ -474,53 +474,52 @@ app.put("/api/ots/:id", async (req, res) => {
 
     // Auto-create ServicioEquipo when OT is signed/approved and has equipoId
     if (updatedOt.equipoId && ["Conformidad Firmada (Listo para Facturar)", "Aprobada", "Firmada"].includes(updatedOt.estado)) {
-      const existingServices = await prisma.servicioEquipo.count({
-        where: { otId: updatedOt.id, equipoId: updatedOt.equipoId }
-      });
-      if (existingServices === 0) {
-        // Try to get report data for richer service record
-        let reportData: any = null;
-        try {
-          reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
-        } catch {}
-
-        // Derive estado_post intelligently from the technical report
-        // If revisionNormas.estadoOperativo === false, the equipment is in observation; else Operativo
-        let estadoPost = 'Operativo';
-        if (reportData?.revisionNormas) {
-          const normas = typeof reportData.revisionNormas === 'string'
-            ? JSON.parse(reportData.revisionNormas)
-            : reportData.revisionNormas;
-          if (normas?.estadoOperativo === false) {
-            estadoPost = 'En observación';
-          }
-        }
-        // Also check if there are corrections from supervisor (indicates issues found)
-        if (reportData?.correccionesSupervisor && estadoPost === 'Operativo') {
-          // Supervisor added notes but still approved — leave as Operativo (approved = fit for service)
-        }
-
-        await prisma.servicioEquipo.create({
-          data: {
-            equipoId: updatedOt.equipoId,
-            otId: updatedOt.id,
-            fecha: (updatedOt as any).horaInicioServicio
-              ? (updatedOt as any).horaInicioServicio.split('T')[0]
-              : updatedOt.fechaProgramada || new Date().toISOString().split('T')[0],
-            tipo: (updatedOt as any).tipoMantenimiento || 'Preventivo',
-            estado_post: estadoPost,
-            tecnicoTitular: (updatedOt as any).tecnicoTitular || 'Sistema',
-            hallazgos: reportData?.observacionesDiagnostico || null,
-            recomendaciones: reportData?.recomendaciones || null
-          }
+      const equipoIds = updatedOt.equipoId.split(',').map((id: string) => id.trim()).filter(Boolean);
+      for (const singleEquipoId of equipoIds) {
+        const existingServices = await prisma.servicioEquipo.count({
+          where: { otId: updatedOt.id, equipoId: singleEquipoId }
         });
+        if (existingServices === 0) {
+          // Try to get report data for richer service record
+          let reportData: any = null;
+          try {
+            reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
+          } catch {}
 
-        // Sync equipo.estado if service left equipment in observation/repair
-        if (estadoPost !== 'Operativo') {
-          await prisma.equipo.update({
-            where: { id: updatedOt.equipoId },
-            data: { estado: estadoPost }
+          // Derive estado_post intelligently from the technical report
+          // If revisionNormas.estadoOperativo === false, the equipment is in observation; else Operativo
+          let estadoPost = 'Operativo';
+          if (reportData?.revisionNormas) {
+            const normas = typeof reportData.revisionNormas === 'string'
+              ? JSON.parse(reportData.revisionNormas)
+              : reportData.revisionNormas;
+            if (normas?.estadoOperativo === false) {
+              estadoPost = 'En observación';
+            }
+          }
+
+          await prisma.servicioEquipo.create({
+            data: {
+              equipoId: singleEquipoId,
+              otId: updatedOt.id,
+              fecha: (updatedOt as any).horaInicioServicio
+                ? (updatedOt as any).horaInicioServicio.split('T')[0]
+                : updatedOt.fechaProgramada || new Date().toISOString().split('T')[0],
+              tipo: (updatedOt as any).tipoMantenimiento || 'Preventivo',
+              estado_post: estadoPost,
+              tecnicoTitular: (updatedOt as any).tecnicoTitular || 'Sistema',
+              hallazgos: reportData?.observacionesDiagnostico || null,
+              recomendaciones: reportData?.recomendaciones || null
+            }
           });
+
+          // Sync equipo.estado if service left equipment in observation/repair
+          if (estadoPost !== 'Operativo') {
+            await prisma.equipo.update({
+              where: { id: singleEquipoId },
+              data: { estado: estadoPost }
+            });
+          }
         }
       }
     }

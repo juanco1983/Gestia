@@ -177,6 +177,26 @@ export default function VentasView({
     }
   };
 
+  const handleEquipoToggle = (id: string) => {
+    const selectedIds = otForm.equipoId ? otForm.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
+    let nextIds;
+    if (selectedIds.includes(id)) {
+      nextIds = selectedIds.filter(x => x !== id);
+    } else {
+      nextIds = [...selectedIds, id];
+    }
+    
+    const firstEqId = nextIds[0];
+    const eq = clientEquipos.find(x => x.id === firstEqId);
+    
+    setOtForm(prev => ({ 
+      ...prev, 
+      equipoId: nextIds.join(','),
+      tipoEquipo: eq ? eq.tipo : prev.tipoEquipo,
+      potenciaKva: eq && eq.potenciaKva ? eq.potenciaKva : prev.potenciaKva
+    }));
+  };
+
   const handleLinkSelect = (val: string) => {
     let newContratoId = '';
     let newAdendaId = '';
@@ -1542,32 +1562,31 @@ export default function VentasView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-500 font-bold block">Equipo Asignado</label>
+                <label className="text-slate-500 font-bold block">Equipos Asignados (Seleccione uno o más)</label>
                 {isLoadingEquipos ? (
                   <div className="text-[10px] text-slate-400 font-mono animate-pulse">Cargando equipos del cliente...</div>
                 ) : (
-                  <select 
-                    required={!!otForm.contratoId}
-                    value={otForm.equipoId} 
-                    onChange={(e) => {
-                      const eqId = e.target.value;
-                      const eq = clientEquipos.find(x => x.id === eqId);
-                      setOtForm(prev => ({
-                        ...prev,
-                        equipoId: eqId,
-                        tipoEquipo: eq ? eq.tipo : prev.tipoEquipo,
-                        potenciaKva: eq && eq.potenciaKva ? eq.potenciaKva : prev.potenciaKva
-                      }));
-                    }} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-sm font-bold text-slate-800"
-                  >
-                    <option value="">-- Seleccione un Equipo --</option>
-                    {getFilteredEquipos().map(eq => (
-                      <option key={eq.id} value={eq.id}>
-                        {eq.codigo} - {eq.tipo} {eq.marca} ({eq.potenciaKva} KVA)
-                      </option>
-                    ))}
-                  </select>
+                  <div className="max-h-36 overflow-y-auto border border-slate-200 rounded p-2 bg-slate-50 space-y-1.5">
+                    {getFilteredEquipos().length === 0 ? (
+                      <div className="text-xs text-slate-400 italic p-1">No hay equipos disponibles</div>
+                    ) : (
+                      getFilteredEquipos().map(eq => {
+                        const selectedIds = otForm.equipoId ? otForm.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
+                        const isChecked = selectedIds.includes(eq.id);
+                        return (
+                          <label key={eq.id} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 rounded cursor-pointer transition-colors text-xs font-bold text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleEquipoToggle(eq.id)}
+                              className="w-3.5 h-3.5 text-[#00B594] border-slate-300 rounded focus:ring-[#00B594]"
+                            />
+                            <span>{eq.codigo} - {eq.tipo} ({eq.potenciaKva} KVA)</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
                 {otForm.contratoId && getFilteredEquipos().length === 0 && !isLoadingEquipos && (
                   <span className="text-[10px] text-amber-600 block mt-0.5 font-bold">
