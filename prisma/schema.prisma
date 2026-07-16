@@ -70,6 +70,7 @@ model OT {
   otFinancieraId            String?
   costo_estimado_usd        Float?
   contratoId                String?
+  adendaId                  String?
 }
 
 model TechnicalReport {
@@ -153,6 +154,9 @@ model OrdenTrabajoLinea {
   listaParaFacturar      Boolean?
   otTecnicaId            String?
   estatus                Json?
+  contratoId             String?
+  adendaId               String?
+  equipoId               String?
 }
 
 model ContratoNuevo {

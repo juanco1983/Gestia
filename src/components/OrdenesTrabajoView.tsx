@@ -28,6 +28,7 @@ import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
 interface OrdenesTrabajoViewProps {
   lineas: OrdenTrabajoLinea[];
   clients: Client[];
+  contratosComerciales?: Contrato[];
   targetVentas: TargetVentas[];
   currentUser: { email: string; username: string };
   onAddLinea: (linea: OrdenTrabajoLinea) => void;
@@ -43,6 +44,7 @@ interface OrdenesTrabajoViewProps {
 export default function OrdenesTrabajoView({
   lineas,
   clients,
+  contratosComerciales = [],
   targetVentas,
   currentUser,
   onAddLinea,
@@ -529,6 +531,7 @@ export default function OrdenesTrabajoView({
       {showCreateMarcoModal && (
         <ModalCrearOtMarco 
           clients={clients}
+          contratosComerciales={contratosComerciales}
           lineas={lineas}
           currentUser={currentUser}
           tipoCambio={tipoCambio}

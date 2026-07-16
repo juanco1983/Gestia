@@ -59,6 +59,7 @@ export interface OT {
   id: string;
   clientId: string;
   contratoId?: string;
+  adendaId?: string;
   costo_estimado_usd?: number;
   equipoId?: string;
   tipoMantenimiento: ServiceType;
@@ -227,6 +228,9 @@ export interface OrdenTrabajoLinea {
   modificadoEn?: string;
   otTecnicaId?: string; // Phase 1: Vínculo con OT técnica
   listaParaFacturar?: boolean; // Phase 6: Indica si la OT ya fue firmada
+  contratoId?: string;
+  adendaId?: string;
+  equipoId?: string;
 }
 
 export interface ContratoAmpliacion {

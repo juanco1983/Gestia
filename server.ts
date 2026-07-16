@@ -368,7 +368,7 @@ app.get("/api/ots", async (req, res) => {
 
 app.post("/api/ots", async (req, res) => {
   try {
-    const { contratoId, costo_estimado_usd, ...otData } = req.body;
+    const { contratoId, adendaId, costo_estimado_usd, ...otData } = req.body;
 
     // Auto-derive tipoEquipo and potenciaKva from Equipo if equipoId is set
     if (otData.equipoId) {
@@ -398,7 +398,7 @@ app.post("/api/ots", async (req, res) => {
       // Start transaction to create OT and deduct balance
       const [createdOt, updatedContrato] = await prisma.$transaction([
         prisma.oT.create({
-          data: { ...otData, contratoId, costo_estimado_usd: costo }
+          data: { ...otData, contratoId, adendaId: adendaId || null, costo_estimado_usd: costo }
         }),
         prisma.contratoNuevo.update({
           where: { id: contratoId },
@@ -409,7 +409,14 @@ app.post("/api/ots", async (req, res) => {
       return res.status(201).json(createdOt);
     } else {
       // Normal OT creation
-      const created = await prisma.oT.create({ data: req.body });
+      const created = await prisma.oT.create({ 
+        data: { 
+          ...otData, 
+          contratoId: contratoId || null, 
+          adendaId: adendaId || null, 
+          costo_estimado_usd: costo_estimado_usd ? Number(costo_estimado_usd) : null 
+        } 
+      });
       return res.status(201).json(created);
     }
   } catch (err) {
@@ -467,53 +474,52 @@ app.put("/api/ots/:id", async (req, res) => {
 
     // Auto-create ServicioEquipo when OT is signed/approved and has equipoId
     if (updatedOt.equipoId && ["Conformidad Firmada (Listo para Facturar)", "Aprobada", "Firmada"].includes(updatedOt.estado)) {
-      const existingServices = await prisma.servicioEquipo.count({
-        where: { otId: updatedOt.id, equipoId: updatedOt.equipoId }
-      });
-      if (existingServices === 0) {
-        // Try to get report data for richer service record
-        let reportData: any = null;
-        try {
-          reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
-        } catch {}
-
-        // Derive estado_post intelligently from the technical report
-        // If revisionNormas.estadoOperativo === false, the equipment is in observation; else Operativo
-        let estadoPost = 'Operativo';
-        if (reportData?.revisionNormas) {
-          const normas = typeof reportData.revisionNormas === 'string'
-            ? JSON.parse(reportData.revisionNormas)
-            : reportData.revisionNormas;
-          if (normas?.estadoOperativo === false) {
-            estadoPost = 'En observación';
-          }
-        }
-        // Also check if there are corrections from supervisor (indicates issues found)
-        if (reportData?.correccionesSupervisor && estadoPost === 'Operativo') {
-          // Supervisor added notes but still approved — leave as Operativo (approved = fit for service)
-        }
-
-        await prisma.servicioEquipo.create({
-          data: {
-            equipoId: updatedOt.equipoId,
-            otId: updatedOt.id,
-            fecha: (updatedOt as any).horaInicioServicio
-              ? (updatedOt as any).horaInicioServicio.split('T')[0]
-              : updatedOt.fechaProgramada || new Date().toISOString().split('T')[0],
-            tipo: (updatedOt as any).tipoMantenimiento || 'Preventivo',
-            estado_post: estadoPost,
-            tecnicoTitular: (updatedOt as any).tecnicoTitular || 'Sistema',
-            hallazgos: reportData?.observacionesDiagnostico || null,
-            recomendaciones: reportData?.recomendaciones || null
-          }
+      const equipoIds = updatedOt.equipoId.split(',').map((id: string) => id.trim()).filter(Boolean);
+      for (const singleEquipoId of equipoIds) {
+        const existingServices = await prisma.servicioEquipo.count({
+          where: { otId: updatedOt.id, equipoId: singleEquipoId }
         });
+        if (existingServices === 0) {
+          // Try to get report data for richer service record
+          let reportData: any = null;
+          try {
+            reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
+          } catch {}
 
-        // Sync equipo.estado if service left equipment in observation/repair
-        if (estadoPost !== 'Operativo') {
-          await prisma.equipo.update({
-            where: { id: updatedOt.equipoId },
-            data: { estado: estadoPost }
+          // Derive estado_post intelligently from the technical report
+          // If revisionNormas.estadoOperativo === false, the equipment is in observation; else Operativo
+          let estadoPost = 'Operativo';
+          if (reportData?.revisionNormas) {
+            const normas = typeof reportData.revisionNormas === 'string'
+              ? JSON.parse(reportData.revisionNormas)
+              : reportData.revisionNormas;
+            if (normas?.estadoOperativo === false) {
+              estadoPost = 'En observación';
+            }
+          }
+
+          await prisma.servicioEquipo.create({
+            data: {
+              equipoId: singleEquipoId,
+              otId: updatedOt.id,
+              fecha: (updatedOt as any).horaInicioServicio
+                ? (updatedOt as any).horaInicioServicio.split('T')[0]
+                : updatedOt.fechaProgramada || new Date().toISOString().split('T')[0],
+              tipo: (updatedOt as any).tipoMantenimiento || 'Preventivo',
+              estado_post: estadoPost,
+              tecnicoTitular: (updatedOt as any).tecnicoTitular || 'Sistema',
+              hallazgos: reportData?.observacionesDiagnostico || null,
+              recomendaciones: reportData?.recomendaciones || null
+            }
           });
+
+          // Sync equipo.estado if service left equipment in observation/repair
+          if (estadoPost !== 'Operativo') {
+            await prisma.equipo.update({
+              where: { id: singleEquipoId },
+              data: { estado: estadoPost }
+            });
+          }
         }
       }
     }
@@ -1054,16 +1060,31 @@ app.get("/api/equipos", async (req: any, res) => {
     const { contratoId, clienteId, estado, tipo, q } = req.query;
     const where: any = {};
     if (contratoId) where.contratoId = contratoId;
-    if (clienteId) where.clienteId = clienteId;
+    if (clienteId) {
+      where.OR = [
+        { clienteId: clienteId },
+        { contrato: { clientId: clienteId } }
+      ];
+    }
     if (estado) where.estado = estado;
     if (tipo) where.tipo = tipo;
     if (q) {
-      where.OR = [
+      const searchOR = [
         { codigo: { contains: q, mode: 'insensitive' } },
         { serie: { contains: q, mode: 'insensitive' } },
         { marca: { contains: q, mode: 'insensitive' } },
         { modelo: { contains: q, mode: 'insensitive' } },
       ];
+      if (where.OR) {
+        const clientOR = where.OR;
+        delete where.OR;
+        where.AND = [
+          { OR: clientOR },
+          { OR: searchOR }
+        ];
+      } else {
+        where.OR = searchOR;
+      }
     }
     const equipos = await prisma.equipo.findMany({
       where,

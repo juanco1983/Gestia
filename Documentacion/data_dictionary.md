@@ -64,9 +64,11 @@ Representa el trabajo físico que los técnicos realizan en campo.
 
 | Campo | Tipo | Requerido | Descripción |
 |:---|:---|:---:|:---|
-| `id` | String | Sí | Código de la OT (Ej: OT-001) |
+| `id` | String | Sí | Código de la OT (Ej: OT-OM-CO-001-001) |
 | `clientId` | String | Sí | FK a `Client.id` |
-| `contratoId` | String | No | FK a `Contract.id` (Si aplica) |
+| `contratoId` | String | No | FK a `ContratoNuevo.id` (Contrato Comercial asociado) |
+| `adendaId` | String | No | FK a `ContratoAmpliacion.id` (Adenda Comercial asociada) |
+| `equipoId` | String | No | FK a `Equipo.id` (Equipo asignado a la OT) |
 | `tipoMantenimiento` | Enum | Sí | `Preventivo`, `Correctivo`, `Emergencia` |
 | `tipoEquipo` | Enum | Sí | Congruente con el contrato |
 | `potenciaKva` | Float | Sí | Potencia del equipo en KVA (determina nro. de fotos) |
