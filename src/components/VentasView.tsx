@@ -21,7 +21,8 @@ import {
   ZoomOut,
   Maximize2,
   Minimize2,
-  Search
+  Search,
+  Cpu
 } from 'lucide-react';
 import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport, Contrato } from '../types';
 import DocumentFormat from './DocumentFormat';
@@ -137,6 +138,8 @@ export default function VentasView({
 
   const [clientEquipos, setClientEquipos] = useState<any[]>([]);
   const [isLoadingEquipos, setIsLoadingEquipos] = useState(false);
+  const [showEquiposDrawer, setShowEquiposDrawer] = useState(false);
+  const [drawerSearch, setDrawerSearch] = useState('');
 
   const getNextOtCode = (contratoId: string, adendaId: string | null) => {
     if (!contratoId) return `OT-${Math.floor(4000 + Math.random() * 999)}`;
@@ -1562,32 +1565,21 @@ export default function VentasView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-500 font-bold block">Equipos Asignados (Seleccione uno o más)</label>
-                {isLoadingEquipos ? (
-                  <div className="text-[10px] text-slate-400 font-mono animate-pulse">Cargando equipos del cliente...</div>
-                ) : (
-                  <div className="max-h-36 overflow-y-auto border border-slate-200 rounded p-2 bg-slate-50 space-y-1.5">
-                    {getFilteredEquipos().length === 0 ? (
-                      <div className="text-xs text-slate-400 italic p-1">No hay equipos disponibles</div>
-                    ) : (
-                      getFilteredEquipos().map(eq => {
-                        const selectedIds = otForm.equipoId ? otForm.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
-                        const isChecked = selectedIds.includes(eq.id);
-                        return (
-                          <label key={eq.id} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 rounded cursor-pointer transition-colors text-xs font-bold text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleEquipoToggle(eq.id)}
-                              className="w-3.5 h-3.5 text-[#00B594] border-slate-300 rounded focus:ring-[#00B594]"
-                            />
-                            <span>{eq.codigo} - {eq.tipo} ({eq.potenciaKva} KVA)</span>
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
+                <label className="text-slate-500 font-bold block">Equipos Asignados</label>
+                <button
+                  type="button"
+                  onClick={() => setShowEquiposDrawer(true)}
+                  className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded text-left flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span className="text-sm">
+                    {otForm.equipoId 
+                      ? `${otForm.equipoId.split(',').filter(Boolean).length} equipo(s) seleccionado(s)` 
+                      : '-- Seleccionar Equipos --'}
+                  </span>
+                  <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono font-bold">
+                    {otForm.equipoId ? 'Editar' : 'Seleccionar'}
+                  </span>
+                </button>
                 {otForm.contratoId && getFilteredEquipos().length === 0 && !isLoadingEquipos && (
                   <span className="text-[10px] text-amber-600 block mt-0.5 font-bold">
                     ⚠️ No hay equipos registrados para este contrato/adenda.
@@ -1650,6 +1642,120 @@ export default function VentasView({
             </form>
           </div>
         </div>
+
+        {showEquiposDrawer && (
+          <>
+            {/* Backdrop for Drawer */}
+            <div 
+              className="fixed inset-0 z-[90] bg-slate-900/30 backdrop-blur-xs transition-opacity" 
+              onClick={() => setShowEquiposDrawer(false)}
+            />
+            {/* Right Drawer */}
+            <div className="fixed inset-y-0 right-0 z-[95] w-full max-w-sm bg-white border-l border-slate-200 shadow-2xl flex flex-col transition-transform duration-300 translate-x-0 text-xs">
+              {/* Header */}
+              <div className="px-5 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                    <Cpu size={16} className="text-[#00B594]" />
+                    Seleccionar Equipos
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Asigne uno o más equipos a la OT</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setShowEquiposDrawer(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-all cursor-pointer animate-fade-in"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Search filter inside drawer */}
+              <div className="p-4 border-b border-slate-100">
+                <input
+                  type="text"
+                  placeholder="Buscar por código, tipo, serie..."
+                  value={drawerSearch}
+                  onChange={(e) => setDrawerSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#00B594]"
+                />
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {getFilteredEquipos().filter(eq => {
+                  if (!drawerSearch) return true;
+                  const search = drawerSearch.toLowerCase();
+                  return (
+                    eq.codigo.toLowerCase().includes(search) ||
+                    (eq.tipo && eq.tipo.toLowerCase().includes(search)) ||
+                    (eq.serie && eq.serie.toLowerCase().includes(search)) ||
+                    (eq.marca && eq.marca.toLowerCase().includes(search))
+                  );
+                }).length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 italic">No se encontraron equipos</div>
+                ) : (
+                  getFilteredEquipos().filter(eq => {
+                    if (!drawerSearch) return true;
+                    const search = drawerSearch.toLowerCase();
+                    return (
+                      eq.codigo.toLowerCase().includes(search) ||
+                      (eq.tipo && eq.tipo.toLowerCase().includes(search)) ||
+                      (eq.serie && eq.serie.toLowerCase().includes(search)) ||
+                      (eq.marca && eq.marca.toLowerCase().includes(search))
+                    );
+                  }).map(eq => {
+                    const selectedIds = otForm.equipoId ? otForm.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
+                    const isChecked = selectedIds.includes(eq.id);
+                    return (
+                      <div 
+                        key={eq.id}
+                        onClick={() => handleEquipoToggle(eq.id)}
+                        className={`p-3 border rounded cursor-pointer transition-all ${
+                          isChecked 
+                            ? 'border-[#00B594] bg-[#00B594]/5 shadow-sm' 
+                            : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}} // handled by parent div click
+                            className="mt-0.5 w-3.5 h-3.5 text-[#00B594] border-slate-300 rounded focus:ring-[#00B594]"
+                          />
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="font-black text-slate-800 text-xs truncate">{eq.codigo}</div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-0.5">{eq.tipo} {eq.marca}</div>
+                            {eq.potenciaKva && (
+                              <span className="inline-block bg-slate-100 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded mt-1.5 font-mono">
+                                {eq.potenciaKva} KVA
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Bottom confirmation */}
+              <div className="p-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between">
+                <span className="font-extrabold text-slate-600 text-[10px] uppercase font-mono">
+                  {otForm.equipoId ? otForm.equipoId.split(',').filter(Boolean).length : 0} seleccionados
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowEquiposDrawer(false)}
+                  className="px-4 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded text-xs shadow-md transition-all cursor-pointer"
+                >
+                  Listo
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </>
     )}
 
