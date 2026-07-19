@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, X, Cpu } from 'lucide-react';
 import { OrdenTrabajoLinea, Client, Contrato, EquipmentType, ServiceType } from '../../types';
 import { MESES_ESPANOL, TIPO_VENTA_VALUES, TIPO_CONTRATACION_VALUES } from '../../utils/otDefaults';
@@ -22,6 +22,10 @@ export default function ModalCrearOtMarco({
   onAddLinea,
   onClose
 }: ModalCrearOtMarcoProps) {
+  const nextOtMarco = useMemo(() => {
+    return Math.max(...lineas.map(l => l.ot_marco), 0) + 1;
+  }, [lineas]);
+
   const [marcoForm, setMarcoForm] = useState({
     anio: new Date().getFullYear(),
     mes: MESES_ESPANOL[new Date().getMonth()],
@@ -458,7 +462,7 @@ export default function ModalCrearOtMarco({
           {/* Bloque 3: Datos de la Primera Línea / Cuota auto-generada */}
           <div className="space-y-3.5 pt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-150">
             <h4 className="text-[10px] font-black uppercase tracking-wide text-[#00B594] font-mono border-b border-[#00B594]/20 pb-1">
-              3. Datos de Primera Cuota Auto-generada ({marcoForm.ot_marco ? `${marcoForm.ot_marco}-1` : 'X-1'})
+              3. Datos de Primera Cuota Auto-generada ({nextOtMarco}-1)
             </h4>
             <div className="grid grid-cols-3 gap-4">
               <div>

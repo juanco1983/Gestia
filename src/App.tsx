@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { INITIAL_CLIENTS, INITIAL_CONTRACTS, INITIAL_OTS, INITIAL_USERS, INITIAL_LOGS } from './mockData';
-import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType } from './types';
+import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType, OtEquipoAsignacion } from './types';
 import { INITIAL_ORDENES_TRABAJO, INITIAL_CONTRATOS_NUEVOS, INITIAL_TARGET_VENTAS } from './utils/otDefaults';
 import OrdenesTrabajoView from './components/OrdenesTrabajoView';
 import ClientesContratosView from './components/ClientesContratosView';
@@ -33,7 +33,9 @@ import {
   Bell,
   Play,
   Calendar,
-  Building2
+  Building2,
+  Mail,
+  User as UserIcon,
 } from 'lucide-react';
 
 // Helper components for the main dashboard mockup look
@@ -99,6 +101,7 @@ const getAppDefaultModulesForRole = (role: string): string[] => {
   }
   return ['Dashboard', 'Monitoreo'];
 };
+
 
 export default function App() {
   // Live dynamic list of users
@@ -306,6 +309,15 @@ export default function App() {
     const local = localStorage.getItem('gestia_target_ventas');
     return local ? JSON.parse(local) : INITIAL_TARGET_VENTAS;
   });
+
+  const [otEquipoAsignaciones, setOtEquipoAsignaciones] = useState<OtEquipoAsignacion[]>(() => {
+    const local = localStorage.getItem('gestia_ot_equipo_asignaciones');
+    return local ? JSON.parse(local) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('gestia_ot_equipo_asignaciones', JSON.stringify(otEquipoAsignaciones));
+  }, [otEquipoAsignaciones]);
 
   const [tipoCambio, setTipoCambio] = useState<number>(() => {
     const local = localStorage.getItem('gestia_tipo_cambio');
@@ -534,7 +546,8 @@ export default function App() {
         console.log(">>> CARGANDO DATOS DEL SERVIDOR...");
         const [
           usersRes, logsRes, clientsRes, contractsRes, otsRes, reportsRes,
-          otLineasRes, contratosComercialesRes, targetVentasRes, configRes
+          otLineasRes, contratosComercialesRes, targetVentasRes, configRes,
+          asignacionesRes
         ] = await Promise.all([
           fetchWithAuth('/api/users').then(res => res.json()),
           fetchWithAuth('/api/logs').then(res => res.json()),
@@ -545,7 +558,8 @@ export default function App() {
           fetchWithAuth('/api/ot-lineas').then(res => res.json()),
           fetchWithAuth('/api/contratos-comerciales').then(res => res.json()),
           fetchWithAuth('/api/target-ventas').then(res => res.json()),
-          fetchWithAuth('/api/config').then(res => res.json())
+          fetchWithAuth('/api/config').then(res => res.json()),
+          fetchWithAuth('/api/ot-equipo-asignaciones').then(res => res.json())
         ]);
 
         if (Array.isArray(usersRes)) setUsers(usersRes);
@@ -557,6 +571,7 @@ export default function App() {
         if (Array.isArray(otLineasRes)) setOrdenesTrabajo(otLineasRes);
         if (Array.isArray(contratosComercialesRes)) setContratosNuevos(contratosComercialesRes);
         if (Array.isArray(targetVentasRes)) setTargetVentas(targetVentasRes);
+        if (Array.isArray(asignacionesRes)) setOtEquipoAsignaciones(asignacionesRes);
         if (configRes && typeof configRes.tipoCambio === 'number') setTipoCambio(configRes.tipoCambio);
       } catch (error) {
         console.error("Conexión local (utilizando caché local offline):", error);
@@ -712,6 +727,30 @@ export default function App() {
       });
     } catch (e) {
       console.warn("OT update guardado localmente:", e);
+    }
+  };
+
+  const handleSaveEquipoAsignacion = async (asg: OtEquipoAsignacion) => {
+    try {
+      const response = await fetchWithAuth('/api/ot-equipo-asignaciones', {
+        method: 'POST',
+        body: JSON.stringify(asg)
+      });
+      if (response.ok) {
+        const createdOrUpdated = await response.json();
+        setOtEquipoAsignaciones(prev => {
+          const exists = prev.some(a => a.otId === createdOrUpdated.otId && a.equipoId === createdOrUpdated.equipoId);
+          if (exists) {
+            return prev.map(a => (a.otId === createdOrUpdated.otId && a.equipoId === createdOrUpdated.equipoId) ? createdOrUpdated : a);
+          }
+          return [...prev, createdOrUpdated];
+        });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error saving equipment assignment:", err);
+      return false;
     }
   };
 
@@ -2067,6 +2106,8 @@ export default function App() {
                   onUpdateOt={handleUpdateOT}
                   onAddOT={handleAddOT}
                   currentUser={currentUser}
+                  equipos={clients.flatMap(c => (c as any).equipos || [])}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
                 />
               </div>
             )}
@@ -2082,6 +2123,7 @@ export default function App() {
                   onUpdateReport={(updatedRep) => {
                     setReports(prev => prev.map(r => r.id === updatedRep.id ? updatedRep : r));
                   }}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
                 />
               </div>
             )}

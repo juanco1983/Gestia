@@ -11,7 +11,7 @@ import {
   SlidersHorizontal,
   RefreshCw
 } from 'lucide-react';
-import { OrdenTrabajoLinea, Client, TargetVentas, ComentarioEstatus, OT, TechnicalReport, User } from '../types';
+import { OrdenTrabajoLinea, Client, TargetVentas, ComentarioEstatus, OT, TechnicalReport, User, Contrato } from '../types';
 import { MESES_ESPANOL } from '../utils/otDefaults';
 
 // Modular Subcomponents Imports

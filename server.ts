@@ -483,7 +483,9 @@ app.put("/api/ots/:id", async (req, res) => {
           // Try to get report data for richer service record
           let reportData: any = null;
           try {
-            reportData = await prisma.technicalReport.findFirst({ where: { otId: updatedOt.id } });
+            reportData = await prisma.technicalReport.findFirst({
+              where: { otId: updatedOt.id, equipoId: singleEquipoId }
+            });
           } catch {}
 
           // Derive estado_post intelligently from the technical report
@@ -532,9 +534,13 @@ app.put("/api/ots/:id", async (req, res) => {
 
 app.get("/api/reports", async (req, res) => {
   try {
-    res.json(await prisma.technicalReport.findMany());
+    const { otId, equipoId } = req.query;
+    const where: any = {};
+    if (otId) where.otId = otId as string;
+    if (equipoId) where.equipoId = equipoId as string;
+    res.json(await prisma.technicalReport.findMany({ where }));
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    res.status(500).json({ error: "Error al obtener reportes" });
   }
 });
 async function processReportPhotos(report: any): Promise<{ report: any; uploadedUrls: string[] }> {
@@ -601,7 +607,12 @@ app.post("/api/reports", async (req, res) => {
     const { otId: finalOtId, ...cleanData } = finalReport;
 
     const saved = await prisma.technicalReport.upsert({
-      where: { otId: finalOtId },
+      where: {
+        otId_equipoId: {
+          otId: finalOtId,
+          equipoId: finalReport.equipoId || null
+        }
+      },
       update: { ...cleanData, offlineDirty: false },
       create: { ...finalReport, offlineDirty: false }
     });
@@ -701,7 +712,12 @@ app.post("/api/sync", async (req, res) => {
 
         const { otId, ...data } = reportToSave;
         await prisma.technicalReport.upsert({
-          where: { otId },
+          where: {
+            otId_equipoId: {
+              otId: otId,
+              equipoId: reportToSave.equipoId || null
+            }
+          },
           update: { ...data, offlineDirty: s3Failed },
           create: { ...reportToSave, offlineDirty: s3Failed }
         });
@@ -1053,6 +1069,100 @@ async function generateEquipoCodigo(contratoId: string, adendaCodigo?: string): 
   }
   return `${prefix}-E${maxSeq + 1}`;
 }
+
+// ----- OT Equipment Assignments Endpoints -----
+app.get("/api/ot-equipo-asignaciones", async (req, res) => {
+  try {
+    const { otId } = req.query;
+    const where: any = {};
+    if (otId) where.otId = otId as string;
+    const asignaciones = await prisma.otEquipoAsignacion.findMany({ where });
+    res.json(asignaciones);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener asignaciones" });
+  }
+});
+
+app.post("/api/ot-equipo-asignaciones", async (req, res) => {
+  try {
+    const {
+      otId,
+      equipoId,
+      tecnicoTitularId,
+      tecnicoTitular,
+      tecnicoApoyoId,
+      tecnicoApoyo,
+      fecha,
+      hora,
+      horaFin
+    } = req.body;
+
+    if (!otId || !equipoId) {
+      return res.status(400).json({ error: "otId y equipoId son obligatorios" });
+    }
+
+    const saved = await prisma.otEquipoAsignacion.upsert({
+      where: {
+        otId_equipoId: {
+          otId,
+          equipoId
+        }
+      },
+      update: {
+        tecnicoTitularId: tecnicoTitularId || null,
+        tecnicoTitular: tecnicoTitular || null,
+        tecnicoApoyoId: tecnicoApoyoId || null,
+        tecnicoApoyo: tecnicoApoyo || null,
+        fecha: fecha || null,
+        hora: hora || null,
+        horaFin: horaFin || null
+      },
+      create: {
+        otId,
+        equipoId,
+        tecnicoTitularId: tecnicoTitularId || null,
+        tecnicoTitular: tecnicoTitular || null,
+        tecnicoApoyoId: tecnicoApoyoId || null,
+        tecnicoApoyo: tecnicoApoyo || null,
+        fecha: fecha || null,
+        hora: hora || null,
+        horaFin: horaFin || null
+      }
+    });
+
+    const allAsignaciones = await prisma.otEquipoAsignacion.findMany({
+      where: { otId }
+    });
+
+    const firstValid = allAsignaciones.find(a => a.tecnicoTitularId);
+    if (firstValid) {
+      const ot = await prisma.oT.findUnique({ where: { id: otId } });
+      if (ot) {
+        let newStatus = ot.estado;
+        if (["CREADA", "PENDIENTE_PROGRAMACION", "Pendiente de Programación"].includes(ot.estado)) {
+          newStatus = "PROGRAMADA";
+        }
+        await prisma.oT.update({
+          where: { id: otId },
+          data: {
+            tecnicoTitularId: firstValid.tecnicoTitularId,
+            tecnicoTitular: firstValid.tecnicoTitular || '',
+            tecnicoApoyoId: firstValid.tecnicoApoyoId,
+            tecnicoApoyo: firstValid.tecnicoApoyo,
+            fechaProgramada: firstValid.fecha || '',
+            horaProgramada: firstValid.hora,
+            horaFinProgramada: firstValid.horaFin,
+            estado: newStatus
+          }
+        });
+      }
+    }
+
+    res.status(201).json(saved);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al guardar asignación" });
+  }
+});
 
 // ----- Equipment endpoints -----
 app.get("/api/equipos", async (req: any, res) => {

@@ -15,7 +15,7 @@ export const INITIAL_TARGET_VENTAS: TargetVentas[] = [
   { id: 't_12', anio: 2026, mes_num: 12, mes: 'DIC', target_ventas_usd: 65000 }
 ];
 
-export const INITIAL_CONTRATOS_NUEVOS: Contrato[] = [
+export const INITIAL_CONTRATOS_NUEVOS: any[] = [
   {
     id: 'cont_001',
     cliente: 'Prosegur Tecnología S.A.',
