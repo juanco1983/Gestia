@@ -183,33 +183,7 @@ export default function App() {
   const [dashboardRange, setDashboardRange] = useState<'trimestral' | 'semestral'>('trimestral');
 
   // Real-time online state
-  const [isOnline, setIsOnline] = useState<boolean>(window.navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log(">>> NAVEGADOR EN LÍNEA");
-      setIsOnline(true);
-    };
-    const handleOffline = () => {
-      console.log(">>> NAVEGADOR FUERA DE LÍNEA");
-      setIsOnline(false);
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isOnline) {
-      console.log(">>> SINCRONIZANDO POR CAMBIO A MODO EN LÍNEA...");
-      handleSyncOffline();
-    }
-  }, [isOnline]);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   // Sidebar visibility state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
@@ -806,80 +780,9 @@ export default function App() {
   };
 
   const handleSyncOffline = async () => {
-    // Si no hay nada que sincronizar, retornamos false para permitir la carga normal
-    const hasLocalChanges = offlineQueue.length > 0 || 
-                            clients.length > 0 || 
-                            contracts.length > 0 || 
-                            ots.length > 0 ||
-                            ordenesTrabajo.length > 0 ||
-                            contratosNuevos.length > 0;
-
-    if (!hasLocalChanges) {
-      console.log(">>> NO HAY CAMBIOS LOCALES PARA SINCRONIZAR.");
-      return false;
-    }
-
-    if (!isOnline) {
-      console.log(">>> EL MODO OFFLINE ESTÁ ACTIVADO. Saltando sincronización.");
-      return false;
-    }
-
-    const syncPayload = {
-      reports: offlineQueue,
-      ots: ots,
-      clients: clients,
-      contracts: contracts,
-      ordenesTrabajo: ordenesTrabajo,
-      contratosNuevos: contratosNuevos,
-      users: users,
-      logs: userLogs
-    };
-    
-    console.log(">>> ENVIANDO PAYLOAD DE SINCRONIZACIÓN:", syncPayload);
-    
-    try {
-      const response = await fetchWithAuth('/api/sync', {
-        method: 'POST',
-        body: JSON.stringify(syncPayload)
-      });
-      const data = await response.json();
-      if (data.success) {
-        if (Array.isArray(data.reports)) setReports(data.reports);
-        if (Array.isArray(data.ots)) setOts(data.ots);
-        if (Array.isArray(data.clients)) setClients(data.clients);
-        if (Array.isArray(data.contracts)) setContracts(data.contracts);
-        if (Array.isArray(data.ordenesTrabajo)) setOrdenesTrabajo(data.ordenesTrabajo);
-        if (Array.isArray(data.contratosNuevos)) setContratosNuevos(data.contratosNuevos);
-        if (Array.isArray(data.users)) setUsers(data.users);
-        if (Array.isArray(data.logs)) setUserLogs(data.logs);
-        
-        setOfflineQueue([]);
-        console.log("Sincronización completa con el servidor exitosa.");
-        return true;
-      }
-    } catch (error) {
-      console.error("Fallo de conexión remota durante la sincronización:", error);
-    }
-
-    // Fallback logic for reports if server is still down
-    let updatedOts = [...ots];
-    const syncedReports = offlineQueue.map(r => {
-      updatedOts = updatedOts.map(o => o.id === r.otId ? { ...o, estado: OTStatus.EN_REVISION } : o);
-      return { ...r, offlineDirty: false };
-    });
-
-    if (syncedReports.length > 0) {
-      setReports(prev => {
-        const nonSyncedOtsOfQueue = syncedReports.map(sr => sr.otId);
-        const filteredPrev = prev.filter(p => !nonSyncedOtsOfQueue.includes(p.otId));
-        return [...filteredPrev, ...syncedReports];
-      });
-      setOts(updatedOts);
-      setOfflineQueue([]);
-      alert(`🤝 COLA DE SINCRONIZACIÓN LOCAL: Se guardaron ${syncedReports.length} informes en el historial local.`);
-    }
-    
-    return false;
+    // Sincronización offline desactivada por solicitud del usuario
+    console.log(">>> Sincronización offline desactivada.");
+    return true;
   };
 
   const handleAddUser = async (user: User) => {
