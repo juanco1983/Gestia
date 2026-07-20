@@ -183,29 +183,30 @@ export default function ModalProgramarVisita({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in" id="modal-programar-visita">
-      <div className="bg-[#1E293B] border border-slate-700/80 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
         
         {/* Header */}
-        <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-[#0F172A]/40">
+        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between shrink-0">
           <div>
-            <h3 className="font-display font-bold text-white text-lg tracking-wide uppercase">
+            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+              <Calendar size={16} className="text-[#00B594]" />
               Programar Visita Técnica
             </h3>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
               {contract.cliente} — {adenda ? `Adenda ${adenda.codigo}` : 'Contrato Principal'}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
-            <X size={20} />
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+        <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 text-left">
           {/* OT Code, Date and Time Block */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                 Código de Orden de Trabajo (OT)
               </label>
               <input
@@ -213,12 +214,12 @@ export default function ModalProgramarVisita({
                 required
                 value={otCode}
                 onChange={e => setOtCode(e.target.value)}
-                className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
               />
             </div>
             
             <div>
-              <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                 Fecha Programada
               </label>
               <div className="relative">
@@ -229,13 +230,13 @@ export default function ModalProgramarVisita({
                   value={fecha}
                   min={todayStr}
                   onChange={e => setFecha(e.target.value)}
-                  className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg pl-10 pr-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                 Hora de Inicio
               </label>
               <div className="relative">
@@ -245,13 +246,13 @@ export default function ModalProgramarVisita({
                   required
                   value={horaInicio}
                   onChange={e => setHoraInicio(e.target.value)}
-                  className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg pl-10 pr-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                 Hora de Fin
               </label>
               <div className="relative">
@@ -261,7 +262,7 @@ export default function ModalProgramarVisita({
                   required
                   value={horaFin}
                   onChange={e => setHoraFin(e.target.value)}
-                  className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg pl-10 pr-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -269,35 +270,35 @@ export default function ModalProgramarVisita({
 
           {/* Equipments Checklist */}
           <div>
-            <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-2">
               Equipos a incluir en la Visita ({activeSelectedEquips.length} de {equipments.length})
             </label>
-            <div className="border border-slate-700 bg-[#0F172A]/40 rounded-xl overflow-hidden divide-y divide-slate-700 max-h-40 overflow-y-auto">
+            <div className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-40 overflow-y-auto">
               {equipments.map(eq => (
                 <div 
                   key={eq.id}
                   onClick={() => handleToggleEquip(eq.id)}
-                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700/20 cursor-pointer select-none transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50/30 cursor-pointer select-none transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={!!selectedEquips[eq.id]}
-                    onChange={() => {}} // Handled by div onClick
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
+                    onChange={() => {}}
+                    className="h-4 w-4 rounded border-slate-300 bg-white text-emerald-500 focus:ring-emerald-500"
                   />
                   <div className="flex-1 min-w-0">
-                    <span className="font-mono text-xs font-bold text-slate-200 block">{eq.codigo}</span>
-                    <span className="text-[10px] text-slate-400 font-sans block truncate">
+                    <span className="font-mono text-xs font-bold text-slate-700 block">{eq.codigo}</span>
+                    <span className="text-[10px] text-slate-500 font-sans block truncate">
                       {eq.tipo} · {eq.marca} {eq.modelo} ({eq.serie})
                     </span>
                   </div>
-                  <span className="text-[10px] bg-slate-700/60 px-2 py-0.5 rounded text-slate-300 font-mono shrink-0">
+                  <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono shrink-0">
                     {eq.potenciaKva} kVA
                   </span>
                 </div>
               ))}
               {equipments.length === 0 && (
-                <div className="p-4 text-center text-xs text-slate-500">
+                <div className="p-4 text-center text-xs text-slate-400 italic">
                   No hay equipos configurados en este contrato o adenda.
                 </div>
               )}
@@ -306,14 +307,14 @@ export default function ModalProgramarVisita({
 
           {/* Technician Assignment */}
           <div className="space-y-4">
-            <h4 className="text-xs font-black font-mono text-slate-400 uppercase tracking-wider border-b border-slate-700 pb-1.5 flex items-center gap-1.5">
-              <Wrench size={14} className="text-emerald-500" />
+            <h4 className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+              <Wrench size={14} className="text-[#00B594]" />
               <span>Asignación de Personal de Campo</span>
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                   Técnico Titular (Líder)
                 </label>
                 <select
@@ -324,7 +325,7 @@ export default function ModalProgramarVisita({
                     if (e.target.value === supportTechId) setSupportTechId('');
                     setAdditionalTechIds(prev => prev.filter(x => x !== e.target.value));
                   }}
-                  className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
                 >
                   <option value="">-- Seleccionar Técnico Titular --</option>
                   {technicians.map(t => (
@@ -334,7 +335,7 @@ export default function ModalProgramarVisita({
               </div>
 
               <div>
-                <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                   Técnico de Apoyo (Opcional)
                 </label>
                 <select
@@ -343,7 +344,7 @@ export default function ModalProgramarVisita({
                     setSupportTechId(e.target.value);
                     setAdditionalTechIds(prev => prev.filter(x => x !== e.target.value));
                   }}
-                  className="w-full bg-[#0F172A]/60 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
                 >
                   <option value="">-- Sin Técnico de Apoyo --</option>
                   {technicians.filter(t => t.id !== primaryTechId).map(t => (
@@ -353,16 +354,16 @@ export default function ModalProgramarVisita({
               </div>
             </div>
 
-            {/* Additional Technicians (2 or more) */}
+            {/* Additional Technicians */}
             <div>
-              <label className="block text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-1.5">
                 Técnicos Adicionales (Soporte Multi-Técnico)
               </label>
               <div className="flex flex-wrap gap-2 items-center">
                 <select
                   onChange={handleAddAdditionalTech}
                   value=""
-                  className="bg-[#0F172A]/60 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none transition-colors"
+                  className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 font-mono text-xs focus:border-emerald-500 focus:outline-none transition-colors"
                 >
                   <option value="">+ Añadir Técnico Adicional</option>
                   {technicians
@@ -376,12 +377,12 @@ export default function ModalProgramarVisita({
                 {additionalTechIds.map(id => {
                   const tech = technicians.find(t => t.id === id);
                   return (
-                    <div key={id} className="flex items-center gap-1.5 bg-slate-700/60 border border-slate-600 rounded-full pl-3 pr-1 py-1 text-slate-200 font-mono text-[10px]">
+                    <div key={id} className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 rounded-full pl-3 pr-1 py-1 text-emerald-700 font-mono text-[10px]">
                       <span>{tech?.username}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveAdditionalTech(id)}
-                        className="p-0.5 rounded-full hover:bg-slate-600 text-slate-400 hover:text-white transition-colors"
+                        className="p-0.5 rounded-full hover:bg-emerald-100 text-emerald-400 hover:text-emerald-600 transition-colors"
                       >
                         <X size={12} />
                       </button>
@@ -394,11 +395,11 @@ export default function ModalProgramarVisita({
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-700/80 bg-[#0F172A]/40 flex justify-end gap-3 shrink-0">
+        <div className="p-4 border-t border-slate-150 bg-slate-50 flex justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-slate-600 text-slate-300 rounded-lg text-xs font-black uppercase font-mono tracking-wider hover:bg-slate-700/30 transition-colors"
+            className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-black uppercase font-mono tracking-wider hover:bg-slate-100 transition-colors"
           >
             Cancelar
           </button>
@@ -406,7 +407,7 @@ export default function ModalProgramarVisita({
             type="submit"
             onClick={handleFormSubmit}
             disabled={isSaving}
-            className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+            className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
           >
             {isSaving ? 'Guardando...' : 'Programar Visita'}
           </button>
