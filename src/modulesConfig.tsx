@@ -43,6 +43,17 @@ export const APP_MODULES: AppModule[] = [
     )
   },
   { 
+    id: 'GestionOTs', 
+    displayLabel: 'Gestión de OT', 
+    iconColor: 'text-[#00B594]', 
+    icon: <FileText size={15} />,
+    badge: (selected: boolean) => (
+      <span className={`text-[9px] font-black font-mono uppercase tracking-tight py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-emerald-100 text-[#00B594]'}`}>
+        SLA
+      </span>
+    )
+  },
+  { 
     id: 'Monitoreo', 
     displayLabel: 'Operaciones', 
     iconColor: 'text-[#00B594]', 
@@ -76,17 +87,6 @@ export const APP_MODULES: AppModule[] = [
     )
   },
   { 
-    id: 'GestionOTs', 
-    displayLabel: 'Gestión de OT', 
-    iconColor: 'text-[#00B594]', 
-    icon: <FileText size={15} />,
-    badge: (selected: boolean) => (
-      <span className={`text-[9px] font-black font-mono uppercase tracking-tight py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-emerald-100 text-[#00B594]'}`}>
-        SLA
-      </span>
-    )
-  },
-  { 
     id: 'Ventas', 
     displayLabel: 'Portal de Ventas', 
     iconColor: 'text-[#00B594]', 
@@ -94,6 +94,17 @@ export const APP_MODULES: AppModule[] = [
     badge: (selected: boolean) => (
       <span className={`text-[9px] font-black font-mono uppercase tracking-tight py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-amber-100 text-[#D97706]'}`}>
         Ventas
+      </span>
+    )
+  },
+  { 
+    id: 'Cliente', 
+    displayLabel: 'Portal Cliente', 
+    iconColor: 'text-[#64748B]', 
+    icon: <Briefcase size={15} />,
+    badge: (selected: boolean, count?: string | number) => (
+      <span className={`text-[10px] font-bold font-mono py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+        {count !== undefined ? count : 0}
       </span>
     )
   },
@@ -106,17 +117,6 @@ export const APP_MODULES: AppModule[] = [
       <span className={`text-[9px] font-bold font-mono py-0.5 px-1.5 rounded-full flex items-center gap-1 ${selected ? 'bg-white/20 text-white' : 'bg-[#F1F3F4] text-slate-500'}`}>
         <span>{count !== undefined ? count : 6}</span>
         <span className="text-[8px] uppercase tracking-tighter opacity-80">Activo</span>
-      </span>
-    )
-  },
-  { 
-    id: 'Cliente', 
-    displayLabel: 'Portal Cliente', 
-    iconColor: 'text-[#64748B]', 
-    icon: <Briefcase size={15} />,
-    badge: (selected: boolean, count?: string | number) => (
-      <span className={`text-[10px] font-bold font-mono py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-        {count !== undefined ? count : 0}
       </span>
     )
   }
