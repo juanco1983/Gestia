@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { INITIAL_CLIENTS, INITIAL_CONTRACTS, INITIAL_OTS, INITIAL_USERS, INITIAL_LOGS } from './mockData';
-import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType } from './types';
+import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType, OtEquipoAsignacion } from './types';
 import { INITIAL_ORDENES_TRABAJO, INITIAL_CONTRATOS_NUEVOS, INITIAL_TARGET_VENTAS } from './utils/otDefaults';
 import OrdenesTrabajoView from './components/OrdenesTrabajoView';
 import ClientesContratosView from './components/ClientesContratosView';
@@ -33,7 +33,9 @@ import {
   Bell,
   Play,
   Calendar,
-  Building2
+  Building2,
+  Mail,
+  User as UserIcon,
 } from 'lucide-react';
 
 // Helper components for the main dashboard mockup look
@@ -99,6 +101,7 @@ const getAppDefaultModulesForRole = (role: string): string[] => {
   }
   return ['Dashboard', 'Monitoreo'];
 };
+
 
 export default function App() {
   // Live dynamic list of users
@@ -180,33 +183,7 @@ export default function App() {
   const [dashboardRange, setDashboardRange] = useState<'trimestral' | 'semestral'>('trimestral');
 
   // Real-time online state
-  const [isOnline, setIsOnline] = useState<boolean>(window.navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log(">>> NAVEGADOR EN LÍNEA");
-      setIsOnline(true);
-    };
-    const handleOffline = () => {
-      console.log(">>> NAVEGADOR FUERA DE LÍNEA");
-      setIsOnline(false);
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isOnline) {
-      console.log(">>> SINCRONIZANDO POR CAMBIO A MODO EN LÍNEA...");
-      handleSyncOffline();
-    }
-  }, [isOnline]);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   // Sidebar visibility state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
@@ -306,6 +283,15 @@ export default function App() {
     const local = localStorage.getItem('gestia_target_ventas');
     return local ? JSON.parse(local) : INITIAL_TARGET_VENTAS;
   });
+
+  const [otEquipoAsignaciones, setOtEquipoAsignaciones] = useState<OtEquipoAsignacion[]>(() => {
+    const local = localStorage.getItem('gestia_ot_equipo_asignaciones');
+    return local ? JSON.parse(local) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('gestia_ot_equipo_asignaciones', JSON.stringify(otEquipoAsignaciones));
+  }, [otEquipoAsignaciones]);
 
   const [tipoCambio, setTipoCambio] = useState<number>(() => {
     const local = localStorage.getItem('gestia_tipo_cambio');
@@ -534,7 +520,8 @@ export default function App() {
         console.log(">>> CARGANDO DATOS DEL SERVIDOR...");
         const [
           usersRes, logsRes, clientsRes, contractsRes, otsRes, reportsRes,
-          otLineasRes, contratosComercialesRes, targetVentasRes, configRes
+          otLineasRes, contratosComercialesRes, targetVentasRes, configRes,
+          asignacionesRes
         ] = await Promise.all([
           fetchWithAuth('/api/users').then(res => res.json()),
           fetchWithAuth('/api/logs').then(res => res.json()),
@@ -545,7 +532,8 @@ export default function App() {
           fetchWithAuth('/api/ot-lineas').then(res => res.json()),
           fetchWithAuth('/api/contratos-comerciales').then(res => res.json()),
           fetchWithAuth('/api/target-ventas').then(res => res.json()),
-          fetchWithAuth('/api/config').then(res => res.json())
+          fetchWithAuth('/api/config').then(res => res.json()),
+          fetchWithAuth('/api/ot-equipo-asignaciones').then(res => res.json())
         ]);
 
         if (Array.isArray(usersRes)) setUsers(usersRes);
@@ -557,6 +545,7 @@ export default function App() {
         if (Array.isArray(otLineasRes)) setOrdenesTrabajo(otLineasRes);
         if (Array.isArray(contratosComercialesRes)) setContratosNuevos(contratosComercialesRes);
         if (Array.isArray(targetVentasRes)) setTargetVentas(targetVentasRes);
+        if (Array.isArray(asignacionesRes)) setOtEquipoAsignaciones(asignacionesRes);
         if (configRes && typeof configRes.tipoCambio === 'number') setTipoCambio(configRes.tipoCambio);
       } catch (error) {
         console.error("Conexión local (utilizando caché local offline):", error);
@@ -715,6 +704,30 @@ export default function App() {
     }
   };
 
+  const handleSaveEquipoAsignacion = async (asg: OtEquipoAsignacion) => {
+    try {
+      const response = await fetchWithAuth('/api/ot-equipo-asignaciones', {
+        method: 'POST',
+        body: JSON.stringify(asg)
+      });
+      if (response.ok) {
+        const createdOrUpdated = await response.json();
+        setOtEquipoAsignaciones(prev => {
+          const exists = prev.some(a => a.otId === createdOrUpdated.otId && a.equipoId === createdOrUpdated.equipoId);
+          if (exists) {
+            return prev.map(a => (a.otId === createdOrUpdated.otId && a.equipoId === createdOrUpdated.equipoId) ? createdOrUpdated : a);
+          }
+          return [...prev, createdOrUpdated];
+        });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error saving equipment assignment:", err);
+      return false;
+    }
+  };
+
   const handleUpdateOtStatus = async (otId: string, status: OTStatus) => {
     let extraUpdates: Partial<OT> = {};
     if (status === OTStatus.TRABAJO_EN_EJECUCION) {
@@ -767,80 +780,9 @@ export default function App() {
   };
 
   const handleSyncOffline = async () => {
-    // Si no hay nada que sincronizar, retornamos false para permitir la carga normal
-    const hasLocalChanges = offlineQueue.length > 0 || 
-                            clients.length > 0 || 
-                            contracts.length > 0 || 
-                            ots.length > 0 ||
-                            ordenesTrabajo.length > 0 ||
-                            contratosNuevos.length > 0;
-
-    if (!hasLocalChanges) {
-      console.log(">>> NO HAY CAMBIOS LOCALES PARA SINCRONIZAR.");
-      return false;
-    }
-
-    if (!isOnline) {
-      console.log(">>> EL MODO OFFLINE ESTÁ ACTIVADO. Saltando sincronización.");
-      return false;
-    }
-
-    const syncPayload = {
-      reports: offlineQueue,
-      ots: ots,
-      clients: clients,
-      contracts: contracts,
-      ordenesTrabajo: ordenesTrabajo,
-      contratosNuevos: contratosNuevos,
-      users: users,
-      logs: userLogs
-    };
-    
-    console.log(">>> ENVIANDO PAYLOAD DE SINCRONIZACIÓN:", syncPayload);
-    
-    try {
-      const response = await fetchWithAuth('/api/sync', {
-        method: 'POST',
-        body: JSON.stringify(syncPayload)
-      });
-      const data = await response.json();
-      if (data.success) {
-        if (Array.isArray(data.reports)) setReports(data.reports);
-        if (Array.isArray(data.ots)) setOts(data.ots);
-        if (Array.isArray(data.clients)) setClients(data.clients);
-        if (Array.isArray(data.contracts)) setContracts(data.contracts);
-        if (Array.isArray(data.ordenesTrabajo)) setOrdenesTrabajo(data.ordenesTrabajo);
-        if (Array.isArray(data.contratosNuevos)) setContratosNuevos(data.contratosNuevos);
-        if (Array.isArray(data.users)) setUsers(data.users);
-        if (Array.isArray(data.logs)) setUserLogs(data.logs);
-        
-        setOfflineQueue([]);
-        console.log("Sincronización completa con el servidor exitosa.");
-        return true;
-      }
-    } catch (error) {
-      console.error("Fallo de conexión remota durante la sincronización:", error);
-    }
-
-    // Fallback logic for reports if server is still down
-    let updatedOts = [...ots];
-    const syncedReports = offlineQueue.map(r => {
-      updatedOts = updatedOts.map(o => o.id === r.otId ? { ...o, estado: OTStatus.EN_REVISION } : o);
-      return { ...r, offlineDirty: false };
-    });
-
-    if (syncedReports.length > 0) {
-      setReports(prev => {
-        const nonSyncedOtsOfQueue = syncedReports.map(sr => sr.otId);
-        const filteredPrev = prev.filter(p => !nonSyncedOtsOfQueue.includes(p.otId));
-        return [...filteredPrev, ...syncedReports];
-      });
-      setOts(updatedOts);
-      setOfflineQueue([]);
-      alert(`🤝 COLA DE SINCRONIZACIÓN LOCAL: Se guardaron ${syncedReports.length} informes en el historial local.`);
-    }
-    
-    return false;
+    // Sincronización offline desactivada por solicitud del usuario
+    console.log(">>> Sincronización offline desactivada.");
+    return true;
   };
 
   const handleAddUser = async (user: User) => {
@@ -1996,6 +1938,9 @@ export default function App() {
                   users={users}
                   onUpdateOtStatus={handleUpdateOtStatus}
                   onUpdateOt={handleUpdateOT}
+                  contratosNuevos={contratosNuevos}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
+                  onAddOT={handleAddOT}
                 />
               </div>
             )}
@@ -2067,6 +2012,8 @@ export default function App() {
                   onUpdateOt={handleUpdateOT}
                   onAddOT={handleAddOT}
                   currentUser={currentUser}
+                  equipos={clients.flatMap(c => (c as any).equipos || [])}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
                 />
               </div>
             )}
@@ -2082,6 +2029,7 @@ export default function App() {
                   onUpdateReport={(updatedRep) => {
                     setReports(prev => prev.map(r => r.id === updatedRep.id ? updatedRep : r));
                   }}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
                 />
               </div>
             )}

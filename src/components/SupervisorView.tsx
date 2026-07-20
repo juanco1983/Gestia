@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck, 
   FileText, 
@@ -15,9 +15,10 @@ import {
   Maximize2,
   Minimize2,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Cpu
 } from 'lucide-react';
-import { OT, OTStatus, Client, TechnicalReport } from '../types';
+import { OT, OTStatus, Client, TechnicalReport, OtEquipoAsignacion } from '../types';
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
 
@@ -27,6 +28,7 @@ interface SupervisorViewProps {
   reports: TechnicalReport[];
   onUpdateOtStatus: (otId: string, status: OTStatus) => void;
   onUpdateReport: (report: TechnicalReport) => void;
+  otEquipoAsignaciones?: OtEquipoAsignacion[];
 }
 
 export default function SupervisorView({
@@ -34,7 +36,8 @@ export default function SupervisorView({
   clients,
   reports,
   onUpdateOtStatus,
-  onUpdateReport
+  onUpdateReport,
+  otEquipoAsignaciones = []
 }: SupervisorViewProps) {
   // Filter OTs in "Sometido a Revisión" or "Rechazado" to review report
   const pendingOts = ots.filter(o => o.estado === OTStatus.EN_REVISION || o.estado === OTStatus.OBSERVADA);
@@ -46,15 +49,24 @@ export default function SupervisorView({
   const [globalSearch, setGlobalSearch] = useState('');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(100);
+  const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
 
-  // Retrieve current report associated with selected OT
-  const getAssociatedReport = (otId: string) => {
+  const otEquipoIds = useMemo(() => {
+    if (!selectedOt?.equipoId) return [];
+    return selectedOt.equipoId.split(',').map(x => x.trim()).filter(Boolean);
+  }, [selectedOt?.equipoId]);
+
+  // Retrieve current report associated with selected OT and equipo
+  const getAssociatedReport = (otId: string, equipoId?: string) => {
+    if (equipoId) return reports.find(r => r.otId === otId && r.equipoId === equipoId);
     return reports.find(r => r.otId === otId);
   };
 
   const handleSelectOt = (ot: OT) => {
     setSelectedOt(ot);
-    const report = getAssociatedReport(ot.id);
+    const equiposIds = ot.equipoId ? ot.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
+    setSelectedEquipoId(equiposIds[0] || '');
+    const report = getAssociatedReport(ot.id, equiposIds[0]);
     setCorreccionText(report?.correccionesSupervisor || '');
     setSimulatedDocxDownloaded(false);
     setActiveTab('resumen');
@@ -76,7 +88,7 @@ export default function SupervisorView({
       return;
     }
 
-    const report = getAssociatedReport(selectedOt.id);
+    const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
     if (report) {
       const updatedReport = {
         ...report,
@@ -86,7 +98,7 @@ export default function SupervisorView({
     }
 
     onUpdateOtStatus(selectedOt.id, OTStatus.OBSERVADA);
-    alert(`❌ ENVIADO A CORRECCIÓN: El informe ha regresado a la bandeja de trabajo del técnico con las anotaciones correspondientes.`);
+    alert(`❌ ENVIADO A CORRECCIÓN: El informe del equipo ha regresado a la bandeja de trabajo del técnico con las anotaciones correspondientes.`);
     setSelectedOt(null);
   };
 
@@ -102,7 +114,7 @@ export default function SupervisorView({
       contactoEmail: 'soporte@clientegeneral.pe',
       contactoTelefono: '999999999'
     };
-    const report = getAssociatedReport(selectedOt.id);
+    const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
     if (!report) {
       alert("ATENCIÓN: El informe técnico aún no ha sido redactado por el personal técnico.");
       return;
@@ -526,7 +538,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                 contactoEmail: 'soporte@clientegeneral.pe',
                 contactoTelefono: '999999999'
               };
-              const report = getAssociatedReport(selectedOt.id);
+    const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
 
               return (
                 <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
@@ -613,10 +625,45 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                     </div>
                     <div>
                       <span className="text-slate-400 block font-mono uppercase text-[9px]">Asignación de Técnicos</span>
-                      <span className="text-slate-700 block mt-0.5 font-semibold">Titular: {selectedOt.tecnicoTitular}</span>
-                      <span className="text-slate-500 block text-[10px]">Auxiliar: {selectedOt.tecnicoApoyo || 'Ninguno'}</span>
+                      <span className="text-slate-700 block mt-0.5 font-semibold">
+                        Titular: {(() => {
+                          const asg = (otEquipoAsignaciones || []).find(a => a.otId === selectedOt.id && a.equipoId === selectedEquipoId);
+                          return asg ? asg.tecnicoTitular : selectedOt.tecnicoTitular;
+                        })()}
+                      </span>
+                      <span className="text-slate-500 block text-[10px]">
+                        Auxiliar: {(() => {
+                          const asg = (otEquipoAsignaciones || []).find(a => a.otId === selectedOt.id && a.equipoId === selectedEquipoId);
+                          return asg ? (asg.tecnicoApoyo || 'Ninguno') : (selectedOt.tecnicoApoyo || 'Ninguno');
+                        })()}
+                      </span>
                     </div>
                   </div>
+
+                  {/* Per-equipo tab selector */}
+                  {otEquipoIds.length > 1 && (
+                    <div className="border-b border-slate-200 bg-slate-50/50 px-4 flex flex-wrap gap-1 py-2">
+                      {otEquipoIds.map(eqId => (
+                        <button
+                          key={eqId}
+                          type="button"
+                          onClick={() => {
+                            setSelectedEquipoId(eqId);
+                            const eqReport = getAssociatedReport(selectedOt.id, eqId);
+                            setCorreccionText(eqReport?.correccionesSupervisor || '');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
+                            selectedEquipoId === eqId
+                              ? 'bg-indigo-100 text-indigo-700 border border-indigo-300 shadow-sm'
+                              : 'text-slate-500 hover:bg-slate-100 border border-transparent'
+                          }`}
+                        >
+                          <Cpu size={12} />
+                          <span>Equipo {eqId.slice(0, 6)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Report Content review */}
                   {report ? (
@@ -890,7 +937,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
           contactoEmail: 'soporte@clientegeneral.pe',
           contactoTelefono: '999999999'
         };
-        const report = getAssociatedReport(selectedOt.id);
+        const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
         if (!report) return null;
 
         return (

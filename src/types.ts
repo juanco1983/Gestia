@@ -70,6 +70,8 @@ export interface OT {
   horaFinProgramada?: string; // Scheduled end time
   horaInicioServicio?: string; // Time when status changes to EN_PROCESO
   horaFinServicio?: string; // Time when technical work ends
+  horaSalida?: string; // Time when status changes to EN_CAMINO
+  horaLlegadaSitio?: string; // Time when status changes to EN_SITIO
   tecnicoTitularId?: string; // Phase 2: references User.id (role Tecnico)
   tecnicoApoyoId?: string; // Phase 2: references User.id (role Tecnico)
   tecnicoTitular: string; // fallback string
@@ -84,6 +86,7 @@ export interface OT {
 export interface TechnicalReport {
   id: string;
   otId: string;
+  equipoId?: string;
   voltajeEntrada: number;
   voltajeSalida: number;
   indicadoresBateria: {
@@ -319,6 +322,20 @@ export interface ServicioEquipo {
   hallazgos?: string;
   recomendaciones?: string;
   fotos?: any;
+  creadoEn?: string;
+}
+
+export interface OtEquipoAsignacion {
+  id: string;
+  otId: string;
+  equipoId: string;
+  tecnicoTitularId?: string | null;
+  tecnicoTitular?: string | null;
+  tecnicoApoyoId?: string | null;
+  tecnicoApoyo?: string | null;
+  fecha?: string | null;
+  hora?: string | null;
+  horaFin?: string | null;
   creadoEn?: string;
 }
 

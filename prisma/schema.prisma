@@ -75,19 +75,20 @@ model OT {
 
 model TechnicalReport {
   id                     String   @id
-  otId                   String   @unique
-  voltajeEntrada         Float
-  voltajeSalida          Float
-  indicadoresBateria     Json
-  observacionesDiagnostico String
-  comentariosAdicionales String
+  otId                   String
+  equipoId               String?  // null = legacy single-equipo report; populated = per-equipo report
+  voltajeEntrada         Float    @default(0)
+  voltajeSalida          Float    @default(0)
+  indicadoresBateria     Json     @default("{}")
+  observacionesDiagnostico String @default("")
+  comentariosAdicionales String  @default("")
   firmaCliente           String?
   correccionesSupervisor String?
   creadoEn               String
   modificadoEn           String
   offlineDirty           Boolean?
-  fotos                  Json     // Array of Base64 strings
-  
+  fotos                  Json     @default("[]") // Array of Base64 strings
+
   // PDF format specific fields
   informeN               String?
   hojaServicioN          String?
@@ -106,6 +107,9 @@ model TechnicalReport {
   diagnosticoGabinete    Json?
   revisionNormas         Json?
   recomendaciones        Json?
+
+  @@unique([otId, equipoId])
+  @@index([otId])
 }
 
 model OrdenTrabajoLinea {
@@ -305,3 +309,19 @@ model ServicioEquipo {
   @@index([equipoId])
 }
 
+model OtEquipoAsignacion {
+  id               String   @id @default(cuid())
+  otId             String
+  equipoId         String
+  tecnicoTitularId String?
+  tecnicoTitular   String?
+  tecnicoApoyoId   String?
+  tecnicoApoyo     String?
+  fecha            String?
+  hora             String?
+  horaFin          String?
+  creadoEn         DateTime @default(now())
+
+  @@unique([otId, equipoId])
+  @@index([otId])
+}

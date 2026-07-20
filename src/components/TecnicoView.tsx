@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Briefcase, 
   Layers, 
@@ -25,9 +25,10 @@ import {
   ArrowLeft,
   MapPin,
   Users,
-  Clock
+  Clock,
+  Cpu
 } from 'lucide-react';
-import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User } from '../types';
+import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
 import { 
   ALL_ACCIONES, 
   DEFAULT_RECOMENDACIONES, 
@@ -46,6 +47,8 @@ interface TecnicoViewProps {
   onUpdateOt: (ot: OT) => void;
   onAddOT: (ot: OT) => void;
   currentUser?: User;
+  equipos: Equipo[];
+  otEquipoAsignaciones: OtEquipoAsignacion[];
 }
 
 export default function TecnicoView({
@@ -57,7 +60,9 @@ export default function TecnicoView({
   onUpdateOtStatus,
   onUpdateOt,
   onAddOT,
-  currentUser
+  currentUser,
+  equipos,
+  otEquipoAsignaciones
 }: TecnicoViewProps) {
   const isTechUser = currentUser?.role === 'Tecnico';
 
@@ -81,8 +86,9 @@ export default function TecnicoView({
       const isApoyoArr = (o.tecnicosAdicionalesIds || []).includes(currentUser?.id || '') || 
                          (o.tecnicosAdicionalesNombres || []).map(n => normalizeName(n)).includes(normalizedCurrentUser);
       const isApoyoLegacy = normalizeName(o.tecnicoApoyo) === normalizedCurrentUser;
+      const hasEquipmentAsg = (otEquipoAsignaciones || []).some(a => a.otId === o.id && (a.tecnicoTitularId === currentUser?.id || a.tecnicoApoyoId === currentUser?.id));
       
-      return isTitular || isApoyoArr || isApoyoLegacy;
+      return isTitular || isApoyoArr || isApoyoLegacy || hasEquipmentAsg;
     }
     // Para roles administrativos, mostrar todas las OTs programadas o en proceso para pruebas
     return o.estado !== OTStatus.CREADA && o.estado !== OTStatus.PENDIENTE_PROGRAMACION;
@@ -92,6 +98,34 @@ export default function TecnicoView({
   const [isEditingReport, setIsEditingReport] = useState<boolean>(false);
   const [showOtSalesInfo, setShowOtSalesInfo] = useState<boolean>(true);
   const [draftLoadedMessage, setDraftLoadedMessage] = useState<string | null>(null);
+
+  const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
+  const [clientEquipos, setClientEquipos] = useState<Equipo[]>([]);
+
+  const otEquipoIds = useMemo(() => {
+    return selectedOt?.equipoId
+      ? selectedOt.equipoId.split(',').map(x => x.trim()).filter(Boolean)
+      : [];
+  }, [selectedOt?.equipoId]);
+
+  // Fetch client equipments for display and auto-select first
+  useEffect(() => {
+    if (selectedOt?.clientId) {
+      fetch(`/api/clients/${selectedOt.clientId}/equipos`)
+        .then(res => res.json())
+        .then(data => setClientEquipos(data))
+        .catch(err => console.error("Error fetching client equipments:", err));
+    }
+  }, [selectedOt?.clientId]);
+
+  // Auto-select first equipo when OT changes
+  useEffect(() => {
+    if (otEquipoIds.length > 0) {
+      setSelectedEquipoId(otEquipoIds[0]);
+    } else {
+      setSelectedEquipoId('');
+    }
+  }, [otEquipoIds]);
 
   // Form states matching high-fidelity PDF
   const [informeN, setInformeN] = useState<string>('');
@@ -220,7 +254,7 @@ export default function TecnicoView({
       recomendaciones
     };
 
-    localStorage.setItem(`mafort_draft_${selectedOt.id}`, JSON.stringify(draft));
+    localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
     if (showNotification) {
       alert("💾 BORRADOR GUARDADO LOCALMENTE:\n\nLos cambios actuales se han guardado de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.");
     }
@@ -273,7 +307,7 @@ export default function TecnicoView({
         },
         recomendaciones
       };
-      localStorage.setItem(`mafort_draft_${selectedOt.id}`, JSON.stringify(draft));
+    localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
     }, 1500); // 1.5s debounce to avoid spamming localStorage
     
     return () => clearTimeout(timer);
@@ -291,6 +325,9 @@ export default function TecnicoView({
   const handleSelectOt = (ot: OT) => {
     setSelectedOt(ot);
     setIsEditingReport(false);
+    const equiposIds = ot.equipoId ? ot.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
+    const currentEquipoId = equiposIds[0] || '';
+    setSelectedEquipoId(currentEquipoId);
     const client = clients.find(c => c.id === ot.clientId) || {
       razonSocial: 'Cliente S.A.',
       direccionSede: 'Sede Central',
@@ -298,7 +335,7 @@ export default function TecnicoView({
     };
 
     // Check if there is an existing local draft
-    const savedDraftStr = localStorage.getItem(`mafort_draft_${ot.id}`);
+    const savedDraftStr = localStorage.getItem(`mafort_draft_${ot.id}_${currentEquipoId}`);
     if (savedDraftStr) {
       try {
         const draft = JSON.parse(savedDraftStr);
@@ -364,7 +401,7 @@ export default function TecnicoView({
     setDraftLoadedMessage(null);
     
     // Check if there is an existing report in the global state (submitted before)
-    const existingReport = reports.find(r => r.otId === ot.id);
+    const existingReport = reports.find(r => r.otId === ot.id && (!currentEquipoId || r.equipoId === currentEquipoId));
     if (existingReport) {
       setInformeN(existingReport.informeN || '');
       setHojaServicioN(existingReport.hojaServicioN || '');
@@ -656,6 +693,7 @@ export default function TecnicoView({
     const compiledReport: TechnicalReport = {
       id: `rep_${Date.now()}`,
       otId: selectedOt.id,
+      equipoId: selectedEquipoId || undefined,
       voltajeEntrada: parseFloat(medicionesEntrada.lnVoltaje[0]) || 220,
       voltajeSalida: parseFloat(medicionesSalida.lnVoltaje[0]) || 220,
       indicadoresBateria: {
@@ -723,7 +761,7 @@ export default function TecnicoView({
       alert(`✅ INFORME DE AUDIO-VISTA ADJUNTO PROCESADO EXITOSAMENTE:\n\nSe ha estructurado y subido el informe técnico con la numeración oficial en formato doble marco a la nube para aprobación.`);
     }
 
-    localStorage.removeItem(`mafort_draft_${selectedOt.id}`);
+    localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
     setSelectedOt(null);
   };
 
@@ -792,6 +830,12 @@ export default function TecnicoView({
                   <span className="text-blue-620 bg-blue-50/70 border border-blue-100 px-1.5 py-0.2 rounded font-mono">
                     {ot.estado}
                   </span>
+                  {ot.equipoId && (
+                    <span className="text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded font-mono flex items-center gap-1" title={ot.equipoId}>
+                      <Cpu size={10} />
+                      <span>{ot.equipoId.split(',').length} eq.</span>
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -830,8 +874,34 @@ export default function TecnicoView({
                   </h2>
                   <p className="text-[10px] text-slate-400 font-sans mt-0.5">Estructurando un informe paralelo compatible con PDF Mafort</p>
                 </div>
-              </div>
 
+                {otEquipoIds.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5 px-2">
+                    {otEquipoIds.map(eqId => {
+                      const eq = equipos.find(e => e.id === eqId);
+                      return (
+                        <button
+                          key={eqId}
+                          type="button"
+                          onClick={() => {
+                            saveActiveDraft();
+                            setSelectedEquipoId(eqId);
+                            setDraftLoadedMessage(`📂 Borrador guardado. Ahora editando: ${eq?.codigo || `Equipo ${eqId.slice(0, 6)}`}`);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[9px] font-mono font-black uppercase tracking-wide transition-all cursor-pointer ${
+                            selectedEquipoId === eqId
+                              ? 'bg-amber-400 text-slate-950 shadow-sm'
+                              : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/70'
+                          }`}
+                        >
+                          {eq?.codigo || eqId.slice(0, 6)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+              </div>
               {/* AUTOMATION TRIGGERS */}
               <button
                 type="button"
@@ -855,7 +925,7 @@ export default function TecnicoView({
                   type="button"
                   onClick={() => {
                     if (window.confirm("¿Seguro que desea restablecer el formulario? Se borrará el borrador local y se volverán a cargar los valores por defecto.")) {
-                      localStorage.removeItem(`mafort_draft_${selectedOt.id}`);
+                      localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
                       setDraftLoadedMessage(null);
                       // Reload defaults
                       const client = clients.find(c => c.id === selectedOt.clientId);
@@ -1993,8 +2063,24 @@ export default function TecnicoView({
                               const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                               onUpdateOt({
                                 ...selectedOt,
-                                estado: OTStatus.TRABAJO_EN_EJECUCION,
-                                horaInicioServicio: now
+                                estado: OTStatus.EN_CAMINO,
+                                horaSalida: now
+                              });
+                            }}
+                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                          >
+                            <MapPin size={18} />
+                            <span>Salir al Cliente (En Camino)</span>
+                          </button>
+                        ) : selectedOt.estado === OTStatus.EN_CAMINO ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                              onUpdateOt({
+                                ...selectedOt,
+                                estado: OTStatus.EN_SITIO,
+                                horaLlegadaSitio: now
                               });
                             }}
                             className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
@@ -2002,7 +2088,7 @@ export default function TecnicoView({
                             <MapPin size={18} />
                             <span>Llegada a Sitio (Iniciar Servicio)</span>
                           </button>
-                        ) : selectedOt.estado === OTStatus.TRABAJO_EN_EJECUCION ? (
+                        ) : selectedOt.estado === OTStatus.EN_SITIO ? (
                           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                             <button
                               type="button"
