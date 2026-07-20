@@ -66,6 +66,7 @@ jobs:
           cp prisma/schema.prisma eb-deploy-temp/prisma/
           cp prisma.config.js eb-deploy-temp/ || true
           if [ -d ".ebextensions" ]; then cp -r .ebextensions eb-deploy-temp/; fi
+          cp db.json eb-deploy-temp/
 
           # Generar package.json de producción
           cat <<EOF > eb-deploy-temp/package.json
@@ -94,7 +95,7 @@ jobs:
           EOF
 
           # Generar Procfile (maneja la migración y el sembrado de la DB en el startup de EC2)
-          echo "web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/seedUbigeo.cjs && node dist/server.cjs" > eb-deploy-temp/Procfile
+          echo "web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/seedCleanDb.cjs && node dist/seedUbigeo.cjs && node dist/server.cjs" > eb-deploy-temp/Procfile
 
           # Comprimir en formato ZIP
           cd eb-deploy-temp

@@ -16,6 +16,13 @@ async function main() {
     const rawData = fs.readFileSync(dbPath, 'utf8');
     const db = JSON.parse(rawData);
 
+    // Safety check: Skip seeding if users are already present
+    const userCount = await prisma.user.count();
+    if (userCount > 0) {
+        console.log('👥 Users already exist in the database. Skipping clean seeding to prevent data loss.');
+        return;
+    }
+
     console.log('🧹 Starting clean seeding of master data...');
 
     // Clear all existing tables to avoid constraint issues and start fresh
