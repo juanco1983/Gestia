@@ -6,6 +6,7 @@ import { UserPlus, MapPin, Wrench, Calendar as CalendarIcon,
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
 import ModalProgramarVisita from './ot/ModalProgramarVisita';
+import ModalDetalleEquipos from './ot/ModalDetalleEquipos';
 
 interface TechMonitoringDashboardProps {
   ots: OT[];
@@ -55,10 +56,13 @@ export default function TechMonitoringDashboard({
   const getTotalKva = (equipos: any[]) =>
     equipos.reduce((sum: number, eq: any) => sum + (Number(eq.potenciaKva) || 0), 0);
 
-  // States for Scheduling from Contracts/Addendums
   const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<any | null>(null);
   const [selectedAdendaForSchedule, setSelectedAdendaForSchedule] = useState<any | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
+  // States for viewing detailed equipments and histories
+  const [selectedContractForEquipments, setSelectedContractForEquipments] = useState<any | null>(null);
+  const [isEquipmentsModalOpen, setIsEquipmentsModalOpen] = useState(false);
   
   // States used by the technical dashboard (dynamically loaded from users)
   const techniciansList = useMemo(() => {
@@ -475,18 +479,66 @@ export default function TechMonitoringDashboard({
                         </div>
 
                         {/* Equipment Summary (always visible) */}
-                        <div className="px-4 pb-3 bg-slate-50 flex items-center gap-2 text-xs text-slate-600">
-                          <Zap size={14} className="text-slate-400 shrink-0" />
-                          <span className="font-mono font-bold">
-                            {primaryEquipments.length} equipo{primaryEquipments.length !== 1 ? 's' : ''}
-                          </span>
-                          {primaryEquipments.length > 0 && (
-                            <>
-                              <span className="text-slate-300">·</span>
-                              <span className="font-mono font-bold text-slate-700">{totalKva} kVA total</span>
-                            </>
-                          )}
-                        </div>
+                        {(() => {
+                          const allEquipments = [...primaryEquipments];
+                          adendas.forEach((adenda: any) => {
+                            const adendaEquips = adenda.equiposAdenda
+                              ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
+                              : [];
+                            adendaEquips.forEach((eq: any) => {
+                              if (!allEquipments.some(e => e.id === eq.id)) {
+                                allEquipments.push(eq);
+                              }
+                            });
+                          });
+
+                          let programadosCount = 0;
+                          let pendientesCount = 0;
+
+                          allEquipments.forEach((eq: any) => {
+                            const isScheduled = ots.some((ot: any) => {
+                              if (ot.estado === OTStatus.CERRADA) return false;
+                              const isAssigned = otEquipoAsignaciones.some((a: any) => a.otId === ot.id && a.equipoId === eq.id);
+                              if (isAssigned) return true;
+                              if (ot.equipoId) {
+                                const ids = ot.equipoId.split(',').map((id: string) => id.trim());
+                                if (ids.includes(eq.id)) return true;
+                              }
+                              return false;
+                            });
+
+                            if (isScheduled) {
+                              programadosCount++;
+                            } else {
+                              pendientesCount++;
+                            }
+                          });
+
+                          return (
+                            <div className="px-4 pb-3 pt-1 bg-slate-50 flex flex-wrap items-center justify-between gap-3 text-xs border-b border-slate-100">
+                              <div className="flex items-center gap-3 text-slate-600 flex-wrap">
+                                <div className="flex items-center gap-1">
+                                  <Zap size={13} className="text-slate-400 shrink-0" />
+                                  <span className="font-mono font-bold">{allEquipments.length} equipo{allEquipments.length !== 1 ? 's' : ''}</span>
+                                  {allEquipments.length > 0 && <span className="font-mono text-[10px] text-slate-400">({totalKva} kVA)</span>}
+                                </div>
+                                <span className="text-slate-300 hidden sm:inline">|</span>
+                                <span className="font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-bold">
+                                  {programadosCount} Programado{programadosCount !== 1 ? 's' : ''}
+                                </span>
+                                <span className="font-mono text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-bold">
+                                  {pendientesCount} Pendiente{pendientesCount !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedContractForEquipments(contract); setIsEquipmentsModalOpen(true); }}
+                                className="text-[10px] font-black text-teal-600 hover:text-teal-700 font-mono uppercase tracking-wider underline cursor-pointer focus:outline-none transition-colors"
+                              >
+                                Ver Detalle e Historial
+                              </button>
+                            </div>
+                          );
+                        })()}
 
                         {/* Expanded Content */}
                         <div
@@ -926,6 +978,21 @@ export default function TechMonitoringDashboard({
           ots={ots}
           users={users}
           onSave={onAddOT}
+        />
+      )}
+
+      {isEquipmentsModalOpen && selectedContractForEquipments && (
+        <ModalDetalleEquipos
+          isOpen={isEquipmentsModalOpen}
+          onClose={() => {
+            setIsEquipmentsModalOpen(false);
+            setSelectedContractForEquipments(null);
+          }}
+          contract={selectedContractForEquipments}
+          ots={ots}
+          otEquipoAsignaciones={otEquipoAsignaciones}
+          reports={reports}
+          clients={clients}
         />
       )}
     </div>
