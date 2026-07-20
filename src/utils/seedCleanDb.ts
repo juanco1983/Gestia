@@ -6,8 +6,15 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const connectionString = `${process.env.DATABASE_URL}`;
-const pool = new Pool({ connectionString });
+let connectionString = `${process.env.DATABASE_URL}`;
+const isAWS = connectionString.includes("amazonaws.com");
+if (isAWS) {
+  connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, "");
+}
+const pool = new Pool({ 
+  connectionString,
+  ssl: isAWS ? { rejectUnauthorized: false } : undefined
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
