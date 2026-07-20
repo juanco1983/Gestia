@@ -1460,6 +1460,7 @@ app.get("/api/tipo-contratos", async (req, res) => {
 });
 
 const CONTRATO_NUEVO_INCLUDE = {
+  equipos: true,
   ampliaciones: {
     include: {
       equiposAdenda: {

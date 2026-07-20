@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { UserPlus, Users, Clock, MapPin, Wrench, Search, Calendar as CalendarIcon, 
   Bell, Smartphone, Move, Info, ChevronLeft, ChevronRight, CheckCircle2,
-  AlertCircle
+  AlertCircle, Cpu, Plus
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
+import ModalProgramarVisita from './ot/ModalProgramarVisita';
 
 interface TechMonitoringDashboardProps {
   ots: OT[];
@@ -13,6 +14,9 @@ interface TechMonitoringDashboardProps {
   users: User[];
   onUpdateOtStatus?: (otId: string, status: OTStatus) => void;
   onUpdateOt?: (ot: OT) => void;
+  contratosNuevos: any[];
+  otEquipoAsignaciones: any[];
+  onAddOT: (newOT: OT) => Promise<void>;
 }
 
 export default function TechMonitoringDashboard({
@@ -21,10 +25,13 @@ export default function TechMonitoringDashboard({
   reports,
   users,
   onUpdateOtStatus,
-  onUpdateOt
+  onUpdateOt,
+  contratosNuevos = [],
+  otEquipoAsignaciones = [],
+  onAddOT
 }: TechMonitoringDashboardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'programacion' | 'disponibilidad'>('programacion');
+  const [activeTab, setActiveTab] = useState<'programacion' | 'disponibilidad' | 'contratos'>('programacion');
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [draggedOt, setDraggedOt] = useState<OT | null>(null);
   const [selectedOtInfo, setSelectedOtInfo] = useState<OT | null>(null);
@@ -32,14 +39,31 @@ export default function TechMonitoringDashboard({
   const [techSearchQuery, setTechSearchQuery] = useState('');
   const [selectedOtForAssign, setSelectedOtForAssign] = useState<OT | null>(null);
   const [dropInitialValues, setDropInitialValues] = useState<{ techId?: string; fecha?: string; hora?: string } | null>(null);
+
+  // States for Scheduling from Contracts/Addendums
+  const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<any | null>(null);
+  const [selectedAdendaForSchedule, setSelectedAdendaForSchedule] = useState<any | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   
-  // States used by the technical dashboard
-  const techniciansList = [
-    { id: 'user_2', name: 'Carlos Ocsa', area: 'Sistemas de Potencia', avatar: 'CO', location: 'Cerca a San Isidro' },
-    { id: 'tech_2', name: 'Gino Murillo', area: 'Climatización', avatar: 'GM', location: 'Base Surco' },
-    { id: 'user_5', name: 'Juan Córdova', area: 'Seguridad Eléctrica', avatar: 'JC', location: 'Ruta a Miraflores' },
-    { id: 'tech_4', name: 'Josué Ale', area: 'Mecatrónica', avatar: 'JA', location: 'Base Surco' }
-  ];
+  // States used by the technical dashboard (dynamically loaded from users)
+  const techniciansList = useMemo(() => {
+    const techsFromDb = users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo');
+    if (techsFromDb.length > 0) {
+      return techsFromDb.map(u => ({
+        id: u.id,
+        name: u.username || 'Técnico',
+        area: u.area || 'Mantenimiento',
+        avatar: (u.username || 'TK').substring(0, 2).toUpperCase(),
+        location: 'Base'
+      }));
+    }
+    return [
+      { id: 'user_2', name: 'Carlos Ocsa', area: 'Sistemas de Potencia', avatar: 'CO', location: 'Cerca a San Isidro' },
+      { id: 'tech_2', name: 'Gino Murillo', area: 'Climatización', avatar: 'GM', location: 'Base Surco' },
+      { id: 'user_5', name: 'Juan Córdova', area: 'Seguridad Eléctrica', avatar: 'JC', location: 'Ruta a Miraflores' },
+      { id: 'tech_4', name: 'Josué Ale', area: 'Mecatrónica', avatar: 'JA', location: 'Base Surco' }
+    ];
+  }, [users]);
 
   const timeSlots = Array.from({ length: 11 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
 
@@ -47,7 +71,24 @@ export default function TechMonitoringDashboard({
   const unassignedOts = ots.filter(ot => ot.estado === OTStatus.PENDIENTE_PROGRAMACION || ot.estado === OTStatus.CREADA);
   
   // Assigned OTs for calendar
-  const assignedOts = ots.filter(ot => ot.estado !== OTStatus.PENDIENTE_PROGRAMACION && ot.estado !== OTStatus.CREADA && ot.tecnicoTitular);
+  const assignedOts = ots.filter(ot => ot.estado !== OTStatus.PENDIENTE_PROGRAMACION && ot.estado !== OTStatus.CREADA);
+
+  const isTechAssignedToOt = (ot: OT, techId: string, techName: string) => {
+    // 1. Primary technician check
+    if (ot.tecnicoTitularId === techId || (ot.tecnicoTitular && normalizeName(ot.tecnicoTitular) === normalizeName(techName))) {
+      return true;
+    }
+    // 2. Additional technicians check
+    if (ot.tecnicosAdicionalesIds?.includes(techId) || ot.tecnicosAdicionalesNombres?.some(name => normalizeName(name) === normalizeName(techName))) {
+      return true;
+    }
+    // 3. Equipment-specific assignments check
+    const assignmentsForOt = otEquipoAsignaciones.filter(a => a.otId === ot.id);
+    if (assignmentsForOt.length > 0) {
+      return assignmentsForOt.some(a => a.tecnicoTitularId === techId || a.tecnicoApoyoId === techId);
+    }
+    return false;
+  };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(currentDate);
@@ -275,7 +316,7 @@ export default function TechMonitoringDashboard({
 
       <div className="flex flex-1 overflow-hidden">
         {/* 2 & 3. Panel Lateral: Cola de Trabajo */}
-        {activeTab !== 'disponibilidad' && (
+        {activeTab === 'programacion' && (
           <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             {/* Fila de Tickets / Cola de Trabajo */}
             <div 
@@ -375,6 +416,13 @@ export default function TechMonitoringDashboard({
                   <Clock size={16} />
                   Disponibilidad
                 </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'contratos' ? 'bg-white shadow text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  onClick={() => setActiveTab('contratos')}
+                >
+                  <Wrench size={16} />
+                  Contratos y Adendas
+                </button>
               </div>
               
               <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 ml-4">
@@ -438,7 +486,7 @@ export default function TechMonitoringDashboard({
                         {techniciansList.map(tech => {
                           const dateStr = currentDate.toISOString().split('T')[0];
                           const startingOt = assignedOts.find(ot => 
-                            normalizeName(ot.tecnicoTitular) === normalizeName(tech.name) && 
+                            isTechAssignedToOt(ot, tech.id, tech.name) && 
                             ot.fechaProgramada === dateStr && 
                             doesOtStartInSlot(ot, time)
                           );
@@ -518,7 +566,7 @@ export default function TechMonitoringDashboard({
                           const dateStr = date.toISOString().split('T')[0];
                           // Find all OTs for this tech on this day
                           const otsInSlot = assignedOts.filter(ot => 
-                            normalizeName(ot.tecnicoTitular) === normalizeName(tech.name) && 
+                            isTechAssignedToOt(ot, tech.id, tech.name) && 
                             ot.fechaProgramada === dateStr
                           );
 
@@ -619,6 +667,159 @@ export default function TechMonitoringDashboard({
             </div>
           </div>
           </>
+          ) : activeTab === 'contratos' ? (
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6 text-left">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="font-display font-black text-slate-800 text-lg uppercase tracking-wider">
+                      Contratos y Adendas Activas
+                    </h3>
+                    <p className="text-xs text-slate-500 font-mono">
+                      Vigencia de contratos, equipamiento asignado y programación directa de visitas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  {contratosNuevos.map((contract: any) => {
+                    const primaryEquipments = contract.equipos || [];
+                    const adendas = contract.ampliaciones || [];
+
+                    return (
+                      <div key={contract.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                        {/* Card Header (Contract Info) */}
+                        <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono font-black text-sm text-slate-900 bg-slate-200 px-2 py-0.5 rounded">
+                                Contrato #{contract.n_contrato || contract.id.replace('cont_', '')}
+                              </span>
+                              <span className="text-xs font-bold text-[#00B594] font-mono uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                {contract.tipo_contrato || 'Mantenimiento'}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-base">{contract.cliente}</h4>
+                            <p className="text-[11px] text-slate-500 font-mono mt-1">
+                              Vigencia: <strong>{contract.fecha_inicio || 'S/D'}</strong> al <strong>{contract.fecha_fin || 'S/D'}</strong>
+                            </p>
+                          </div>
+                          
+                          <button
+                            onClick={() => {
+                              setSelectedContractForSchedule(contract);
+                              setSelectedAdendaForSchedule(null);
+                              setIsScheduleModalOpen(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider transition-colors active:scale-[0.98]"
+                          >
+                            <CalendarIcon size={14} className="text-white" />
+                            <span>Programar Visita</span>
+                          </button>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="p-5 space-y-5">
+                          {/* Primary Contract Equipments */}
+                          <div>
+                            <h5 className="text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                              <Cpu size={14} className="text-slate-400" />
+                              <span>Equipos del Contrato Principal ({primaryEquipments.length})</span>
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {primaryEquipments.map((eq: any) => (
+                                <div key={eq.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
+                                  <div className="min-w-0">
+                                    <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
+                                    <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
+                                  </div>
+                                  <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
+                                    {eq.potenciaKva} kVA
+                                  </span>
+                                </div>
+                              ))}
+                              {primaryEquipments.length === 0 && (
+                                <p className="text-xs text-slate-400 italic">No hay equipos asignados directamente al contrato principal.</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Addendums List */}
+                          {adendas.length > 0 && (
+                            <div className="border-t border-slate-100 pt-4 space-y-4">
+                              <h5 className="text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                <Plus size={14} className="text-teal-500" />
+                                <span>Adendas / Ampliaciones de Contrato ({adendas.length})</span>
+                              </h5>
+                              <div className="space-y-3">
+                                {adendas.map((adenda: any) => {
+                                  const adendaEquips = adenda.equiposAdenda
+                                    ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
+                                    : [];
+                                  return (
+                                    <div key={adenda.id} className="p-4 bg-teal-50/20 border border-teal-100 rounded-xl text-xs space-y-3">
+                                      <div className="flex justify-between items-center">
+                                        <div>
+                                          <span className="font-mono font-black text-slate-800 bg-teal-100/60 px-2 py-0.5 rounded mr-2 border border-teal-200">
+                                            Adenda {adenda.codigo || adenda.id.replace('ad_', '')}
+                                          </span>
+                                          <span className="text-[10px] text-slate-500 font-mono">
+                                            Vigencia: {adenda.fecha_inicio} al {adenda.fecha_fin}
+                                          </span>
+                                        </div>
+                                        
+                                        <button
+                                          onClick={() => {
+                                            setSelectedContractForSchedule(contract);
+                                            setSelectedAdendaForSchedule(adenda);
+                                            setIsScheduleModalOpen(true);
+                                          }}
+                                          className="flex items-center gap-1.5 px-3 py-1 bg-[#E6F7F4] border border-emerald-100 rounded-md text-[#00B594] hover:bg-emerald-100 transition-all font-black uppercase font-mono text-[10px]"
+                                        >
+                                          <CalendarIcon size={12} />
+                                          <span>Programar de Adenda</span>
+                                        </button>
+                                      </div>
+
+                                      {/* Adenda Equipments */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {adendaEquips.map((eq: any) => (
+                                          <div key={eq.id} className="p-2.5 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-xs">
+                                            <div className="min-w-0">
+                                              <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
+                                              <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                              <span className="text-[10px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
+                                            </div>
+                                            <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
+                                              {eq.potenciaKva} kVA
+                                            </span>
+                                          </div>
+                                        ))}
+                                        {adendaEquips.length === 0 && (
+                                          <p className="text-xs text-slate-400 italic">No hay equipos asignados a esta adenda.</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {contratosNuevos.length === 0 && (
+                    <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
+                      <Wrench size={32} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-500 text-sm font-medium">No hay contratos o adendas comerciales vigentes.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="flex-1 flex bg-slate-50 overflow-hidden">
               {/* Left Sidebar: Tech Search & List */}
@@ -995,6 +1196,22 @@ export default function TechMonitoringDashboard({
             setDropInitialValues(null);
             setDraggedOt(null);
           }}
+        />
+      )}
+
+      {isScheduleModalOpen && selectedContractForSchedule && (
+        <ModalProgramarVisita
+          isOpen={isScheduleModalOpen}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSelectedContractForSchedule(null);
+            setSelectedAdendaForSchedule(null);
+          }}
+          contract={selectedContractForSchedule}
+          adenda={selectedAdendaForSchedule}
+          ots={ots}
+          users={users}
+          onSave={onAddOT}
         />
       )}
     </div>

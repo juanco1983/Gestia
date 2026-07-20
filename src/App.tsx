@@ -1938,6 +1938,9 @@ export default function App() {
                   users={users}
                   onUpdateOtStatus={handleUpdateOtStatus}
                   onUpdateOt={handleUpdateOT}
+                  contratosNuevos={contratosNuevos}
+                  otEquipoAsignaciones={otEquipoAsignaciones}
+                  onAddOT={handleAddOT}
                 />
               </div>
             )}
