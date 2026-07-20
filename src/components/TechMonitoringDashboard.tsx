@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { UserPlus, Users, Clock, MapPin, Wrench, Search, Calendar as CalendarIcon, 
-  Bell, Smartphone, Move, Info, ChevronLeft, ChevronRight, CheckCircle2,
-  AlertCircle, Cpu, Plus
+import { UserPlus, MapPin, Wrench, Calendar as CalendarIcon, 
+  Bell, Smartphone, Info, ChevronLeft, ChevronRight, ChevronDown,
+  Cpu, Plus, Zap, Search
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
@@ -31,7 +31,7 @@ export default function TechMonitoringDashboard({
   onAddOT
 }: TechMonitoringDashboardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'programacion' | 'disponibilidad' | 'contratos'>('programacion');
+  const [activeTab, setActiveTab] = useState<'contratos' | 'programacion'>('contratos');
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [draggedOt, setDraggedOt] = useState<OT | null>(null);
   const [selectedOtInfo, setSelectedOtInfo] = useState<OT | null>(null);
@@ -39,6 +39,21 @@ export default function TechMonitoringDashboard({
   const [techSearchQuery, setTechSearchQuery] = useState('');
   const [selectedOtForAssign, setSelectedOtForAssign] = useState<OT | null>(null);
   const [dropInitialValues, setDropInitialValues] = useState<{ techId?: string; fecha?: string; hora?: string } | null>(null);
+  const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
+  const [contractSearchQuery, setContractSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const toggleContract = (id: string) => {
+    setExpandedContracts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const getTotalKva = (equipos: any[]) =>
+    equipos.reduce((sum: number, eq: any) => sum + (Number(eq.potenciaKva) || 0), 0);
 
   // States for Scheduling from Contracts/Addendums
   const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<any | null>(null);
@@ -67,9 +82,6 @@ export default function TechMonitoringDashboard({
 
   const timeSlots = Array.from({ length: 11 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
 
-  // Unassigned OTs (Mesa de Entrada)
-  const unassignedOts = ots.filter(ot => ot.estado === OTStatus.PENDIENTE_PROGRAMACION || ot.estado === OTStatus.CREADA);
-  
   // Assigned OTs for calendar
   const assignedOts = ots.filter(ot => ot.estado !== OTStatus.PENDIENTE_PROGRAMACION && ot.estado !== OTStatus.CREADA);
 
@@ -234,16 +246,6 @@ export default function TechMonitoringDashboard({
     return parseInt(startH) === parseInt(slotH);
   };
 
-  const getDisponibilidadCols = () => {
-    if (calendarView === 'day') {
-      return timeSlots.map(time => ({ type: 'time' as const, time, date: currentDate, isCurrentMonth: true }));
-    }
-    if (calendarView === 'week') {
-      return weekDays.map(date => ({ type: 'date' as const, date, isCurrentMonth: true }));
-    }
-    return getMonthDays().map(d => ({ type: 'date' as const, date: d.date, isCurrentMonth: d.isCurrentMonth }));
-  };
-
   const handleDragStart = (e: React.DragEvent, ot: OT) => {
     if (isOTFinalizada(ot.estado)) {
       e.preventDefault();
@@ -290,138 +292,50 @@ export default function TechMonitoringDashboard({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 font-sans -m-6 md:-m-8">
-      {/* 4. Barra de Alertas y Notificaciones */}
-      <div className="bg-slate-900 text-slate-200 px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800 shrink-0">
+    <div className="flex flex-col h-full bg-slate-50 font-sans rounded-2xl overflow-hidden">
+      {/* Barra de Alertas y Notificaciones */}
+      <div className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-200/80 shrink-0 rounded-t-2xl">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="font-mono font-bold tracking-wider text-emerald-400 uppercase">Monitoreo Activo</span>
+            <span className="font-mono font-bold tracking-wider text-emerald-600 uppercase">Monitoreo Activo</span>
           </div>
-          <div className="hidden md:flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded border border-slate-700">
-            <Bell size={12} className="text-amber-400" />
-            <span>Última alerta: <strong className="text-white">Nueva OT creada hace 5 min</strong></span>
+          <div className="hidden md:flex items-center gap-1.5 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">
+            <Bell size={12} className="text-amber-500" />
+            <span className="text-slate-600">Última alerta: <strong className="text-slate-900">Nueva OT creada hace 5 min</strong></span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 border border-slate-700 bg-slate-800 px-2 py-1 rounded">
-            <Smartphone size={12} className="text-blue-400" />
-            <span className="font-mono text-[10px]">Sincronización Móvil: <strong className="text-emerald-400">100% (4/4 Online)</strong></span>
+          <div className="flex items-center gap-1.5 border border-slate-200 bg-white px-2 py-1 rounded-md shadow-sm">
+            <Smartphone size={12} className="text-[#33337A]" />
+            <span className="font-mono text-[10px] text-slate-600">Sincronización Móvil: <strong className="text-emerald-600">100% (4/4 Online)</strong></span>
           </div>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* 2 & 3. Panel Lateral: Cola de Trabajo */}
-        {activeTab === 'programacion' && (
-          <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-            {/* Fila de Tickets / Cola de Trabajo */}
-            <div 
-              className="flex-1 overflow-y-auto p-4 bg-slate-50/50"
-              onDragOver={handleDragOver}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (draggedOt && onUpdateOt) {
-                  onUpdateOt({
-                    ...draggedOt,
-                    tecnicoTitular: '',
-                    tecnicoTitularId: undefined,
-                    horaProgramada: undefined,
-                    estado: OTStatus.PENDIENTE_PROGRAMACION
-                  });
-                  setDraggedOt(null);
-                }
-              }}
-            >
-              <h3 className="text-xs font-black text-slate-800 uppercase font-mono tracking-wider mb-3 flex items-center gap-2">
-                <AlertCircle size={14} className="text-rose-500" />
-                Mesa de Entrada ({unassignedOts.length})
-              </h3>
-              <p className="text-[10px] text-slate-500 mb-3 font-mono leading-tight">
-                Arrastra un ticket al calendario para asignar a un técnico.
-              </p>
-              <div className="space-y-2">
-                {unassignedOts.map(ot => (
-                  <div
-                    key={ot.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, ot)}
-                    className="bg-white border-l-4 border-l-red-500 border border-slate-200 p-2.5 rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow relative group"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-mono text-xs font-black text-slate-900">{ot.id}</span>
-                      <Move size={12} className="text-slate-400 group-hover:text-slate-600" />
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-700 truncate">{getClientName(ot.clientId)}</p>
-                    <p className="text-[10px] text-slate-500 truncate mb-2">{ot.tipoEquipo}</p>
-
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedOtForAssign(ot);
-                      }}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#E6F7F4] border border-emerald-100 rounded-md text-[#00B594] hover:bg-emerald-100 transition-all text-[10px] font-black uppercase font-mono"
-                    >
-                      <UserPlus size={12} />
-                      <span>Asignar a Técnico</span>
-                    </button>
-                    
-                    {/* Floating Detail Window on Hover */}
-                    <div className="hidden group-hover:block absolute left-full top-0 ml-2 w-64 bg-slate-900 text-slate-100 p-4 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-left-2">
-                      <div className="space-y-2">
-                        <div className="flex justify-between border-b border-slate-700 pb-2">
-                          <span className="font-mono font-bold text-amber-400">{ot.id}</span>
-                          <span className="text-[10px] bg-rose-500 text-white px-1.5 rounded font-bold uppercase">Alta</span>
-                        </div>
-                        <div className="text-xs space-y-1">
-                          <p><span className="text-slate-400">Cliente:</span> {getClientName(ot.clientId)}</p>
-                          <p><span className="text-slate-400">Equipo:</span> {ot.tipoEquipo} ({ot.potenciaKva}KVA)</p>
-                          <p><span className="text-slate-400">Detalle:</span> {ot.tipoMantenimiento || 'Mantenimiento requerido'}</p>
-                          <p><span className="text-slate-400">F. Límite:</span> {ot.fechaProgramada || 'Sin programar'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {unassignedOts.length === 0 && (
-                  <div className="text-center p-4 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs">
-                    No hay tickets pendientes en cola.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 1. Panel de Programación (Vista Principal) */}
+        {/* Panel de Programación (Vista Principal) */}
         <div className="flex-1 flex flex-col bg-slate-100 overflow-hidden">
           {/* Calendar Header */}
           <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-4">
               <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
                 <button 
-                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'programacion' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  onClick={() => setActiveTab('programacion')}
-                >
-                  <CalendarIcon size={16} />
-                  Programación
-                </button>
-                <button 
-                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'disponibilidad' ? 'bg-white shadow text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  onClick={() => setActiveTab('disponibilidad')}
-                >
-                  <Clock size={16} />
-                  Disponibilidad
-                </button>
-                <button 
                   className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'contratos' ? 'bg-white shadow text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}
                   onClick={() => setActiveTab('contratos')}
                 >
                   <Wrench size={16} />
                   Contratos y Adendas
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'programacion' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  onClick={() => setActiveTab('programacion')}
+                >
+                  <CalendarIcon size={16} />
+                  Programación
                 </button>
               </div>
               
@@ -443,7 +357,278 @@ export default function TechMonitoringDashboard({
             </div>
           </div>
 
-          {activeTab === 'programacion' ? (
+          {activeTab === 'contratos' ? (
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6 text-left">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <div>
+                    <h3 className="font-display font-black text-slate-800 text-lg uppercase tracking-wider">
+                      Contratos y Adendas Activas
+                    </h3>
+                    <p className="text-xs text-slate-500 font-mono">
+                      {contratosNuevos.length} contratos registrados
+                    </p>
+                  </div>
+                  <div className="relative w-full sm:w-72">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por cliente, contrato o tipo..."
+                      value={contractSearchQuery}
+                      onChange={e => { setContractSearchQuery(e.target.value); setCurrentPage(1); }}
+                      className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 font-mono focus:border-emerald-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {(() => {
+                  const filtered = contratosNuevos.filter((c: any) => {
+                    const q = contractSearchQuery.toLowerCase();
+                    if (!q) return true;
+                    const num = c.n_contrato || c.id.replace('cont_', '');
+                    return num.includes(q) || (c.cliente || '').toLowerCase().includes(q) || (c.tipo_contrato || '').toLowerCase().includes(q);
+                  });
+                  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+                  const safePage = Math.min(currentPage, totalPages);
+                  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+                  return (
+                    <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {paginated.map((contract: any) => {
+                    const primaryEquipments = contract.equipos || [];
+                    const adendas = contract.ampliaciones || [];
+                    const totalKva = getTotalKva(primaryEquipments);
+                    const isExpanded = expandedContracts.has(contract.id);
+                    const hasDates = contract.fecha_inicio && contract.fecha_fin && contract.fecha_inicio !== 'S/D' && contract.fecha_fin !== 'S/D';
+
+                    let nearExpiry = false;
+                    if (hasDates) {
+                      const daysLeft = Math.ceil((new Date(contract.fecha_fin.split('/').reverse().join('-')).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                      nearExpiry = daysLeft <= 30 && daysLeft >= 0;
+                    }
+
+                    return (
+                      <div
+                        key={contract.id}
+                        className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 overflow-hidden ${nearExpiry ? 'border-amber-300 shadow-amber-100/50' : 'border-slate-200 hover:shadow-md'}`}
+                      >
+                        {/* Accordion Header */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleContract(contract.id); } }}
+                          className="p-4 bg-slate-50 flex items-center gap-3 cursor-pointer select-none"
+                        >
+                          <div
+                            className="flex-1 min-w-0"
+                            onClick={() => toggleContract(contract.id)}
+                          >
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="font-mono font-black text-sm text-slate-900 bg-slate-200 px-2 py-0.5 rounded">
+                                Contrato #{contract.n_contrato || contract.id.replace('cont_', '')}
+                              </span>
+                              <span className="text-[10px] font-bold text-[#00B594] font-mono uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                {contract.tipo_contrato || 'Mantenimiento'}
+                              </span>
+                              {!hasDates && (
+                                <span className="text-[10px] font-bold text-slate-500 font-mono uppercase bg-slate-200 px-2 py-0.5 rounded">
+                                  Sin vigencia definida
+                                </span>
+                              )}
+                              {nearExpiry && (
+                                <span className="text-[10px] font-bold text-amber-700 font-mono uppercase bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                                  Próximo a vencer
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-sm">{contract.cliente}</h4>
+                            {hasDates ? (
+                              <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                Vigencia: <strong>{contract.fecha_inicio}</strong> al <strong>{contract.fecha_fin}</strong>
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5 italic">Sin fechas de vigencia registradas</p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(null); setIsScheduleModalOpen(true); }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-lg text-[10px] font-black uppercase font-mono tracking-wider transition-colors active:scale-[0.98] shrink-0 shadow-sm shadow-emerald-500/10"
+                          >
+                            <CalendarIcon size={12} className="text-white" />
+                            <span>Programar Visita</span>
+                          </button>
+
+                          <button
+                            onClick={() => toggleContract(contract.id)}
+                            className="p-1.5 hover:bg-slate-200 rounded-full transition-colors shrink-0 text-slate-500"
+                            aria-label={isExpanded ? 'Colapsar detalle' : 'Expandir detalle'}
+                          >
+                            <ChevronDown
+                              size={18}
+                              className="transition-transform duration-150 ease"
+                              style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Equipment Summary (always visible) */}
+                        <div className="px-4 pb-3 bg-slate-50 flex items-center gap-2 text-xs text-slate-600">
+                          <Zap size={14} className="text-slate-400 shrink-0" />
+                          <span className="font-mono font-bold">
+                            {primaryEquipments.length} equipo{primaryEquipments.length !== 1 ? 's' : ''}
+                          </span>
+                          {primaryEquipments.length > 0 && (
+                            <>
+                              <span className="text-slate-300">·</span>
+                              <span className="font-mono font-bold text-slate-700">{totalKva} kVA total</span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Expanded Content */}
+                        <div
+                          className="transition-all duration-200 ease-in-out"
+                          style={{
+                            maxHeight: isExpanded ? `${600 + adendas.length * 200}px` : '0px',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div className="px-4 pb-4 space-y-4 border-t border-slate-100 pt-4">
+                            {/* Primary Contract Equipments */}
+                            <div>
+                              <h5 className="text-[10px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <Cpu size={12} className="text-slate-400" />
+                                <span>Equipos del Contrato Principal ({primaryEquipments.length})</span>
+                              </h5>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {primaryEquipments.map((eq: any) => (
+                                  <div key={eq.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-[11px]">
+                                    <div className="min-w-0">
+                                      <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
+                                      <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                      <span className="text-[9px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
+                                    </div>
+                                    <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
+                                      {eq.potenciaKva} kVA
+                                    </span>
+                                  </div>
+                                ))}
+                                {primaryEquipments.length === 0 && (
+                                  <p className="text-[11px] text-slate-400 italic col-span-full">No hay equipos asignados directamente al contrato principal.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Addendums List */}
+                            {adendas.length > 0 && (
+                              <div className="border-t border-slate-100 pt-3 space-y-3">
+                                <h5 className="text-[10px] font-black font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                  <Plus size={12} className="text-teal-500" />
+                                  <span>Adendas / Ampliaciones de Contrato ({adendas.length})</span>
+                                </h5>
+                                <div className="space-y-2">
+                                  {adendas.map((adenda: any) => {
+                                    const adendaEquips = adenda.equiposAdenda
+                                      ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
+                                      : [];
+                                    return (
+                                      <div key={adenda.id} className="p-3 bg-teal-50/20 border border-teal-100 rounded-xl text-[11px] space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <div>
+                                            <span className="font-mono font-black text-slate-800 bg-teal-100/60 px-2 py-0.5 rounded mr-2 border border-teal-200 text-[10px]">
+                                              Adenda {adenda.codigo || adenda.id.replace('ad_', '')}
+                                            </span>
+                                            <span className="text-[9px] text-slate-500 font-mono">
+                                              Vigencia: {adenda.fecha_inicio} al {adenda.fecha_fin}
+                                            </span>
+                                          </div>
+                                          <button
+                                            onClick={() => { setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(adenda); setIsScheduleModalOpen(true); }}
+                                            className="flex items-center gap-1 px-2.5 py-1 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-md text-[9px] font-black uppercase font-mono tracking-wider transition-all active:scale-[0.98]"
+                                          >
+                                            <CalendarIcon size={10} />
+                                            <span>Programar de Adenda</span>
+                                          </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                          {adendaEquips.map((eq: any) => (
+                                            <div key={eq.id} className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-[11px]">
+                                              <div className="min-w-0">
+                                                <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
+                                                <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                                <span className="text-[9px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
+                                              </div>
+                                              <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
+                                                {eq.potenciaKva} kVA
+                                              </span>
+                                            </div>
+                                          ))}
+                                          {adendaEquips.length === 0 && (
+                                            <p className="text-[11px] text-slate-400 italic col-span-full">No hay equipos asignados a esta adenda.</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {filtered.length === 0 && (
+                    <div className="col-span-full p-12 text-center bg-white border border-slate-200 rounded-2xl">
+                      <Wrench size={32} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-500 text-sm font-medium">
+                        {contractSearchQuery ? 'No se encontraron contratos con ese criterio.' : 'No hay contratos o adendas comerciales vigentes.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={`min-w-[36px] h-9 rounded-lg text-xs font-black font-mono transition-colors ${
+                          p === safePage
+                            ? 'bg-[#00B594] text-white shadow-sm'
+                            : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
             <>
               {/* Color Codes Legend */}
               <div className="bg-white px-6 py-2 border-b border-slate-200 flex gap-4 text-[10px] font-mono font-bold shrink-0 overflow-x-auto">
@@ -459,88 +644,70 @@ export default function TechMonitoringDashboard({
                   
                   {calendarView === 'day' ? (
                 <>
-                  {/* Grid Header (Technicians) */}
-                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px repeat(${techniciansList.length}, minmax(0, 1fr))` }}>
+                  {/* Grid Header (Day Title) */}
+                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px 1fr` }}>
                     <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
                       Hora
                     </div>
-                    {techniciansList.map(tech => (
-                      <div key={tech.id} className="p-3 border-r border-slate-200 text-center relative">
-                        <span className="font-bold text-sm text-slate-800 block truncate">{tech.name}</span>
-                        <span className="text-[10px] text-slate-500 font-mono truncate">{tech.area}</span>
-                      </div>
-                    ))}
+                    <div className="p-3 text-center relative bg-slate-50/50">
+                      <span className="font-bold text-sm text-slate-800 block truncate">
+                        {currentDate.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Grid Body (Time Slots) */}
                   <div className="relative bg-white">
-                    {timeSlots.map((time, idx) => (
-                      <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px repeat(${techniciansList.length}, minmax(0, 1fr))` }}>
-                        
-                        {/* Time Label */}
-                        <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
-                          {time}
-                        </div>
-                        
-                        {/* Tech Drop Zones */}
-                        {techniciansList.map(tech => {
-                          const dateStr = currentDate.toISOString().split('T')[0];
-                          const startingOt = assignedOts.find(ot => 
-                            isTechAssignedToOt(ot, tech.id, tech.name) && 
-                            ot.fechaProgramada === dateStr && 
-                            doesOtStartInSlot(ot, time)
-                          );
+                    {timeSlots.map((time) => {
+                      const dateStr = currentDate.toISOString().split('T')[0];
+                      const otsInSlot = assignedOts.filter(ot => 
+                        ot.fechaProgramada === dateStr && doesOtStartInSlot(ot, time)
+                      );
+                      const hasOverlapping = assignedOts.some(ot => 
+                        ot.fechaProgramada === dateStr && !doesOtStartInSlot(ot, time) && getOtsInTimeSlot('', dateStr, time).some(o => o.id === ot.id)
+                      );
 
-                          return (
-                            <div 
-                              key={`${tech.id}-${time}`} 
-                              className="border-r border-slate-100 min-h-[80px] p-1.5 relative transition-colors hover:bg-indigo-50/50"
-                              onDragOver={handleDragOver}
-                              onDrop={(e) => handleDrop(e, tech.name, time)}
-                            >
-                              {startingOt && (
-                                <div 
-                                  draggable
-                                  onDragStart={(e) => {
-                                    e.stopPropagation();
-                                    handleDragStart(e, startingOt);
-                                  }}
-                                  onClick={() => setSelectedOtInfo(startingOt)}
-                                  className={`absolute left-1.5 right-1.5 p-2 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(startingOt.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow z-20 ${getOtColorCode(startingOt.estado)}`}
-                                  style={{
-                                    top: '6px',
-                                    height: `calc(${getOtDurationInHours(startingOt)} * 100% + ${(getOtDurationInHours(startingOt) - 1) * 1}px - 12px)`
-                                  }}
-                                >
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="font-mono text-[10px] font-bold">{startingOt.id}</span>
-                                    {startingOt.estado === OTStatus.TRABAJO_EN_EJECUCION && (
-                                      <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="font-bold text-[11px] leading-tight line-clamp-2">{getClientName(startingOt.clientId)}</span>
-                                  <span className="text-[9px] mt-1 font-mono opacity-90 block">
-                                    {startingOt.horaProgramada || '09:00'}{startingOt.horaFinProgramada ? ` - ${startingOt.horaFinProgramada}` : ''}
-                                  </span>
-                                  <span className="text-[9px] mt-auto pt-1 font-mono opacity-80 truncate">{startingOt.tipoEquipo}</span>
+                      return (
+                        <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px 1fr` }}>
+                          <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
+                            {time}
+                          </div>
+                          <div className="min-h-[80px] p-2 relative transition-colors hover:bg-indigo-50/50 flex flex-wrap gap-2"
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, '', time)}
+                          >
+                            {otsInSlot.length > 0 ? otsInSlot.map(ot => (
+                              <div
+                                key={ot.id}
+                                draggable
+                                onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
+                                onClick={() => setSelectedOtInfo(ot)}
+                                className={`p-2 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)} min-w-[180px] max-w-[220px]`}
+                              >
+                                <div className="flex justify-between items-start mb-1">
+                                  <span className="font-mono text-[10px] font-bold">{ot.id}</span>
+                                  {ot.tecnicoTitular && <span className="text-[8px] font-bold opacity-75 truncate max-w-[80px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
                                 </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ))}
+                                <span className="font-bold text-[11px] leading-tight line-clamp-2">{getClientName(ot.clientId)}</span>
+                                <span className="text-[9px] mt-1 font-mono opacity-90 block">
+                                  {ot.horaProgramada || '09:00'}{ot.horaFinProgramada ? ` - ${ot.horaFinProgramada}` : ''}
+                                </span>
+                              </div>
+                            )) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 font-mono italic">Sin programación</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               ) : calendarView === 'week' ? (
                 <>
                   {/* Grid Header (Days of week) */}
-                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `120px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
+                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
                     <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
-                      Técnico
+                      Hora
                     </div>
                     {weekDays.map(date => (
                       <div key={date.toISOString()} className="p-3 border-r border-slate-200 text-center relative">
@@ -550,59 +717,43 @@ export default function TechMonitoringDashboard({
                     ))}
                   </div>
 
-                  {/* Grid Body (Technicians) */}
+                  {/* Grid Body (Time Slots x Days) */}
                   <div className="relative bg-white">
-                    {techniciansList.map((tech) => (
-                      <div key={tech.id} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `120px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
-                        
-                        {/* Tech Label */}
-                        <div className="p-3 border-r border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-center">
-                          <span className="font-bold text-xs text-slate-800 block">{tech.name}</span>
-                          <span className="text-[9px] text-slate-500 font-mono">{tech.area}</span>
+                    {timeSlots.map((time) => (
+                      <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
+                        <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
+                          {time}
                         </div>
-                        
-                        {/* Day Drop Zones */}
                         {weekDays.map(date => {
                           const dateStr = date.toISOString().split('T')[0];
-                          // Find all OTs for this tech on this day
                           const otsInSlot = assignedOts.filter(ot => 
-                            isTechAssignedToOt(ot, tech.id, tech.name) && 
-                            ot.fechaProgramada === dateStr
+                            ot.fechaProgramada === dateStr && doesOtStartInSlot(ot, time)
                           );
 
                           return (
                             <div 
-                              key={`${tech.id}-${dateStr}`} 
-                              className="border-r border-slate-100 min-h-[100px] p-1.5 relative transition-colors hover:bg-indigo-50/50 space-y-1.5"
+                              key={`${dateStr}-${time}`} 
+                              className="border-r border-slate-100 min-h-[70px] p-1 relative transition-colors hover:bg-indigo-50/50 space-y-1"
                               onDragOver={handleDragOver}
-                              onDrop={(e) => handleDrop(e, tech.name, '09:00', dateStr)}
+                              onDrop={(e) => handleDrop(e, '', time, dateStr)}
                             >
-                              {otsInSlot.map(otInSlot => (
+                              {otsInSlot.length > 0 ? otsInSlot.map(ot => (
                                 <div 
-                                  key={otInSlot.id}
+                                  key={ot.id}
                                   draggable
-                                  onDragStart={(e) => {
-                                    e.stopPropagation();
-                                    handleDragStart(e, otInSlot);
-                                  }}
-                                  onClick={() => setSelectedOtInfo(otInSlot)}
-                                  className={`p-2 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(otInSlot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow relative ${getOtColorCode(otInSlot.estado)}`}
+                                  onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
+                                  onClick={() => setSelectedOtInfo(ot)}
+                                  className={`p-1.5 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)}`}
                                 >
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="font-mono text-[10px] font-bold">{otInSlot.id}</span>
-                                    {otInSlot.estado === OTStatus.TRABAJO_EN_EJECUCION && (
-                                      <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                      </span>
-                                    )}
+                                  <div className="flex justify-between items-start">
+                                    <span className="font-mono text-[9px] font-bold">{ot.id}</span>
+                                    {ot.tecnicoTitular && <span className="text-[7px] font-bold opacity-75 truncate max-w-[50px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
                                   </div>
-                                  <span className="font-bold text-[10px] leading-tight line-clamp-1">{getClientName(otInSlot.clientId)}</span>
-                                  <span className="text-[9px] mt-0.5 font-mono opacity-80">
-                                    {otInSlot.horaProgramada || '09:00'}{otInSlot.horaFinProgramada ? ` - ${otInSlot.horaFinProgramada}` : ''}
-                                  </span>
+                                  <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(ot.clientId)}</span>
                                 </div>
-                              ))}
+                              )) : (
+                                <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300 font-mono italic">—</div>
+                              )}
                             </div>
                           )
                         })}
@@ -666,448 +817,11 @@ export default function TechMonitoringDashboard({
               )}
             </div>
           </div>
-          </>
-          ) : activeTab === 'contratos' ? (
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6 text-left">
-              <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="font-display font-black text-slate-800 text-lg uppercase tracking-wider">
-                      Contratos y Adendas Activas
-                    </h3>
-                    <p className="text-xs text-slate-500 font-mono">
-                      Vigencia de contratos, equipamiento asignado y programación directa de visitas.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  {contratosNuevos.map((contract: any) => {
-                    const primaryEquipments = contract.equipos || [];
-                    const adendas = contract.ampliaciones || [];
-
-                    return (
-                      <div key={contract.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                        {/* Card Header (Contract Info) */}
-                        <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono font-black text-sm text-slate-900 bg-slate-200 px-2 py-0.5 rounded">
-                                Contrato #{contract.n_contrato || contract.id.replace('cont_', '')}
-                              </span>
-                              <span className="text-xs font-bold text-[#00B594] font-mono uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                                {contract.tipo_contrato || 'Mantenimiento'}
-                              </span>
-                            </div>
-                            <h4 className="font-bold text-slate-800 text-base">{contract.cliente}</h4>
-                            <p className="text-[11px] text-slate-500 font-mono mt-1">
-                              Vigencia: <strong>{contract.fecha_inicio || 'S/D'}</strong> al <strong>{contract.fecha_fin || 'S/D'}</strong>
-                            </p>
-                          </div>
-                          
-                          <button
-                            onClick={() => {
-                              setSelectedContractForSchedule(contract);
-                              setSelectedAdendaForSchedule(null);
-                              setIsScheduleModalOpen(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider transition-colors active:scale-[0.98]"
-                          >
-                            <CalendarIcon size={14} className="text-white" />
-                            <span>Programar Visita</span>
-                          </button>
-                        </div>
-
-                        {/* Card Body */}
-                        <div className="p-5 space-y-5">
-                          {/* Primary Contract Equipments */}
-                          <div>
-                            <h5 className="text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                              <Cpu size={14} className="text-slate-400" />
-                              <span>Equipos del Contrato Principal ({primaryEquipments.length})</span>
-                            </h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {primaryEquipments.map((eq: any) => (
-                                <div key={eq.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
-                                  <div className="min-w-0">
-                                    <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
-                                    <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
-                                    <span className="text-[10px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
-                                  </div>
-                                  <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
-                                    {eq.potenciaKva} kVA
-                                  </span>
-                                </div>
-                              ))}
-                              {primaryEquipments.length === 0 && (
-                                <p className="text-xs text-slate-400 italic">No hay equipos asignados directamente al contrato principal.</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Addendums List */}
-                          {adendas.length > 0 && (
-                            <div className="border-t border-slate-100 pt-4 space-y-4">
-                              <h5 className="text-[11px] font-black font-mono text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                                <Plus size={14} className="text-teal-500" />
-                                <span>Adendas / Ampliaciones de Contrato ({adendas.length})</span>
-                              </h5>
-                              <div className="space-y-3">
-                                {adendas.map((adenda: any) => {
-                                  const adendaEquips = adenda.equiposAdenda
-                                    ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
-                                    : [];
-                                  return (
-                                    <div key={adenda.id} className="p-4 bg-teal-50/20 border border-teal-100 rounded-xl text-xs space-y-3">
-                                      <div className="flex justify-between items-center">
-                                        <div>
-                                          <span className="font-mono font-black text-slate-800 bg-teal-100/60 px-2 py-0.5 rounded mr-2 border border-teal-200">
-                                            Adenda {adenda.codigo || adenda.id.replace('ad_', '')}
-                                          </span>
-                                          <span className="text-[10px] text-slate-500 font-mono">
-                                            Vigencia: {adenda.fecha_inicio} al {adenda.fecha_fin}
-                                          </span>
-                                        </div>
-                                        
-                                        <button
-                                          onClick={() => {
-                                            setSelectedContractForSchedule(contract);
-                                            setSelectedAdendaForSchedule(adenda);
-                                            setIsScheduleModalOpen(true);
-                                          }}
-                                          className="flex items-center gap-1.5 px-3 py-1 bg-[#E6F7F4] border border-emerald-100 rounded-md text-[#00B594] hover:bg-emerald-100 transition-all font-black uppercase font-mono text-[10px]"
-                                        >
-                                          <CalendarIcon size={12} />
-                                          <span>Programar de Adenda</span>
-                                        </button>
-                                      </div>
-
-                                      {/* Adenda Equipments */}
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {adendaEquips.map((eq: any) => (
-                                          <div key={eq.id} className="p-2.5 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-xs">
-                                            <div className="min-w-0">
-                                              <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
-                                              <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
-                                              <span className="text-[10px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
-                                            </div>
-                                            <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
-                                              {eq.potenciaKva} kVA
-                                            </span>
-                                          </div>
-                                        ))}
-                                        {adendaEquips.length === 0 && (
-                                          <p className="text-xs text-slate-400 italic">No hay equipos asignados a esta adenda.</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {contratosNuevos.length === 0 && (
-                    <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
-                      <Wrench size={32} className="mx-auto text-slate-300 mb-3" />
-                      <p className="text-slate-500 text-sm font-medium">No hay contratos o adendas comerciales vigentes.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex bg-slate-50 overflow-hidden">
-              {/* Left Sidebar: Tech Search & List */}
-              <div className="w-72 bg-white border-r border-slate-200 flex flex-col z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-                <div className="p-4 border-b border-slate-200">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="Buscar técnico..." 
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
-                      value={techSearchQuery}
-                      onChange={(e) => setTechSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                  {techniciansList.filter(t => t.name.toLowerCase().includes(techSearchQuery.toLowerCase())).map(tech => (
-                    <button
-                      key={tech.id}
-                      onClick={() => setSelectedTechId(tech.id)}
-                      className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-colors ${selectedTechId === tech.id || (!selectedTechId && tech.id === techniciansList[0].id) ? 'bg-emerald-50 border border-emerald-200 shadow-sm' : 'hover:bg-slate-50 border border-transparent'}`}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-sm ${selectedTechId === tech.id || (!selectedTechId && tech.id === techniciansList[0].id) ? 'bg-emerald-200 text-emerald-800 border-2 border-white' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                        {tech.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className={`font-bold text-sm truncate ${selectedTechId === tech.id || (!selectedTechId && tech.id === techniciansList[0].id) ? 'text-emerald-900' : 'text-slate-800'}`}>{tech.name}</h4>
-                        <p className="text-[10px] text-slate-500 font-mono truncate">{tech.area}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Side: Calendar for Selected Tech */}
-              <div className="flex-1 flex flex-col bg-white overflow-hidden">
-                <div className="bg-white px-6 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-sm">
-                      {(techniciansList.find(t => t.id === selectedTechId) || techniciansList[0]).avatar}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-800">
-                        {(techniciansList.find(t => t.id === selectedTechId) || techniciansList[0]).name}
-                      </h3>
-                      <p className="text-[10px] text-slate-500 font-mono">Disponibilidad Actual</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 text-[10px] font-mono font-bold">
-                    <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500 text-white flex items-center justify-center"><CheckCircle2 size={8} /></span> Disponible</div>
-                    <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500 text-white flex items-center justify-center"><CalendarIcon size={8} /></span> Ocupado</div>
-                  </div>
-                </div>
-
-                {calendarView === 'day' && (
-                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
-                    <div className="max-w-3xl mx-auto border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                      <div className="bg-slate-50 p-4 border-b border-slate-200 text-center flex flex-col items-center justify-center">
-                        <h3 className="font-bold text-lg text-slate-800 capitalize">{currentDate.toLocaleDateString('es-PE', { weekday: 'long' })}</h3>
-                        <p className="text-sm text-slate-500">{currentDate.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                      </div>
-                      <div className="divide-y divide-slate-100">
-                        {timeSlots.map(time => {
-                          const dateStr = currentDate.toISOString().split('T')[0];
-                          const selectedTechName = (techniciansList.find(t => t.id === selectedTechId) || techniciansList[0]).name;
-                          
-                          const startingOt = assignedOts.find(ot => 
-                            normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                            ot.fechaProgramada === dateStr && 
-                            doesOtStartInSlot(ot, time)
-                          );
-                          
-                          const overlappingOt = assignedOts.find(ot => 
-                            normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                            ot.fechaProgramada === dateStr && 
-                            !doesOtStartInSlot(ot, time) && 
-                            getOtsInTimeSlot(selectedTechName, dateStr, time).some(o => o.id === ot.id)
-                          );
-
-                          const isPast = currentDate < new Date(new Date().setHours(0,0,0,0)) || (dateStr === new Date().toISOString().split('T')[0] && parseInt(time.split(':')[0]) < new Date().getHours());
-
-                          return (
-                            <div key={time} className={`flex transition-colors h-20 ${isPast ? 'bg-slate-50/50 opacity-70' : 'hover:bg-slate-50'}`}>
-                              <div className="w-24 p-4 border-r border-slate-100 text-center flex flex-col justify-center font-mono text-sm font-bold text-slate-500">
-                                {time}
-                              </div>
-                              <div className="flex-1 p-3 relative">
-                                {startingOt ? (
-                                  <div 
-                                    onClick={() => setSelectedOtInfo(startingOt)} 
-                                    className={`absolute left-3 right-3 bg-red-50 border border-red-200 rounded-lg p-3 cursor-pointer hover:shadow-md transition-all flex items-center justify-between z-20 ${getOtColorCode(startingOt.estado)}`}
-                                    style={{
-                                      top: '12px',
-                                      height: `calc(${getOtDurationInHours(startingOt)} * 80px - 24px)`
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                                        <Wrench size={16} />
-                                      </div>
-                                      <div>
-                                        <span className="text-red-700 font-bold text-sm block">OT-{startingOt.id}</span>
-                                        <span className="text-red-600 text-xs truncate max-w-[200px] block">{getClientName(startingOt.clientId)}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                      <span className="text-[11px] font-mono font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                                        {startingOt.horaProgramada || '09:00'}{startingOt.horaFinProgramada ? ` - ${startingOt.horaFinProgramada}` : ''}
-                                      </span>
-                                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold font-mono shadow-sm">{startingOt.estado}</span>
-                                    </div>
-                                  </div>
-                                ) : overlappingOt ? (
-                                  null
-                                ) : (
-                                  <div className="h-full flex items-center justify-between p-3 text-emerald-600 opacity-80 bg-emerald-50 border border-emerald-100 rounded-lg">
-                                    <div className="flex items-center">
-                                      <div className="w-8 h-8 rounded bg-emerald-100 text-emerald-500 flex items-center justify-center mr-3 shrink-0">
-                                        <CheckCircle2 size={16} />
-                                      </div>
-                                      <span className="text-sm font-bold">Disponible para asignación</span>
-                                    </div>
-                                    <span className="text-[11px] font-mono font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">{time} - {`${parseInt(time.split(':')[0]) + 1}:00`}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {calendarView === 'week' && (
-                  <div className="flex-1 overflow-auto p-6 bg-slate-50">
-                    <div className="min-w-[800px] border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden flex flex-col h-full max-h-[800px]">
-                      <div className="grid border-b border-slate-200 bg-slate-50 shrink-0" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
-                        <div className="p-3 border-r border-slate-200 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">Hora</div>
-                        {weekDays.map(date => {
-                          const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
-                          return (
-                            <div key={date.toISOString()} className={`p-3 border-r border-slate-200 text-center flex flex-col items-center justify-center ${isToday ? 'bg-emerald-50 text-emerald-800' : 'text-slate-700'}`}>
-                              <span className="text-[10px] font-mono uppercase block font-bold mb-0.5">{date.toLocaleDateString('es-PE', { weekday: 'short' })}</span>
-                              <span className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm ${isToday ? 'bg-emerald-500 text-white shadow-sm' : ''}`}>{date.getDate()}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex-1 overflow-y-auto">
-                        {timeSlots.map(time => (
-                          <div key={time} className="grid border-b border-slate-100 last:border-0 hover:bg-slate-50/50" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
-                            <div className="p-2 border-r border-slate-100 font-mono text-[10px] font-bold text-slate-500 flex items-center justify-center bg-slate-50">
-                              {time}
-                            </div>
-                            {weekDays.map(date => {
-                              const dateStr = date.toISOString().split('T')[0];
-                              const selectedTechName = (techniciansList.find(t => t.id === selectedTechId) || techniciansList[0]).name;
-                              
-                              const startingOt = assignedOts.find(ot => 
-                                normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                                ot.fechaProgramada === dateStr && 
-                                doesOtStartInSlot(ot, time)
-                              );
-                              
-                              const overlappingOt = assignedOts.find(ot => 
-                                normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                                ot.fechaProgramada === dateStr && 
-                                !doesOtStartInSlot(ot, time) && 
-                                getOtsInTimeSlot(selectedTechName, dateStr, time).some(o => o.id === ot.id)
-                              );
-
-                              const isPast = date < new Date(new Date().setHours(0,0,0,0)) || (dateStr === new Date().toISOString().split('T')[0] && parseInt(time.split(':')[0]) < new Date().getHours());
-
-                              return (
-                                <div key={dateStr} className={`border-r border-slate-100 p-1.5 relative min-h-[48px] flex items-center justify-center ${isPast ? 'bg-slate-50/50' : ''}`}>
-                                  {startingOt ? (
-                                    <div 
-                                      onClick={() => setSelectedOtInfo(startingOt)}
-                                      className="absolute left-1 right-1 bg-red-100 border border-red-300 rounded-md overflow-hidden p-1 cursor-pointer hover:shadow-md hover:border-red-400 z-20 flex flex-col items-center justify-center transition-all"
-                                      style={{
-                                        top: '4px',
-                                        height: `calc(${getOtDurationInHours(startingOt)} * 100% + ${(getOtDurationInHours(startingOt) - 1) * 1}px - 8px)`
-                                      }}
-                                    >
-                                      <span className="text-[10px] font-bold text-red-800 block truncate w-full text-center">OT-{startingOt.id}</span>
-                                      <span className="text-[9px] font-mono text-red-600 block">
-                                        {startingOt.horaProgramada || '09:00'}{startingOt.horaFinProgramada ? ` - ${startingOt.horaFinProgramada}` : ''}
-                                      </span>
-                                    </div>
-                                  ) : overlappingOt ? (
-                                    null
-                                  ) : (
-                                    <div className="absolute inset-1 bg-emerald-50 border border-emerald-200 rounded-md p-1 flex flex-col items-center justify-center">
-                                      <span className="text-[9px] font-bold text-emerald-600">Disponible</span>
-                                      <span className="text-[8px] font-mono text-emerald-500">{time} - {`${parseInt(time.split(':')[0]) + 1}:00`}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {calendarView === 'month' && (
-                  <div className="flex-1 overflow-auto p-6 bg-slate-50">
-                    <div className="min-w-[800px] border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-full flex flex-col min-h-[600px]">
-                      <div className="grid border-b border-slate-200 bg-slate-50 shrink-0" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
-                        {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(dayName => (
-                          <div key={dayName} className="p-3 border-r border-slate-200 text-center font-bold text-xs text-slate-600 uppercase tracking-wider font-mono">
-                            {dayName}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex-1 grid grid-cols-7" style={{ gridTemplateRows: `repeat(${Math.ceil(getMonthDays().length / 7)}, minmax(100px, 1fr))` }}>
-                        {getMonthDays().map((dayObj, idx) => {
-                          const dateStr = dayObj.date.toISOString().split('T')[0];
-                          const selectedTechName = (techniciansList.find(t => t.id === selectedTechId) || techniciansList[0]).name;
-                          const otsInDay = assignedOts.filter(ot => normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && ot.fechaProgramada === dateStr);
-                          const isToday = dateStr === new Date().toISOString().split('T')[0];
-                          const isPast = dayObj.date < new Date(new Date().setHours(0,0,0,0));
-                          
-                          return (
-                            <div key={idx} className={`border-r border-b border-slate-100 p-2 relative flex flex-col gap-1.5 transition-colors hover:bg-slate-50/50 ${!dayObj.isCurrentMonth || isPast ? 'bg-slate-50/40' : 'bg-white'}`}>
-                              <div className={`text-right ${isToday ? 'font-black text-emerald-600' : 'font-bold text-slate-400'} text-xs mb-1 p-1`}>
-                                <span className={isToday ? 'w-6 h-6 inline-flex items-center justify-center bg-emerald-100 rounded-full' : ''}>{dayObj.date.getDate()}</span>
-                              </div>
-                              <div className="flex-1 overflow-y-auto space-y-1.5 custom-scrollbar pb-1">
-                                {timeSlots.map(time => {
-                                  const startingOt = assignedOts.find(ot => 
-                                    normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                                    ot.fechaProgramada === dateStr && 
-                                    doesOtStartInSlot(ot, time)
-                                  );
-                                  
-                                  const overlappingOt = assignedOts.find(ot => 
-                                    normalizeName(ot.tecnicoTitular) === normalizeName(selectedTechName) && 
-                                    ot.fechaProgramada === dateStr && 
-                                    !doesOtStartInSlot(ot, time) && 
-                                    getOtsInTimeSlot(selectedTechName, dateStr, time).some(o => o.id === ot.id)
-                                  );
-
-                                  if (startingOt) {
-                                    return (
-                                      <div 
-                                        key={time}
-                                        onClick={() => setSelectedOtInfo(startingOt)}
-                                        className={`border rounded-md px-2 py-1 cursor-pointer hover:shadow-sm transition-all group flex flex-col gap-1 ${getOtColorCode(startingOt.estado)}`}
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <span className="font-bold text-[9px]">OT-{startingOt.id}</span>
-                                          <span className="text-[8px] font-mono opacity-80 bg-white/50 px-1 rounded">
-                                            {startingOt.horaProgramada || '09:00'}{startingOt.horaFinProgramada ? ` - ${startingOt.horaFinProgramada}` : ''}
-                                          </span>
-                                        </div>
-                                        <span className="text-[9px] truncate block opacity-80 group-hover:opacity-100">{getClientName(startingOt.clientId)}</span>
-                                      </div>
-                                    );
-                                  } else if (overlappingOt) {
-                                    return null;
-                                  } else {
-                                    return (
-                                      <div key={time} className="bg-emerald-50 border border-emerald-100 rounded-md px-2 py-1 flex justify-between items-center opacity-80">
-                                        <span className="font-bold text-emerald-600 text-[9px]">Disponible</span>
-                                        <span className="text-[8px] font-mono text-emerald-500">{time}</span>
-                                      </div>
-                                    );
-                                  }
-                                })}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          </>)}
         </div>
       </div>
       
+
       {/* OT Detail Modal (Floating) */}
       {selectedOtInfo && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
