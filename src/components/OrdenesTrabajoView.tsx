@@ -567,6 +567,7 @@ export default function OrdenesTrabajoView({
           linea={selectedLineForAssign}
           ots={ots}
           users={users}
+          clients={clients}
           onUpdateOT={(ot) => {
             if (onUpdateOT) onUpdateOT(ot);
             setSelectedLineForAssign(null);

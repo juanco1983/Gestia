@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, UserPlus, Users, Trash2, Calendar, Clock, Cpu } from 'lucide-react';
-import { OrdenTrabajoLinea, OT, User, OTStatus, Equipo } from '../../types';
+import { X, UserPlus, Users, Trash2, Calendar, Clock, Cpu, AlertTriangle } from 'lucide-react';
+import { OrdenTrabajoLinea, OT, User, OTStatus, Equipo, Client } from '../../types';
+import { checkTechnicianConflicts } from '../../utils/conflictChecker';
 
 interface ModalAsignarTecnicoProps {
   linea: OrdenTrabajoLinea;
   ots: OT[];
   users: User[];
+  clients: Client[];
   onUpdateOT: (ot: OT) => void;
   onClose: () => void;
   initialValues?: {
@@ -19,6 +21,7 @@ export default function ModalAsignarTecnico({
   linea,
   ots,
   users,
+  clients,
   onUpdateOT,
   onClose,
   initialValues
@@ -107,6 +110,77 @@ export default function ModalAsignarTecnico({
 
     setAssignmentsState(initialState);
   }, [asignaciones, otEquipoIds, matchingOt, todayStr]);
+
+  const conflicts = useMemo(() => {
+    const list: Array<{ type: string; message: string; techName: string }> = [];
+    if (!matchingOt) return list;
+
+    const clientId = matchingOt.clientId;
+
+    // Check fallback titular
+    if (fallbackTechId) {
+      const alerts = checkTechnicianConflicts(
+        fallbackTechId,
+        fallbackFecha,
+        fallbackHora,
+        fallbackHoraFin,
+        matchingOt.id,
+        ots,
+        clients,
+        clientId
+      );
+      list.push(...alerts.map(a => ({ ...a, techName: technicians.find(t => t.id === fallbackTechId)?.username || 'Titular' })));
+    }
+
+    // Check additional techs (if any)
+    additionalTechIds.forEach(id => {
+      const alerts = checkTechnicianConflicts(
+        id,
+        fallbackFecha,
+        fallbackHora,
+        fallbackHoraFin,
+        matchingOt.id,
+        ots,
+        clients,
+        clientId
+      );
+      list.push(...alerts.map(a => ({ ...a, techName: technicians.find(t => t.id === id)?.username || 'Adicional' })));
+    });
+
+    // Check per-equipment assignments (if any)
+    Object.entries(assignmentsState).forEach(([eqId, state]) => {
+      if (state.tecnicoId) {
+        const alerts = checkTechnicianConflicts(
+          state.tecnicoId,
+          state.fechaProgramada,
+          state.horaInicioProgramada,
+          state.horaFinProgramada,
+          matchingOt.id,
+          ots,
+          clients,
+          clientId
+        );
+        const eqCode = equipos.find(e => e.id === eqId)?.codigo || eqId;
+        list.push(...alerts.map(a => ({ ...a, techName: `${technicians.find(t => t.id === state.tecnicoId)?.username || 'Titular'} (${eqCode})` })));
+      }
+      if (state.tecnicoApoyoId) {
+        const alerts = checkTechnicianConflicts(
+          state.tecnicoApoyoId,
+          state.fechaProgramada,
+          state.horaInicioProgramada,
+          state.horaFinProgramada,
+          matchingOt.id,
+          ots,
+          clients,
+          clientId
+        );
+        const eqCode = equipos.find(e => e.id === eqId)?.codigo || eqId;
+        list.push(...alerts.map(a => ({ ...a, techName: `${technicians.find(t => t.id === state.tecnicoApoyoId)?.username || 'Apoyo'} (${eqCode})` })));
+      }
+    });
+
+    return list;
+  }, [matchingOt, fallbackTechId, fallbackFecha, fallbackHora, fallbackHoraFin, additionalTechIds, assignmentsState, ots, clients, technicians, equipos]);
 
   const handleSave = async () => {
     if (!matchingOt) {
@@ -449,6 +523,23 @@ export default function ModalAsignarTecnico({
               )}
             </div>
           </div>
+
+          {/* Conflict Warnings Box */}
+          {conflicts.length > 0 && (
+            <div className="mx-6 mb-4 bg-amber-50 border border-amber-250/80 rounded-xl p-3.5 space-y-2 select-none text-left">
+              <div className="flex items-center gap-2 text-amber-800 font-bold text-[11px] uppercase tracking-wide">
+                <AlertTriangle size={14} className="shrink-0 text-amber-600 animate-bounce" />
+                <span>Advertencias de Asignación (Recomendador S.L.A)</span>
+              </div>
+              <div className="space-y-1.5 pl-5">
+                {conflicts.map((c, idx) => (
+                  <p key={idx} className="text-xs text-amber-700 leading-normal">
+                    <span className="font-bold font-mono">[{c.techName}]:</span> {c.message}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2.5 p-6 border-t border-slate-150 shrink-0 bg-slate-50">
