@@ -13,6 +13,9 @@ import KpiCardsGrid, { KpiCardData } from './KpiCardsGrid';
 import PipelineOTs from './PipelineOTs';
 import AlertasRiesgoPanel from './AlertasRiesgoPanel';
 import CargaTecnicos from './CargaTecnicos';
+import LiveActivityFeed from './LiveActivityFeed';
+import RankingEquiposFallas from './RankingEquiposFallas';
+import CopilotoIAPanel from './CopilotoIAPanel';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -283,13 +286,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         activeCount={otsActivas.length}
       />
 
-      {/* 2. Grid de KPIs Adaptativos */}
+      {/* 2. Grid de KPIs Adaptativos por Rol */}
       <KpiCardsGrid cards={kpiCards} onNavigateToTab={onNavigateToTab} />
 
       {/* 3. Pipeline de OTs (Embudo de Trabajo) */}
       <PipelineOTs ots={ots} onNavigateToTab={onNavigateToTab} />
 
-      {/* 4. Panel Doble: Alertas de Riesgo + Carga de Técnicos */}
+      {/* 4. Panel Doble: Alertas de Riesgo Operativo + Carga de Técnicos (Fase 1) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AlertasRiesgoPanel
           reports={reports}
@@ -301,7 +304,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <CargaTecnicos users={users} ots={ots} onNavigateToTab={onNavigateToTab} />
       </div>
 
-      {/* 5. Evolución Operativa y Gráfica Principal */}
+      {/* 5. Panel Doble: Actividad en Tiempo Real + Ranking de Equipos con Fallas (Fase 2) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LiveActivityFeed ots={ots} reports={reports} clients={clients} />
+        <RankingEquiposFallas clients={clients} ots={ots} onNavigateToTab={onNavigateToTab} />
+      </div>
+
+      {/* 6. Evolución Operativa y Gráfica Principal */}
       <div className="bg-white border border-slate-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
@@ -362,6 +371,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* 7. Copiloto IA Interactivo (Fase 3) */}
+      <CopilotoIAPanel
+        currentUser={currentUser}
+        ots={ots}
+        reports={reports}
+        users={users}
+        onNavigateToTab={onNavigateToTab}
+      />
     </div>
   );
 };
