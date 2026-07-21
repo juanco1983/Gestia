@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserPlus, MapPin, Wrench, Calendar as CalendarIcon, 
   Bell, Smartphone, Info, ChevronLeft, ChevronRight, ChevronDown,
-  Cpu, Plus, Zap, Search
+  Cpu, Plus, Zap, Search, Layers, CheckCircle2, FileText
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
@@ -32,7 +32,8 @@ export default function TechMonitoringDashboard({
   onAddOT
 }: TechMonitoringDashboardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'contratos' | 'programacion'>('contratos');
+  const [activeTab, setActiveTab] = useState<'contratos' | 'operaciones'>('contratos');
+  const [operationsSubTab, setOperationsSubTab] = useState<'resumen' | 'equipos' | 'asignaciones' | 'agenda' | 'informes' | 'historial'>('resumen');
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [draggedOt, setDraggedOt] = useState<OT | null>(null);
   const [selectedOtInfo, setSelectedOtInfo] = useState<OT | null>(null);
@@ -323,42 +324,71 @@ export default function TechMonitoringDashboard({
       <div className="flex flex-1 overflow-hidden">
         {/* Panel de Programación (Vista Principal) */}
         <div className="flex-1 flex flex-col bg-slate-100 overflow-hidden">
-          {/* Calendar Header */}
-          <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+          {/* Main Module Header */}
+          <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col gap-4 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start">
                 <button 
-                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'contratos' ? 'bg-white shadow text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'contratos' ? 'bg-white shadow text-teal-650' : 'text-slate-500 hover:text-slate-700'}`}
                   onClick={() => setActiveTab('contratos')}
                 >
-                  <Wrench size={16} />
-                  Contratos y Adendas
+                  <Wrench size={14} />
+                  <span>Contratos y Adendas</span>
                 </button>
                 <button 
-                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'programacion' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  onClick={() => setActiveTab('programacion')}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'operaciones' ? 'bg-white shadow text-blue-650' : 'text-slate-500 hover:text-slate-700'}`}
+                  onClick={() => setActiveTab('operaciones')}
                 >
-                  <CalendarIcon size={16} />
-                  Programación
+                  <Layers size={14} />
+                  <span>Centro de Operaciones</span>
                 </button>
               </div>
-              
-              <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 ml-4">
-                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${calendarView === 'day' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('day')}>Día</button>
-                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${calendarView === 'week' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('week')}>Semana</button>
-                <button className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${calendarView === 'month' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('month')}>Mes</button>
-              </div>
+
+              {/* Calendar controls only when on operations tab and agenda sub-tab */}
+              {activeTab === 'operaciones' && operationsSubTab === 'agenda' && (
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
+                    <button className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors ${calendarView === 'day' ? 'bg-white shadow text-blue-650' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('day')}>Día</button>
+                    <button className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors ${calendarView === 'week' ? 'bg-white shadow text-blue-650' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('week')}>Semana</button>
+                    <button className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors ${calendarView === 'month' ? 'bg-white shadow text-blue-650' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setCalendarView('month')}>Mes</button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handlePrevDay} className="p-1 hover:bg-slate-100 rounded-full text-slate-650 cursor-pointer"><ChevronLeft size={16} /></button>
+                    <span className="font-mono font-bold text-xs text-slate-700 min-w-[150px] text-center">
+                      {getCalendarHeaderTitle()}
+                    </span>
+                    <button onClick={handleNextDay} className="p-1 hover:bg-slate-100 rounded-full text-slate-650 cursor-pointer"><ChevronRight size={16} /></button>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <button onClick={handlePrevDay} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer transition-colors"><ChevronLeft size={18} /></button>
-                <span className="font-mono font-bold text-sm text-slate-700 min-w-[190px] px-2 text-center">
-                  {getCalendarHeaderTitle()}
-                </span>
-                <button onClick={handleNextDay} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer transition-colors"><ChevronRight size={18} /></button>
+
+            {/* Sub-tabs bar under Operations tab */}
+            {activeTab === 'operaciones' && (
+              <div className="flex gap-2 border-t border-slate-100 pt-3 overflow-x-auto text-[11px] font-black uppercase tracking-wider font-mono">
+                {(['resumen', 'equipos', 'asignaciones', 'agenda', 'informes', 'historial'] as const).map((tab) => {
+                  const isActive = operationsSubTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setOperationsSubTab(tab)}
+                      className={`px-3 py-1.5 rounded-lg border transition-colors cursor-pointer whitespace-nowrap ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
+                          : 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {tab === 'resumen' && "Resumen"}
+                      {tab === 'equipos' && "Equipos"}
+                      {tab === 'asignaciones' && "Asignaciones"}
+                      {tab === 'agenda' && "Agenda (Calendario)"}
+                      {tab === 'informes' && "Informes"}
+                      {tab === 'historial' && "Historial"}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
 
           {activeTab === 'contratos' ? (
@@ -681,195 +711,501 @@ export default function TechMonitoringDashboard({
               </div>
             </div>
           ) : (
-            <>
-              {/* Color Codes Legend */}
-              <div className="bg-white px-6 py-2 border-b border-slate-200 flex gap-4 text-[10px] font-mono font-bold shrink-0 overflow-x-auto">
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Pendiente / Urgente</div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Asignado / En ruta</div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> En Proceso</div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Finalizado</div>
-              </div>
-
-              {/* Calendar Grid */}
-              <div className="flex-1 overflow-auto bg-white p-4">
-                <div className="min-w-[800px] border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                  
-                  {calendarView === 'day' ? (
-                <>
-                  {/* Grid Header (Day Title) */}
-                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px 1fr` }}>
-                    <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
-                      Hora
-                    </div>
-                    <div className="p-3 text-center relative bg-slate-50/50">
-                      <span className="font-bold text-sm text-slate-800 block truncate">
-                        {currentDate.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Grid Body (Time Slots) */}
-                  <div className="relative bg-white">
-                    {timeSlots.map((time) => {
-                      const dateStr = currentDate.toISOString().split('T')[0];
-                      const otsInSlot = assignedOts.filter(ot => 
-                        ot.fechaProgramada === dateStr && doesOtStartInSlot(ot, time)
-                      );
-                      const hasOverlapping = assignedOts.some(ot => 
-                        ot.fechaProgramada === dateStr && !doesOtStartInSlot(ot, time) && getOtsInTimeSlot('', dateStr, time).some(o => o.id === ot.id)
-                      );
-
-                      return (
-                        <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px 1fr` }}>
-                          <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
-                            {time}
-                          </div>
-                          <div className="min-h-[80px] p-2 relative transition-colors hover:bg-indigo-50/50 flex flex-wrap gap-2"
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, '', time)}
-                          >
-                            {otsInSlot.length > 0 ? otsInSlot.map(ot => (
-                              <div
-                                key={ot.id}
-                                draggable
-                                onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
-                                onClick={() => setSelectedOtInfo(ot)}
-                                className={`p-2 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)} min-w-[180px] max-w-[220px]`}
-                              >
-                                <div className="flex justify-between items-start mb-1">
-                                  <span className="font-mono text-[10px] font-bold">{ot.id}</span>
-                                  {ot.tecnicoTitular && <span className="text-[8px] font-bold opacity-75 truncate max-w-[80px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
-                                </div>
-                                <span className="font-bold text-[11px] leading-tight line-clamp-2">{getClientName(ot.clientId)}</span>
-                                <span className="text-[9px] mt-1 font-mono opacity-90 block">
-                                  {ot.horaProgramada || '09:00'}{ot.horaFinProgramada ? ` - ${ot.horaFinProgramada}` : ''}
-                                </span>
-                              </div>
-                            )) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 font-mono italic">Sin programación</div>
-                            )}
-                          </div>
+            <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+              
+              {/* SUB-TAB 1: RESUMEN */}
+              {operationsSubTab === 'resumen' && (
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+                  <div className="max-w-6xl mx-auto space-y-6">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Metric 1 */}
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                          <Layers size={20} />
                         </div>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : calendarView === 'week' ? (
-                <>
-                  {/* Grid Header (Days of week) */}
-                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
-                    <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
-                      Hora
-                    </div>
-                    {weekDays.map(date => (
-                      <div key={date.toISOString()} className="p-3 border-r border-slate-200 text-center relative">
-                        <span className="font-bold text-sm text-slate-800 block truncate">{getDayName(date)}</span>
-                        <span className="text-[10px] text-slate-500 font-mono truncate">{date.toLocaleDateString('es-PE')}</span>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Servicios Activos</span>
+                          <strong className="text-xl font-mono font-bold text-slate-800">{ots.filter(o => o.estado !== OTStatus.CERRADA).length}</strong>
+                        </div>
                       </div>
-                    ))}
+
+                      {/* Metric 2 */}
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                          <Wrench size={20} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Por Asignar</span>
+                          <strong className="text-xl font-mono font-bold text-slate-800">
+                            {ots.filter(o => o.estado === OTStatus.PENDIENTE_PROGRAMACION || !o.tecnicoTitularId).length}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Metric 3 */}
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                          <Zap size={20} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">En Ejecución</span>
+                          <strong className="text-xl font-mono font-bold text-slate-800">
+                            {ots.filter(o => [OTStatus.EN_SITIO, OTStatus.TRABAJO_EN_EJECUCION].includes(o.estado)).length}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Metric 4 */}
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
+                          <CheckCircle2 size={20} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Finalizados</span>
+                          <strong className="text-xl font-mono font-bold text-slate-800">{ots.filter(o => o.estado === OTStatus.CERRADA).length}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Active/Scheduled Services list */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+                      <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                        <CalendarIcon size={16} className="text-[#00B594]" />
+                        <span>Próximos Servicios Programados</span>
+                      </h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                              <th className="py-2.5">Código OT</th>
+                              <th className="py-2.5">Cliente</th>
+                              <th className="py-2.5">Equipo</th>
+                              <th className="py-2.5">Fecha</th>
+                              <th className="py-2.5">Técnico Líder</th>
+                              <th className="py-2.5">Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {ots.filter(o => o.estado !== OTStatus.CERRADA).slice(0, 8).map(ot => (
+                              <tr key={ot.id} className="hover:bg-slate-50/50">
+                                <td className="py-3 font-mono font-bold text-slate-800">{ot.id}</td>
+                                <td className="py-3 font-bold text-slate-700">{getClientName(ot.clientId)}</td>
+                                <td className="py-3">{ot.tipoEquipo} ({ot.potenciaKva} kVA)</td>
+                                <td className="py-3 font-mono">{ot.fechaProgramada} {ot.horaProgramada || ''}</td>
+                                <td className="py-3 font-bold text-slate-600">{ot.tecnicoTitular}</td>
+                                <td className="py-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                                    ot.estado === OTStatus.PROGRAMADA ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                    ot.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                    'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {ot.estado}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                            {ots.filter(o => o.estado !== OTStatus.CERRADA).length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="py-8 text-center text-slate-400 italic">No hay servicios programados activos.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 2: EQUIPOS */}
+              {operationsSubTab === 'equipos' && (
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+                  <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                      <Cpu size={16} className="text-[#00B594]" />
+                      <span>Control de Equipos y Vigencias de Servicio</span>
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                            <th className="py-2.5">Código Equipo</th>
+                            <th className="py-2.5">Cliente</th>
+                            <th className="py-2.5">Especificaciones</th>
+                            <th className="py-2.5">Ubicación</th>
+                            <th className="py-2.5">Última Visita</th>
+                            <th className="py-2.5">Estado Técnico</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {contratosNuevos.flatMap((c: any) => {
+                            const primary = c.equipos || [];
+                            const adendas = c.ampliaciones || [];
+                            const list = [...primary];
+                            adendas.forEach((ad: any) => {
+                              const adEquips = ad.equiposAdenda ? ad.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean) : [];
+                              adEquips.forEach((eq: any) => {
+                                if (!list.some(e => e.id === eq.id)) list.push(eq);
+                              });
+                            });
+                            return list.map(eq => ({ eq, contract: c }));
+                          }).slice(0, 15).map(({ eq, contract }) => {
+                            const lastService = reports.filter(r => r.equipoId === eq.id).sort((a,b) => b.creadoEn.localeCompare(a.creadoEn))[0];
+                            return (
+                              <tr key={eq.id} className="hover:bg-slate-50/50">
+                                <td className="py-3 font-mono font-bold text-slate-800">{eq.codigo}</td>
+                                <td className="py-3 font-bold text-slate-700">{contract.cliente}</td>
+                                <td className="py-3">{eq.tipo} · {eq.marca} {eq.modelo} ({eq.potenciaKva} kVA)</td>
+                                <td className="py-3 text-slate-500 font-mono text-[10px]">{eq.ubicacion || 'No especificada'}</td>
+                                <td className="py-3 font-mono">{lastService?.fechaServicio || lastService?.creadoEn?.split('T')[0] || 'Sin registro'}</td>
+                                <td className="py-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                                    eq.estado === 'Operativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                    eq.estado === 'En observación' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                    'bg-rose-50 text-rose-600 border border-rose-100'
+                                  }`}>
+                                    {eq.estado}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 3: ASIGNACIONES (TECNICOS) */}
+              {operationsSubTab === 'asignaciones' && (
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+                  <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                      <Wrench size={16} className="text-[#00B594]" />
+                      <span>Carga de Trabajo y Asignaciones de Técnicos</span>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo').map(tech => {
+                        const assigned = ots.filter(o => o.tecnicoTitularId === tech.id && o.estado !== OTStatus.CERRADA);
+                        const support = ots.filter(o => o.tecnicoApoyoId === tech.id && o.estado !== OTStatus.CERRADA);
+                        return (
+                          <div key={tech.id} className="p-4 border border-slate-200 rounded-xl space-y-3 bg-slate-50/30">
+                            <div className="flex justify-between items-center border-b border-slate-150 pb-2">
+                              <div>
+                                <strong className="text-slate-800 text-sm">{tech.username}</strong>
+                                <span className="text-[10px] text-slate-400 block font-mono">{tech.email}</span>
+                              </div>
+                              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded font-mono font-bold">
+                                {assigned.length + support.length} Visitas Activas
+                              </span>
+                            </div>
+                            <div className="space-y-1.5 text-xs">
+                              {assigned.map(ot => (
+                                <div key={ot.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100">
+                                  <div>
+                                    <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1 py-0.5 rounded text-[10px] mr-1">{ot.id}</span>
+                                    <span>{getClientName(ot.clientId)}</span>
+                                  </div>
+                                  <span className="text-[10px] font-mono text-slate-400">{ot.fechaProgramada}</span>
+                                </div>
+                              ))}
+                              {assigned.length === 0 && (
+                                <p className="text-slate-400 italic text-[11px] py-2 text-center">Sin servicios asignados como titular.</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 4: AGENDA (CALENDARIO) */}
+              {operationsSubTab === 'agenda' && (
+                <>
+                  {/* Color Codes Legend */}
+                  <div className="bg-white px-6 py-2 border-b border-slate-200 flex gap-4 text-[10px] font-mono font-bold shrink-0 overflow-x-auto">
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Pendiente / Urgente</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Asignado / En ruta</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> En Proceso</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Finalizado</div>
                   </div>
 
-                  {/* Grid Body (Time Slots x Days) */}
-                  <div className="relative bg-white">
-                    {timeSlots.map((time) => (
-                      <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
-                        <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
-                          {time}
+                  {/* Calendar Grid */}
+                  <div className="flex-1 overflow-auto bg-white p-4">
+                    <div className="min-w-[800px] border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-sm">
+                      
+                      {calendarView === 'day' ? (
+                    <>
+                      {/* Grid Header (Day Title) */}
+                      <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px 1fr` }}>
+                        <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
+                          Hora
                         </div>
-                        {weekDays.map(date => {
-                          const dateStr = date.toISOString().split('T')[0];
+                        <div className="p-3 text-center relative bg-slate-50/50">
+                          <span className="font-bold text-sm text-slate-800 block truncate">
+                            {currentDate.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Grid Body (Time Slots) */}
+                      <div className="relative bg-white">
+                        {timeSlots.map((time) => {
+                          const dateStr = currentDate.toISOString().split('T')[0];
                           const otsInSlot = assignedOts.filter(ot => 
                             ot.fechaProgramada === dateStr && doesOtStartInSlot(ot, time)
                           );
+                          const hasOverlapping = assignedOts.some(ot => 
+                            ot.fechaProgramada === dateStr && !doesOtStartInSlot(ot, time) && getOtsInTimeSlot('', dateStr, time).some(o => o.id === ot.id)
+                          );
+
+                          return (
+                            <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px 1fr` }}>
+                              <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
+                                {time}
+                              </div>
+                              <div className="min-h-[80px] p-2 relative transition-colors hover:bg-indigo-50/50 flex flex-wrap gap-2"
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, '', time)}
+                              >
+                                {otsInSlot.length > 0 ? otsInSlot.map(ot => (
+                                  <div
+                                    key={ot.id}
+                                    draggable
+                                    onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
+                                    onClick={() => setSelectedOtInfo(ot)}
+                                    className={`p-2 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)} min-w-[180px] max-w-[220px]`}
+                                  >
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="font-mono text-[10px] font-bold">{ot.id}</span>
+                                      {ot.tecnicoTitular && <span className="text-[8px] font-bold opacity-75 truncate max-w-[80px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
+                                    </div>
+                                    <span className="font-bold text-[11px] leading-tight line-clamp-2">{getClientName(ot.clientId)}</span>
+                                    <span className="text-[9px] mt-1 font-mono opacity-90 block">
+                                      {ot.horaProgramada || '09:00'}{ot.horaFinProgramada ? ` - ${ot.horaFinProgramada}` : ''}
+                                    </span>
+                                  </div>
+                                )) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 font-mono italic">Sin programación</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : calendarView === 'week' ? (
+                    <>
+                      {/* Grid Header (Days of week) */}
+                      <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
+                        <div className="p-3 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-[10px] font-bold text-slate-400 uppercase">
+                          Hora
+                        </div>
+                        {weekDays.map(date => (
+                          <div key={date.toISOString()} className="p-3 border-r border-slate-200 text-center relative">
+                            <span className="font-bold text-sm text-slate-800 block truncate">{getDayName(date)}</span>
+                            <span className="text-[10px] text-slate-500 font-mono truncate">{date.toLocaleDateString('es-PE')}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Grid Body (Time Slots x Days) */}
+                      <div className="relative bg-white">
+                        {timeSlots.map((time) => (
+                          <div key={time} className="grid border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: `80px repeat(${weekDays.length}, minmax(0, 1fr))` }}>
+                            <div className="p-2 border-r border-slate-200 bg-slate-50 flex items-center justify-center font-mono text-xs font-bold text-slate-500">
+                              {time}
+                            </div>
+                            {weekDays.map(date => {
+                              const dateStr = date.toISOString().split('T')[0];
+                              const otsInSlot = assignedOts.filter(ot => 
+                                ot.fechaProgramada === dateStr && doesOtStartInSlot(ot, time)
+                              );
+
+                              return (
+                                <div 
+                                  key={`${dateStr}-${time}`} 
+                                  className="border-r border-slate-100 min-h-[70px] p-1 relative transition-colors hover:bg-indigo-50/50 space-y-1"
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleDrop(e, '', time, dateStr)}
+                                >
+                                  {otsInSlot.length > 0 ? otsInSlot.map(ot => (
+                                    <div 
+                                      key={ot.id}
+                                      draggable
+                                      onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
+                                      onClick={() => setSelectedOtInfo(ot)}
+                                      className={`p-1.5 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)}`}
+                                    >
+                                      <div className="flex justify-between items-start">
+                                        <span className="font-mono text-[9px] font-bold">{ot.id}</span>
+                                        {ot.tecnicoTitular && <span className="text-[7px] font-bold opacity-75 truncate max-w-[50px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
+                                      </div>
+                                      <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(ot.clientId)}</span>
+                                    </div>
+                                  )) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300 font-mono italic">—</div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Grid Header (Days of week) */}
+                      <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
+                        {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(dayName => (
+                          <div key={dayName} className="p-3 border-r border-slate-200 text-center relative bg-slate-50">
+                            <span className="font-bold text-sm text-slate-800 block truncate">{dayName}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Grid Body (Month Days) */}
+                      <div className="grid bg-white" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
+                        {getMonthDays().map((dayObj, idx) => {
+                          const dateStr = dayObj.date.toISOString().split('T')[0];
+                          const otsInSlot = assignedOts.filter(ot => ot.fechaProgramada === dateStr);
+                          const isToday = dateStr === new Date().toISOString().split('T')[0];
 
                           return (
                             <div 
-                              key={`${dateStr}-${time}`} 
-                              className="border-r border-slate-100 min-h-[70px] p-1 relative transition-colors hover:bg-indigo-50/50 space-y-1"
+                              key={idx} 
+                              className={`min-h-[120px] p-1.5 border-r border-b border-slate-100 relative transition-colors hover:bg-indigo-50/50 ${!dayObj.isCurrentMonth ? 'bg-slate-50/50 opacity-60' : ''} ${isToday ? 'bg-blue-50/30' : ''}`}
                               onDragOver={handleDragOver}
-                              onDrop={(e) => handleDrop(e, '', time, dateStr)}
+                              onDrop={(e) => handleDrop(e, techniciansList[0].name, '09:00', dateStr)}
                             >
-                              {otsInSlot.length > 0 ? otsInSlot.map(ot => (
-                                <div 
-                                  key={ot.id}
-                                  draggable
-                                  onDragStart={(e) => { e.stopPropagation(); handleDragStart(e, ot); }}
-                                  onClick={() => setSelectedOtInfo(ot)}
-                                  className={`p-1.5 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(ot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow ${getOtColorCode(ot.estado)}`}
-                                >
-                                  <div className="flex justify-between items-start">
-                                    <span className="font-mono text-[9px] font-bold">{ot.id}</span>
-                                    {ot.tecnicoTitular && <span className="text-[7px] font-bold opacity-75 truncate max-w-[50px]">{ot.tecnicoTitular.split(' ')[0]}</span>}
-                                  </div>
-                                  <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(ot.clientId)}</span>
-                                </div>
-                              )) : (
-                                <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-300 font-mono italic">—</div>
-                              )}
+                              <div className={`text-right mb-1 ${isToday ? 'font-black text-blue-600' : 'font-bold text-slate-400'} text-xs p-1`}>
+                                {dayObj.date.getDate()}
+                              </div>
+                              <div className="space-y-1 max-h-[90px] overflow-y-auto custom-scrollbar">
+                                {otsInSlot.map(otInSlot => (
+                                    <div 
+                                      key={otInSlot.id}
+                                      draggable
+                                      onDragStart={(e) => {
+                                        e.stopPropagation();
+                                        handleDragStart(e, otInSlot);
+                                      }}
+                                      onClick={() => setSelectedOtInfo(otInSlot)}
+                                      className={`p-1.5 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(otInSlot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow relative ${getOtColorCode(otInSlot.estado)}`}
+                                    >
+                                      <div className="flex justify-between items-start mb-0.5">
+                                        <span className="font-mono text-[9px] font-bold">{otInSlot.id}</span>
+                                        <span className="text-[8px] font-bold opacity-75 truncate max-w-[40px]" title={otInSlot.tecnicoTitular}>{otInSlot.tecnicoTitular?.split(' ')[0]}</span>
+                                      </div>
+                                      <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(otInSlot.clientId)}</span>
+                                    </div>
+                                ))}
+                              </div>
                             </div>
                           )
                         })}
                       </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Grid Header (Days of week) */}
-                  <div className="grid border-b border-slate-200 bg-white" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
-                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(dayName => (
-                      <div key={dayName} className="p-3 border-r border-slate-200 text-center relative bg-slate-50">
-                        <span className="font-bold text-sm text-slate-800 block truncate">{dayName}</span>
-                      </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
-                  {/* Grid Body (Month Days) */}
-                  <div className="grid bg-white" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
-                    {getMonthDays().map((dayObj, idx) => {
-                      const dateStr = dayObj.date.toISOString().split('T')[0];
-                      const otsInSlot = assignedOts.filter(ot => ot.fechaProgramada === dateStr);
-                      const isToday = dateStr === new Date().toISOString().split('T')[0];
-
-                      return (
-                        <div 
-                          key={idx} 
-                          className={`min-h-[120px] p-1.5 border-r border-b border-slate-100 relative transition-colors hover:bg-indigo-50/50 ${!dayObj.isCurrentMonth ? 'bg-slate-50/50 opacity-60' : ''} ${isToday ? 'bg-blue-50/30' : ''}`}
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, techniciansList[0].name, '09:00', dateStr)}
-                        >
-                          <div className={`text-right mb-1 ${isToday ? 'font-black text-blue-600' : 'font-bold text-slate-400'} text-xs p-1`}>
-                            {dayObj.date.getDate()}
-                          </div>
-                          <div className="space-y-1 max-h-[90px] overflow-y-auto custom-scrollbar">
-                            {otsInSlot.map(otInSlot => (
-                                <div 
-                                  key={otInSlot.id}
-                                  draggable
-                                  onDragStart={(e) => {
-                                    e.stopPropagation();
-                                    handleDragStart(e, otInSlot);
-                                  }}
-                                  onClick={() => setSelectedOtInfo(otInSlot)}
-                                  className={`p-1.5 rounded shadow-sm text-left flex flex-col ${isOTFinalizada(otInSlot.estado) ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing hover:shadow-md'} transition-shadow relative ${getOtColorCode(otInSlot.estado)}`}
-                                >
-                                  <div className="flex justify-between items-start mb-0.5">
-                                    <span className="font-mono text-[9px] font-bold">{otInSlot.id}</span>
-                                    <span className="text-[8px] font-bold opacity-75 truncate max-w-[40px]" title={otInSlot.tecnicoTitular}>{otInSlot.tecnicoTitular?.split(' ')[0]}</span>
-                                  </div>
-                                  <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(otInSlot.clientId)}</span>
-                                </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
+          {/* SUB-TAB 5: INFORMES */}
+          {operationsSubTab === 'informes' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+              <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText size={16} className="text-[#00B594]" />
+                  <span>Bandeja de Informes Técnicos de Campo</span>
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-2.5">Informe N°</th>
+                        <th className="py-2.5">OT Técnica</th>
+                        <th className="py-2.5">Cliente</th>
+                        <th className="py-2.5">Fecha Servicio</th>
+                        <th className="py-2.5">Diagnóstico</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {reports.map((report) => (
+                        <tr key={report.id} className="hover:bg-slate-50/50">
+                          <td className="py-3 font-mono font-bold text-slate-800">
+                            {report.informeN || `INF-${report.id.slice(0, 6)}`}
+                          </td>
+                          <td className="py-3 font-mono">{report.otId}</td>
+                          <td className="py-3 font-bold text-slate-700">
+                            {getClientName(ots.find(o => o.id === report.otId)?.clientId || '')}
+                          </td>
+                          <td className="py-3 font-mono">{report.fechaServicio || 'S/D'}</td>
+                          <td className="py-3 truncate max-w-xs">{report.observacionesDiagnostico || 'Operación Normal'}</td>
+                        </tr>
+                      ))}
+                      {reports.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-400 italic">No hay informes registrados.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-          </>)}
+          )}
+
+          {/* SUB-TAB 6: HISTORIAL */}
+          {operationsSubTab === 'historial' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+              <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="text-[#00B594]" />
+                  <span>Bitácora Histórica de Servicios Cerrados</span>
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-2.5">Código OT</th>
+                        <th className="py-2.5">Cliente</th>
+                        <th className="py-2.5">Tipo Servicio</th>
+                        <th className="py-2.5">Fecha Fin</th>
+                        <th className="py-2.5">Técnico Líder</th>
+                        <th className="py-2.5">Estado Financiero</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {ots.filter(o => o.estado === OTStatus.CERRADA).map((ot) => (
+                        <tr key={ot.id} className="hover:bg-slate-50/50">
+                          <td className="py-3 font-mono font-bold text-slate-800">{ot.id}</td>
+                          <td className="py-3 font-bold text-slate-700">{getClientName(ot.clientId)}</td>
+                          <td className="py-3">{ot.tipoMantenimiento}</td>
+                          <td className="py-3 font-mono">{ot.fechaProgramada}</td>
+                          <td className="py-3">{ot.tecnicoTitular}</td>
+                          <td className="py-3 text-emerald-600 font-bold">EJECUTADO / CERRADO</td>
+                        </tr>
+                      ))}
+                      {ots.filter(o => o.estado === OTStatus.CERRADA).length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-400 italic">No hay servicios finalizados en el historial.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+            </div>
+          )}
         </div>
       </div>
       
