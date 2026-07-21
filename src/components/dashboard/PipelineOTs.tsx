@@ -1,5 +1,6 @@
 import React from 'react';
 import { OT, OTStatus } from '../../types';
+import { Calendar, Zap, FileText, CheckCircle2 } from 'lucide-react';
 
 interface PipelineOTsProps {
   ots: OT[];
@@ -44,7 +45,9 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
       percentage: Math.round((programadas / total) * 100),
       color: 'bg-blue-500',
       badgeColor: 'bg-blue-50 text-blue-700 border-blue-200/60',
-      icon: '📅',
+      Icon: Calendar,
+      iconColor: 'text-blue-500',
+      iconBg: 'bg-blue-50',
       desc: 'Listas para iniciar'
     },
     {
@@ -54,7 +57,9 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
       percentage: Math.round((enEjecucion / total) * 100),
       color: 'bg-[#00B594]',
       badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
-      icon: '⚡',
+      Icon: Zap,
+      iconColor: 'text-[#00B594]',
+      iconBg: 'bg-emerald-50',
       desc: 'Técnicos en sitio'
     },
     {
@@ -64,7 +69,9 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
       percentage: Math.round((informePendiente / total) * 100),
       color: 'bg-amber-500',
       badgeColor: 'bg-amber-50 text-amber-700 border-amber-200/60',
-      icon: '📝',
+      Icon: FileText,
+      iconColor: 'text-amber-500',
+      iconBg: 'bg-amber-50',
       desc: 'En revisión supervisor',
       highlight: informePendiente > 5 // Bottle-neck warning
     },
@@ -75,7 +82,9 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
       percentage: Math.round((cerradas / total) * 100),
       color: 'bg-slate-400',
       badgeColor: 'bg-slate-100 text-slate-700 border-slate-200/60',
-      icon: '✅',
+      Icon: CheckCircle2,
+      iconColor: 'text-slate-500',
+      iconBg: 'bg-slate-100',
       desc: 'Servicio completado'
     }
   ];
@@ -116,40 +125,45 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
 
       {/* Funnel Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {stages.map((stg) => (
-          <div
-            key={stg.id}
-            onClick={() => onNavigateToTab?.('Monitoreo', stg.id)}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-              stg.highlight
-                ? 'bg-amber-50/40 border-amber-300 hover:border-amber-400 shadow-sm'
-                : 'bg-slate-50/60 border-slate-100 hover:border-slate-300 hover:bg-white hover:shadow-md'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-lg">{stg.icon}</span>
-              {stg.highlight && (
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full animate-pulse">
-                  Cuello de Botella
+        {stages.map((stg) => {
+          const Icon = stg.Icon;
+          return (
+            <div
+              key={stg.id}
+              onClick={() => onNavigateToTab?.('Monitoreo', stg.id)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                stg.highlight
+                  ? 'bg-amber-50/40 border-amber-300 hover:border-amber-400 shadow-sm'
+                  : 'bg-slate-50/60 border-slate-100 hover:border-slate-300 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-xl ${stg.iconBg} flex items-center justify-center`}>
+                  <Icon size={16} className={stg.iconColor} />
+                </div>
+                {stg.highlight && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full animate-pulse">
+                    Cuello de Botella
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] font-bold text-slate-600 block mb-1">
+                {stg.label}
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black font-mono text-slate-900">
+                  {stg.count}
                 </span>
-              )}
-            </div>
-            <span className="text-[11px] font-bold text-slate-600 block mb-1">
-              {stg.label}
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black font-mono text-slate-900">
-                {stg.count}
-              </span>
-              <span className="text-[11px] font-mono text-slate-400 font-semibold">
-                ({stg.percentage}%)
+                <span className="text-[11px] font-mono text-slate-400 font-semibold">
+                  ({stg.percentage}%)
+                </span>
+              </div>
+              <span className="text-[10.5px] text-slate-400 mt-1 block">
+                {stg.desc}
               </span>
             </div>
-            <span className="text-[10.5px] text-slate-400 mt-1 block">
-              {stg.desc}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

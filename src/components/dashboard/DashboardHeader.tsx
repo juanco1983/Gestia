@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from '../../types';
+import { Activity } from 'lucide-react';
 
 interface DashboardHeaderProps {
   currentUser?: User | null;
@@ -28,7 +29,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 font-mono border border-emerald-200/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <Activity size={12} className="text-emerald-600 animate-pulse" />
             Centro de Comando Operativo
           </span>
           <span className="text-xs text-slate-400 font-medium font-mono hidden sm:inline">
@@ -36,7 +37,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </span>
         </div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          Hola, {currentUser?.username || 'Equipo GESTIA'} 👋
+          Hola, {currentUser?.username || 'Equipo GESTIA'}
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
           {selectedRoleFilter === 'Todos'
