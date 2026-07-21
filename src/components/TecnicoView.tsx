@@ -1896,8 +1896,11 @@ export default function TecnicoView({
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-400 font-medium">Estado actual:</span>
                   <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border ${
-                    selectedOt.estado === OTStatus.PROGRAMADA ? 'bg-slate-50 text-slate-600 border-slate-200' :
+                    selectedOt.estado === OTStatus.PROGRAMADA ? 'bg-slate-50 text-slate-650 border-slate-200' :
+                    selectedOt.estado === OTStatus.EN_CAMINO ? 'bg-sky-50 text-sky-600 border-sky-200 animate-pulse' :
+                    selectedOt.estado === OTStatus.EN_SITIO ? 'bg-teal-50 text-teal-600 border-teal-200' :
                     selectedOt.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-blue-50 text-blue-600 border-blue-200 animate-pulse' :
+                    selectedOt.estado === OTStatus.INFORME_PENDIENTE ? 'bg-indigo-50 text-indigo-600 border-indigo-200' :
                     selectedOt.estado === OTStatus.EN_REVISION ? 'bg-amber-50 text-amber-600 border-amber-200' :
                     selectedOt.estado === OTStatus.OBSERVADA ? 'bg-rose-50 text-rose-600 border-rose-200' :
                     'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -1910,11 +1913,13 @@ export default function TecnicoView({
               {/* Progress Stepper tracker */}
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-150/80">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-3 text-left">Flujo de Trabajo S.L.A</h4>
-                <div className="grid grid-cols-4 gap-2 text-center text-[9px] font-mono font-bold text-slate-400">
-                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.PROGRAMADA ? 'bg-slate-200 text-slate-700 font-black' : 'bg-slate-100 text-slate-400'}`}>1. PENDIENTE</div>
-                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-blue-100 text-blue-700 font-black' : 'bg-slate-100 text-slate-400'}`}>2. EN SERVICIO</div>
-                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.EN_REVISION ? 'bg-amber-100 text-amber-700 font-black' : 'bg-slate-100 text-slate-400'}`}>3. REVISIÓN</div>
-                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.APROBADA || selectedOt.estado === OTStatus.FIRMADA ? 'bg-emerald-100 text-emerald-700 font-black' : 'bg-slate-100 text-slate-400'}`}>4. CONFORMIDAD</div>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 text-center text-[8px] font-mono font-bold text-slate-400">
+                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.PROGRAMADA ? 'bg-slate-200 text-slate-700 font-black' : 'bg-slate-100 text-slate-400'}`}>1. PROGRAMADA</div>
+                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.EN_CAMINO ? 'bg-sky-100 text-sky-700 font-black' : 'bg-slate-100 text-slate-400'}`}>2. EN CAMINO</div>
+                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.EN_SITIO ? 'bg-teal-100 text-teal-700 font-black' : 'bg-slate-100 text-slate-400'}`}>3. EN SITIO</div>
+                  <div className={`p-1.5 rounded ${selectedOt.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-blue-100 text-blue-700 font-black animate-pulse' : 'bg-slate-100 text-slate-400'}`}>4. EJECUCIÓN</div>
+                  <div className={`p-1.5 rounded ${[OTStatus.INFORME_PENDIENTE, OTStatus.EN_REVISION, OTStatus.OBSERVADA].includes(selectedOt.estado) ? 'bg-amber-100 text-amber-700 font-black' : 'bg-slate-100 text-slate-400'}`}>5. INFORME</div>
+                  <div className={`p-1.5 rounded ${[OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.CERRADA].includes(selectedOt.estado) ? 'bg-emerald-100 text-emerald-700 font-black' : 'bg-slate-100 text-slate-400'}`}>6. REALIZADO</div>
                 </div>
               </div>
 
@@ -2070,7 +2075,7 @@ export default function TecnicoView({
                             className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                           >
                             <MapPin size={18} />
-                            <span>Salir al Cliente (En Camino)</span>
+                            <span>Iniciar Ruta (En Camino)</span>
                           </button>
                         ) : selectedOt.estado === OTStatus.EN_CAMINO ? (
                           <button
@@ -2083,12 +2088,28 @@ export default function TecnicoView({
                                 horaLlegadaSitio: now
                               });
                             }}
-                            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                            className="w-full md:w-auto bg-teal-600 hover:bg-teal-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                           >
                             <MapPin size={18} />
-                            <span>Llegada a Sitio (Iniciar Servicio)</span>
+                            <span>Llegada al Sitio (Registrar Entrada)</span>
                           </button>
                         ) : selectedOt.estado === OTStatus.EN_SITIO ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                              onUpdateOt({
+                                ...selectedOt,
+                                estado: OTStatus.TRABAJO_EN_EJECUCION,
+                                horaInicioServicio: now
+                              });
+                            }}
+                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95 animate-pulse"
+                          >
+                            <Clock size={18} />
+                            <span>Iniciar Trabajo (En Ejecución)</span>
+                          </button>
+                        ) : selectedOt.estado === OTStatus.TRABAJO_EN_EJECUCION ? (
                           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                             <button
                               type="button"
@@ -2101,7 +2122,7 @@ export default function TecnicoView({
                             <button
                               type="button"
                               onClick={() => {
-                                if (window.confirm('¿Está seguro de finalizar el servicio? Se registrará la hora de término.')) {
+                                if (window.confirm('¿Está seguro de finalizar el servicio? Se registrará la hora de término de los trabajos.')) {
                                   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                                   onUpdateOt({
                                     ...selectedOt,
@@ -2113,10 +2134,11 @@ export default function TecnicoView({
                               className="w-full md:w-auto bg-red-600 hover:bg-red-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-red-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                             >
                               <Clock size={18} />
-                              <span>Finalizar Servicio (Concluir Visita)</span>
+                              <span>Finalizar Trabajo (Concluir Visita)</span>
                             </button>
                           </div>
                         ) : (
+                          // For states like INFORME_PENDIENTE, OBSERVADA, etc.
                           <button
                             type="button"
                             onClick={() => {
