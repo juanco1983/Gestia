@@ -379,6 +379,75 @@ app.post("/api/ots", async (req, res) => {
       }
     }
 
+    // Auto-create matching OrdenTrabajoLinea in database
+    let clientReasonSocial = "Cliente General";
+    let clientRuc = "S/D";
+    let clientContact = "Responsable";
+    if (otData.clientId) {
+      const client = await prisma.client.findUnique({ where: { id: otData.clientId } });
+      if (client) {
+        clientReasonSocial = client.razonSocial;
+        clientRuc = client.ruc;
+        clientContact = client.contactoNombre;
+      }
+    }
+
+    let contractNum = "S/D";
+    let contractOc = "S/D";
+    let contractComercial = "S/D";
+    if (contratoId) {
+      const contract = await prisma.contratoNuevo.findUnique({ where: { id: contratoId } });
+      if (contract) {
+        contractNum = contract.n_contrato || "S/D";
+        contractOc = contract.oc || "S/D";
+        contractComercial = contract.comercial || "S/D";
+      }
+    }
+
+    const maxMarco = await prisma.ordenTrabajoLinea.aggregate({ _max: { ot_marco: true } });
+    const otMarcoNum = (maxMarco._max.ot_marco || 90000) + 1;
+
+    const MESES_ESPANOL = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SET", "OCT", "NOV", "DIC"];
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthName = MESES_ESPANOL[today.getMonth()];
+    const currentDateStr = today.toISOString().split('T')[0];
+
+    const costo = costo_estimado_usd ? Number(costo_estimado_usd) : 0;
+
+    const financialLineData = {
+      id: `otl_${otData.id || Date.now()}`,
+      anio: currentYear,
+      ot_marco: otMarcoNum,
+      ot: (otData.id || `OT-${Date.now()}`).replace('OT-', ''),
+      mes: currentMonthName,
+      fecha: currentDateStr,
+      nombre_solicitante: clientContact,
+      razon_social: clientReasonSocial,
+      clientId: otData.clientId || null,
+      empresa: clientReasonSocial,
+      descripcion: `${otData.tipoMantenimiento || 'Servicio'} de ${otData.tipoEquipo || 'Equipo'} - Código OT: ${otData.id || ''}`,
+      n_cotizacion: contractNum,
+      n_oc_os: contractOc,
+      simbolo_moneda: '$',
+      monto_marco_sin_igv: costo,
+      monto_marco_inc_igv: Number((costo * 1.18).toFixed(2)),
+      sub_importe_sin_igv: costo,
+      sub_importe_inc_igv: Number((costo * 1.18).toFixed(2)),
+      total_usd: costo,
+      anio_prog_facturacion: currentYear,
+      mes_prog_servicio: currentMonthName,
+      mes_prog_facturacion: currentMonthName,
+      tipo_venta: 'MANTENIMIENTO',
+      pendiente: 'POR EJECUTAR',
+      estado: 'POR FACTURAR',
+      factura: '',
+      comercial: contractComercial,
+      contratoId: contratoId || null,
+      adendaId: adendaId || null,
+      equipoId: otData.equipoId || null
+    };
+
     if (contratoId && costo_estimado_usd) {
       const contrato = await prisma.contratoNuevo.findUnique({
         where: { id: contratoId }
@@ -389,34 +458,41 @@ app.post("/api/ots", async (req, res) => {
       }
 
       const saldoActual = contrato.saldo_disponible_usd ?? contrato.presupuesto_total_usd ?? 0;
-      const costo = Number(costo_estimado_usd);
 
       if (saldoActual < costo) {
         return res.status(400).json({ error: "Saldo insuficiente en el contrato marco", saldoDisponible: saldoActual });
       }
 
-      // Start transaction to create OT and deduct balance
-      const [createdOt, updatedContrato] = await prisma.$transaction([
+      // Start transaction to create OT, deduct balance, and create OrdenTrabajoLinea
+      const [createdOt, updatedContrato, createdLine] = await prisma.$transaction([
         prisma.oT.create({
           data: { ...otData, contratoId, adendaId: adendaId || null, costo_estimado_usd: costo }
         }),
         prisma.contratoNuevo.update({
           where: { id: contratoId },
           data: { saldo_disponible_usd: saldoActual - costo }
+        }),
+        prisma.ordenTrabajoLinea.create({
+          data: financialLineData
         })
       ]);
 
       return res.status(201).json(createdOt);
     } else {
-      // Normal OT creation
-      const created = await prisma.oT.create({ 
-        data: { 
-          ...otData, 
-          contratoId: contratoId || null, 
-          adendaId: adendaId || null, 
-          costo_estimado_usd: costo_estimado_usd ? Number(costo_estimado_usd) : null 
-        } 
-      });
+      // Normal OT creation (includes automatically created financial line)
+      const [created, createdLine] = await prisma.$transaction([
+        prisma.oT.create({ 
+          data: { 
+            ...otData, 
+            contratoId: contratoId || null, 
+            adendaId: adendaId || null, 
+            costo_estimado_usd: costo_estimado_usd ? Number(costo_estimado_usd) : null 
+          } 
+        }),
+        prisma.ordenTrabajoLinea.create({
+          data: financialLineData
+        })
+      ]);
       return res.status(201).json(created);
     }
   } catch (err) {
@@ -1656,8 +1732,81 @@ async function seedTipoContratos() {
   }
 }
 
+async function runDataFixes() {
+  try {
+    // 1. Check and fix BCP client mapping
+    const clientBcp = await prisma.client.findUnique({ where: { id: 'client_bcp' } });
+    if (!clientBcp) {
+      await prisma.client.create({
+        data: {
+          id: 'client_bcp',
+          razonSocial: 'Banco de Crédito del Perú',
+          ruc: '20100047218',
+          direccionSede: 'Calle Centenario 156',
+          distrito: 'La Molina',
+          pais: 'Perú',
+          provincia: 'Lima',
+          contactoNombre: 'Sr. Roberto Torres',
+          contactoEmail: 'rtorres@bcp.com.pe',
+          contactoTelefono: '912345678'
+        }
+      });
+      console.log("[Data Fix] Client created: Banco de Crédito del Perú");
+    }
+    
+    const cont250 = await prisma.contratoNuevo.findUnique({ where: { id: 'cont_250' } });
+    if (cont250 && cont250.clientId !== 'client_bcp') {
+      await prisma.contratoNuevo.update({
+        where: { id: 'cont_250' },
+        data: { clientId: 'client_bcp' }
+      });
+      await prisma.oT.updateMany({
+        where: { contratoId: 'cont_250' },
+        data: { clientId: 'client_bcp' }
+      });
+      console.log("[Data Fix] Fixed cont_250 clientId mapping to BCP.");
+    }
+
+    // 2. Check and fix Clinica Internacional mapping
+    const clientClinica = await prisma.client.findUnique({ where: { id: 'client_clinica_internacional' } });
+    if (!clientClinica) {
+      await prisma.client.create({
+        data: {
+          id: 'client_clinica_internacional',
+          razonSocial: 'Clínica Internacional',
+          ruc: '20100234567',
+          direccionSede: 'Av. Guardia Civil 385',
+          distrito: 'San Borja',
+          pais: 'Perú',
+          provincia: 'Lima',
+          contactoNombre: 'Dr. Alejandro Silva',
+          contactoEmail: 'asilva@clinica-internacional.com.pe',
+          contactoTelefono: '987654321'
+        }
+      });
+      console.log("[Data Fix] Client created: Clínica Internacional");
+    }
+    
+    const cont251 = await prisma.contratoNuevo.findUnique({ where: { id: 'cont_251' } });
+    if (cont251 && cont251.clientId !== 'client_clinica_internacional') {
+      await prisma.contratoNuevo.update({
+        where: { id: 'cont_251' },
+        data: { clientId: 'client_clinica_internacional' }
+      });
+      await prisma.oT.updateMany({
+        where: { contratoId: 'cont_251' },
+        data: { clientId: 'client_clinica_internacional' }
+      });
+      console.log("[Data Fix] Fixed cont_251 clientId mapping to Clínica Internacional.");
+    }
+  } catch (err) {
+    console.error("[Data Fix Error] Failed to run database fixes:", err);
+  }
+}
+
 async function startServer() {
   await seedTipoContratos();
+  await runDataFixes();
   if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "dev") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
