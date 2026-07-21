@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, OT, OTStatus } from '../../types';
+import { Users, ArrowRight } from 'lucide-react';
 
 interface CargaTecnicosProps {
   users: User[];
@@ -52,6 +53,7 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <Users size={16} className="text-slate-700" />
             <span>Carga del Equipo Técnico</span>
             <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
               {tecnicos.length} personal
@@ -63,9 +65,10 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
         </div>
         <button
           onClick={() => onNavigateToTab?.('Monitoreo')}
-          className="text-xs font-bold text-[#00B594] hover:text-[#009b7e] transition-colors"
+          className="text-xs font-bold text-[#00B594] hover:text-[#009b7e] transition-colors flex items-center gap-1"
         >
-          Asignar →
+          <span>Asignar</span>
+          <ArrowRight size={13} />
         </button>
       </div>
 

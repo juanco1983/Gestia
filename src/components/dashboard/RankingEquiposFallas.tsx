@@ -1,5 +1,6 @@
 import React from 'react';
 import { Client, OT } from '../../types';
+import { Cpu, AlertTriangle, ArrowRight } from 'lucide-react';
 
 interface RankingEquiposFallasProps {
   clients: Client[];
@@ -61,6 +62,7 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <Cpu size={16} className="text-rose-500" />
             <span>Ranking de Equipos con Incidencias</span>
             <span className="text-[10px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
               Top Fallas
@@ -72,9 +74,10 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
         </div>
         <button
           onClick={() => onNavigateToTab?.('Monitoreo')}
-          className="text-xs font-bold text-[#00B594] hover:text-[#009b7e] transition-colors"
+          className="text-xs font-bold text-[#00B594] hover:text-[#009b7e] transition-colors flex items-center gap-1"
         >
-          Ver Equipos →
+          <span>Ver Equipos</span>
+          <ArrowRight size={13} />
         </button>
       </div>
 

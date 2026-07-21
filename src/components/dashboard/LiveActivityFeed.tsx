@@ -1,5 +1,6 @@
 import React from 'react';
 import { OT, TechnicalReport, Client } from '../../types';
+import { Play, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Activity } from 'lucide-react';
 
 interface LiveActivityFeedProps {
   ots: OT[];
@@ -81,15 +82,15 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
   const getTypeStyle = (type: ActivityEvent['type']) => {
     switch (type) {
       case 'start':
-        return { bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', icon: '🚀' };
+        return { bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', Icon: Play };
       case 'finish':
-        return { bg: 'bg-blue-50 text-blue-600 border-blue-200', icon: '✅' };
+        return { bg: 'bg-blue-50 text-blue-600 border-blue-200', Icon: CheckCircle2 };
       case 'approve':
-        return { bg: 'bg-indigo-50 text-indigo-600 border-indigo-200', icon: '🛡️' };
+        return { bg: 'bg-indigo-50 text-indigo-600 border-indigo-200', Icon: ShieldAlert };
       case 'alert':
-        return { bg: 'bg-rose-50 text-rose-600 border-rose-200', icon: '⚠️' };
+        return { bg: 'bg-rose-50 text-rose-600 border-rose-200', Icon: AlertTriangle };
       case 'contract':
-        return { bg: 'bg-amber-50 text-amber-600 border-amber-200', icon: '📄' };
+        return { bg: 'bg-amber-50 text-amber-600 border-amber-200', Icon: FileText };
     }
   };
 
@@ -98,6 +99,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <Activity size={16} className="text-[#00B594]" />
             <span>Actividad en Tiempo Real</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           </h3>
@@ -113,6 +115,8 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
       <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1">
         {events.map((ev) => {
           const style = getTypeStyle(ev.type);
+          const Icon = style.Icon;
+
           return (
             <div
               key={ev.id}
@@ -121,8 +125,8 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
               <span className="text-[11px] font-mono font-black text-slate-400 shrink-0 pt-0.5">
                 {ev.time}
               </span>
-              <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs shrink-0 border ${style.bg}`}>
-                {style.icon}
+              <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border ${style.bg}`}>
+                <Icon size={14} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-slate-700 leading-snug">

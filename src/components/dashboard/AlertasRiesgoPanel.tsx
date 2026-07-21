@@ -1,5 +1,6 @@
 import React from 'react';
 import { TechnicalReport, Contrato, OT, User } from '../../types';
+import { AlertTriangle, Clock, FileText, CheckCircle2, ShieldAlert, Wrench } from 'lucide-react';
 
 interface AlertasRiesgoPanelProps {
   reports: TechnicalReport[];
@@ -23,6 +24,7 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
     description: string;
     actionLabel: string;
     targetTab: string;
+    icon: React.ElementType;
   }> = [];
 
   // 1. Bypass Active check
@@ -40,7 +42,8 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
       title: `${bypassReports.length} Equipo(s) en Modo Bypass Activo`,
       description: 'Equipos desprotegidos ante corte de energía comercial. Requieren auditoría o correctivo inmediato.',
       actionLabel: 'Ver Informes →',
-      targetTab: 'Supervisor'
+      targetTab: 'Supervisor',
+      icon: ShieldAlert
     });
   }
 
@@ -62,7 +65,8 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
       title: `${expiringContracts.length} Contrato(s) por vencer en los próximos 45 días`,
       description: 'Revisar visitas de mantenimiento preventivo pendientes antes del vencimiento.',
       actionLabel: 'Ver Contratos →',
-      targetTab: 'Monitoreo'
+      targetTab: 'Monitoreo',
+      icon: Clock
     });
   }
 
@@ -82,7 +86,8 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
       title: `${overloadedTechIds.length} Técnico(s) con Alta Carga Operativa`,
       description: 'Más de 3 Órdenes de Trabajo activas asignadas simultáneamente.',
       actionLabel: 'Ver Monitoreo →',
-      targetTab: 'Monitoreo'
+      targetTab: 'Monitoreo',
+      icon: Wrench
     });
   }
 
@@ -95,7 +100,8 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
       title: `${pendingReportsCount} Informes Pendientes de Revisión`,
       description: 'Acumulación de informes de servicio esperando validación de supervisor.',
       actionLabel: 'Aprobar Informes →',
-      targetTab: 'Supervisor'
+      targetTab: 'Supervisor',
+      icon: FileText
     });
   }
 
@@ -123,7 +129,9 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
 
       {alerts.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-          <span className="text-2xl mb-2">🎉</span>
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
+            <CheckCircle2 size={20} />
+          </div>
           <p className="text-xs font-bold text-slate-700">Operación 100% Controlada</p>
           <p className="text-[11px] text-slate-400 mt-1">No hay alertas de bypass ni retrasos en SLAs actualmente.</p>
         </div>
@@ -132,6 +140,8 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
           {alerts.map(alert => {
             const isCritical = alert.type === 'critical';
             const isWarning = alert.type === 'warning';
+            const Icon = alert.icon;
+
             return (
               <div
                 key={alert.id}
@@ -144,14 +154,14 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold mt-0.5 ${
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                     isCritical
                       ? 'bg-rose-100 text-rose-600'
                       : isWarning
                       ? 'bg-amber-100 text-amber-600'
                       : 'bg-blue-100 text-blue-600'
                   }`}>
-                    {isCritical ? '⚠️' : isWarning ? '⏰' : '📋'}
+                    <Icon size={16} />
                   </div>
                   <div>
                     <h4 className="text-xs font-bold leading-snug">{alert.title}</h4>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, OT, TechnicalReport } from '../../types';
+import { Bot, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 
 interface CopilotoIAPanelProps {
   currentUser?: User | null;
@@ -35,21 +36,21 @@ export const CopilotoIAPanel: React.FC<CopilotoIAPanelProps> = ({
       id: 'sug_1',
       title: 'Optimización de Rutas y Carga de Técnicos',
       detail: 'Detecté que el técnico Pedro tiene 5 OTs programadas hoy en la zona San Isidro, mientras Juan tiene 1 OT en Surco. Reasignar 2 OTs reducirá el tiempo de traslado en 35%.',
-      actionText: 'Equilibrar Carga →',
+      actionText: 'Equilibrar Carga',
       targetTab: 'Monitoreo'
     },
     {
       id: 'sug_2',
       title: `${bypassCount > 0 ? bypassCount : 1} Equipo(s) Crítico(s) en Modo Bypass`,
       detail: 'Se requiere agendar una visita de mantenimiento correctivo de emergencia antes de 24h para evitar riesgo de caída en fallas comerciales.',
-      actionText: 'Programar Correctivo →',
+      actionText: 'Programar Correctivo',
       targetTab: 'Monitoreo'
     },
     {
       id: 'sug_3',
       title: 'Aprobación de Informes por Supervisor',
       detail: `${pendingReportsCount} informe(s) técnico(s) sometido(s) a revisión. Se sugiere validar mediciones de baterías para liberar facturación.`,
-      actionText: 'Revisar Informes →',
+      actionText: 'Revisar Informes',
       targetTab: 'Supervisor'
     }
   ];
@@ -63,8 +64,9 @@ export const CopilotoIAPanel: React.FC<CopilotoIAPanelProps> = ({
 
       <div className="space-y-1.5 z-10 max-w-3xl text-left">
         <div className="flex items-center gap-2">
-          <span className="bg-ai-brand text-white text-[9.5px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider font-mono">
-            🤖 Copiloto IA Gestia
+          <span className="bg-ai-brand text-white text-[9.5px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider font-mono flex items-center gap-1.5">
+            <Bot size={13} />
+            <span>Copiloto IA Gestia</span>
           </span>
           <span className="text-[11px] text-slate-400 font-medium">
             Recomendación en tiempo real para {currentUser?.username || 'Operaciones'}
@@ -80,7 +82,8 @@ export const CopilotoIAPanel: React.FC<CopilotoIAPanelProps> = ({
 
         {appliedSuggestion && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold mt-1">
-            <span>✓</span> Sugerencia procesada e integrada en el flujo operativo.
+            <CheckCircle2 size={14} />
+            <span>Sugerencia procesada e integrada en el flujo operativo.</span>
           </div>
         )}
       </div>
@@ -94,9 +97,10 @@ export const CopilotoIAPanel: React.FC<CopilotoIAPanelProps> = ({
               onNavigateToTab(activeSuggestion.targetTab);
             }
           }}
-          className="bg-ai-brand hover:bg-[#5b5ebc] text-white border-none py-2.5 px-4 rounded-xl text-xs font-extrabold cursor-pointer transition-all shadow-md hover:shadow-lg active:scale-95"
+          className="bg-ai-brand hover:bg-[#5b5ebc] text-white border-none py-2.5 px-4 rounded-xl text-xs font-extrabold cursor-pointer transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2"
         >
-          {activeSuggestion.actionText}
+          <span>{activeSuggestion.actionText}</span>
+          <ArrowRight size={14} />
         </button>
       </div>
     </div>
