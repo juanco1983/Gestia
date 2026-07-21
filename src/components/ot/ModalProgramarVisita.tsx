@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft } from 'lucide-react';
-import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo } from '../../types';
+import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo, Client } from '../../types';
+import { checkTechnicianConflicts } from '../../utils/conflictChecker';
 
 interface ModalProgramarVisitaProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ModalProgramarVisitaProps {
   adenda: any | null;
   ots: OT[];
   users: User[];
+  clients: Client[];
   onSave: (newOT: OT) => Promise<void>;
 }
 
@@ -19,6 +21,7 @@ export default function ModalProgramarVisita({
   adenda,
   ots,
   users,
+  clients,
   onSave
 }: ModalProgramarVisitaProps) {
   const technicians = useMemo(() => users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo'), [users]);
@@ -47,6 +50,58 @@ export default function ModalProgramarVisita({
   const [supportTechId, setSupportTechId] = useState('');
   const [additionalTechIds, setAdditionalTechIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Calculate technician workload/schedule/geographic conflicts dynamically
+  const conflicts = useMemo(() => {
+    const list: Array<{ type: string; message: string; techName: string }> = [];
+    if (!primaryTechId && !supportTechId && additionalTechIds.length === 0) return list;
+    
+    const clientId = contract?.clientId || '';
+    
+    if (primaryTechId) {
+      const alerts = checkTechnicianConflicts(
+        primaryTechId,
+        fecha,
+        horaInicio,
+        horaFin,
+        undefined,
+        ots,
+        clients,
+        clientId
+      );
+      list.push(...alerts.map(a => ({ ...a, techName: technicians.find(t => t.id === primaryTechId)?.username || 'Titular' })));
+    }
+    
+    if (supportTechId) {
+      const alerts = checkTechnicianConflicts(
+        supportTechId,
+        fecha,
+        horaInicio,
+        horaFin,
+        undefined,
+        ots,
+        clients,
+        clientId
+      );
+      list.push(...alerts.map(a => ({ ...a, techName: technicians.find(t => t.id === supportTechId)?.username || 'Apoyo' })));
+    }
+    
+    additionalTechIds.forEach(id => {
+      const alerts = checkTechnicianConflicts(
+        id,
+        fecha,
+        horaInicio,
+        horaFin,
+        undefined,
+        ots,
+        clients,
+        clientId
+      );
+      list.push(...alerts.map(a => ({ ...a, techName: technicians.find(t => t.id === id)?.username || 'Adicional' })));
+    });
+    
+    return list;
+  }, [primaryTechId, supportTechId, additionalTechIds, fecha, horaInicio, horaFin, ots, clients, contract?.clientId, technicians]);
 
   // Initialize service type based on contract details
   useEffect(() => {
@@ -519,6 +574,23 @@ export default function ModalProgramarVisita({
                   })}
                 </div>
               </div>
+
+              {/* Conflict Warnings Box */}
+              {conflicts.length > 0 && (
+                <div className="bg-amber-50 border border-amber-250/80 rounded-xl p-3.5 space-y-2 mt-4 select-none text-left">
+                  <div className="flex items-center gap-2 text-amber-800 font-bold text-[11px] uppercase tracking-wide">
+                    <AlertTriangle size={14} className="shrink-0 text-amber-600 animate-bounce" />
+                    <span>Advertencias de Asignación (Recomendador S.L.A)</span>
+                  </div>
+                  <div className="space-y-1.5 pl-5">
+                    {conflicts.map((c, idx) => (
+                      <p key={idx} className="text-xs text-amber-700 leading-normal">
+                        <span className="font-bold font-mono">[{c.techName}]:</span> {c.message}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

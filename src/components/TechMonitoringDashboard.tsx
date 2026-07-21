@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { UserPlus, MapPin, Wrench, Calendar as CalendarIcon, 
   Bell, Smartphone, Info, ChevronLeft, ChevronRight, ChevronDown,
-  Cpu, Plus, Zap, Search, Layers, CheckCircle2, FileText
+  Cpu, Plus, Zap, Search, Layers, CheckCircle2, FileText,
+  ThumbsUp, ThumbsDown, AlertTriangle, X
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
@@ -15,6 +16,7 @@ interface TechMonitoringDashboardProps {
   users: User[];
   onUpdateOtStatus?: (otId: string, status: OTStatus) => void;
   onUpdateOt?: (ot: OT) => void;
+  onUpdateReport?: (report: TechnicalReport) => void;
   contratosNuevos: any[];
   otEquipoAsignaciones: any[];
   onAddOT: (newOT: OT) => Promise<void>;
@@ -27,6 +29,7 @@ export default function TechMonitoringDashboard({
   users,
   onUpdateOtStatus,
   onUpdateOt,
+  onUpdateReport,
   contratosNuevos = [],
   otEquipoAsignaciones = [],
   onAddOT
@@ -41,10 +44,28 @@ export default function TechMonitoringDashboard({
   const [techSearchQuery, setTechSearchQuery] = useState('');
   const [selectedOtForAssign, setSelectedOtForAssign] = useState<OT | null>(null);
   const [dropInitialValues, setDropInitialValues] = useState<{ techId?: string; fecha?: string; hora?: string } | null>(null);
+  const [selectedReportForAudit, setSelectedReportForAudit] = useState<TechnicalReport | null>(null);
+  const [reportFilterStatus, setReportFilterStatus] = useState<'todos' | 'pendientes' | 'observados' | 'aprobados'>('todos');
   const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
   const [contractSearchQuery, setContractSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  const filteredReportsForDashboard = useMemo(() => {
+    return reports.filter(r => {
+      const otStatus = ots.find(o => o.id === r.otId)?.estado;
+      if (reportFilterStatus === 'pendientes') {
+        return otStatus === OTStatus.EN_REVISION;
+      }
+      if (reportFilterStatus === 'observados') {
+        return otStatus === OTStatus.OBSERVADA;
+      }
+      if (reportFilterStatus === 'aprobados') {
+        return otStatus === OTStatus.APROBADA || otStatus === OTStatus.FIRMADA;
+      }
+      return true;
+    });
+  }, [reports, ots, reportFilterStatus]);
 
   const toggleContract = (id: string) => {
     setExpandedContracts(prev => {
@@ -1119,44 +1140,208 @@ export default function TechMonitoringDashboard({
           {/* SUB-TAB 5: INFORMES */}
           {operationsSubTab === 'informes' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
-              <div className="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-                <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText size={16} className="text-[#00B594]" />
-                  <span>Bandeja de Informes Técnicos de Campo</span>
-                </h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                        <th className="py-2.5">Informe N°</th>
-                        <th className="py-2.5">OT Técnica</th>
-                        <th className="py-2.5">Cliente</th>
-                        <th className="py-2.5">Fecha Servicio</th>
-                        <th className="py-2.5">Diagnóstico</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {reports.map((report) => (
-                        <tr key={report.id} className="hover:bg-slate-50/50">
-                          <td className="py-3 font-mono font-bold text-slate-800">
-                            {report.informeN || `INF-${report.id.slice(0, 6)}`}
-                          </td>
-                          <td className="py-3 font-mono">{report.otId}</td>
-                          <td className="py-3 font-bold text-slate-700">
-                            {getClientName(ots.find(o => o.id === report.otId)?.clientId || '')}
-                          </td>
-                          <td className="py-3 font-mono">{report.fechaServicio || 'S/D'}</td>
-                          <td className="py-3 truncate max-w-xs">{report.observacionesDiagnostico || 'Operación Normal'}</td>
+              {/* Tab Filters */}
+              <div className="max-w-6xl mx-auto flex flex-wrap gap-2 select-none">
+                {(['todos', 'pendientes', 'observados', 'aprobados'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => {
+                      setReportFilterStatus(filter);
+                      setSelectedReportForAudit(null);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                      reportFilterStatus === filter
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {filter === 'todos' && 'Todos los Informes'}
+                    {filter === 'pendientes' && 'Pendientes de Aprobación'}
+                    {filter === 'observados' && 'Observados / Con Observación'}
+                    {filter === 'aprobados' && 'Aprobados / Firmados'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                {/* Reports Table Card */}
+                <div className={`bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 ${selectedReportForAudit ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+                  <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText size={16} className="text-[#00B594]" />
+                    <span>Bandeja de Informes Técnicos de Campo ({filteredReportsForDashboard.length})</span>
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-2.5">Informe N°</th>
+                          <th className="py-2.5">OT Técnica</th>
+                          <th className="py-2.5">Cliente</th>
+                          <th className="py-2.5">Fecha</th>
+                          <th className="py-2.5">Estado OT</th>
+                          <th className="py-2.5 text-right">Acción</th>
                         </tr>
-                      ))}
-                      {reports.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-slate-400 italic">No hay informes registrados.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredReportsForDashboard.map((report) => {
+                          const ot = ots.find(o => o.id === report.otId);
+                          const otStatus = ot?.estado || 'DESCONOCIDO';
+                          
+                          return (
+                            <tr 
+                              key={report.id} 
+                              className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${selectedReportForAudit?.id === report.id ? 'bg-slate-50' : ''}`}
+                              onClick={() => {
+                                setSelectedReportForAudit(report);
+                              }}
+                            >
+                              <td className="py-3 font-mono font-bold text-slate-800">
+                                {report.informeN || `INF-${report.id.slice(0, 6)}`}
+                              </td>
+                              <td className="py-3 font-mono">{report.otId}</td>
+                              <td className="py-3 font-bold text-slate-700 truncate max-w-[120px]">
+                                {getClientName(ot?.clientId || '')}
+                              </td>
+                              <td className="py-3 font-mono">{report.fechaServicio || 'S/D'}</td>
+                              <td className="py-3">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase border tracking-wide font-mono ${
+                                  otStatus === OTStatus.EN_REVISION ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                  otStatus === OTStatus.OBSERVADA ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                  otStatus === OTStatus.APROBADA || otStatus === OTStatus.FIRMADA ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                  'bg-slate-50 text-slate-500 border-slate-200'
+                                }`}>
+                                  {otStatus}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedReportForAudit(report);
+                                  }}
+                                  className="text-xs font-bold text-[#00B594] hover:text-[#009b7e] underline cursor-pointer"
+                                >
+                                  Auditar
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {filteredReportsForDashboard.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-slate-400 italic">No hay informes registrados para esta categoría.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+
+                {/* Audit Action Panel (Sidebar) */}
+                {selectedReportForAudit && (() => {
+                  const matchingOt = ots.find(o => o.id === selectedReportForAudit.otId);
+                  
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5 animate-in slide-in-from-right duration-200 text-left">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div className="space-y-0.5">
+                          <h4 className="font-display font-black text-slate-800 text-xs uppercase tracking-wide">Panel de Auditoría</h4>
+                          <p className="font-mono text-[10px] text-slate-500">{selectedReportForAudit.informeN || `INF-${selectedReportForAudit.id.slice(0, 6)}`}</p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedReportForAudit(null)}
+                          className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {/* Summary Data */}
+                      <div className="space-y-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-slate-400 uppercase text-[9px] font-black font-mono block">Cliente / Sede:</span>
+                          <span className="text-slate-800 font-bold block">{getClientName(matchingOt?.clientId || '')}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 uppercase text-[9px] font-black font-mono block">Equipo & Potencia:</span>
+                          <span className="text-slate-800 font-bold block">{matchingOt?.tipoEquipo} {matchingOt?.potenciaKva ? `(${matchingOt.potenciaKva} KVA)` : ''}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 border-t border-slate-200/60 pt-2 mt-2">
+                          <div>
+                            <span className="text-slate-400 uppercase text-[9px] font-black font-mono block">Técnico Líder:</span>
+                            <span className="text-slate-800 font-semibold block truncate">{matchingOt?.tecnicoTitular}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 uppercase text-[9px] font-black font-mono block">Fecha Visita:</span>
+                            <span className="text-slate-800 font-mono block">{selectedReportForAudit.fechaServicio || 'S/D'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Technical Readings */}
+                      <div className="space-y-2.5">
+                        <h5 className="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider">Lecturas y Diagnóstico</h5>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                            <span className="text-[9px] text-slate-400 font-bold block font-mono uppercase">Voltaje Ent.</span>
+                            <strong className="text-slate-800 font-mono text-xs">{selectedReportForAudit.voltajeEntrada || '---'} V</strong>
+                          </div>
+                          <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                            <span className="text-[9px] text-slate-400 font-bold block font-mono uppercase">Voltaje Sal.</span>
+                            <strong className="text-slate-800 font-mono text-xs">{selectedReportForAudit.voltajeSalida || '---'} V</strong>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs bg-slate-50/50 p-2 rounded-lg border border-slate-100 flex items-center justify-between">
+                          <span className="text-[9px] text-slate-400 font-bold font-mono uppercase">¿Bypass Activo?</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase font-mono ${
+                            selectedReportForAudit.indicadoresBateria?.bypassActivo ? 'bg-amber-100 text-amber-800 font-bold' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {selectedReportForAudit.indicadoresBateria?.bypassActivo ? 'SÍ (BYPASS)' : 'NO (INVERSOR)'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-400 font-bold block font-mono uppercase">Observaciones/Diagnóstico:</span>
+                          <p className="bg-slate-50/40 border border-slate-150 rounded-lg p-2.5 text-xs text-slate-700 italic max-h-24 overflow-y-auto leading-relaxed">
+                            {selectedReportForAudit.observacionesDiagnostico || 'No se registraron anomalías.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Photo Attachments Preview */}
+                      {selectedReportForAudit.fotosLabeled && selectedReportForAudit.fotosLabeled.length > 0 && (
+                        <div className="space-y-2">
+                          <h5 className="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider">Evidencias Fotográficas ({selectedReportForAudit.fotosLabeled.length})</h5>
+                          <div className="flex gap-1.5 overflow-x-auto pb-1 max-w-full">
+                            {selectedReportForAudit.fotosLabeled.map((pic: any, idx: number) => (
+                              <div key={idx} className="relative group shrink-0 w-16 h-16 bg-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+                                <img 
+                                  src={pic.url || pic} 
+                                  alt={pic.label || `foto-${idx}`} 
+                                  className="w-full h-full object-cover" 
+                                />
+                                <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] py-0.5 truncate text-center opacity-0 group-hover:opacity-100 transition-opacity font-mono">
+                                  {pic.label || `Foto ${idx+1}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Supervisor Observations (Read-Only) */}
+                      {selectedReportForAudit.correccionesSupervisor && (
+                        <div className="space-y-1.5 bg-rose-50 border border-rose-100 rounded-xl p-3 text-left select-none">
+                          <label className="text-[10px] font-black uppercase text-rose-700 font-mono tracking-wider block">Observaciones del Supervisor</label>
+                          <p className="text-xs text-rose-800 leading-normal italic">
+                            "{selectedReportForAudit.correccionesSupervisor}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -1277,7 +1462,7 @@ export default function TechMonitoringDashboard({
       )}
 
       {/* Modals */}
-      {selectedOtForAssign && (
+       {selectedOtForAssign && (
         <ModalAsignarTecnico
           linea={{ 
             id: selectedOtForAssign.otFinancieraId || '', 
@@ -1286,6 +1471,7 @@ export default function TechMonitoringDashboard({
           } as any}
           ots={ots}
           users={users}
+          clients={clients}
           initialValues={dropInitialValues || undefined}
           onUpdateOT={(ot) => {
             if (onUpdateOt) onUpdateOt(ot);
@@ -1313,6 +1499,7 @@ export default function TechMonitoringDashboard({
           adenda={selectedAdendaForSchedule}
           ots={ots}
           users={users}
+          clients={clients}
           onSave={onAddOT}
         />
       )}

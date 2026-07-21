@@ -1938,6 +1938,9 @@ export default function App() {
                   users={users}
                   onUpdateOtStatus={handleUpdateOtStatus}
                   onUpdateOt={handleUpdateOT}
+                  onUpdateReport={(updatedRep) => {
+                    setReports(prev => prev.map(r => r.id === updatedRep.id ? updatedRep : r));
+                  }}
                   contratosNuevos={contratosNuevos}
                   otEquipoAsignaciones={otEquipoAsignaciones}
                   onAddOT={handleAddOT}
