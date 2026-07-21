@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { UserPlus, MapPin, Wrench, Calendar as CalendarIcon, 
   Bell, Smartphone, Info, ChevronLeft, ChevronRight, ChevronDown,
   Cpu, Plus, Zap, Search, Layers, CheckCircle2, FileText,
-  ThumbsUp, ThumbsDown, AlertTriangle, X
+  ThumbsUp, ThumbsDown, AlertTriangle, X, ArrowUpDown, Filter,
+  Clock, Eye, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, User } from '../types';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
@@ -49,7 +50,10 @@ export default function TechMonitoringDashboard({
   const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
   const [contractSearchQuery, setContractSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 25;
+  const [contractFilterChip, setContractFilterChip] = useState<'todos' | 'atencion' | 'por_vencer' | 'sin_visitas'>('todos');
+  const [contractSortCol, setContractSortCol] = useState<'default' | 'vigencia' | 'estado'>('default');
+  const [contractSortDir, setContractSortDir] = useState<'asc' | 'desc'>('desc');
 
   const filteredReportsForDashboard = useMemo(() => {
     return reports.filter(r => {
@@ -77,6 +81,94 @@ export default function TechMonitoringDashboard({
 
   const getTotalKva = (equipos: any[]) =>
     equipos.reduce((sum: number, eq: any) => sum + (Number(eq.potenciaKva) || 0), 0);
+
+  // ---- Computed contract stats for KPIs, chips, sorting ----
+  const contractStats = useMemo(() => {
+    return contratosNuevos.map((contract: any) => {
+      const primaryEquipments = contract.equipos || [];
+      const adendas = contract.ampliaciones || [];
+      const allEquipments = [...primaryEquipments];
+      adendas.forEach((adenda: any) => {
+        const adendaEquips = adenda.equiposAdenda
+          ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
+          : [];
+        adendaEquips.forEach((eq: any) => {
+          if (!allEquipments.some((e: any) => e.id === eq.id)) {
+            allEquipments.push(eq);
+          }
+        });
+      });
+
+      let programadosCount = 0;
+      let pendientesCount = 0;
+      allEquipments.forEach((eq: any) => {
+        const isScheduled = ots.some((ot: any) => {
+          if (ot.estado === OTStatus.CERRADA) return false;
+          const isAssigned = otEquipoAsignaciones.some((a: any) => a.otId === ot.id && a.equipoId === eq.id);
+          if (isAssigned) return true;
+          if (ot.equipoId) {
+            const ids = ot.equipoId.split(',').map((id: string) => id.trim());
+            if (ids.includes(eq.id)) return true;
+          }
+          return false;
+        });
+        if (isScheduled) programadosCount++; else pendientesCount++;
+      });
+
+      const hasDates = contract.fecha_inicio && contract.fecha_fin && contract.fecha_inicio !== 'S/D' && contract.fecha_fin !== 'S/D';
+      let daysLeft = Infinity;
+      let totalDays = 1;
+      let elapsedDays = 0;
+      let nearExpiry = false;
+      if (hasDates) {
+        const startDate = new Date(contract.fecha_inicio.split('/').reverse().join('-'));
+        const endDate = new Date(contract.fecha_fin.split('/').reverse().join('-'));
+        daysLeft = Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+        elapsedDays = Math.max(0, Math.ceil((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+        nearExpiry = daysLeft <= 30 && daysLeft >= 0;
+      }
+      const progressPct = hasDates ? Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100)) : -1;
+
+      return {
+        id: contract.id,
+        pendientesCount,
+        programadosCount,
+        totalEquipos: allEquipments.length,
+        allEquipments,
+        adendas,
+        hasDates,
+        daysLeft,
+        nearExpiry,
+        progressPct,
+        needsAttention: pendientesCount > 0,
+        sinVisitas: programadosCount === 0 && allEquipments.length > 0,
+      };
+    });
+  }, [contratosNuevos, ots, otEquipoAsignaciones]);
+
+  // Aggregate KPIs
+  const contractKpis = useMemo(() => {
+    const total = contractStats.length;
+    const needAttention = contractStats.filter(s => s.needsAttention).length;
+    const nearExpiry = contractStats.filter(s => s.nearExpiry).length;
+    const totalEquipos = contractStats.reduce((sum, s) => sum + s.totalEquipos, 0);
+    return { total, needAttention, nearExpiry, totalEquipos };
+  }, [contractStats]);
+
+  const toggleContractSort = (col: 'vigencia' | 'estado') => {
+    if (contractSortCol === col) {
+      setContractSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setContractSortCol(col);
+      setContractSortDir('asc');
+    }
+  };
+
+  const resetContractSort = () => {
+    setContractSortCol('default');
+    setContractSortDir('desc');
+  };
 
   const [selectedContractForSchedule, setSelectedContractForSchedule] = useState<any | null>(null);
   const [selectedAdendaForSchedule, setSelectedAdendaForSchedule] = useState<any | null>(null);
@@ -414,14 +506,15 @@ export default function TechMonitoringDashboard({
 
           {activeTab === 'contratos' ? (
             <div className="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-6 text-left">
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-6xl mx-auto">
+                {/* 1. Header & Quick Search */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div>
                     <h3 className="font-display font-black text-slate-800 text-lg uppercase tracking-wider">
                       Contratos y Adendas Activas
                     </h3>
-                    <p className="text-xs text-slate-500 font-mono">
-                      {contratosNuevos.length} contratos registrados
+                    <p className="text-xs text-slate-500 font-mono mt-0.5">
+                      {contractKpis.total} contratos registrados · <span className={contractKpis.needAttention > 0 ? "text-amber-600 font-bold" : "text-slate-500"}>{contractKpis.needAttention} requieren atención</span>
                     </p>
                   </div>
                   <div className="relative w-full sm:w-72">
@@ -431,302 +524,570 @@ export default function TechMonitoringDashboard({
                       placeholder="Buscar por cliente, contrato o tipo..."
                       value={contractSearchQuery}
                       onChange={e => { setContractSearchQuery(e.target.value); setCurrentPage(1); }}
-                      className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 font-mono focus:border-emerald-500 focus:outline-none transition-colors"
+                      className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 font-mono focus:border-[#00B594] focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
-                {(() => {
-                  const filtered = contratosNuevos.filter((c: any) => {
-                    const q = contractSearchQuery.toLowerCase();
-                    if (!q) return true;
-                    const num = c.n_contrato || c.id.replace('cont_', '');
-                    return num.includes(q) || (c.cliente || '').toLowerCase().includes(q) || (c.tipo_contrato || '').toLowerCase().includes(q);
-                  });
-                  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-                  const safePage = Math.min(currentPage, totalPages);
-                  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
-                  return (
-                    <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {paginated.map((contract: any) => {
-                    const primaryEquipments = contract.equipos || [];
-                    const adendas = contract.ampliaciones || [];
-                    const totalKva = getTotalKva(primaryEquipments);
-                    const isExpanded = expandedContracts.has(contract.id);
-                    const hasDates = contract.fecha_inicio && contract.fecha_fin && contract.fecha_inicio !== 'S/D' && contract.fecha_fin !== 'S/D';
-
-                    let nearExpiry = false;
-                    if (hasDates) {
-                      const daysLeft = Math.ceil((new Date(contract.fecha_fin.split('/').reverse().join('-')).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                      nearExpiry = daysLeft <= 30 && daysLeft >= 0;
-                    }
-
-                    return (
-                      <div
-                        key={contract.id}
-                        className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 overflow-hidden ${nearExpiry ? 'border-amber-300 shadow-amber-100/50' : 'border-slate-200 hover:shadow-md'}`}
-                      >
-                        {/* Accordion Header */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          aria-expanded={isExpanded}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleContract(contract.id); } }}
-                          className="p-4 bg-slate-50 flex items-center gap-3 cursor-pointer select-none"
-                        >
-                          <div
-                            className="flex-1 min-w-0"
-                            onClick={() => toggleContract(contract.id)}
-                          >
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="font-mono font-black text-sm text-slate-900 bg-slate-200 px-2 py-0.5 rounded">
-                                Contrato #{contract.n_contrato || contract.id.replace('cont_', '')}
-                              </span>
-                              <span className="text-[10px] font-bold text-[#00B594] font-mono uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                                {contract.tipo_contrato || 'Mantenimiento'}
-                              </span>
-                              {!hasDates && (
-                                <span className="text-[10px] font-bold text-slate-500 font-mono uppercase bg-slate-200 px-2 py-0.5 rounded">
-                                  Sin vigencia definida
-                                </span>
-                              )}
-                              {nearExpiry && (
-                                <span className="text-[10px] font-bold text-amber-700 font-mono uppercase bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
-                                  Próximo a vencer
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="font-bold text-slate-800 text-sm">{contract.cliente}</h4>
-                            {hasDates ? (
-                              <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                Vigencia: <strong>{contract.fecha_inicio}</strong> al <strong>{contract.fecha_fin}</strong>
-                              </p>
-                            ) : (
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5 italic">Sin fechas de vigencia registradas</p>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(null); setIsScheduleModalOpen(true); }}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-lg text-[10px] font-black uppercase font-mono tracking-wider transition-colors active:scale-[0.98] shrink-0 shadow-sm shadow-emerald-500/10"
-                          >
-                            <CalendarIcon size={12} className="text-white" />
-                            <span>Programar Visita</span>
-                          </button>
-
-                          <button
-                            onClick={() => toggleContract(contract.id)}
-                            className="p-1.5 hover:bg-slate-200 rounded-full transition-colors shrink-0 text-slate-500"
-                            aria-label={isExpanded ? 'Colapsar detalle' : 'Expandir detalle'}
-                          >
-                            <ChevronDown
-                              size={18}
-                              className="transition-transform duration-150 ease"
-                              style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                            />
-                          </button>
-                        </div>
-
-                        {/* Equipment Summary (always visible) */}
-                        {(() => {
-                          const allEquipments = [...primaryEquipments];
-                          adendas.forEach((adenda: any) => {
-                            const adendaEquips = adenda.equiposAdenda
-                              ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
-                              : [];
-                            adendaEquips.forEach((eq: any) => {
-                              if (!allEquipments.some(e => e.id === eq.id)) {
-                                allEquipments.push(eq);
-                              }
-                            });
-                          });
-
-                          let programadosCount = 0;
-                          let pendientesCount = 0;
-
-                          allEquipments.forEach((eq: any) => {
-                            const isScheduled = ots.some((ot: any) => {
-                              if (ot.estado === OTStatus.CERRADA) return false;
-                              const isAssigned = otEquipoAsignaciones.some((a: any) => a.otId === ot.id && a.equipoId === eq.id);
-                              if (isAssigned) return true;
-                              if (ot.equipoId) {
-                                const ids = ot.equipoId.split(',').map((id: string) => id.trim());
-                                if (ids.includes(eq.id)) return true;
-                              }
-                              return false;
-                            });
-
-                            if (isScheduled) {
-                              programadosCount++;
-                            } else {
-                              pendientesCount++;
-                            }
-                          });
-
-                          return (
-                            <div className="px-4 pb-3 pt-1 bg-slate-50 flex flex-wrap items-center justify-between gap-3 text-xs border-b border-slate-100">
-                              <div className="flex items-center gap-3 text-slate-600 flex-wrap">
-                                <div className="flex items-center gap-1">
-                                  <Zap size={13} className="text-slate-400 shrink-0" />
-                                  <span className="font-mono font-bold">{allEquipments.length} equipo{allEquipments.length !== 1 ? 's' : ''}</span>
-                                  {allEquipments.length > 0 && <span className="font-mono text-[10px] text-slate-400">({totalKva} kVA)</span>}
-                                </div>
-                                <span className="text-slate-300 hidden sm:inline">|</span>
-                                <span className="font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-bold">
-                                  {programadosCount} Programado{programadosCount !== 1 ? 's' : ''}
-                                </span>
-                                <span className="font-mono text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-bold">
-                                  {pendientesCount} Pendiente{pendientesCount !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedContractForEquipments(contract); setIsEquipmentsModalOpen(true); }}
-                                className="text-[10px] font-black text-teal-600 hover:text-teal-700 font-mono uppercase tracking-wider underline cursor-pointer focus:outline-none transition-colors"
-                              >
-                                Ver Detalle e Historial
-                              </button>
-                            </div>
-                          );
-                        })()}
-
-                        {/* Expanded Content */}
-                        <div
-                          className="transition-all duration-200 ease-in-out"
-                          style={{
-                            maxHeight: isExpanded ? `${600 + adendas.length * 200}px` : '0px',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div className="px-4 pb-4 space-y-4 border-t border-slate-100 pt-4">
-                            {/* Primary Contract Equipments */}
-                            <div>
-                              <h5 className="text-[10px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <Cpu size={12} className="text-slate-400" />
-                                <span>Equipos del Contrato Principal ({primaryEquipments.length})</span>
-                              </h5>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {primaryEquipments.map((eq: any) => (
-                                  <div key={eq.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-[11px]">
-                                    <div className="min-w-0">
-                                      <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
-                                      <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
-                                      <span className="text-[9px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
-                                    </div>
-                                    <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
-                                      {eq.potenciaKva} kVA
-                                    </span>
-                                  </div>
-                                ))}
-                                {primaryEquipments.length === 0 && (
-                                  <p className="text-[11px] text-slate-400 italic col-span-full">No hay equipos asignados directamente al contrato principal.</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Addendums List */}
-                            {adendas.length > 0 && (
-                              <div className="border-t border-slate-100 pt-3 space-y-3">
-                                <h5 className="text-[10px] font-black font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                  <Plus size={12} className="text-teal-500" />
-                                  <span>Adendas / Ampliaciones de Contrato ({adendas.length})</span>
-                                </h5>
-                                <div className="space-y-2">
-                                  {adendas.map((adenda: any) => {
-                                    const adendaEquips = adenda.equiposAdenda
-                                      ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
-                                      : [];
-                                    return (
-                                      <div key={adenda.id} className="p-3 bg-teal-50/20 border border-teal-100 rounded-xl text-[11px] space-y-2">
-                                        <div className="flex justify-between items-center">
-                                          <div>
-                                            <span className="font-mono font-black text-slate-800 bg-teal-100/60 px-2 py-0.5 rounded mr-2 border border-teal-200 text-[10px]">
-                                              Adenda {adenda.codigo || adenda.id.replace('ad_', '')}
-                                            </span>
-                                            <span className="text-[9px] text-slate-500 font-mono">
-                                              Vigencia: {adenda.fecha_inicio} al {adenda.fecha_fin}
-                                            </span>
-                                          </div>
-                                          <button
-                                            onClick={() => { setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(adenda); setIsScheduleModalOpen(true); }}
-                                            className="flex items-center gap-1 px-2.5 py-1 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-md text-[9px] font-black uppercase font-mono tracking-wider transition-all active:scale-[0.98]"
-                                          >
-                                            <CalendarIcon size={10} />
-                                            <span>Programar de Adenda</span>
-                                          </button>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                          {adendaEquips.map((eq: any) => (
-                                            <div key={eq.id} className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-[11px]">
-                                              <div className="min-w-0">
-                                                <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
-                                                <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
-                                                <span className="text-[9px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
-                                              </div>
-                                              <span className="font-mono font-bold text-slate-600 bg-slate-200/60 px-2 py-0.5 rounded shrink-0 ml-2">
-                                                {eq.potenciaKva} kVA
-                                              </span>
-                                            </div>
-                                          ))}
-                                          {adendaEquips.length === 0 && (
-                                            <p className="text-[11px] text-slate-400 italic col-span-full">No hay equipos asignados a esta adenda.</p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {filtered.length === 0 && (
-                    <div className="col-span-full p-12 text-center bg-white border border-slate-200 rounded-2xl">
-                      <Wrench size={32} className="mx-auto text-slate-300 mb-3" />
-                      <p className="text-slate-500 text-sm font-medium">
-                        {contractSearchQuery ? 'No se encontraron contratos con ese criterio.' : 'No hay contratos o adendas comerciales vigentes.'}
-                      </p>
+                {/* 2. KPI Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                      <FileText size={18} />
                     </div>
-                  )}
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Total Contratos</span>
+                      <strong className="text-lg font-mono font-bold text-slate-800">{contractKpis.total}</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
+                      <AlertTriangle size={18} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Con Pendientes</span>
+                      <strong className="text-lg font-mono font-bold text-amber-700">{contractKpis.needAttention}</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg shrink-0">
+                      <Clock size={18} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Por Vencer (30d)</span>
+                      <strong className="text-lg font-mono font-bold text-slate-800">{contractKpis.nearExpiry}</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
+                      <Zap size={18} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">Equipos Totales</span>
+                      <strong className="text-lg font-mono font-bold text-slate-800">{contractKpis.totalEquipos}</strong>
+                    </div>
+                  </div>
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 pt-4">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={safePage === 1}
-                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setCurrentPage(p)}
-                        className={`min-w-[36px] h-9 rounded-lg text-xs font-black font-mono transition-colors ${
-                          p === safePage
-                            ? 'bg-[#00B594] text-white shadow-sm'
-                            : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={safePage === totalPages}
-                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
-                    </>
+                {/* 3. Filter Chips Bar */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 text-xs font-mono">
+                  <span className="text-slate-400 flex items-center gap-1 text-[11px] uppercase tracking-wider font-bold mr-1 shrink-0">
+                    <Filter size={12} /> Filtrar:
+                  </span>
+
+                  <button
+                    onClick={() => { setContractFilterChip('todos'); setCurrentPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg border font-bold transition-all shrink-0 cursor-pointer ${
+                      contractFilterChip === 'todos'
+                        ? 'bg-[#00B594] text-white border-[#00B594] shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Todos <span className="ml-1 px-1.5 py-0.2 bg-black/10 rounded-full text-[10px]">{contractKpis.total}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { setContractFilterChip('atencion'); setCurrentPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg border font-bold transition-all shrink-0 cursor-pointer ${
+                      contractFilterChip === 'atencion'
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Requieren atención <span className="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded-full text-[10px]">{contractKpis.needAttention}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { setContractFilterChip('por_vencer'); setCurrentPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg border font-bold transition-all shrink-0 cursor-pointer ${
+                      contractFilterChip === 'por_vencer'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Por vencer (30 días) <span className="ml-1 px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded-full text-[10px]">{contractKpis.nearExpiry}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { setContractFilterChip('sin_visitas'); setCurrentPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg border font-bold transition-all shrink-0 cursor-pointer ${
+                      contractFilterChip === 'sin_visitas'
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Sin visitas programadas <span className="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px]">{contractStats.filter(s => s.sinVisitas).length}</span>
+                  </button>
+                </div>
+
+                {/* 4. Processing Dataset (Filter & Sort) */}
+                {(() => {
+                  const filtered = contratosNuevos.filter((c: any) => {
+                    const stats = contractStats.find(s => s.id === c.id);
+                    if (!stats) return true;
+
+                    // Chip filter
+                    if (contractFilterChip === 'atencion' && !stats.needsAttention) return false;
+                    if (contractFilterChip === 'por_vencer' && !stats.nearExpiry) return false;
+                    if (contractFilterChip === 'sin_visitas' && !stats.sinVisitas) return false;
+
+                    // Search query
+                    const q = contractSearchQuery.toLowerCase().trim();
+                    if (!q) return true;
+                    const num = (c.n_contrato || c.id.replace('cont_', '')).toLowerCase();
+                    const cliente = (c.cliente || '').toLowerCase();
+                    const tipo = (c.tipo_contrato || '').toLowerCase();
+                    return num.includes(q) || cliente.includes(q) || tipo.includes(q);
+                  });
+
+                  // Sorting logic
+                  const sorted = [...filtered].sort((a: any, b: any) => {
+                    const statsA = contractStats.find(s => s.id === a.id);
+                    const statsB = contractStats.find(s => s.id === b.id);
+                    if (!statsA || !statsB) return 0;
+
+                    if (contractSortCol === 'vigencia') {
+                      const daysA = statsA.daysLeft === Infinity ? -99999 : statsA.daysLeft;
+                      const daysB = statsB.daysLeft === Infinity ? -99999 : statsB.daysLeft;
+                      return contractSortDir === 'asc' ? daysA - daysB : daysB - daysA;
+                    }
+
+                    if (contractSortCol === 'estado') {
+                      const pendA = statsA.pendientesCount;
+                      const pendB = statsB.pendientesCount;
+                      return contractSortDir === 'asc' ? pendA - pendB : pendB - pendA;
+                    }
+
+                    // Default order: Attention required first (highest pendientes first), then client A-Z
+                    if (statsA.needsAttention !== statsB.needsAttention) {
+                      return statsA.needsAttention ? -1 : 1;
+                    }
+                    if (statsA.pendientesCount !== statsB.pendientesCount) {
+                      return statsB.pendientesCount - statsA.pendientesCount;
+                    }
+                    return (a.cliente || '').localeCompare(b.cliente || '');
+                  });
+
+                  const totalItems = sorted.length;
+                  const usePagination = totalItems > ITEMS_PER_PAGE;
+                  const totalPages = usePagination ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
+                  const safePage = Math.min(currentPage, totalPages);
+                  const displayList = usePagination
+                    ? sorted.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+                    : sorted;
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Desktop Table View */}
+                      <div className="hidden lg:block bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100/80 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider select-none">
+                              <th className="py-3 px-4 font-bold">Cliente / Contrato</th>
+                              <th className="py-3 px-3 font-bold">Tipo de Servicio</th>
+                              <th 
+                                className="py-3 px-3 font-bold cursor-pointer hover:bg-slate-200/60 transition-colors"
+                                onClick={() => toggleContractSort('vigencia')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  <span>Vigencia</span>
+                                  {contractSortCol === 'vigencia' ? (
+                                    contractSortDir === 'asc' ? <ArrowUp size={12} className="text-[#00B594]" /> : <ArrowDown size={12} className="text-[#00B594]" />
+                                  ) : (
+                                    <ArrowUpDown size={12} className="text-slate-400" />
+                                  )}
+                                </div>
+                              </th>
+                              <th className="py-3 px-3 font-bold text-center">Equipos</th>
+                              <th className="py-3 px-3 font-bold text-center">Adendas</th>
+                              <th 
+                                className="py-3 px-3 font-bold cursor-pointer hover:bg-slate-200/60 transition-colors"
+                                onClick={() => toggleContractSort('estado')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  <span>Estado</span>
+                                  {contractSortCol === 'estado' ? (
+                                    contractSortDir === 'asc' ? <ArrowUp size={12} className="text-[#00B594]" /> : <ArrowDown size={12} className="text-[#00B594]" />
+                                  ) : (
+                                    <ArrowUpDown size={12} className="text-slate-400" />
+                                  )}
+                                </div>
+                              </th>
+                              <th className="py-3 px-4 font-bold text-right">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-sans">
+                            {displayList.map((contract: any) => {
+                              const stats = contractStats.find(s => s.id === contract.id)!;
+                              const isExpanded = expandedContracts.has(contract.id);
+                              const contractNum = contract.n_contrato || contract.id.replace('cont_', '');
+
+                              return (
+                                <React.Fragment key={contract.id}>
+                                  <tr 
+                                    className={`transition-colors cursor-pointer hover:bg-slate-50/80 ${
+                                      stats.needsAttention ? 'bg-amber-50/30' : ''
+                                    } ${isExpanded ? 'bg-slate-50' : ''}`}
+                                    onClick={() => toggleContract(contract.id)}
+                                  >
+                                    {/* Cliente / Contrato */}
+                                    <td className="py-3 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <ChevronDown
+                                          size={14}
+                                          className={`text-slate-400 transition-transform duration-150 shrink-0 ${isExpanded ? 'rotate-180 text-teal-600' : ''}`}
+                                        />
+                                        <div>
+                                          <div className="font-bold text-slate-800 text-xs hover:text-[#00B594] transition-colors">
+                                            {contract.cliente}
+                                          </div>
+                                          <div className="font-mono text-[10px] text-slate-500 font-bold">
+                                            Contrato #{contractNum}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    {/* Tipo de servicio */}
+                                    <td className="py-3 px-3">
+                                      <span className="inline-block max-w-[140px] truncate text-[10px] font-bold font-mono text-[#00B594] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded" title={contract.tipo_contrato || 'Mantenimiento'}>
+                                        {contract.tipo_contrato || 'Mantenimiento'}
+                                      </span>
+                                    </td>
+
+                                    {/* Vigencia + Mini Progress Bar */}
+                                    <td className="py-3 px-3">
+                                      {stats.hasDates ? (
+                                        <div className="w-36">
+                                          <div className="text-[10px] font-mono text-slate-700 font-bold">
+                                            {contract.fecha_inicio} - {contract.fecha_fin}
+                                          </div>
+                                          <div className="flex items-center gap-1.5 mt-1">
+                                            <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                              <div 
+                                                className={`h-full rounded-full ${
+                                                  stats.daysLeft <= 30 ? 'bg-rose-500' :
+                                                  stats.daysLeft <= 90 ? 'bg-amber-500' : 'bg-emerald-500'
+                                                }`}
+                                                style={{ width: `${stats.progressPct}%` }}
+                                              />
+                                            </div>
+                                            <span className={`text-[9px] font-mono font-bold shrink-0 ${
+                                              stats.nearExpiry ? 'text-rose-600' : 'text-slate-400'
+                                            }`}>
+                                              {stats.daysLeft > 0 ? `${stats.daysLeft}d` : 'Vencido'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <span className="text-[10px] font-mono text-slate-400 italic">S/D</span>
+                                      )}
+                                    </td>
+
+                                    {/* Equipos */}
+                                    <td className="py-3 px-3 text-center">
+                                      <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                                        {stats.totalEquipos} eq.
+                                      </span>
+                                    </td>
+
+                                    {/* Adendas */}
+                                    <td className="py-3 px-3 text-center">
+                                      {stats.adendas.length > 0 ? (
+                                        <span className="inline-flex items-center gap-1 font-mono font-black text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded text-[10px]">
+                                          <Plus size={10} /> {stats.adendas.length} adenda{stats.adendas.length > 1 ? 's' : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="font-mono text-[10px] text-slate-400">-</span>
+                                      )}
+                                    </td>
+
+                                    {/* Estado */}
+                                    <td className="py-3 px-3">
+                                      {stats.needsAttention ? (
+                                        <span className="inline-flex items-center gap-1 font-mono font-black text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px]">
+                                          <AlertTriangle size={10} /> {stats.pendientesCount} pendiente{stats.pendientesCount !== 1 ? 's' : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 font-mono font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px]">
+                                          <CheckCircle2 size={10} /> Al día
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Acciones */}
+                                    <td className="py-3 px-4 text-right" onClick={e => e.stopPropagation()}>
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={() => { setSelectedContractForEquipments(contract); setIsEquipmentsModalOpen(true); }}
+                                          className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                          title="Ver detalle e historial"
+                                        >
+                                          <Eye size={14} />
+                                        </button>
+                                        <button
+                                          onClick={() => { setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(null); setIsScheduleModalOpen(true); }}
+                                          className="flex items-center gap-1 px-2.5 py-1.5 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-lg text-[10px] font-black uppercase font-mono tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-emerald-500/10"
+                                        >
+                                          <CalendarIcon size={12} />
+                                          <span>Programar</span>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+
+                                  {/* Row Expansion (Accordion inline) */}
+                                  {isExpanded && (
+                                    <tr className="bg-slate-50/90 border-b border-slate-200">
+                                      <td colSpan={7} className="p-4">
+                                        <div className="space-y-4 max-w-5xl mx-auto">
+                                          {/* Equipos del contrato principal */}
+                                          <div>
+                                            <h5 className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                              <Cpu size={12} className="text-slate-400" />
+                                              <span>Equipos Contrato Principal ({(contract.equipos || []).length})</span>
+                                            </h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                              {(contract.equipos || []).map((eq: any) => (
+                                                <div key={eq.id} className="p-2.5 bg-white border border-slate-200 rounded-xl flex justify-between items-center text-[11px] shadow-xs">
+                                                  <div className="min-w-0">
+                                                    <span className="font-mono font-bold text-slate-800 block">{eq.codigo}</span>
+                                                    <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                                    <span className="text-[9px] text-slate-400 font-mono block mt-0.5">Ubicación: {eq.ubicacion || 'No especificada'}</span>
+                                                  </div>
+                                                  <span className="font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px] shrink-0 ml-2">
+                                                    {eq.potenciaKva} kVA
+                                                  </span>
+                                                </div>
+                                              ))}
+                                              {(contract.equipos || []).length === 0 && (
+                                                <p className="text-[11px] text-slate-400 italic col-span-full">No hay equipos asignados directamente al contrato principal.</p>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Adendas / Ampliaciones */}
+                                          {stats.adendas.length > 0 && (
+                                            <div className="border-t border-slate-200 pt-3 space-y-2">
+                                              <h5 className="text-[10px] font-black font-mono text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                <Plus size={12} className="text-teal-600" />
+                                                <span>Adendas / Ampliaciones ({stats.adendas.length})</span>
+                                              </h5>
+                                              <div className="space-y-2">
+                                                {stats.adendas.map((adenda: any) => {
+                                                  const adendaEquips = adenda.equiposAdenda
+                                                    ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
+                                                    : [];
+                                                  return (
+                                                    <div key={adenda.id} className="p-3 bg-teal-50/40 border border-teal-100 rounded-xl text-[11px] space-y-2">
+                                                      <div className="flex justify-between items-center">
+                                                        <div>
+                                                          <span className="font-mono font-black text-slate-800 bg-teal-100/80 px-2 py-0.5 rounded mr-2 border border-teal-200 text-[10px]">
+                                                            Adenda {adenda.codigo || adenda.id.replace('ad_', '')}
+                                                          </span>
+                                                          <span className="text-[9px] text-slate-500 font-mono">
+                                                            Vigencia: {adenda.fecha_inicio} al {adenda.fecha_fin}
+                                                          </span>
+                                                        </div>
+                                                        <button
+                                                          onClick={() => { setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(adenda); setIsScheduleModalOpen(true); }}
+                                                          className="flex items-center gap-1 px-2.5 py-1 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-md text-[9px] font-black uppercase font-mono tracking-wider transition-all active:scale-[0.98] cursor-pointer"
+                                                        >
+                                                          <CalendarIcon size={10} />
+                                                          <span>Programar Adenda</span>
+                                                        </button>
+                                                      </div>
+                                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        {adendaEquips.map((eq: any) => (
+                                                          <div key={eq.id} className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-[11px]">
+                                                            <div className="min-w-0">
+                                                              <span className="font-mono font-bold text-slate-700 block">{eq.codigo}</span>
+                                                              <span className="text-slate-500 truncate block">{eq.tipo} · {eq.marca} {eq.modelo}</span>
+                                                            </div>
+                                                            <span className="font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px] shrink-0 ml-2">
+                                                              {eq.potenciaKva} kVA
+                                                            </span>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          <div className="flex justify-end pt-1">
+                                            <button
+                                              onClick={() => { setSelectedContractForEquipments(contract); setIsEquipmentsModalOpen(true); }}
+                                              className="text-[10px] font-black text-teal-600 hover:text-teal-700 font-mono uppercase tracking-wider underline cursor-pointer"
+                                            >
+                                              Ver Historial Completo de Servicios
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Compact Cards View (<1024px) */}
+                      <div className="lg:hidden space-y-3">
+                        {displayList.map((contract: any) => {
+                          const stats = contractStats.find(s => s.id === contract.id)!;
+                          const isExpanded = expandedContracts.has(contract.id);
+
+                          return (
+                            <div 
+                              key={contract.id}
+                              className={`bg-white border rounded-xl p-4 shadow-sm space-y-3 ${
+                                stats.needsAttention ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
+                              }`}
+                            >
+                              {/* Header row */}
+                              <div className="flex justify-between items-start gap-2">
+                                <div>
+                                  <h4 className="font-bold text-slate-800 text-sm">{contract.cliente}</h4>
+                                  <span className="font-mono text-[10px] text-slate-500 font-bold">
+                                    Contrato #{contract.n_contrato || contract.id.replace('cont_', '')}
+                                  </span>
+                                </div>
+                                {stats.needsAttention ? (
+                                  <span className="font-mono font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full text-[10px]">
+                                    {stats.pendientesCount} pend.
+                                  </span>
+                                ) : (
+                                  <span className="font-mono font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px]">
+                                    Al día
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Info line */}
+                              <div className="flex items-center justify-between text-xs border-t border-slate-100 pt-2 font-mono">
+                                <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-bold">
+                                  {contract.tipo_contrato || 'Mantenimiento'}
+                                </span>
+                                <span className="text-[10px] text-slate-600 font-bold">
+                                  {stats.totalEquipos} eq. {stats.adendas.length > 0 && `· ${stats.adendas.length} adendas`}
+                                </span>
+                              </div>
+
+                              {/* Vigencia */}
+                              {stats.hasDates && (
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                                    <span>Vigencia</span>
+                                    <span className="font-bold text-slate-700">{contract.fecha_inicio} - {contract.fecha_fin}</span>
+                                  </div>
+                                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                    <div 
+                                      className={`h-full ${stats.daysLeft <= 30 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
+                                      style={{ width: `${stats.progressPct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex items-center justify-between pt-1 gap-2">
+                                <button
+                                  onClick={() => toggleContract(contract.id)}
+                                  className="text-[11px] text-slate-500 font-mono underline"
+                                >
+                                  {isExpanded ? 'Ocultar equipos' : 'Ver equipos'}
+                                </button>
+                                <button
+                                  onClick={() => { setSelectedContractForSchedule(contract); setSelectedAdendaForSchedule(null); setIsScheduleModalOpen(true); }}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-[#00B594] text-white rounded-lg text-[10px] font-black uppercase font-mono tracking-wider"
+                                >
+                                  <CalendarIcon size={12} />
+                                  <span>Programar</span>
+                                </button>
+                              </div>
+
+                              {/* Mobile expanded details */}
+                              {isExpanded && (
+                                <div className="border-t border-slate-200 pt-3 space-y-2 text-xs">
+                                  <h5 className="font-mono text-[10px] text-slate-400 uppercase font-bold">Equipos ({(contract.equipos || []).length}):</h5>
+                                  <div className="space-y-1">
+                                    {(contract.equipos || []).map((eq: any) => (
+                                      <div key={eq.id} className="p-2 bg-slate-50 rounded border border-slate-200 flex justify-between font-mono text-[11px]">
+                                        <span>{eq.codigo} ({eq.tipo})</span>
+                                        <span className="font-bold">{eq.potenciaKva} kVA</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Empty State */}
+                      {totalItems === 0 && (
+                        <div className="p-12 text-center bg-white border border-slate-200 rounded-xl">
+                          <Wrench size={32} className="mx-auto text-slate-300 mb-3" />
+                          <p className="text-slate-500 text-sm font-medium">
+                            {contractSearchQuery || contractFilterChip !== 'todos'
+                              ? 'No se encontraron contratos con los filtros aplicados.'
+                              : 'No hay contratos o adendas registradas.'}
+                          </p>
+                          {(contractSearchQuery || contractFilterChip !== 'todos') && (
+                            <button
+                              onClick={() => { setContractSearchQuery(''); setContractFilterChip('todos'); }}
+                              className="mt-3 text-xs font-mono font-bold text-[#00B594] underline cursor-pointer"
+                            >
+                              Limpiar filtros
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Footer & Pagination */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs font-mono text-slate-500">
+                        <div>
+                          Showing {displayList.length} of {totalItems} contracts
+                          {contractSortCol !== 'default' && (
+                            <span className="ml-2 text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600">
+                              Orden: {contractSortCol} ({contractSortDir})
+                              <button onClick={resetContractSort} className="ml-1 text-slate-400 hover:text-slate-600 font-bold">×</button>
+                            </span>
+                          )}
+                        </div>
+
+                        {usePagination && totalPages > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                              disabled={safePage === 1}
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-colors"
+                            >
+                              <ChevronLeft size={14} />
+                            </button>
+                            <span className="px-2 font-bold text-slate-700">
+                              {safePage} / {totalPages}
+                            </span>
+                            <button
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              disabled={safePage === totalPages}
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-colors"
+                            >
+                              <ChevronRight size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
