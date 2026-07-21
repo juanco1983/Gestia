@@ -1861,6 +1861,7 @@ export default function TechMonitoringDashboard({
           ots={ots}
           users={users}
           clients={clients}
+          otEquipoAsignaciones={otEquipoAsignaciones}
           onSave={onAddOT}
         />
       )}

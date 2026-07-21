@@ -11,6 +11,7 @@ interface ModalProgramarVisitaProps {
   ots: OT[];
   users: User[];
   clients: Client[];
+  otEquipoAsignaciones?: any[];
   onSave: (newOT: OT) => Promise<void>;
 }
 
@@ -22,6 +23,7 @@ export default function ModalProgramarVisita({
   ots,
   users,
   clients,
+  otEquipoAsignaciones = [],
   onSave
 }: ModalProgramarVisitaProps) {
   const technicians = useMemo(() => users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo'), [users]);
@@ -40,9 +42,9 @@ export default function ModalProgramarVisita({
     return contract.equipos || [];
   }, [contract, adenda]);
 
-  // Form states
   const [serviceType, setServiceType] = useState<ServiceType>(ServiceType.PREVENTIVO);
   const [selectedEquips, setSelectedEquips] = useState<Record<string, boolean>>({});
+  const [equipmentFilter, setEquipmentFilter] = useState<'todos' | 'pendientes' | 'programados'>('todos');
   const [fecha, setFecha] = useState(todayStr);
   const [horaInicio, setHoraInicio] = useState('09:00');
   const [horaFin, setHoraFin] = useState('12:00');
@@ -50,6 +52,36 @@ export default function ModalProgramarVisita({
   const [supportTechId, setSupportTechId] = useState('');
   const [additionalTechIds, setAdditionalTechIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Active OT detection per equipment
+  const equipmentOTMap = useMemo(() => {
+    const map: Record<string, { ot: OT; otCode: string; fecha: string } | null> = {};
+    equipments.forEach(eq => {
+      const activeOT = ots.find(ot => {
+        if (ot.estado === OTStatus.CERRADA) return false;
+        if (otEquipoAsignaciones && otEquipoAsignaciones.length > 0) {
+          const isAssigned = otEquipoAsignaciones.some((a: any) => a.otId === ot.id && a.equipoId === eq.id);
+          if (isAssigned) return true;
+        }
+        if (ot.equipoId) {
+          const ids = ot.equipoId.split(',').map((id: string) => id.trim());
+          if (ids.includes(eq.id)) return true;
+        }
+        return false;
+      });
+
+      if (activeOT) {
+        map[eq.id] = {
+          ot: activeOT,
+          otCode: activeOT.id.startsWith('ot_') ? activeOT.id.replace('ot_', 'OT-') : activeOT.id,
+          fecha: activeOT.fechaProgramada || 'Sin fecha'
+        };
+      } else {
+        map[eq.id] = null;
+      }
+    });
+    return map;
+  }, [equipments, ots, otEquipoAsignaciones]);
 
   // Calculate technician workload/schedule/geographic conflicts dynamically
   const conflicts = useMemo(() => {
@@ -112,14 +144,56 @@ export default function ModalProgramarVisita({
     }
   }, [contract]);
 
-  // Select all equipments by default
+  // Smart Default Pre-selection: Select ONLY pending equipments (without active OT)
   useEffect(() => {
+    if (!isOpen) return;
     const initial: Record<string, boolean> = {};
+    let pendingCount = 0;
+
     equipments.forEach(eq => {
-      initial[eq.id] = true;
+      const isScheduled = !!equipmentOTMap[eq.id];
+      if (!isScheduled) {
+        initial[eq.id] = true;
+        pendingCount++;
+      } else {
+        initial[eq.id] = false;
+      }
     });
+
+    // If ALL equipments are already scheduled, leave them unchecked so user can explicitly pick
+    if (pendingCount === 0 && equipments.length > 0) {
+      equipments.forEach(eq => {
+        initial[eq.id] = false;
+      });
+    }
+
     setSelectedEquips(initial);
-  }, [equipments]);
+    setEquipmentFilter('todos');
+  }, [equipments, equipmentOTMap, isOpen]);
+
+  const selectOnlyPendingEquips = () => {
+    const next: Record<string, boolean> = {};
+    equipments.forEach(eq => {
+      next[eq.id] = !equipmentOTMap[eq.id];
+    });
+    setSelectedEquips(next);
+  };
+
+  const selectAllEquips = () => {
+    const next: Record<string, boolean> = {};
+    equipments.forEach(eq => {
+      next[eq.id] = true;
+    });
+    setSelectedEquips(next);
+  };
+
+  const deselectAllEquips = () => {
+    const next: Record<string, boolean> = {};
+    equipments.forEach(eq => {
+      next[eq.id] = false;
+    });
+    setSelectedEquips(next);
+  };
 
   if (!isOpen) return null;
 
@@ -388,45 +462,142 @@ export default function ModalProgramarVisita({
 
           {/* STEP 2: SELECCIÓN DE EQUIPOS */}
           {step === 2 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150">
-              <div className="flex justify-between items-center">
-                <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 2: Selección de Equipos</h4>
-                <span className="text-[10px] font-mono font-bold text-slate-400">
-                  Seleccionados: {activeSelectedEquips.length} de {equipments.length}
+            <div className="space-y-4 animate-in fade-in-50 duration-150 text-left">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                  <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 2: Selección de Equipos</h4>
+                  <p className="text-xs text-slate-500">Selecciona las máquinas a las que se les creará una Orden de Trabajo (OT) técnica individual.</p>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded shrink-0">
+                  Seleccionados: <strong className="text-emerald-600">{activeSelectedEquips.length}</strong> de {equipments.length}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">Marca las máquinas a las que se les creará la OT técnica de forma individual.</p>
 
-              <div className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                {equipments.map(eq => (
-                  <div 
-                    key={eq.id}
-                    onClick={() => handleToggleEquip(eq.id)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-emerald-50/30 cursor-pointer select-none transition-colors"
+              {/* Action buttons & Filter Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div className="flex items-center gap-1.5 font-mono text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEquipmentFilter('todos')}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                      equipmentFilter === 'todos' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={!!selectedEquips[eq.id]}
-                      onChange={() => {}}
-                      className="h-4 w-4 rounded border-slate-300 bg-white text-emerald-500 focus:ring-emerald-500"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-mono text-xs font-bold text-slate-800 block">{eq.codigo}</span>
-                      <span className="text-[10px] text-slate-500 font-sans block truncate">
-                        {eq.tipo} · {eq.marca} {eq.modelo} ({eq.serie})
-                      </span>
-                    </div>
-                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono shrink-0">
-                      {eq.potenciaKva} kVA
-                    </span>
-                  </div>
-                ))}
+                    Todos ({equipments.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEquipmentFilter('pendientes')}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                      equipmentFilter === 'pendientes' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Pendientes ({equipments.filter(e => !equipmentOTMap[e.id]).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEquipmentFilter('programados')}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+                      equipmentFilter === 'programados' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Programados ({equipments.filter(e => !!equipmentOTMap[e.id]).length})
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                  <button
+                    type="button"
+                    onClick={selectOnlyPendingEquips}
+                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-md border border-amber-200 transition-colors cursor-pointer"
+                  >
+                    🎯 Solo Pendientes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={selectAllEquips}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md transition-colors cursor-pointer"
+                  >
+                    Marcar Todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deselectAllEquips}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-md transition-colors cursor-pointer"
+                  >
+                    Desmarcar
+                  </button>
+                </div>
+              </div>
+
+              {/* Equipment Checklist */}
+              <div className="border border-slate-200 bg-slate-50/50 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                {equipments
+                  .filter(eq => {
+                    const otInfo = equipmentOTMap[eq.id];
+                    if (equipmentFilter === 'pendientes') return !otInfo;
+                    if (equipmentFilter === 'programados') return !!otInfo;
+                    return true;
+                  })
+                  .map(eq => {
+                    const otInfo = equipmentOTMap[eq.id];
+                    const isChecked = !!selectedEquips[eq.id];
+
+                    return (
+                      <div 
+                        key={eq.id}
+                        onClick={() => handleToggleEquip(eq.id)}
+                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer select-none transition-colors ${
+                          isChecked ? 'bg-emerald-50/40' : 'hover:bg-slate-100/60'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-slate-300 bg-white text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-slate-800">{eq.codigo}</span>
+                            {otInfo ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                ✓ Programado ({otInfo.otCode} · {otInfo.fecha})
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                ⚠️ Pendiente de Visita
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-sans block truncate mt-0.5">
+                            {eq.tipo} · {eq.marca} {eq.modelo} ({eq.serie})
+                          </span>
+                        </div>
+                        <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono shrink-0">
+                          {eq.potenciaKva} kVA
+                        </span>
+                      </div>
+                    );
+                  })}
+
                 {equipments.length === 0 && (
                   <div className="p-8 text-center text-xs text-slate-400 italic bg-white">
                     No hay equipos configurados en este contrato o adenda.
                   </div>
                 )}
               </div>
+
+              {/* Duplicate OT Warning Notice */}
+              {activeSelectedEquips.some(eq => !!equipmentOTMap[eq.id]) && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2 font-sans">
+                  <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold mb-0.5">Atención con reprogramación:</strong>
+                    Has seleccionado uno o más equipos que ya cuentan con una Orden de Trabajo activa programada. Al continuar se creará una visita adicional para dichos equipos.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
