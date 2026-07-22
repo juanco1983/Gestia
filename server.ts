@@ -10,6 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import ubigeos from 'ubigeo-peru';
 
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
@@ -267,9 +268,64 @@ app.post("/api/logs", async (req, res) => {
   }
 });
 
+async function ensureUbigeoData() {
+  try {
+    const distCount = await prisma.distrito.count();
+    if (distCount < 100) {
+      console.log("Seeding ALL INEI Ubigeo data from ubigeo-peru package...");
+      await prisma.distrito.deleteMany({});
+      await prisma.provincia.deleteMany({});
+      await prisma.pais.deleteMany({});
+
+      const paisPER = await prisma.pais.upsert({
+        where: { id: 'PER' },
+        update: { nombre: 'Perú' },
+        create: { id: 'PER', nombre: 'Perú' }
+      });
+      await prisma.pais.upsert({ where: { id: 'CHL' }, update: { nombre: 'Chile' }, create: { id: 'CHL', nombre: 'Chile' } });
+      await prisma.pais.upsert({ where: { id: 'COL' }, update: { nombre: 'Colombia' }, create: { id: 'COL', nombre: 'Colombia' } });
+      await prisma.pais.upsert({ where: { id: 'MEX' }, update: { nombre: 'México' }, create: { id: 'MEX', nombre: 'México' } });
+
+      const data = (ubigeos as any).inei || (ubigeos as any).default?.inei || ubigeos;
+      if (Array.isArray(data)) {
+        const departamentos = data.filter((u: any) => u.provincia === '00' && u.distrito === '00');
+        const provincias = data.filter((u: any) => u.provincia !== '00' && u.distrito === '00');
+        const distritos = data.filter((u: any) => u.provincia !== '00' && u.distrito !== '00');
+
+        for (const prov of provincias) {
+          const provId = `${prov.departamento}${prov.provincia}`;
+          const dep = departamentos.find((d: any) => d.departamento === prov.departamento);
+          const nombreStr = dep ? `${prov.nombre} (${dep.nombre})` : prov.nombre;
+          await prisma.provincia.upsert({
+            where: { id: provId },
+            update: { nombre: nombreStr, paisId: paisPER.id },
+            create: { id: provId, nombre: nombreStr, paisId: paisPER.id }
+          });
+        }
+
+        for (const dist of distritos) {
+          const provId = `${dist.departamento}${dist.provincia}`;
+          const distId = `${dist.departamento}${dist.provincia}${dist.distrito}`;
+          await prisma.distrito.upsert({
+            where: { id: distId },
+            update: { nombre: dist.nombre, provinciaId: provId },
+            create: { id: distId, nombre: dist.nombre, provinciaId: provId }
+          });
+        }
+
+        console.log(`Successfully seeded ${provincias.length} provinces and ${distritos.length} districts!`);
+      }
+    }
+  } catch (err) {
+    console.error("Error ensuring ubigeo data:", err);
+  }
+}
+
 app.get("/api/ubigeo/paises", async (req, res) => {
   try {
-    res.json(await prisma.pais.findMany({ orderBy: { nombre: 'asc' } }));
+    await ensureUbigeoData();
+    let paises = await prisma.pais.findMany({ orderBy: { nombre: 'asc' } });
+    res.json(paises);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -277,9 +333,11 @@ app.get("/api/ubigeo/paises", async (req, res) => {
 
 app.get("/api/ubigeo/provincias", async (req, res) => {
   try {
+    await ensureUbigeoData();
     const { paisId } = req.query;
     const whereClause = paisId ? { paisId: String(paisId) } : {};
-    res.json(await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+    let provincias = await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
+    res.json(provincias);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -287,9 +345,11 @@ app.get("/api/ubigeo/provincias", async (req, res) => {
 
 app.get("/api/ubigeo/distritos", async (req, res) => {
   try {
+    await ensureUbigeoData();
     const { provinciaId } = req.query;
     const whereClause = provinciaId ? { provinciaId: String(provinciaId) } : {};
-    res.json(await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+    let distritos = await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
+    res.json(distritos);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
