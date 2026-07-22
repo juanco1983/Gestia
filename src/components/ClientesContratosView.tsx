@@ -200,29 +200,30 @@ export default function ClientesContratosView({
       .catch(() => setPaises(DEFAULT_PAISES));
   }, []);
 
+  const activePais = showClientModal ? clientForm.pais : showEditClientModal ? editClientForm.pais : (clientForm.pais || editClientForm.pais);
+  const activeProv = showClientModal ? clientForm.provincia : showEditClientModal ? editClientForm.provincia : (clientForm.provincia || editClientForm.provincia);
+
   useEffect(() => {
-    const activePais = showClientModal ? clientForm.pais : editClientForm.pais;
     if (activePais) {
       fetch(`/api/ubigeo/provincias?paisId=${activePais}`)
         .then(r => r.json())
-        .then(data => setProvincias(Array.isArray(data) && data.length > 0 ? data : DEFAULT_PROVINCIAS))
-        .catch(() => setProvincias(DEFAULT_PROVINCIAS));
+        .then(data => setProvincias(Array.isArray(data) ? data : []))
+        .catch(console.error);
     } else {
-      setProvincias(DEFAULT_PROVINCIAS);
+      setProvincias([]);
     }
-  }, [clientForm.pais, editClientForm.pais, showClientModal]);
+  }, [activePais]);
 
   useEffect(() => {
-    const activeProv = showClientModal ? clientForm.provincia : editClientForm.provincia;
     if (activeProv) {
       fetch(`/api/ubigeo/distritos?provinciaId=${activeProv}`)
         .then(r => r.json())
-        .then(data => setDistritos(Array.isArray(data) && data.length > 0 ? data : DEFAULT_DISTRITOS))
-        .catch(() => setDistritos(DEFAULT_DISTRITOS));
+        .then(data => setDistritos(Array.isArray(data) ? data : []))
+        .catch(console.error);
     } else {
-      setDistritos(DEFAULT_DISTRITOS);
+      setDistritos([]);
     }
-  }, [clientForm.provincia, editClientForm.provincia, showClientModal]);
+  }, [activeProv]);
 
   // Contrato form state
   const [contratoForm, setContratoForm] = useState({
