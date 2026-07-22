@@ -200,8 +200,8 @@ export default function ClientesContratosView({
       .catch(() => setPaises(DEFAULT_PAISES));
   }, []);
 
-  const activePais = showClientModal ? clientForm.pais : showEditClientModal ? editClientForm.pais : (clientForm.pais || editClientForm.pais);
-  const activeProv = showClientModal ? clientForm.provincia : showEditClientModal ? editClientForm.provincia : (clientForm.provincia || editClientForm.provincia);
+  const activePais = clientForm.pais || editClientForm.pais;
+  const activeProv = clientForm.provincia || editClientForm.provincia;
 
   useEffect(() => {
     if (activePais) {
