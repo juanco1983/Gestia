@@ -56,6 +56,8 @@ export default function ModalEditarLinea({
     return () => { if (el) el.style.overflow = ''; };
   }, []);
 
+  const isReadOnly = editingLine.estado === 'FACTURADO' || (editingLine.estado as string) === 'COMPLETADO';
+
   return (
     <>
     <div className="fixed inset-0 z-[80] bg-slate-900/40 backdrop-blur-sm" />
@@ -63,8 +65,13 @@ export default function ModalEditarLinea({
       <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
           <div>
-            <h3 className="font-black text-slate-800 text-sm">
-              Editar Línea de OT {editingLine.ot}
+            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+              <span>Editar Línea de OT {editingLine.ot}</span>
+              {isReadOnly && (
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">
+                  🔒 Completada (Solo Lectura)
+                </span>
+              )}
             </h3>
             <span className="text-[10px] font-bold text-slate-450 font-mono">Cliente: {editingLine.razon_social}</span>
           </div>
@@ -78,8 +85,17 @@ export default function ModalEditarLinea({
 
         <form onSubmit={handleEditLineSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-left text-xs font-sans">
           
+          {isReadOnly && (
+            <div className="bg-emerald-50 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center gap-3 text-emerald-900 text-xs font-semibold">
+              <CheckCircle2 size={18} className="text-[#00B594] shrink-0" />
+              <span>
+                <strong>Línea Completada y Facturada:</strong> Esta orden de trabajo ha cerrado su ciclo operativo-financiero y se encuentra bloqueada para modificaciones.
+              </span>
+            </div>
+          )}
+
           {/* SECCIÓN 1: DATOS ESPECÍFICOS DE LA CUOTA / LÍNEA */}
-          <div className="space-y-3">
+          <fieldset disabled={isReadOnly} className="space-y-3 disabled:opacity-80">
             <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-450 font-mono border-b border-slate-100 pb-1">
               Datos de la Línea / Cuota
             </h4>
@@ -267,7 +283,7 @@ export default function ModalEditarLinea({
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
               />
             </div>
-          </div>
+          </fieldset>
 
           {/* SECCIÓN 2: DATOS DEL ACUERDO MARCO PADRE (ACORDEÓN EXTENSIBLE) */}
           <div className="border-t border-slate-200 pt-3">
@@ -404,14 +420,16 @@ export default function ModalEditarLinea({
               onClick={onClose}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
             >
-              Cancelar
+              {isReadOnly ? 'Cerrar' : 'Cancelar'}
             </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
-            >
-              Guardar Cambios
-            </button>
+            {!isReadOnly && (
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
+              >
+                Guardar Cambios
+              </button>
+            )}
           </div>
 
         </form>

@@ -475,9 +475,23 @@ export default function TablaOrdenesTrabajo({
                   const absoluteProgMonth = getAbsoluteMonth(line.anio_prog_facturacion, line.mes_prog_facturacion);
                   const isOverdue = line.estado === 'POR FACTURAR' && absoluteProgMonth < currentAbsoluteMonth;
                   
-                  // Match with operational technical OT
+                  // Match with operational technical OT and report
                   const matchingOt = ots?.find(o => o.otFinancieraId === line.id || o.id === `OT-${line.ot}` || String(o.id).replace('OT-', '') === String(line.ot));
                   const report = matchingOt ? reports?.find(r => r.otId === matchingOt.id) : null;
+
+                  // Gating: Only allow PDF/Report viewer if report is Approved by Supervisor
+                  const isReportApproved = matchingOt && (
+                    matchingOt.estado === 'Aprobada' || 
+                    matchingOt.estado === 'Firmada' || 
+                    matchingOt.estado === 'Facturada' || 
+                    matchingOt.estado === 'Cerrada' ||
+                    (matchingOt.estado as string) === 'APROBADA' ||
+                    (matchingOt.estado as string) === 'FIRMADA' ||
+                    (matchingOt.estado as string) === 'FACTURADA' ||
+                    (matchingOt.estado as string) === 'CERRADA'
+                  );
+
+                  const isCompletada = line.estado === 'FACTURADO' || (line.estado as string) === 'COMPLETADO';
 
                   return (
                     <tr key={line.id} className={`hover:bg-slate-50/50 transition-colors ${isOverdue ? 'bg-rose-50/25' : ''}`}>
@@ -524,13 +538,14 @@ export default function TablaOrdenesTrabajo({
                         )}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
-                          line.estado === 'FACTURADO'
-                            ? 'bg-[#E6F7F4] text-[#00B594]'
+                        <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase flex items-center gap-1 w-max ${
+                          isCompletada
+                            ? 'bg-[#E6F7F4] text-[#00B594] border border-emerald-200'
                             : line.estado === 'POR FACTURAR'
-                            ? 'bg-amber-100 text-amber-700'
+                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
                             : 'bg-rose-100 text-rose-700'
                         }`}>
+                          {isCompletada && <span className="text-[8px]">🔒</span>}
                           {line.estado}
                         </span>
                       </td>
@@ -547,24 +562,40 @@ export default function TablaOrdenesTrabajo({
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-center gap-1.5">
-                          {report && (
+                          {/* Approved Report / PDF Viewer Button (Gated) */}
+                          {report && isReportApproved ? (
                             <button
                               onClick={() => setSelectedPreviewOt(matchingOt || null)}
-                              className="p-1 bg-emerald-50 border border-emerald-150 rounded-md hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 cursor-pointer flex items-center gap-1 transition-colors"
-                              title="Visualizar informe técnico aprobado por supervisor"
+                              className="p-1 px-2 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 cursor-pointer flex items-center gap-1 transition-colors"
+                              title="Visualizar e imprimir informe técnico aprobado por supervisor"
                             >
-                              <Eye size={13} />
-                              <span className="text-[9px] font-extrabold font-mono uppercase pr-0.5">Informe</span>
+                              <FileText size={13} />
+                              <span className="text-[9px] font-extrabold font-mono uppercase">Informe PDF</span>
                             </button>
-                          )}
+                          ) : report ? (
+                            <span 
+                              className="px-2 py-1 rounded-md text-[9px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200 shrink-0 cursor-help"
+                              title="El informe técnico aún no ha sido aprobado por el supervisor. El PDF estará disponible tras la aprobación."
+                            >
+                              ⏳ En Revisión
+                            </span>
+                          ) : null}
+
+                          {/* Edit / View Detail Button */}
                           <button
                             onClick={() => onEditClick(line)}
-                            className="p-1 bg-slate-50 border border-slate-150 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
-                            title="Editar cuota"
+                            className={`p-1 border rounded-md cursor-pointer text-[10px] font-extrabold font-mono uppercase px-2 py-1 transition-colors flex items-center gap-1 ${
+                              isCompletada
+                                ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                : 'bg-slate-50 border-slate-150 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                            }`}
+                            title={isCompletada ? "Ver detalles de cuota completada (Solo Lectura)" : "Editar cuota"}
                           >
-                            Editar
+                            {isCompletada ? <Eye size={12} /> : null}
+                            <span>{isCompletada ? 'Ver' : 'Editar'}</span>
                           </button>
-                          {onAssignTechClick && (
+
+                          {onAssignTechClick && !isCompletada && (
                             <button
                               onClick={() => onAssignTechClick(line)}
                               className="p-1 bg-[#E6F7F4] border border-emerald-100 rounded-md hover:bg-emerald-100 text-[#00B594] cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
@@ -585,7 +616,7 @@ export default function TablaOrdenesTrabajo({
                               </span>
                             )}
                           </button>
-                          {line.estado !== 'ANULADO' && (
+                          {line.estado !== 'ANULADO' && !isCompletada && (
                             <button
                               onClick={() => onCancelClick(line)}
                               className="p-1 bg-rose-50 border border-rose-100 rounded-md hover:bg-rose-100 text-rose-600 cursor-pointer transition-colors"
