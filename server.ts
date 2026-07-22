@@ -10,6 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import ubigeos from 'ubigeo-peru';
 
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
@@ -269,10 +270,14 @@ app.post("/api/logs", async (req, res) => {
 
 async function ensureUbigeoData() {
   try {
-    const count = await prisma.pais.count();
-    if (count === 0) {
-      console.log("Seeding default Ubigeo data...");
-      const per = await prisma.pais.upsert({
+    const distCount = await prisma.distrito.count();
+    if (distCount < 100) {
+      console.log("Seeding ALL INEI Ubigeo data from ubigeo-peru package...");
+      await prisma.distrito.deleteMany({});
+      await prisma.provincia.deleteMany({});
+      await prisma.pais.deleteMany({});
+
+      const paisPER = await prisma.pais.upsert({
         where: { id: 'PER' },
         update: { nombre: 'Perú' },
         create: { id: 'PER', nombre: 'Perú' }
@@ -281,57 +286,34 @@ async function ensureUbigeoData() {
       await prisma.pais.upsert({ where: { id: 'COL' }, update: { nombre: 'Colombia' }, create: { id: 'COL', nombre: 'Colombia' } });
       await prisma.pais.upsert({ where: { id: 'MEX' }, update: { nombre: 'México' }, create: { id: 'MEX', nombre: 'México' } });
 
-      const provLima = await prisma.provincia.upsert({
-        where: { id: '1501' },
-        update: { nombre: 'Lima', paisId: per.id },
-        create: { id: '1501', nombre: 'Lima', paisId: per.id }
-      });
-      const provCallao = await prisma.provincia.upsert({
-        where: { id: '0701' },
-        update: { nombre: 'Callao', paisId: per.id },
-        create: { id: '0701', nombre: 'Callao', paisId: per.id }
-      });
-      await prisma.provincia.upsert({ where: { id: '0401' }, update: { nombre: 'Arequipa', paisId: per.id }, create: { id: '0401', nombre: 'Arequipa', paisId: per.id } });
-      await prisma.provincia.upsert({ where: { id: '1301' }, update: { nombre: 'Trujillo', paisId: per.id }, create: { id: '1301', nombre: 'Trujillo', paisId: per.id } });
+      const data = (ubigeos as any).inei || (ubigeos as any).default?.inei || ubigeos;
+      if (Array.isArray(data)) {
+        const departamentos = data.filter((u: any) => u.provincia === '00' && u.distrito === '00');
+        const provincias = data.filter((u: any) => u.provincia !== '00' && u.distrito === '00');
+        const distritos = data.filter((u: any) => u.provincia !== '00' && u.distrito !== '00');
 
-      const distritosLima = [
-        { id: '150101', nombre: 'Lima Cercado' },
-        { id: '150103', nombre: 'Ate' },
-        { id: '150140', nombre: 'Santiago de Surco' },
-        { id: '150115', nombre: 'La Victoria' },
-        { id: '150131', nombre: 'San Isidro' },
-        { id: '150122', nombre: 'Miraflores' },
-        { id: '150130', nombre: 'San Borja' },
-        { id: '150116', nombre: 'Lince' },
-        { id: '150121', nombre: 'Magdalena del Mar' },
-        { id: '150136', nombre: 'San Miguel' },
-        { id: '150117', nombre: 'Los Olivos' },
-        { id: '150108', nombre: 'Chorrillos' },
-        { id: '150128', nombre: 'Pueblo Libre' }
-      ];
+        for (const prov of provincias) {
+          const provId = `${prov.departamento}${prov.provincia}`;
+          const dep = departamentos.find((d: any) => d.departamento === prov.departamento);
+          const nombreStr = dep ? `${prov.nombre} (${dep.nombre})` : prov.nombre;
+          await prisma.provincia.upsert({
+            where: { id: provId },
+            update: { nombre: nombreStr, paisId: paisPER.id },
+            create: { id: provId, nombre: nombreStr, paisId: paisPER.id }
+          });
+        }
 
-      for (const d of distritosLima) {
-        await prisma.distrito.upsert({
-          where: { id: d.id },
-          update: { nombre: d.nombre, provinciaId: provLima.id },
-          create: { id: d.id, nombre: d.nombre, provinciaId: provLima.id }
-        });
-      }
+        for (const dist of distritos) {
+          const provId = `${dist.departamento}${dist.provincia}`;
+          const distId = `${dist.departamento}${dist.provincia}${dist.distrito}`;
+          await prisma.distrito.upsert({
+            where: { id: distId },
+            update: { nombre: dist.nombre, provinciaId: provId },
+            create: { id: distId, nombre: dist.nombre, provinciaId: provId }
+          });
+        }
 
-      const distritosCallao = [
-        { id: '070101', nombre: 'Callao' },
-        { id: '070102', nombre: 'Bellavista' },
-        { id: '070103', nombre: 'Carmen de la Legua' },
-        { id: '070104', nombre: 'La Perla' },
-        { id: '070106', nombre: 'Ventanilla' }
-      ];
-
-      for (const d of distritosCallao) {
-        await prisma.distrito.upsert({
-          where: { id: d.id },
-          update: { nombre: d.nombre, provinciaId: provCallao.id },
-          create: { id: d.id, nombre: d.nombre, provinciaId: provCallao.id }
-        });
+        console.log(`Successfully seeded ${provincias.length} provinces and ${distritos.length} districts!`);
       }
     }
   } catch (err) {
