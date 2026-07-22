@@ -267,9 +267,83 @@ app.post("/api/logs", async (req, res) => {
   }
 });
 
+async function ensureUbigeoData() {
+  try {
+    const count = await prisma.pais.count();
+    if (count === 0) {
+      console.log("Seeding default Ubigeo data...");
+      const per = await prisma.pais.upsert({
+        where: { id: 'PER' },
+        update: { nombre: 'Perú' },
+        create: { id: 'PER', nombre: 'Perú' }
+      });
+      await prisma.pais.upsert({ where: { id: 'CHL' }, update: { nombre: 'Chile' }, create: { id: 'CHL', nombre: 'Chile' } });
+      await prisma.pais.upsert({ where: { id: 'COL' }, update: { nombre: 'Colombia' }, create: { id: 'COL', nombre: 'Colombia' } });
+      await prisma.pais.upsert({ where: { id: 'MEX' }, update: { nombre: 'México' }, create: { id: 'MEX', nombre: 'México' } });
+
+      const provLima = await prisma.provincia.upsert({
+        where: { id: '1501' },
+        update: { nombre: 'Lima', paisId: per.id },
+        create: { id: '1501', nombre: 'Lima', paisId: per.id }
+      });
+      const provCallao = await prisma.provincia.upsert({
+        where: { id: '0701' },
+        update: { nombre: 'Callao', paisId: per.id },
+        create: { id: '0701', nombre: 'Callao', paisId: per.id }
+      });
+      await prisma.provincia.upsert({ where: { id: '0401' }, update: { nombre: 'Arequipa', paisId: per.id }, create: { id: '0401', nombre: 'Arequipa', paisId: per.id } });
+      await prisma.provincia.upsert({ where: { id: '1301' }, update: { nombre: 'Trujillo', paisId: per.id }, create: { id: '1301', nombre: 'Trujillo', paisId: per.id } });
+
+      const distritosLima = [
+        { id: '150101', nombre: 'Lima Cercado' },
+        { id: '150103', nombre: 'Ate' },
+        { id: '150140', nombre: 'Santiago de Surco' },
+        { id: '150115', nombre: 'La Victoria' },
+        { id: '150131', nombre: 'San Isidro' },
+        { id: '150122', nombre: 'Miraflores' },
+        { id: '150130', nombre: 'San Borja' },
+        { id: '150116', nombre: 'Lince' },
+        { id: '150121', nombre: 'Magdalena del Mar' },
+        { id: '150136', nombre: 'San Miguel' },
+        { id: '150117', nombre: 'Los Olivos' },
+        { id: '150108', nombre: 'Chorrillos' },
+        { id: '150128', nombre: 'Pueblo Libre' }
+      ];
+
+      for (const d of distritosLima) {
+        await prisma.distrito.upsert({
+          where: { id: d.id },
+          update: { nombre: d.nombre, provinciaId: provLima.id },
+          create: { id: d.id, nombre: d.nombre, provinciaId: provLima.id }
+        });
+      }
+
+      const distritosCallao = [
+        { id: '070101', nombre: 'Callao' },
+        { id: '070102', nombre: 'Bellavista' },
+        { id: '070103', nombre: 'Carmen de la Legua' },
+        { id: '070104', nombre: 'La Perla' },
+        { id: '070106', nombre: 'Ventanilla' }
+      ];
+
+      for (const d of distritosCallao) {
+        await prisma.distrito.upsert({
+          where: { id: d.id },
+          update: { nombre: d.nombre, provinciaId: provCallao.id },
+          create: { id: d.id, nombre: d.nombre, provinciaId: provCallao.id }
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error ensuring ubigeo data:", err);
+  }
+}
+
 app.get("/api/ubigeo/paises", async (req, res) => {
   try {
-    res.json(await prisma.pais.findMany({ orderBy: { nombre: 'asc' } }));
+    await ensureUbigeoData();
+    let paises = await prisma.pais.findMany({ orderBy: { nombre: 'asc' } });
+    res.json(paises);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -277,9 +351,11 @@ app.get("/api/ubigeo/paises", async (req, res) => {
 
 app.get("/api/ubigeo/provincias", async (req, res) => {
   try {
+    await ensureUbigeoData();
     const { paisId } = req.query;
     const whereClause = paisId ? { paisId: String(paisId) } : {};
-    res.json(await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+    let provincias = await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
+    res.json(provincias);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -287,9 +363,11 @@ app.get("/api/ubigeo/provincias", async (req, res) => {
 
 app.get("/api/ubigeo/distritos", async (req, res) => {
   try {
+    await ensureUbigeoData();
     const { provinciaId } = req.query;
     const whereClause = provinciaId ? { provinciaId: String(provinciaId) } : {};
-    res.json(await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } }));
+    let distritos = await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
+    res.json(distritos);
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }

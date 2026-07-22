@@ -23,6 +23,39 @@ import EquipoPickerModal from './EquipoPickerModal';
 import EquipoDetailDrawer from './EquipoDetailDrawer';
 import DocumentFormat from './DocumentFormat';
 
+const DEFAULT_PAISES = [
+  { id: 'PER', nombre: 'Perú' },
+  { id: 'CHL', nombre: 'Chile' },
+  { id: 'COL', nombre: 'Colombia' },
+  { id: 'MEX', nombre: 'México' }
+];
+
+const DEFAULT_PROVINCIAS = [
+  { id: '1501', nombre: 'Lima', paisId: 'PER' },
+  { id: '0701', nombre: 'Callao', paisId: 'PER' },
+  { id: '0401', nombre: 'Arequipa', paisId: 'PER' },
+  { id: '1301', nombre: 'Trujillo', paisId: 'PER' }
+];
+
+const DEFAULT_DISTRITOS = [
+  { id: '150101', nombre: 'Lima Cercado', provinciaId: '1501' },
+  { id: '150103', nombre: 'Ate', provinciaId: '1501' },
+  { id: '150140', nombre: 'Santiago de Surco', provinciaId: '1501' },
+  { id: '150115', nombre: 'La Victoria', provinciaId: '1501' },
+  { id: '150131', nombre: 'San Isidro', provinciaId: '1501' },
+  { id: '150122', nombre: 'Miraflores', provinciaId: '1501' },
+  { id: '150130', nombre: 'San Borja', provinciaId: '1501' },
+  { id: '150116', nombre: 'Lince', provinciaId: '1501' },
+  { id: '150121', nombre: 'Magdalena del Mar', provinciaId: '1501' },
+  { id: '150136', nombre: 'San Miguel', provinciaId: '1501' },
+  { id: '150117', nombre: 'Los Olivos', provinciaId: '1501' },
+  { id: '150108', nombre: 'Chorrillos', provinciaId: '1501' },
+  { id: '150128', nombre: 'Pueblo Libre', provinciaId: '1501' },
+  { id: '070101', nombre: 'Callao', provinciaId: '0701' },
+  { id: '070102', nombre: 'Bellavista', provinciaId: '0701' },
+  { id: '070104', nombre: 'La Perla', provinciaId: '0701' }
+];
+
 interface ClientesContratosViewProps {
   clients: Client[];
   contratos: Contrato[];
@@ -163,8 +196,8 @@ export default function ClientesContratosView({
   useEffect(() => {
     fetch('/api/ubigeo/paises')
       .then(r => r.json())
-      .then(data => setPaises(data || []))
-      .catch(console.error);
+      .then(data => setPaises(Array.isArray(data) && data.length > 0 ? data : DEFAULT_PAISES))
+      .catch(() => setPaises(DEFAULT_PAISES));
   }, []);
 
   useEffect(() => {
@@ -172,10 +205,10 @@ export default function ClientesContratosView({
     if (activePais) {
       fetch(`/api/ubigeo/provincias?paisId=${activePais}`)
         .then(r => r.json())
-        .then(data => setProvincias(data || []))
-        .catch(console.error);
+        .then(data => setProvincias(Array.isArray(data) && data.length > 0 ? data : DEFAULT_PROVINCIAS))
+        .catch(() => setProvincias(DEFAULT_PROVINCIAS));
     } else {
-      setProvincias([]);
+      setProvincias(DEFAULT_PROVINCIAS);
     }
   }, [clientForm.pais, editClientForm.pais, showClientModal]);
 
@@ -184,10 +217,10 @@ export default function ClientesContratosView({
     if (activeProv) {
       fetch(`/api/ubigeo/distritos?provinciaId=${activeProv}`)
         .then(r => r.json())
-        .then(data => setDistritos(data || []))
-        .catch(console.error);
+        .then(data => setDistritos(Array.isArray(data) && data.length > 0 ? data : DEFAULT_DISTRITOS))
+        .catch(() => setDistritos(DEFAULT_DISTRITOS));
     } else {
-      setDistritos([]);
+      setDistritos(DEFAULT_DISTRITOS);
     }
   }, [clientForm.provincia, editClientForm.provincia, showClientModal]);
 
