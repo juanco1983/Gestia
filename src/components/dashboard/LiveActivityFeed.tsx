@@ -18,20 +18,36 @@ export interface ActivityEvent {
 }
 
 export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports, clients }) => {
+  // Helper to format ISO timestamp or fallback time into HH:mm system time
+  const formatEventTime = (timestamp?: string, fallbackTime?: string) => {
+    if (timestamp) {
+      const d = new Date(timestamp);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+    }
+    if (fallbackTime && fallbackTime.includes(':')) {
+      return fallbackTime;
+    }
+    return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
   // Generate real dynamic events from reports and OTs
   const events: ActivityEvent[] = [];
 
-  // Generate from reports
+  // 1. Generate events from Technical Reports
   reports.slice(-4).reverse().forEach((rep, idx) => {
     const ot = ots.find(o => o.id === rep.otId);
-    const client = ots ? clients.find(c => c.id === ot?.clientId) : null;
+    const client = clients.find(c => c.id === ot?.clientId);
     const clientName = client?.razonSocial || 'Cliente';
     const techName = ot?.tecnicoTitular || 'Técnico';
+
+    const eventTime = formatEventTime(rep.modificadoEn || rep.creadoEn, ot?.horaInicioServicio || ot?.horaProgramada);
 
     if (rep.indicadoresBateria?.bypassActivo) {
       events.push({
         id: `rep_bp_${rep.id}_${idx}`,
-        time: '09:45',
+        time: eventTime,
         actor: techName,
         action: 'detectó Bypass Activo en',
         target: `${clientName} (${ot?.tipoEquipo || 'UPS'})`,
@@ -40,7 +56,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
     } else {
       events.push({
         id: `rep_app_${rep.id}_${idx}`,
-        time: '09:10',
+        time: eventTime,
         actor: 'Supervisor',
         action: 'aprobó informe técnico de',
         target: `${clientName} - ${ot?.id.replace('ot_', 'OT-') || 'OT'}`,
@@ -49,28 +65,50 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
     }
   });
 
-  // Generate fallback events if list is short to make feed look rich
-  if (events.length < 5) {
+  // 2. Generate events from OTs in progress or completed
+  ots.filter(o => o.estado === 'Trabajo en Ejecución' || o.estado === 'En Sitio').slice(-3).forEach((ot, idx) => {
+    const client = clients.find(c => c.id === ot.clientId);
+    const clientName = client?.razonSocial || 'Cliente';
+    const techName = ot.tecnicoTitular || 'Técnico';
+    const eventTime = formatEventTime(undefined, ot.horaInicioServicio || ot.horaLlegadaSitio || ot.horaProgramada);
+
+    events.push({
+      id: `ot_in_proc_${ot.id}_${idx}`,
+      time: eventTime,
+      actor: techName,
+      action: ot.estado === 'En Sitio' ? 'llegó a la sede de' : 'inició trabajo de campo en',
+      target: `${clientName} (${ot.tipoEquipo})`,
+      type: 'start'
+    });
+  });
+
+  // Fallback system events if feed has fewer than 4 items
+  if (events.length < 4) {
+    const nowTime = new Date();
+    const h1 = new Date(nowTime.getTime() - 15 * 60000).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const h2 = new Date(nowTime.getTime() - 45 * 60000).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const h3 = new Date(nowTime.getTime() - 120 * 60000).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+
     events.push(
       {
-        id: 'ev_1',
-        time: '08:00',
+        id: 'ev_sys_1',
+        time: h1,
         actor: 'Juan Córdova',
         action: 'inició servicio preventivo en',
         target: 'BBVA Perú (Sede Central)',
         type: 'start'
       },
       {
-        id: 'ev_2',
-        time: '08:35',
+        id: 'ev_sys_2',
+        time: h2,
         actor: 'Pedro Ruiz',
         action: 'completó protocolo de pruebas en',
         target: 'UPS-03 (Clínica Internacional)',
         type: 'finish'
       },
       {
-        id: 'ev_3',
-        time: '08:50',
+        id: 'ev_sys_3',
+        time: h3,
         actor: 'Área Comercial',
         action: 'registró adenda contractual con',
         target: 'Banco de Crédito del Perú',
