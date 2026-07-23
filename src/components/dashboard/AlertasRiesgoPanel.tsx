@@ -186,6 +186,16 @@ export const AlertasRiesgoPanel: React.FC<AlertasRiesgoPanelProps> = ({
           })}
         </div>
       )}
+
+      <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
+        <button
+          onClick={() => onNavigateToTab?.('Supervisor')}
+          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <span>Ver todas las alertas</span>
+          <span>→</span>
+        </button>
+      </div>
     </div>
   );
 };

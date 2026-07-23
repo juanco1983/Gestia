@@ -1,11 +1,12 @@
 import React from 'react';
 import { OT, TechnicalReport, Client } from '../../types';
-import { Play, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Activity } from 'lucide-react';
+import { Play, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Activity, ChevronRight } from 'lucide-react';
 
 interface LiveActivityFeedProps {
   ots: OT[];
   reports: TechnicalReport[];
   clients: Client[];
+  onNavigateToTab?: (tabId: string) => void;
 }
 
 export interface ActivityEvent {
@@ -17,7 +18,7 @@ export interface ActivityEvent {
   type: 'start' | 'finish' | 'approve' | 'alert' | 'contract';
 }
 
-export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports, clients }) => {
+export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports, clients, onNavigateToTab }) => {
   // Smart date formatter: Distinguishes 'Hoy', 'Ayer', or specific date + time
   const formatEventTime = (timestamp?: string, fallbackTime?: string) => {
     if (timestamp) {
@@ -187,6 +188,16 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
             </div>
           );
         })}
+      </div>
+
+      <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
+        <button
+          onClick={() => onNavigateToTab?.('Supervisor')}
+          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <span>Ver todas las actividades</span>
+          <span>→</span>
+        </button>
       </div>
     </div>
   );

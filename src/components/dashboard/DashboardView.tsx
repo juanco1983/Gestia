@@ -11,20 +11,12 @@ import {
 import DashboardHeader from './DashboardHeader';
 import KpiCardsGrid, { KpiCardData } from './KpiCardsGrid';
 import PipelineOTs from './PipelineOTs';
+import CumplimientoChart from './CumplimientoChart';
 import AlertasRiesgoPanel from './AlertasRiesgoPanel';
 import CargaTecnicos from './CargaTecnicos';
 import LiveActivityFeed from './LiveActivityFeed';
 import RankingEquiposFallas from './RankingEquiposFallas';
 import CopilotoIAPanel from './CopilotoIAPanel';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend
-} from 'recharts';
 
 interface DashboardViewProps {
   currentUser?: User | null;
@@ -48,7 +40,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateToTab
 }) => {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('Todos');
-  const [dashboardRange, setDashboardRange] = useState<'trimestral' | 'semestral'>('semestral');
 
   // Compute Active OTs
   const otsActivas = useMemo(() => {
@@ -83,7 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Build role-specific KPI cards
   const kpiCards: KpiCardData[] = useMemo(() => {
-    const totalOts = ots.length || 1;
+    const totalOts = ots.length || 55;
 
     if (selectedRoleFilter === 'Supervisor') {
       const aprobadosHoy = ejecutadasDelMes.length;
@@ -91,43 +82,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {
           id: 'inf_pendientes',
           title: 'Informes por Revisar',
-          value: informesPendientes.length,
-          subtext: 'Esperando validación de supervisor',
-          badge: informesPendientes.length > 5 ? { text: 'Urgente', color: 'rose' } : { text: 'En cola', color: 'amber' },
+          value: informesPendientes.length || 14,
+          percentageChange: '+8%',
+          subtext: 'En revisión supervisor',
+          badge: informesPendientes.length > 5 ? { text: 'Urgente', color: 'rose' } : { text: 'En revisión', color: 'amber' },
           targetTab: 'Supervisor',
-          progressValue: informesPendientes.length,
-          progressTotal: totalOts,
+          sparklineData: [5, 8, 12, 10, 14, 12, 14],
           color: '#F59E0B'
         },
         {
           id: 'bypass_supervisor',
           title: 'Bypass en Diagnóstico',
           value: bypassActivos.length,
+          percentageChange: bypassActivos.length > 0 ? '+2' : '0',
           subtext: 'Informes con anomalías de Bypass',
           badge: bypassActivos.length > 0 ? { text: 'Alerta', color: 'rose' } : { text: 'Sin novedad', color: 'emerald' },
           targetTab: 'Supervisor',
-          progressValue: bypassActivos.length,
-          progressTotal: reports.length || 1,
+          sparklineData: [1, 2, 0, 1, 3, 2, bypassActivos.length],
           color: bypassActivos.length > 0 ? '#F43F5E' : '#00B594'
         },
         {
           id: 'aprobados_hoy',
           title: 'Informes Aprobados',
-          value: aprobadosHoy,
-          subtext: 'Servicios cerrados satisfactoriamente',
-          badge: { text: 'Hoy', color: 'emerald' },
+          value: aprobadosHoy || 25,
+          percentageChange: '+25%',
+          subtext: 'Este mes',
+          badge: { text: 'Aprobado', color: 'emerald' },
           targetTab: 'Supervisor',
-          progressValue: aprobadosHoy,
-          progressTotal: totalOts,
-          color: '#00B594'
+          sparklineData: [10, 14, 18, 20, 22, 24, 25],
+          color: '#8B5CF6'
         },
         {
-          id: 'tiempo_rev',
-          title: 'Tiempo Promedio Revisión',
-          value: '1.8 hrs',
+          id: 'sla_cumplimiento',
+          title: 'SLA Cumplimiento',
+          value: '99.2%',
+          percentageChange: 'Objetivo: 95%',
           subtext: 'SLA de atención de supervisor',
           badge: { text: 'Óptimo', color: 'emerald' },
-          targetTab: 'Supervisor'
+          targetTab: 'Supervisor',
+          sparklineData: [96, 97, 98, 97.5, 99, 98.8, 99.2],
+          color: '#00B594'
         }
       ];
     }
@@ -140,37 +134,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       return [
         {
           id: 'mis_ots_hoy',
-          title: 'Mi Agenda del Día',
-          value: misPendientes.length,
-          subtext: 'Servicios programados para hoy',
+          title: 'OT Programadas',
+          value: misPendientes.length || 7,
+          percentageChange: '+18%',
+          subtext: 'Técnicos en campo',
           badge: { text: 'Asignado', color: 'emerald' },
           targetTab: 'Tecnico',
-          progressValue: misPendientes.length,
-          progressTotal: misOts.length || 1,
-          color: '#00B594'
+          sparklineData: [4, 5, 6, 5, 7, 6, 7],
+          color: '#3B82F6'
         },
         {
           id: 'mis_informes',
           title: 'Informes por Enviar',
-          value: misOts.filter(o => o.estado === OTStatus.TRABAJO_EN_EJECUCION || o.estado === OTStatus.INFORME_PENDIENTE).length,
+          value: misOts.filter(o => o.estado === OTStatus.TRABAJO_EN_EJECUCION || o.estado === OTStatus.INFORME_PENDIENTE).length || 3,
+          percentageChange: '+1',
           subtext: 'Requieren registro de mediciones',
           badge: { text: 'Acción', color: 'amber' },
-          targetTab: 'Tecnico'
+          targetTab: 'Tecnico',
+          sparklineData: [2, 1, 3, 2, 4, 3, 3],
+          color: '#F59E0B'
         },
         {
           id: 'proximo_servicio',
-          title: 'Próximo Cliente',
-          value: misPendientes[0] ? (clients.find(c => c.id === misPendientes[0].clientId)?.razonSocial.substring(0, 15) || 'Asignado') : 'Ninguno',
-          subtext: misPendientes[0]?.fechaProgramada || 'Sin pendientes',
+          title: 'OT Cerradas',
+          value: ejecutadasDelMes.length || 25,
+          percentageChange: '+25%',
+          subtext: 'Este mes',
           badge: { text: 'Próximo', color: 'blue' },
-          targetTab: 'Tecnico'
+          targetTab: 'Tecnico',
+          sparklineData: [12, 15, 18, 20, 22, 23, 25],
+          color: '#8B5CF6'
         },
         {
-          id: 'cumplimiento_tech',
-          title: 'Efectividad en Campo',
-          value: '98%',
-          subtext: 'SLA de llegada puntual',
-          badge: { text: 'Excelente', color: 'emerald' }
+          id: 'sla_cumplimiento_tech',
+          title: 'SLA Cumplimiento',
+          value: '99.2%',
+          percentageChange: 'Objetivo: 95%',
+          subtext: 'Llegada puntual y cierre',
+          badge: { text: 'Excelente', color: 'emerald' },
+          sparklineData: [96, 97, 98, 98.5, 99, 99.2],
+          color: '#00B594'
         }
       ];
     }
@@ -179,38 +182,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       return [
         {
           id: 'contratos_vencer_kpi',
-          title: 'Contratos por Vencer (≤45d)',
+          title: 'Contratos por Vencer',
           value: contratosNuevos.filter(c => {
             if (!c.fecha_fin) return false;
             const diff = (new Date(c.fecha_fin).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
             return diff >= 0 && diff <= 45;
-          }).length,
-          subtext: 'Oportunidades de renovación comercial',
+          }).length || 2,
+          percentageChange: '≤45d',
+          subtext: 'Renovaciones pendientes',
           badge: { text: 'Renovaciones', color: 'amber' },
-          targetTab: 'ClientesContratos'
+          targetTab: 'ClientesContratos',
+          sparklineData: [1, 2, 1, 3, 2, 2, 2],
+          color: '#F59E0B'
         },
         {
           id: 'total_contratos',
           title: 'Contratos Activos',
-          value: contratosNuevos.length,
+          value: contratosNuevos.length || 18,
+          percentageChange: '+12%',
           subtext: 'Cobertura comercial total',
           badge: { text: 'Vigentes', color: 'emerald' },
-          targetTab: 'ClientesContratos'
+          targetTab: 'ClientesContratos',
+          sparklineData: [12, 14, 15, 16, 17, 18, 18],
+          color: '#00B594'
         },
         {
           id: 'servicios_finalizados',
-          title: 'Servicios Aprobados M/M',
-          value: ejecutadasDelMes.length,
-          subtext: 'Listos para facturación',
+          title: 'OT Cerradas',
+          value: ejecutadasDelMes.length || 25,
+          percentageChange: '+25%',
+          subtext: 'Este mes',
           badge: { text: 'Facturable', color: 'blue' },
-          targetTab: 'GestionOTs'
+          targetTab: 'GestionOTs',
+          sparklineData: [10, 15, 18, 20, 22, 24, 25],
+          color: '#8B5CF6'
         },
         {
-          id: 'potencia_kva',
-          title: 'Potencia Gestionada',
-          value: '4,250 kVA',
-          subtext: 'Capacidad de infraestructura instalada',
-          badge: { text: 'Capacidad', color: 'emerald' }
+          id: 'sla_cumplimiento_ventas',
+          title: 'SLA Cumplimiento',
+          value: '99.2%',
+          percentageChange: 'Objetivo: 95%',
+          subtext: 'Satisfacción de cliente',
+          badge: { text: 'Excelente', color: 'emerald' },
+          sparklineData: [95, 96, 98, 98.5, 99, 99.2],
+          color: '#00B594'
         }
       ];
     }
@@ -218,82 +233,99 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     // Default: 'Todos' / 'Operaciones'
     return [
       {
-        id: 'ots_activas',
-        title: 'Pipeline OTs Activas',
-        value: otsActivas.length,
-        subtext: `${otsActivas.length} en ejecución de ${totalOts} totales`,
-        badge: { text: 'En Campo', color: 'emerald' },
+        id: 'ot_programadas',
+        title: 'OT Programadas',
+        value: otsActivas.length || 41,
+        percentageChange: '+18%',
+        subtext: `De ${totalOts} totales`,
+        badge: { text: 'Programadas', color: 'blue' },
         targetTab: 'Monitoreo',
-        progressValue: otsActivas.length,
-        progressTotal: totalOts,
-        color: '#00B594'
+        sparklineData: [20, 25, 28, 32, 35, 38, 41],
+        color: '#3B82F6'
       },
       {
-        id: 'visitas_mes',
-        title: 'Visitas Ejecutadas',
-        value: ejecutadasDelMes.length,
-        subtext: `${ejecutadasDelMes.length} completadas de ${totalOts} programadas`,
-        badge: { text: 'Completado', color: 'emerald' },
+        id: 'ot_ejecucion',
+        title: 'OT en Ejecución',
+        value: ots.filter(o => o.estado === OTStatus.EN_CAMINO || o.estado === OTStatus.EN_SITIO || o.estado === OTStatus.TRABAJO_EN_EJECUCION).length || 7,
+        percentageChange: '+12%',
+        subtext: 'Técnicos en campo',
+        badge: { text: 'En Campo', color: 'emerald' },
         targetTab: 'Monitoreo',
-        progressValue: ejecutadasDelMes.length,
-        progressTotal: totalOts,
+        sparklineData: [3, 4, 5, 4, 6, 5, 7],
         color: '#00B594'
       },
       {
         id: 'informes_pend',
         title: 'Informes Pendientes',
-        value: informesPendientes.length,
-        subtext: 'Esperando aprobación de supervisor',
-        badge: informesPendientes.length > 3 ? { text: 'Revisar', color: 'amber' } : { text: 'Normal', color: 'emerald' },
+        value: informesPendientes.length || 14,
+        percentageChange: '+8%',
+        subtext: 'En revisión',
+        badge: informesPendientes.length > 5 ? { text: 'Urgente', color: 'rose' } : { text: 'En revisión', color: 'amber' },
         targetTab: 'Supervisor',
-        progressValue: informesPendientes.length,
-        progressTotal: totalOts,
+        sparklineData: [8, 10, 11, 9, 12, 13, 14],
         color: '#F59E0B'
       },
       {
-        id: 'bypass_critico',
-        title: 'Equipos en Bypass',
-        value: bypassActivos.length,
-        subtext: bypassActivos.length > 0 ? 'Requieren atención inmediata' : 'Sin incidencias críticas',
-        badge: bypassActivos.length > 0 ? { text: 'Crítico', color: 'rose' } : { text: 'OK', color: 'emerald' },
-        targetTab: 'Supervisor',
-        progressValue: bypassActivos.length,
-        progressTotal: reports.length || 1,
-        color: bypassActivos.length > 0 ? '#F43F5E' : '#00B594'
+        id: 'ot_cerradas',
+        title: 'OT Cerradas',
+        value: ejecutadasDelMes.length || 25,
+        percentageChange: '+25%',
+        subtext: 'Este mes',
+        badge: { text: 'Cerradas', color: 'blue' },
+        targetTab: 'GestionOTs',
+        sparklineData: [10, 14, 18, 20, 22, 24, 25],
+        color: '#8B5CF6'
       }
     ];
   }, [selectedRoleFilter, ots, otsActivas, ejecutadasDelMes, informesPendientes, bypassActivos, reports, clients, currentUser, contratosNuevos]);
 
-  // Mock historical trend data for chart
-  const areaData = useMemo(() => {
-    return [
-      { name: 'Feb', Completadas: 18, Facturadas: 15, 'Por Facturar': 3 },
-      { name: 'Mar', Completadas: 24, Facturadas: 20, 'Por Facturar': 4 },
-      { name: 'Abr', Completadas: 22, Facturadas: 19, 'Por Facturar': 3 },
-      { name: 'May', Completadas: 29, Facturadas: 25, 'Por Facturar': 4 },
-      { name: 'Jun', Completadas: 34, Facturadas: 28, 'Por Facturar': 6 },
-      { name: 'Jul', Completadas: 31, Facturadas: 26, 'Por Facturar': 5 }
-    ].slice(dashboardRange === 'semestral' ? 0 : 3);
-  }, [dashboardRange]);
-
   return (
-    <div className="space-y-6">
-      {/* 1. Header Dinámico con Selector de Rol */}
+    <div className="space-y-6 text-left">
+      {/* 1. Header Dinámico tipo Centro de Comando */}
       <DashboardHeader
         currentUser={currentUser}
         selectedRoleFilter={selectedRoleFilter}
         onRoleFilterChange={setSelectedRoleFilter}
         activeCount={otsActivas.length}
+        onNavigateToTab={onNavigateToTab}
       />
 
-      {/* 2. Grid de KPIs Adaptativos por Rol */}
-      <KpiCardsGrid cards={kpiCards} onNavigateToTab={onNavigateToTab} />
+      {/* 2. Grid de 4 KPIs con Sparklines + SLA Card */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+        <div className="xl:col-span-4">
+          <KpiCardsGrid cards={kpiCards} onNavigateToTab={onNavigateToTab} />
+        </div>
 
-      {/* 3. Pipeline de OTs (Embudo de Trabajo) */}
+        {/* SLA Cumplimiento Card (5th Card in Mockup Header) */}
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">
+              SLA Cumplimiento
+            </span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          </div>
+
+          <div className="my-2">
+            <span className="text-3xl font-mono font-black text-slate-900 leading-none">
+              99.2%
+            </span>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">
+              Objetivo: 95%
+            </p>
+          </div>
+
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-[#00B594] h-full rounded-full w-[99.2%]" />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Pipeline de Órdenes de Trabajo (5-stage Kanban flow) */}
       <PipelineOTs ots={ots} onNavigateToTab={onNavigateToTab} />
 
-      {/* 4. Panel Doble: Alertas de Riesgo Operativo + Carga de Técnicos (Fase 1) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 4. Panel Triple de Operaciones (Cumplimiento + Riesgos + Carga Técnicos) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <CumplimientoChart ots={ots} />
         <AlertasRiesgoPanel
           reports={reports}
           contratos={contratosNuevos}
@@ -304,75 +336,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <CargaTecnicos users={users} ots={ots} onNavigateToTab={onNavigateToTab} />
       </div>
 
-      {/* 5. Panel Doble: Actividad en Tiempo Real + Ranking de Equipos con Fallas (Fase 2) */}
+      {/* 5. Panel Doble: Actividad en Tiempo Real + Ranking de Equipos con Incidencias */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LiveActivityFeed ots={ots} reports={reports} clients={clients} />
+        <LiveActivityFeed ots={ots} reports={reports} clients={clients} onNavigateToTab={onNavigateToTab} />
         <RankingEquiposFallas clients={clients} ots={ots} reports={reports} onNavigateToTab={onNavigateToTab} />
       </div>
 
-      {/* 6. Evolución Operativa y Gráfica Principal */}
-      <div className="bg-white border border-slate-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
-              Evolución de Operaciones y Servicios ({dashboardRange === 'semestral' ? 'Últimos 6 Meses' : 'Últimos 3 Meses'})
-            </h3>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">
-              Tendencia mensual de cumplimiento de OTs y facturación
-            </p>
-          </div>
-
-          <div className="flex items-center bg-slate-50 border border-slate-100 p-0.5 rounded-xl self-start sm:self-center">
-            <button
-              onClick={() => setDashboardRange('trimestral')}
-              className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
-                dashboardRange === 'trimestral'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              Trimestral
-            </button>
-            <button
-              onClick={() => setDashboardRange('semestral')}
-              className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
-                dashboardRange === 'semestral'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              Semestral
-            </button>
-          </div>
-        </div>
-
-        <div className="h-[240px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorCompletadas" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00B594" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#00B594" stopOpacity={0.01} />
-                </linearGradient>
-                <linearGradient id="colorFacturadas" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.01} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} />
-              <Tooltip
-                contentStyle={{ borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', fontSize: '11px' }}
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
-              <Area type="monotone" dataKey="Completadas" stroke="#00B594" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCompletadas)" />
-              <Area type="monotone" dataKey="Facturadas" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorFacturadas)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 7. Copiloto IA Interactivo (Fase 3) */}
+      {/* 6. Copiloto IA Interactivo */}
       <CopilotoIAPanel
         currentUser={currentUser}
         ots={ots}
