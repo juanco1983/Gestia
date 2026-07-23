@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestia — Acceso</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #0a0f16;
+    --bg-panel: #0e141d;
+    --card: #131b26;
+    --card-2: #10171f;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text-hi: #f4f6f8;
+    --text-mid: #b7c0cb;
+    --text-low: #7c8794;
+    --teal: #2dd4bf;
+    --teal-dim: #1a9c8c;
+    --blue: #4f8ff7;
+    --amber: #f5b544;
+    --amber-text: #ffd589;
+    --red: #ef5a5a;
+    --red-text: #ff9d9d;
+    --green: #34d399;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text-hi);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 1.35fr 0.9fr;
+    min-height: 100vh;
+  }
+
+  /* ---------- LEFT ---------- */
+  .left{
+    position:relative;
+    padding: 40px 56px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% 90%, rgba(239,90,90,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 85% 15%, rgba(45,212,191,0.08), transparent 60%),
+      var(--bg-panel);
+  }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-name{ font-size:19px; font-weight:700; letter-spacing:0.5px; }
+  .brand-sub{ font-size:10.5px; color: var(--text-low); letter-spacing:1.2px; margin-top:2px; }
+
+  .meta{ display:flex; align-items:center; gap:18px; font-size:12.5px; color: var(--text-mid); }
+  .meta span{ display:flex; align-items:center; gap:6px; }
+  .dot-sep{ width:3px; height:3px; border-radius:50%; background: var(--text-low); }
+
+  .hero{ margin-top:44px; }
+  .hero h1{
+    font-size:38px; line-height:1.15; font-weight:700; letter-spacing:-0.5px;
+  }
+  .hero h1 .accent{ color: var(--teal); }
+  .hero p{
+    margin-top:14px; max-width:420px; font-size:14.5px; line-height:1.6; color: var(--text-mid);
+  }
+
+  .status-pill{
+    margin-top:20px; display:inline-flex; align-items:center; gap:8px;
+    background: rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.25);
+    padding:7px 14px; border-radius:100px; font-size:12.5px; color:#8fe8c4;
+  }
+  .status-pill .pulse{
+    width:7px; height:7px; border-radius:50%; background: var(--green);
+    box-shadow: 0 0 0 3px rgba(52,211,153,0.18);
+  }
+
+  .stats{
+    margin-top:28px; display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; max-width:520px;
+  }
+  .stat{
+    background: var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:14px 16px;
+  }
+  .stat-top{ display:flex; align-items:center; gap:9px; }
+  .stat-icon{
+    width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center;
+    font-size:13px; flex-shrink:0;
+  }
+  .ic-blue{ background: rgba(79,143,247,0.16); color:#8fb8fb; }
+  .ic-green{ background: rgba(52,211,153,0.16); color:#7fe0bb; }
+  .ic-purple{ background: rgba(139,124,246,0.16); color:#b3a5f9; }
+  .stat-num{ font-size:19px; font-weight:700; }
+  .stat-label{ font-size:11px; color: var(--text-low); margin-top:6px; }
+  .stat-delta{ font-size:10.5px; margin-top:4px; color: var(--text-mid); }
+  .stat-delta.up{ color:#7fe0bb; }
+
+  /* map */
+  .map-wrap{
+    margin-top:26px; flex:1; position:relative; border-radius:16px; overflow:hidden;
+    border:1px solid var(--border); min-height:300px;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 42px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 42px),
+      #0c131b;
+  }
+  .map-wrap svg{ position:absolute; inset:0; width:100%; height:100%; }
+
+  .map-card{
+    position:absolute; background: rgba(14,20,29,0.94); border:1px solid var(--border-strong);
+    border-radius:10px; padding:10px 13px; font-size:11.5px; backdrop-filter: blur(6px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .map-card .name{ font-weight:600; font-size:12.5px; margin-bottom:3px; }
+  .map-card .line{ color: var(--text-mid); }
+  .map-card .eta{ color: #8fb8fb; }
+
+  .card-tecnico{ display:flex; align-items:center; gap:8px; }
+  .avatar{ width:30px; height:30px; border-radius:50%; background:#2a3746; flex-shrink:0; }
+
+  .card-alert{
+    border-left: 3px solid var(--red); border-radius: 0 10px 10px 0;
+  }
+  .card-alert .name{ color: var(--red-text); }
+  .card-alert .prio{ color: var(--red-text); font-weight:600; }
+
+  .legend{
+    position:absolute; bottom:14px; left:14px; display:flex; gap:14px;
+    font-size:11px; color: var(--text-mid); background: rgba(10,15,22,0.7); padding:8px 12px; border-radius:8px;
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .trust{
+    margin-top:22px; display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid var(--border); padding-top:18px;
+  }
+  .trust-left{ display:flex; align-items:center; gap:10px; font-size:12px; color: var(--text-mid); }
+  .trust-badges{ display:flex; gap:10px; }
+  .badge{
+    font-size:9.5px; color: var(--text-low); border:1px solid var(--border); border-radius:6px;
+    padding:5px 9px; text-align:center; line-height:1.3; font-weight:600; letter-spacing:0.3px;
+  }
+
+  /* ---------- RIGHT ---------- */
+  .right{
+    background: var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    padding: 40px;
+    border-left: 1px solid var(--border);
+  }
+  .panel{ width:100%; max-width:400px; }
+  .panel-head{ display:flex; align-items:center; gap:14px; margin-bottom:26px; }
+  .panel-avatar{
+    width:46px; height:46px; border-radius:12px; background: rgba(79,143,247,0.14);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .panel h2{ font-size:19px; font-weight:700; }
+  .panel-sub{ font-size:13px; color: var(--text-mid); margin-top:2px; }
+
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block; font-size:11px; font-weight:600; letter-spacing:0.6px; color: var(--text-low);
+    margin-bottom:7px; text-transform:uppercase;
+  }
+  .input-wrap{
+    display:flex; align-items:center; gap:10px; background: var(--card-2); border:1px solid var(--border);
+    border-radius:10px; padding:0 14px; height:46px;
+  }
+  .input-wrap:focus-within{ border-color: rgba(79,143,247,0.6); }
+  .input-wrap input{
+    flex:1; background:none; border:none; outline:none; color: var(--text-hi); font-size:14px; font-family:inherit;
+  }
+  .input-wrap input::placeholder{ color: var(--text-low); }
+  .input-wrap .ic{ color: var(--text-low); font-size:14px; }
+
+  .row-between{ display:flex; align-items:center; justify-content:space-between; margin: 14px 0 20px; font-size:12.5px; }
+  .remember{ display:flex; align-items:center; gap:8px; color: var(--text-mid); }
+  .remember input{ accent-color: var(--teal); }
+  .forgot{ color:#8fb8fb; text-decoration:none; }
+
+  .btn-primary{
+    width:100%; height:48px; border:none; border-radius:10px; cursor:pointer;
+    background: linear-gradient(90deg, #2dd4bf, #4f8ff7);
+    color:#04211c; font-weight:700; font-size:14.5px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+
+  .divider{
+    display:flex; align-items:center; gap:12px; margin:22px 0; font-size:11.5px; color: var(--text-low);
+  }
+  .divider::before, .divider::after{ content:""; flex:1; height:1px; background: var(--border); }
+
+  .sso{ display:flex; flex-direction:column; gap:10px; }
+  .btn-sso{
+    height:46px; border-radius:10px; border:1px solid var(--border); background: var(--card-2);
+    color: var(--text-hi); font-size:13.5px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+
+  .copilot{
+    margin-top:20px; background: rgba(79,143,247,0.07); border:1px solid rgba(79,143,247,0.22);
+    border-radius:12px; padding:14px 16px; display:flex; gap:12px; align-items:flex-start;
+  }
+  .copilot .ic{
+    width:28px; height:28px; border-radius:8px; background: rgba(79,143,247,0.18); color:#8fb8fb;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:1px;
+  }
+  .copilot-title{ font-size:12.5px; font-weight:700; color:#8fb8fb; }
+  .copilot-text{ font-size:12px; color: var(--text-mid); margin-top:3px; line-height:1.5; }
+
+  .demo-link{
+    margin-top:18px; text-align:center; font-size:12.5px; color: var(--text-mid);
+  }
+  .demo-link a{ color:#8fb8fb; text-decoration:none; font-weight:600; }
+
+  @media (max-width: 980px){
+    .app{ grid-template-columns: 1fr; }
+    .left{ display:none; }
+    .right{ border-left:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT: producto -->
+  <div class="left">
+    <div class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 34 34" fill="none">
+          <path d="M4 26 L13 8 L17 16 L21 8 L30 26" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <div class="brand-name">GESTIA</div>
+          <div class="brand-sub">GESTIÓN INTELIGENTE DE SERVICIOS DE CAMPO</div>
+        </div>
+      </div>
+      <div class="meta">
+        <span>08:42</span>
+        <span class="dot-sep"></span>
+        <span>Lima, Perú</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h1>Tu operación.<br>En tiempo real.<br><span class="accent">Bajo control.</span></h1>
+      <p>Centralizamos órdenes, técnicos y contratos con inteligencia que anticipa cuellos de botella y mejora tu SLA.</p>
+      <div class="status-pill"><span class="pulse"></span> Sistema operativo · 100% en línea</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-top">
+          <div class="stat-icon ic-blue">🗓</div>
+          <div class="stat-num">124</div>
+        </div>
+        <div class="stat-label">OT activas</div>
+        <div class="stat-delta up">↗ +12% vs ayer</div>
+      </div>
+      <div class="stat">
+        <div class="stat-top">
+          <div class="stat-icon ic-green">👥</div>
+          <div class="stat-num">5</div>
+        </div>
+        <div class="stat-label">Técnicos en ruta</div>
+        <div class="stat-delta">En tiempo real</div>
+      </div>
+      <div class="stat">
+        <div class="stat-top">
+          <div class="stat-icon ic-purple">📈</div>
+          <div class="stat-num">99.4%</div>
+        </div>
+        <div class="stat-label">SLA global</div>
+        <div class="stat-delta up">↗ +1.8% vs ayer</div>
+      </div>
+    </div>
+
+    <div class="map-wrap">
+      <svg viewBox="0 0 700 320" preserveAspectRatio="none">
+        <path d="M 90 260 Q 220 230 300 190 T 470 90" stroke="#2dd4bf" stroke-width="2" fill="none" opacity="0.55"/>
+        <path d="M 90 260 Q 160 200 240 170" stroke="#ef5a5a" stroke-width="2" fill="none" opacity="0.55"/>
+        <circle cx="90" cy="260" r="16" fill="#ef5a5a" opacity="0.18"/>
+        <circle cx="90" cy="260" r="6" fill="#ef5a5a"/>
+        <circle cx="240" cy="170" r="6" fill="#2dd4bf"/>
+        <circle cx="330" cy="150" r="6" fill="#2dd4bf"/>
+        <circle cx="470" cy="90" r="6" fill="#f5b544"/>
+      </svg>
+
+      <div class="map-card card-alert" style="top:56%; left:5%; width:190px;">
+        <div class="name">OT-1423 · SLA en riesgo</div>
+        <div class="line">Zona: San Borja</div>
+        <div class="prio">Prioridad alta</div>
+      </div>
+
+      <div class="map-card" style="top:20%; left:70%; width:170px;">
+        <div class="card-tecnico">
+          <div class="avatar"></div>
+          <div>
+            <div class="name">Téc. Andrés</div>
+            <div class="line eta">En ruta · ETA 15 min</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:#2dd4bf"></i>En ruta</span>
+        <span><i style="background:#f5b544"></i>Retraso</span>
+        <span><i style="background:#ef5a5a"></i>Riesgo de SLA</span>
+      </div>
+    </div>
+
+    <div class="trust">
+      <div class="trust-left">
+        🛡 Datos protegidos. Operaciones seguras.
+      </div>
+      <div class="trust-badges">
+        <div class="badge">ISO<br>27001</div>
+        <div class="badge">SOC 2<br>TYPE II</div>
+        <div class="badge">GDPR<br>COMPLIANT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: login -->
+  <div class="right">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-avatar">
+          <svg width="20" height="20" viewBox="0 0 34 34" fill="none">
+            <path d="M4 26 L13 8 L17 16 L21 8 L30 26" stroke="#4f8ff7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Bienvenido de nuevo</h2>
+          <div class="panel-sub">Ingresa tus credenciales para acceder al sistema.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="ic">✉</span>
+          <input type="email" placeholder="nombre@gestia.com">
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:0;">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="ic">🔒</span>
+          <input type="password" placeholder="••••••••">
+          <span class="ic">👁</span>
+        </div>
+      </div>
+
+      <div class="row-between">
+        <label class="remember"><input type="checkbox"> Recordarme</label>
+        <a href="#" class="forgot">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button class="btn-primary">🔒 Acceder al sistema →</button>
+
+      <div class="divider">o continúa con</div>
+
+      <div class="sso">
+        <button class="btn-sso">🪟 Iniciar sesión con Microsoft 365</button>
+        <button class="btn-sso">🔵 Iniciar sesión con Google Workspace</button>
+      </div>
+
+      <div class="copilot">
+        <div class="ic">✨</div>
+        <div>
+          <div class="copilot-title">Copiloto activo</div>
+          <div class="copilot-text">Gestia priorizó automáticamente 2 OTs con mayor riesgo de incumplimiento de SLA esta semana.</div>
+        </div>
+      </div>
+
+      <div class="demo-link">¿Solo exploras? <a href="#">Ver usuarios de prueba →</a></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

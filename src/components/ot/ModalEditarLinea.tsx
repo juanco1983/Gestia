@@ -54,9 +54,13 @@ export default function ModalEditarLinea({
     const el = document.getElementById('main-workspace-content');
     if (el) el.style.overflow = 'hidden';
     return () => { if (el) el.style.overflow = ''; };
-  }, []);
+  }, []);  // Lock modal ONLY if the record was ALREADY saved as FACTURADO with invoice number when opened
+  const [initialIsFacturado] = useState<boolean>(() => {
+    const isFact = editingLine.estado === 'FACTURADO' || (editingLine.estado as string) === 'COMPLETADO';
+    return isFact && Boolean(editingLine.n_factura && editingLine.n_factura.trim() !== '');
+  });
 
-  const isReadOnly = editingLine.estado === 'FACTURADO' || (editingLine.estado as string) === 'COMPLETADO';
+  const isReadOnly = initialIsFacturado;
 
   return (
     <>
@@ -184,7 +188,14 @@ export default function ModalEditarLinea({
                   }}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-semibold"
                 >
-                  {ESTADO_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
+                  <option value="PENDIENTE_VISITA">📅 Pendiente de Visita</option>
+                  <option value="PENDIENTE_INFORME">⏳ Pendiente de Informe</option>
+                  <option value="PENDIENTE_FACTURACION">💳 Pendiente de Facturación</option>
+                  {editingLine.estado === 'POR FACTURAR' && (
+                    <option value="POR FACTURAR">💳 Pendiente de Facturación (Por Facturar)</option>
+                  )}
+                  <option value="FACTURADO">🔒 Facturado (Completado)</option>
+                  <option value="ANULADO">🚫 Anulado</option>
                 </select>
               </div>
               <div>
