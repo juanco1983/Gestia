@@ -415,9 +415,19 @@ async function runCase1(): Promise<void> {
         `Importe guardado correctamente (${data.sub_importe_sin_igv})`
       );
       assert(
-        data.factura === 'F001-E2E-001245',
-        `N° Factura guardado correctamente (${data.factura})`
+        data.n_factura === 'F001-E2E-001245' || data.factura === 'F001-E2E-001245',
+        `N° Factura guardado correctamente (${data.n_factura || data.factura})`
       );
+
+      // Verify contract balance auto-deducted
+      const { data: updatedContratos } = await api('GET', '/api/contratos-comerciales');
+      if (Array.isArray(updatedContratos)) {
+        const myContract = updatedContratos.find((c: any) => c.id === contratoId);
+        if (myContract) {
+          assert(myContract.monto_facturado_sin_igv === 6000, `Contrato monto_facturado_sin_igv actualizado a 6000 (actual: ${myContract.monto_facturado_sin_igv})`);
+          assert(myContract.saldo_disponible_usd === 6000, `Contrato saldo_disponible_usd restado a 6000 (actual: ${myContract.saldo_disponible_usd})`);
+        }
+      }
     }
   } else {
     logWarn('No hay OT Financiera para completar facturación');

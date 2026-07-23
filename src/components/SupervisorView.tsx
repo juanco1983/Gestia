@@ -76,6 +76,11 @@ export default function SupervisorView({
 
   const handleApproveReport = () => {
     if (!selectedOt) return;
+    const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
+    if (isApprovedOrCompleted) {
+      alert('Este informe ya ha sido APROBADO previamente y no se pueden realizar nuevas aprobaciones.');
+      return;
+    }
     onUpdateOtStatus(selectedOt.id, OTStatus.APROBADA);
     alert(`⚡ INFORME APROBADO: Notificación automatizada enviada con éxito al cliente para firma de conformidad.`);
     setSelectedOt(null);
@@ -83,6 +88,11 @@ export default function SupervisorView({
 
   const handleDeclineReport = () => {
     if (!selectedOt) return;
+    const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
+    if (isApprovedOrCompleted) {
+      alert('Este informe ya ha sido APROBADO previamente y no puede ser cancelado ni rechazado.');
+      return;
+    }
     if (!correccionText.trim()) {
       alert("ATENCIÓN: Debe redactar una nota de corrección explicando qué mediciones o fotos se deben re-evaluar.");
       return;
@@ -757,27 +767,39 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                         </div>
 
                         {/* Operational Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-150">
-                          <button 
-                            type="button"
-                            onClick={handleDeclineReport}
-                            className="flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-4 py-2.5 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
-                            id="audit-reject-btn"
-                          >
-                            <ThumbsDown size={14} />
-                            <span>Rechazar y Regresar a Campo</span>
-                          </button>
+                        {['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado) ? (
+                          <div className="flex items-center justify-between gap-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl w-full">
+                            <div className="flex items-center gap-2.5 text-emerald-800 font-extrabold text-xs">
+                              <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                              <span>INFORME APROBADO Y REGISTRADO — Este informe ya cuenta con la aprobación del supervisor y no puede ser modificado ni cancelado.</span>
+                            </div>
+                            <span className="bg-emerald-600 text-white font-mono text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shrink-0 shadow-sm">
+                              {selectedOt.estado}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-150">
+                            <button 
+                              type="button"
+                              onClick={handleDeclineReport}
+                              className="flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-4 py-2.5 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
+                              id="audit-reject-btn"
+                            >
+                              <ThumbsDown size={14} />
+                              <span>Rechazar y Regresar a Campo</span>
+                            </button>
 
-                          <button 
-                            type="button"
-                            onClick={handleApproveReport}
-                            className="flex items-center gap-1.5 bg-emerald-500 text-slate-955 px-5 py-2.5 text-xs font-extrabold rounded-lg hover:bg-emerald-400 transition-colors shadow-md shadow-emerald-500/10 cursor-pointer"
-                            id="audit-approve-btn"
-                          >
-                            <ThumbsUp size={14} />
-                            <span>Aprobar y Enviar a Cliente</span>
-                          </button>
-                        </div>
+                            <button 
+                              type="button"
+                              onClick={handleApproveReport}
+                              className="flex items-center gap-1.5 bg-emerald-500 text-slate-955 px-5 py-2.5 text-xs font-extrabold rounded-lg hover:bg-emerald-400 transition-colors shadow-md shadow-emerald-500/10 cursor-pointer"
+                              id="audit-approve-btn"
+                            >
+                              <ThumbsUp size={14} />
+                              <span>Aprobar y Enviar a Cliente</span>
+                            </button>
+                          </div>
+                        )}
 
                       </div>
                     ) : (

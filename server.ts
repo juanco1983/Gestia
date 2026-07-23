@@ -1115,6 +1115,58 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
       });
     }
 
+    // Auto-recalculate and sync main Contract balance and consumed amount
+    let targetContractId = updatedLine.contratoId;
+    if (!targetContractId && updatedLine.otTecnicaId) {
+      const otTec = await prisma.oT.findUnique({ where: { id: updatedLine.otTecnicaId } });
+      if (otTec && otTec.contratoId) {
+        targetContractId = otTec.contratoId;
+      }
+    }
+
+    if (targetContractId) {
+      const otTecnicaIds = (await prisma.oT.findMany({
+        where: { contratoId: targetContractId },
+        select: { id: true }
+      })).map(o => o.id);
+
+      const contractLines = await prisma.ordenTrabajoLinea.findMany({
+        where: {
+          OR: [
+            { contratoId: targetContractId },
+            { otTecnicaId: { in: otTecnicaIds } }
+          ]
+        }
+      });
+
+      let totalFacturadoSinIgv = 0;
+      let totalFacturadoIncIgv = 0;
+      for (const line of contractLines) {
+        if (line.factura || line.estado === 'FACTURADO' || line.pendiente === 'EJECUTADO') {
+          const valSinIgv = line.sub_importe_sin_igv || line.monto_marco_sin_igv || 0;
+          const valIncIgv = line.sub_importe_inc_igv || line.monto_marco_inc_igv || Number((valSinIgv * 1.18).toFixed(2));
+          totalFacturadoSinIgv += valSinIgv;
+          totalFacturadoIncIgv += valIncIgv;
+        }
+      }
+
+      const contract = await prisma.contratoNuevo.findUnique({ where: { id: targetContractId } });
+      if (contract) {
+        const totalBudget = contract.monto_sin_igv || contract.presupuesto_total_usd || contract.monto_original || 0;
+        const newSaldo = Math.max(0, totalBudget - totalFacturadoSinIgv);
+        await prisma.contratoNuevo.update({
+          where: { id: targetContractId },
+          data: {
+            monto_facturado_sin_igv: totalFacturadoSinIgv,
+            monto_facturado_inc_igv: totalFacturadoIncIgv,
+            por_facturar_sin_igv: Math.max(0, totalBudget - totalFacturadoSinIgv),
+            saldo_disponible_usd: newSaldo,
+            presupuesto_total_usd: totalBudget > 0 ? totalBudget : undefined
+          }
+        });
+      }
+    }
+
     res.json(updatedLine);
   } catch (err) {
     res.status(404).json({ error: "Línea no encontrada" });
