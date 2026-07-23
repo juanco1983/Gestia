@@ -48,7 +48,9 @@ function logSection(title: string) {
   log(`${C.bold}${C.blue}  ${title}${C.reset}`);
   log(`${C.bold}${C.blue}${'═'.repeat(60)}${C.reset}`);
 }
-function logStep(msg: string) { log(`${C.dim}  ▶ ${msg}${C.reset}`); }
+async function logStep(msg: string) {
+  log(`${C.dim}  ▶ ${msg}${C.reset}`);
+}
 function logPass(test: string) { log(`  ${C.green}✅ PASS${C.reset} ${test}`); passCount++; }
 function logFail(test: string, error: string, detail?: any) {
   log(`  ${C.red}❌ FAIL${C.reset} ${test}`);
@@ -118,7 +120,7 @@ async function runCase1(): Promise<void> {
   let reportId = '';
 
   // ─── PASO 1: Crear Cliente ───────────────────────────────
-  logStep('PASO 1: Crear Cliente');
+  await logStep('PASO 1: Crear Cliente');
   {
     const { ok, status, data } = await api('POST', '/api/clients', {
       razonSocial: 'ALPHA TECH E2E S.A.C.',
@@ -136,7 +138,7 @@ async function runCase1(): Promise<void> {
     assert(!!data?.id, 'Cliente retorna ID', data);
     if (data?.id) {
       clientId = data.id;
-      logStep(`Cliente creado: ${clientId} — ${data.razonSocial}`);
+      await logStep(`Cliente creado: ${clientId} — ${data.razonSocial}`);
       assert(data.razonSocial === 'ALPHA TECH E2E S.A.C.', 'Razón social guardada correctamente');
     }
   }
@@ -144,9 +146,10 @@ async function runCase1(): Promise<void> {
   if (!clientId) { logWarn('Omitiendo pasos siguientes por fallo en creación de cliente'); return; }
 
   // ─── PASO 2: Crear Contrato Comercial ───────────────────
-  logStep('PASO 2: Crear Contrato Comercial');
+  await logStep('PASO 2: Crear Contrato Comercial');
   {
     const { ok, data } = await api('POST', '/api/contratos-comerciales', {
+      n_contrato: 'COT-2026-001',
       cliente: 'ALPHA TECH E2E S.A.C.',
       clientId,
       fecha_inicio: '2026-07-01',
@@ -162,7 +165,7 @@ async function runCase1(): Promise<void> {
     assert(ok, 'POST /api/contratos-comerciales → 201 Created', !ok ? data : undefined);
     if (data?.id) {
       contratoId = data.id;
-      logStep(`Contrato creado: ${contratoId}`);
+      await logStep(`Contrato creado: ${contratoId}`);
       assert(data.cliente === 'ALPHA TECH E2E S.A.C.', 'Nombre del cliente guardado en contrato');
       assert(data.n_contrato?.startsWith('COT-'), `N° de contrato autogenerado correctamente (${data.n_contrato})`);
     }
@@ -171,7 +174,7 @@ async function runCase1(): Promise<void> {
   if (!contratoId) { logWarn('Omitiendo pasos siguientes por fallo en creación de contrato'); return; }
 
   // ─── PASO 3: Agregar Equipo al Contrato ─────────────────
-  logStep('PASO 3: Agregar Equipo al Contrato');
+  await logStep('PASO 3: Agregar Equipo al Contrato');
   {
     // Step 3a: Create the equipo first
     const { ok: createOk, data: createData } = await api('POST', '/api/equipos', {
@@ -189,7 +192,7 @@ async function runCase1(): Promise<void> {
 
     if (createData?.id) {
       equipoId = createData.id;
-      logStep(`Equipo creado: ${equipoId} — ${createData.marca} ${createData.modelo}`);
+      await logStep(`Equipo creado: ${equipoId} — ${createData.marca} ${createData.modelo}`);
       assert(createData.tipo === 'UPS', 'Tipo de equipo guardado correctamente');
       assert(parseFloat(createData.potenciaKva) === 20, 'Potencia kVA guardada correctamente');
 
@@ -200,7 +203,7 @@ async function runCase1(): Promise<void> {
   }
 
   // ─── PASO 4: Crear Adenda + Equipo Adicional ────────────
-  logStep('PASO 4: Crear Adenda + Equipo Adicional');
+  await logStep('PASO 4: Crear Adenda + Equipo Adicional');
   {
     const { ok: adOk, data: adData } = await api('POST', `/api/contracts/${contratoId}/ampliaciones`, {
       monto: 4500,
@@ -216,7 +219,7 @@ async function runCase1(): Promise<void> {
     const latestAdenda = adendas[adendas.length - 1];
     if (latestAdenda?.id) {
       adendaId = latestAdenda.id;
-      logStep(`Adenda creada: ${adendaId}`);
+      await logStep(`Adenda creada: ${adendaId}`);
       assert(latestAdenda.monto === 4500 || parseFloat(latestAdenda.monto) === 4500, 'Monto de adenda guardado correctamente');
     } else {
       logWarn('No se pudo obtener ID de adenda del response');
@@ -243,13 +246,13 @@ async function runCase1(): Promise<void> {
           equipoId: eqCreateData.id
         });
         assert(eqOk, `Equipo Eaton vinculado a adenda ${adendaId}`, !eqOk ? eqData : undefined);
-        if (eqData) { logStep(`Equipo de adenda vinculado: ${eqCreateData.id}`); }
+        if (eqData) { await logStep(`Equipo de adenda vinculado: ${eqCreateData.id}`); }
       }
     }
   }
 
   // ─── PASO 5: Verificar Contrato con Equipos ──────────────
-  logStep('PASO 5: Verificar Contrato actualizado');
+  await logStep('PASO 5: Verificar Contrato actualizado');
   {
     const { ok, data } = await api('GET', '/api/contratos-comerciales');
     if (ok && Array.isArray(data)) {
@@ -257,18 +260,19 @@ async function runCase1(): Promise<void> {
       assert(!!myContract, 'Contrato recuperado de la API');
       const contractEquipos = myContract?.equipos || [];
       const adendaEquipos = myContract?.ampliaciones?.flatMap((a: any) => a.equipos || []) || [];
-      logStep(`Equipos en contrato: ${contractEquipos.length} directos, ${adendaEquipos.length} en adendas`);
+      await logStep(`Equipos en contrato: ${contractEquipos.length} directos, ${adendaEquipos.length} en adendas`);
       assert(contractEquipos.length >= 1, `Contrato tiene ≥1 equipo directo (encontrados: ${contractEquipos.length})`);
     }
   }
 
   // ─── PASO 6: Programar Visita → Generar OT ──────────────
-  logStep('PASO 6: Programar Visita → Generar OT Técnica + Financiera');
+  await logStep('PASO 6: Programar Visita → Generar OT Técnica + Financiera');
   {
     const { data: users } = await api('GET', '/api/users');
     const tecnico = Array.isArray(users) ? users.find((u: any) => u.role === 'Tecnico' || u.role === 'Administrador') : null;
 
     const { ok, data } = await api('POST', '/api/ots', {
+      id: 'OT-2026-001',
       clientId,
       contratoId,
       equipoId: equipoId || undefined,
@@ -285,7 +289,7 @@ async function runCase1(): Promise<void> {
     assert(ok, 'POST /api/ots → 201 Created', !ok ? data : undefined);
     if (data?.id) {
       otId = data.id;
-      logStep(`OT Técnica creada: ${otId}`);
+      await logStep(`OT Técnica creada: ${otId}`);
       assert(data.estado === 'Programada', 'Estado inicial de OT = Programada');
       assert(data.clientId === clientId, 'clientId guardado correctamente en OT');
     }
@@ -301,7 +305,7 @@ async function runCase1(): Promise<void> {
       );
       if (myLinea) {
         otLineaId = myLinea.id;
-        logStep(`OT Financiera creada: ${otLineaId}`);
+        await logStep(`OT Financiera creada: ${otLineaId}`);
         assert(!!otLineaId, 'OT Financiera generada automáticamente');
         // Validate client name is NOT 'Cliente General'
         const clientOk = myLinea.razon_social !== 'Cliente General' && !!myLinea.razon_social;
@@ -315,14 +319,14 @@ async function runCase1(): Promise<void> {
   if (!otId) { logWarn('Omitiendo pasos de informe por fallo en creación de OT'); return; }
 
   // ─── PASO 7: Pasar OT a Ejecución ────────────────────────
-  logStep('PASO 7: Cambiar estado OT → En Ejecución');
+  await logStep('PASO 7: Cambiar estado OT → En Ejecución');
   {
     const { ok, data } = await api('PUT', `/api/ots/${otId}`, { estado: 'Trabajo en Ejecución' });
     assert(ok, `PUT /api/ots/${otId} → estado = "Trabajo en Ejecución"`, !ok ? data : undefined);
   }
 
   // ─── PASO 8: Registrar Informe Técnico ───────────────────
-  logStep('PASO 8: Registrar Informe Técnico');
+  await logStep('PASO 8: Registrar Informe Técnico');
   {
     const { ok, data } = await api('POST', '/api/reports', {
       id: `report_c1_${Date.now()}`,
@@ -350,7 +354,7 @@ async function runCase1(): Promise<void> {
     assert(ok, 'POST /api/reports → 201 Created', !ok ? data : undefined);
     if (data?.id) {
       reportId = data.id;
-      logStep(`Informe creado: ${reportId}`);
+      await logStep(`Informe creado: ${reportId}`);
       assert(data.indicadoresBateria?.bypassActivo === false, 'Bypass = false guardado correctamente');
 
       // Check OT Financial line execution auto-synced
@@ -365,7 +369,7 @@ async function runCase1(): Promise<void> {
   }
 
   // ─── PASO 9: Supervisor Aprueba el Informe ───────────────
-  logStep('PASO 9: Supervisor Aprueba el Informe → OT = Aprobada');
+  await logStep('PASO 9: Supervisor Aprueba el Informe → OT = Aprobada');
   {
     const { ok, data } = await api('PUT', `/api/ots/${otId}`, { estado: 'Aprobada' });
     assert(ok, `PUT /api/ots/${otId} → estado = "Aprobada"`, !ok ? data : undefined);
@@ -391,7 +395,7 @@ async function runCase1(): Promise<void> {
   }
 
   // ─── PASO 10: Completar Datos de Facturación ─────────────
-  logStep('PASO 10: Completar Datos de Facturación → Estado = FACTURADO');
+  await logStep('PASO 10: Completar Datos de Facturación → Estado = FACTURADO');
   if (otLineaId) {
     const fechaFactura = new Date().toISOString().split('T')[0];
     const { ok, data } = await api('PUT', `/api/ot-lineas/${otLineaId}`, {
@@ -405,7 +409,7 @@ async function runCase1(): Promise<void> {
 
     assert(ok, `PUT /api/ot-lineas/${otLineaId} → Facturación guardada`, !ok ? data : undefined);
     if (data) {
-      logStep(`OT Financiera actualizada. Estado: ${data.estado}`);
+      await logStep(`OT Financiera actualizada. Estado: ${data.estado}`);
       assert(
         parseFloat(data.sub_importe_sin_igv) === 6000,
         `Importe guardado correctamente (${data.sub_importe_sin_igv})`
@@ -437,7 +441,7 @@ async function runCase2(): Promise<void> {
   let reportId = '';
 
   // ─── PASO 1: Crear Cliente ───────────────────────────────
-  logStep('PASO 1: Crear Cliente');
+  await logStep('PASO 1: Crear Cliente');
   {
     const { ok, data } = await api('POST', '/api/clients', {
       razonSocial: 'BETA SOLUTIONS E2E S.R.L.',
@@ -454,7 +458,7 @@ async function runCase2(): Promise<void> {
     assert(ok, 'POST /api/clients → 201 Created', !ok ? data : undefined);
     if (data?.id) {
       clientId = data.id;
-      logStep(`Cliente creado: ${clientId} — ${data.razonSocial}`);
+      await logStep(`Cliente creado: ${clientId} — ${data.razonSocial}`);
       assert(data.razonSocial === 'BETA SOLUTIONS E2E S.R.L.', 'Razón social guardada correctamente');
     }
   }
@@ -462,9 +466,10 @@ async function runCase2(): Promise<void> {
   if (!clientId) { logWarn('Omitiendo pasos siguientes por fallo en creación de cliente'); return; }
 
   // ─── PASO 2: Crear Contrato + Equipo ────────────────────
-  logStep('PASO 2: Crear Contrato + Equipo Tablero');
+  await logStep('PASO 2: Crear Contrato + Equipo Tablero');
   {
     const { ok: ctOk, data: ctData } = await api('POST', '/api/contratos-comerciales', {
+      n_contrato: 'COT-2026-002',
       cliente: 'BETA SOLUTIONS E2E S.R.L.',
       clientId,
       fecha_inicio: '2026-07-01',
@@ -480,7 +485,7 @@ async function runCase2(): Promise<void> {
     assert(ctOk, 'POST /api/contratos-comerciales → 201 Created', !ctOk ? ctData : undefined);
     if (ctData?.id) {
       contratoId = ctData.id;
-      logStep(`Contrato creado: ${contratoId}`);
+      await logStep(`Contrato creado: ${contratoId}`);
 
       // Add equipment
       const { ok: eqCreateOk, data: eqCreateData } = await api('POST', '/api/equipos', {
@@ -498,7 +503,7 @@ async function runCase2(): Promise<void> {
 
       if (eqCreateData?.id) {
         equipoId = eqCreateData.id;
-        logStep(`Equipo ABB creado: ${equipoId}`);
+        await logStep(`Equipo ABB creado: ${equipoId}`);
         const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/equipos`, { equipoId });
         assert(eqOk, `Equipo ABB vinculado al contrato`, !eqOk ? eqData : undefined);
       }
@@ -508,7 +513,7 @@ async function runCase2(): Promise<void> {
   if (!contratoId) { logWarn('Omitiendo pasos siguientes por fallo en creación de contrato'); return; }
 
   // ─── PASO 3: Crear Adenda + Equipo Adicional ────────────
-  logStep('PASO 3: Crear Adenda + Equipo Schneider');
+  await logStep('PASO 3: Crear Adenda + Equipo Schneider');
   {
     const { ok, data } = await api('POST', `/api/contracts/${contratoId}/ampliaciones`, {
       monto: 2000,
@@ -521,7 +526,7 @@ async function runCase2(): Promise<void> {
     const adendas = data?.ampliaciones || [];
     const latestAdenda = adendas[adendas.length - 1];
     if (latestAdenda?.id) {
-      logStep(`Adenda creada: ${latestAdenda.id}`);
+      await logStep(`Adenda creada: ${latestAdenda.id}`);
 
       // Create Schneider equipo first, then link to adenda
       const { ok: eqCreateOk, data: eqCreateData } = await api('POST', '/api/equipos', {
@@ -541,7 +546,7 @@ async function runCase2(): Promise<void> {
           equipoId: eqCreateData.id
         });
         assert(eqOk, 'POST equipo a adenda → 201', !eqOk ? eqData : undefined);
-        if (eqOk) { logStep(`Equipo Schneider vinculado a adenda: ${eqCreateData.id}`); }
+        if (eqOk) { await logStep(`Equipo Schneider vinculado a adenda: ${eqCreateData.id}`); }
       }
     } else {
       logWarn('No se obtuvo ID de adenda');
@@ -549,12 +554,13 @@ async function runCase2(): Promise<void> {
   }
 
   // ─── PASO 4: Programar Visita (OT Correctiva) ───────────
-  logStep('PASO 4: Programar Visita → OT Correctiva');
+  await logStep('PASO 4: Programar Visita → OT Correctiva');
   {
     const { data: users } = await api('GET', '/api/users');
     const tecnico = Array.isArray(users) ? users.find((u: any) => u.role === 'Tecnico' || u.role === 'Administrador') : null;
 
     const { ok, data } = await api('POST', '/api/ots', {
+      id: 'OT-2026-002',
       clientId,
       contratoId,
       equipoId: equipoId || undefined,
@@ -571,7 +577,7 @@ async function runCase2(): Promise<void> {
     assert(ok, 'POST /api/ots → 201 Correctiva', !ok ? data : undefined);
     if (data?.id) {
       otId = data.id;
-      logStep(`OT Técnica creada: ${otId}`);
+      await logStep(`OT Técnica creada: ${otId}`);
       assert(data.tipoMantenimiento === 'Correctivo', 'Tipo de mantenimiento = Correctivo');
       assert(data.clientId === clientId, 'clientId correcto en OT');
     }
@@ -587,7 +593,7 @@ async function runCase2(): Promise<void> {
       );
       if (myLinea) {
         otLineaId = myLinea.id;
-        logStep(`OT Financiera: ${otLineaId}`);
+        await logStep(`OT Financiera: ${otLineaId}`);
         assert(myLinea.razon_social !== 'Cliente General', `Nombre cliente no es "Cliente General" (actual: "${myLinea.razon_social}")`);
         assert(myLinea.razon_social?.includes('BETA'), `Nombre cliente contiene "BETA" (actual: "${myLinea.razon_social}")`);
       } else {
@@ -599,7 +605,7 @@ async function runCase2(): Promise<void> {
   if (!otId) { logWarn('Omitiendo pasos de informe por fallo en creación de OT'); return; }
 
   // ─── PASO 5: Registrar Informe con Bypass Activo ─────────
-  logStep('PASO 5: Registrar Informe con BYPASS ACTIVO (anomalía)');
+  await logStep('PASO 5: Registrar Informe con BYPASS ACTIVO (anomalía)');
   {
     const { ok, data } = await api('POST', '/api/reports', {
       id: `report_c2a_${Date.now()}`,
@@ -629,7 +635,7 @@ async function runCase2(): Promise<void> {
     assert(ok, 'POST /api/reports con bypass → 201 Created', !ok ? data : undefined);
     if (data?.id) {
       reportId = data.id;
-      logStep(`Informe creado con bypass: ${reportId}`);
+      await logStep(`Informe creado con bypass: ${reportId}`);
       assert(data.indicadoresBateria?.bypassActivo === true, 'Bypass activo guardado correctamente');
 
       // Verify OT Financial sync
@@ -644,7 +650,7 @@ async function runCase2(): Promise<void> {
   }
 
   // ─── PASO 6: OT → Estado Observada (Supervisor Observa) ─
-  logStep('PASO 6A: Supervisor OBSERVA el informe → OT = Observada');
+  await logStep('PASO 6A: Supervisor OBSERVA el informe → OT = Observada');
   {
     const { ok, data } = await api('PUT', `/api/ots/${otId}`, {
       estado: 'Observada',
@@ -654,7 +660,7 @@ async function runCase2(): Promise<void> {
   }
 
   // ─── PASO 6B: Técnico Corrige Informe ────────────────────
-  logStep('PASO 6B: Técnico CORRIGE y reenvía informe');
+  await logStep('PASO 6B: Técnico CORRIGE y reenvía informe');
   {
     const { ok, data } = await api('POST', '/api/reports', {
       id: `report_c2b_${Date.now()}`,
@@ -681,11 +687,11 @@ async function runCase2(): Promise<void> {
     });
 
     assert(ok, 'POST /api/reports (corrección) → 201/200', !ok ? data : undefined);
-    if (data?.id) { logStep(`Informe corregido guardado: ${data.id}`); }
+    if (data?.id) { await logStep(`Informe corregido guardado: ${data.id}`); }
   }
 
   // ─── PASO 6C: Supervisor Aprueba el Informe Corregido ───
-  logStep('PASO 6C: Supervisor APRUEBA el informe corregido');
+  await logStep('PASO 6C: Supervisor APRUEBA el informe corregido');
   {
     const { ok, data } = await api('PUT', `/api/ots/${otId}`, { estado: 'Aprobada' });
     assert(ok, `PUT /api/ots/${otId} → estado = "Aprobada"`, !ok ? data : undefined);
@@ -708,7 +714,7 @@ async function runCase2(): Promise<void> {
   }
 
   // ─── PASO 7: Completar Facturación ───────────────────────
-  logStep('PASO 7: Completar Datos de Facturación');
+  await logStep('PASO 7: Completar Datos de Facturación');
   if (otLineaId) {
     const { ok, data } = await api('PUT', `/api/ot-lineas/${otLineaId}`, {
       sub_importe_sin_igv: 2125,
@@ -753,7 +759,7 @@ async function verifyDashboardData(): Promise<void> {
   ]);
 
   const clientCount = Array.isArray(clients) ? clients.filter((c: any) => c.razonSocial?.includes('E2E')).length : 0;
-  const contratoCount = Array.isArray(contratos) ? contratos.filter((c: any) => c.n_contrato?.includes('E2E')).length : 0;
+  const contratoCount = Array.isArray(contratos) ? contratos.filter((c: any) => c.n_contrato?.includes('COT-') || c.id?.startsWith('cont_') || c.id?.startsWith('COT-')).length : 0;
   const otCount = Array.isArray(ots) ? ots.length : 0;
   const reportCount = Array.isArray(reports) ? reports.length : 0;
   const lineasAprobadas = Array.isArray(lineas) ? lineas.filter((l: any) => l.pendiente === 'EJECUTADO' || l.pendiente === 'FACTURADO' || l.estado === 'FACTURADO').length : 0;
@@ -790,7 +796,7 @@ async function main() {
 
   // ─── 1. Health check ────────────────────────────────────
   logSection('CONEXIÓN Y AUTENTICACIÓN');
-  logStep(`Verificando health check en ${BASE_URL}/api/health`);
+  await logStep(`Verificando health check en ${BASE_URL}/api/health`);
   {
     const { ok, data } = await api('GET', '/api/health');
     assert(ok, 'GET /api/health → responde correctamente', !ok ? data : undefined);
@@ -802,13 +808,13 @@ async function main() {
   }
 
   // ─── 2. Login ───────────────────────────────────────────
-  logStep(`Autenticando con usuario: ${ADMIN_EMAIL}`);
+  await logStep(`Autenticando con usuario: ${ADMIN_EMAIL}`);
   {
     const { ok, data } = await api('POST', '/api/login', { email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
     assert(ok, 'POST /api/login → token recibido', !ok ? data : undefined);
     if (ok && data?.token) {
       TOKEN = data.token;
-      logStep(`Autenticado como: ${data.user?.username} (${data.user?.role})`);
+      await logStep(`Autenticado como: ${data.user?.username} (${data.user?.role})`);
     } else {
       log(`\n${C.red}${C.bold}ERROR FATAL: Login fallido. Verifica credenciales.${C.reset}`);
       log(`${C.yellow}Configura TEST_ADMIN_PASSWORD=<password> en .env o pasa --password como arg.${C.reset}\n`);
