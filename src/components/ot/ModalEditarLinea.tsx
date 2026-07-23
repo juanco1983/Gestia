@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
 import { OrdenTrabajoLinea, Client } from '../../types';
-import { MESES_ESPANOL, ESTADO_VALUES, PENDIENTE_VALUES } from '../../utils/otDefaults';
+import { MESES_ESPANOL, getFinancialStatusInfo, PENDIENTE_VALUES } from '../../utils/otDefaults';
 
 interface ModalEditarLineaProps {
   editingLine: OrdenTrabajoLinea;
@@ -28,20 +28,32 @@ export default function ModalEditarLinea({
   const handleEditLineSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Rule: Cannot mark as FACTURADO without invoice number & invoice date
-    if (editingLine.estado === 'FACTURADO' && (!editingLine.n_factura.trim() || !editingLine.fecha_factura)) {
-      alert('REGLA DE NEGOCIO: No se puede marcar como "FACTURADO" si no se introduce un número de factura y su fecha de emisión.');
+    const subSinIgv = Number(editingLine.sub_importe_sin_igv) || 0;
+    const hasInvoiceNumber = Boolean(editingLine.n_factura && editingLine.n_factura.trim() !== '');
+    const hasInvoiceDate = Boolean(editingLine.fecha_factura && editingLine.fecha_factura.trim() !== '');
+
+    // Partial invoice data validation warning
+    if ((hasInvoiceNumber || hasInvoiceDate) && (!hasInvoiceNumber || !hasInvoiceDate || subSinIgv <= 0)) {
+      alert('REGLA DE NEGOCIO: Para completar y marcar como Facturado, debe ingresar el Sub Importe (mayor a 0), el número de factura y la fecha de emisión.');
       return;
     }
 
+    // Automatic status determination: If amount + invoice number + invoice date exist -> Automatically FACTURADO (Completado)
+    let autoEstado = editingLine.estado;
+    if (subSinIgv > 0 && hasInvoiceNumber && hasInvoiceDate) {
+      autoEstado = 'FACTURADO';
+    }
+
     // Auto calculate Total USD for this specific line
-    const subSinIgv = Number(editingLine.sub_importe_sin_igv) || 0;
     const isSoles = editingLine.simbolo_moneda === 'S/';
     const totalUsd = isSoles ? (subSinIgv / tipoCambio) : subSinIgv;
 
     const updatedLine: OrdenTrabajoLinea = {
       ...editingLine,
+      sub_importe_sin_igv: subSinIgv,
+      sub_importe_inc_igv: Number((subSinIgv * 1.18).toFixed(2)),
       total_usd: Number(totalUsd.toFixed(2)),
+      estado: autoEstado,
       modificadoPor: currentUser.email,
       modificadoEn: new Date().toISOString().split('T')[0]
     };
@@ -56,7 +68,7 @@ export default function ModalEditarLinea({
     return () => { if (el) el.style.overflow = ''; };
   }, []);
 
-  const isReadOnly = editingLine.estado === 'FACTURADO' || (editingLine.estado as string) === 'COMPLETADO';
+  const statusInfo = getFinancialStatusInfo(editingLine);
 
   return (
     <>
@@ -67,11 +79,9 @@ export default function ModalEditarLinea({
           <div>
             <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
               <span>Editar Línea de OT {editingLine.ot}</span>
-              {isReadOnly && (
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">
-                  🔒 Completada (Solo Lectura)
-                </span>
-              )}
+              <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
+                {statusInfo.label}
+              </span>
             </h3>
             <span className="text-[10px] font-bold text-slate-450 font-mono">Cliente: {editingLine.razon_social}</span>
           </div>
@@ -85,19 +95,10 @@ export default function ModalEditarLinea({
 
         <form onSubmit={handleEditLineSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-left text-xs font-sans">
           
-          {isReadOnly && (
-            <div className="bg-emerald-50 border border-emerald-200/80 p-3.5 rounded-2xl flex items-center gap-3 text-emerald-900 text-xs font-semibold">
-              <CheckCircle2 size={18} className="text-[#00B594] shrink-0" />
-              <span>
-                <strong>Línea Completada y Facturada:</strong> Esta orden de trabajo ha cerrado su ciclo operativo-financiero y se encuentra bloqueada para modificaciones.
-              </span>
-            </div>
-          )}
-
           {/* SECCIÓN 1: DATOS ESPECÍFICOS DE LA CUOTA / LÍNEA */}
-          <fieldset disabled={isReadOnly} className="space-y-3 disabled:opacity-80">
+          <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-450 font-mono border-b border-slate-100 pb-1">
-              Datos de la Línea / Cuota
+              Datos de la Línea / Cuota Financiera
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
@@ -105,7 +106,9 @@ export default function ModalEditarLinea({
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Sub Importe (Sin IGV)</label>
                 <input
                   type="number"
-                  value={editingLine.sub_importe_sin_igv}
+                  step="0.01"
+                  placeholder="0.00"
+                  value={editingLine.sub_importe_sin_igv || ''}
                   onChange={(e) => {
                     const sin = Number(e.target.value) || 0;
                     setEditingLine({
@@ -114,18 +117,68 @@ export default function ModalEditarLinea({
                       sub_importe_inc_igv: Number((sin * 1.18).toFixed(2))
                     });
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800 font-bold focus:outline-none focus:border-[#00B594]"
                 />
               </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Sub Importe (Con IGV)</label>
                 <input
                   type="number"
-                  value={editingLine.sub_importe_inc_igv}
-                  onChange={(e) => setEditingLine({ ...editingLine, sub_importe_inc_igv: Number(e.target.value) || 0 })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800"
+                  step="0.01"
+                  readOnly
+                  value={editingLine.sub_importe_inc_igv || 0}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800 font-bold"
                 />
               </div>
+            </div>
+
+            {/* SECCIÓN DATOS REALES DE FACTURACIÓN */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-wide font-mono flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-[#00B594]" />
+                  Datos Reales de Facturación (Monto y Factura)
+                </h4>
+                <span className="text-[9.5px] font-mono font-bold text-slate-400">
+                  Automático
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9.5px] font-bold uppercase text-slate-600 block mb-1 font-mono">Nro de Factura</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: F001-2294"
+                    value={editingLine.n_factura || ''}
+                    onChange={(e) => setEditingLine({ ...editingLine, n_factura: e.target.value.toUpperCase() })}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono font-bold text-slate-850 focus:outline-none focus:border-[#00B594]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9.5px] font-bold uppercase text-slate-600 block mb-1 font-mono">Fecha Emisión</label>
+                  <input
+                    type="date"
+                    value={editingLine.fecha_factura || ''}
+                    onChange={(e) => {
+                      const date = e.target.value;
+                      const parts = date.split('-');
+                      const y = parts.length > 0 ? parseInt(parts[0]) : undefined;
+                      const mIndex = parts.length > 1 ? parseInt(parts[1]) - 1 : 0;
+                      setEditingLine({
+                        ...editingLine,
+                        fecha_factura: date,
+                        anio_factura: y,
+                        mes_factura: MESES_ESPANOL[mIndex]
+                      });
+                    }}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono text-slate-800 focus:outline-none focus:border-[#00B594]"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Al completar el sub importe, nro. de factura y fecha, el estado pasará a <strong>Facturado</strong> automáticamente.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -170,22 +223,11 @@ export default function ModalEditarLinea({
 
             <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado Facturación</label>
-                <select
-                  value={editingLine.estado}
-                  onChange={(e) => {
-                    const st = e.target.value as any;
-                    setEditingLine({
-                      ...editingLine,
-                      estado: st,
-                      n_factura: st === 'FACTURADO' ? editingLine.n_factura : '',
-                      fecha_factura: st === 'FACTURADO' ? editingLine.fecha_factura : ''
-                    });
-                  }}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-semibold"
-                >
-                  {ESTADO_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado Facturación (Automático)</label>
+                <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-bold flex items-center justify-between">
+                  <span>{statusInfo.label}</span>
+                  <span className="text-[9px] text-slate-400 uppercase font-mono">Auto</span>
+                </div>
               </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado Ejecución</label>
@@ -199,56 +241,13 @@ export default function ModalEditarLinea({
               </div>
             </div>
 
-            {editingLine.estado === 'FACTURADO' && (
-              <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-150 space-y-3">
-                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-wide font-mono flex items-center gap-1.5">
-                  <CheckCircle2 size={12} className="text-amber-600" />
-                  Introducir Datos Reales de Factura
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[9px] font-black uppercase text-amber-800 block mb-1 font-mono">Nro de Factura <span className="text-rose-500">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: F001-2294"
-                      value={editingLine.n_factura}
-                      onChange={(e) => setEditingLine({ ...editingLine, n_factura: e.target.value.toUpperCase() })}
-                      className="w-full bg-white border border-amber-200 rounded-xl py-1.5 px-3 font-mono font-bold text-slate-850 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black uppercase text-amber-800 block mb-1 font-mono">Fecha Emisión <span className="text-rose-500">*</span></label>
-                    <input
-                      type="date"
-                      required
-                      value={editingLine.fecha_factura || ''}
-                      onChange={(e) => {
-                        const date = e.target.value;
-                        const parts = date.split('-');
-                        const y = parts.length > 0 ? parseInt(parts[0]) : undefined;
-                        const mIndex = parts.length > 1 ? parseInt(parts[1]) - 1 : 0;
-                        setEditingLine({
-                          ...editingLine,
-                          fecha_factura: date,
-                          anio_factura: y,
-                          mes_factura: MESES_ESPANOL[mIndex]
-                        });
-                      }}
-                      className="w-full bg-white border border-amber-200 rounded-xl py-1.5 px-3 font-mono text-slate-800 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nro Guía / Informe</label>
                 <input
                   type="text"
                   placeholder="Ej: GR-1204"
-                  value={editingLine.nro_guia_informe}
+                  value={editingLine.nro_guia_informe || ''}
                   onChange={(e) => setEditingLine({ ...editingLine, nro_guia_informe: e.target.value.toUpperCase() })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-850"
                 />
@@ -257,7 +256,7 @@ export default function ModalEditarLinea({
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Vendedor / Comercial</label>
                 <input
                   type="text"
-                  value={editingLine.comercial}
+                  value={editingLine.comercial || ''}
                   onChange={(e) => setEditingLine({ ...editingLine, comercial: e.target.value })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
                 />
@@ -268,7 +267,7 @@ export default function ModalEditarLinea({
               <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Observaciones Operacionales</label>
               <input
                 type="text"
-                value={editingLine.observacion}
+                value={editingLine.observacion || ''}
                 onChange={(e) => setEditingLine({ ...editingLine, observacion: e.target.value })}
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
               />
@@ -278,12 +277,12 @@ export default function ModalEditarLinea({
               <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Notas Seguimiento Comercial</label>
               <input
                 type="text"
-                value={editingLine.seguimiento}
+                value={editingLine.seguimiento || ''}
                 onChange={(e) => setEditingLine({ ...editingLine, seguimiento: e.target.value })}
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
               />
             </div>
-          </fieldset>
+          </div>
 
           {/* SECCIÓN 2: DATOS DEL ACUERDO MARCO PADRE (ACORDEÓN EXTENSIBLE) */}
           <div className="border-t border-slate-200 pt-3">
@@ -337,7 +336,7 @@ export default function ModalEditarLinea({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono font-mono">Nro Cotización</label>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nro Cotización</label>
                     <input
                       type="text"
                       value={editingLine.n_cotizacion || ''}
@@ -346,7 +345,7 @@ export default function ModalEditarLinea({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono font-mono">Nro OC / OS</label>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nro OC / OS</label>
                     <input
                       type="text"
                       value={editingLine.n_oc_os || ''}
@@ -395,7 +394,7 @@ export default function ModalEditarLinea({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono font-mono">Monto Marco (Con IGV)</label>
+                    <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto Marco (Con IGV)</label>
                     <input
                       type="number"
                       value={editingLine.monto_marco_inc_igv || 0}
@@ -420,16 +419,14 @@ export default function ModalEditarLinea({
               onClick={onClose}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
             >
-              {isReadOnly ? 'Cerrar' : 'Cancelar'}
+              Cancelar
             </button>
-            {!isReadOnly && (
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
-              >
-                Guardar Cambios
-              </button>
-            )}
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
+            >
+              Guardar Cambios
+            </button>
           </div>
 
         </form>

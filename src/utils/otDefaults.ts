@@ -57,16 +57,6 @@ export const INITIAL_CONTRATOS_NUEVOS: any[] = [
   }
 ];
 
-// --------------------------------------------------------------------------
-// ÓRDENES DE TRABAJO FINANCIERAS (vinculadas a las 5 OTs técnicas)
-// --------------------------------------------------------------------------
-// otl_1  →  OT-001 (CERRADA)    →  FACTURADO
-// otl_2  →  OT-002 (FIRMADA)    →  POR FACTURAR (lista para facturar)
-// otl_3  →  OT-003 (EN_REVISION)→  POR FACTURAR (pendiente de aprobación técnica)
-// otl_4  →  OT-004 (PROGRAMADA) →  POR FACTURAR (servicio no ejecutado aún)
-// otl_5  →  OT-005 (CREADA)     →  POR FACTURAR (emergencia recién registrada)
-// --------------------------------------------------------------------------
-
 export const INITIAL_ORDENES_TRABAJO: OrdenTrabajoLinea[] = [];
 
 export const MESES_ESPANOL = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SET', 'OCT', 'NOV', 'DIC'];
@@ -90,8 +80,11 @@ export const PENDIENTE_VALUES = [
 ];
 
 export const ESTADO_VALUES = [
-  'FACTURADO',
+  'PENDIENTE_VISITA',
+  'PENDIENTE_INFORME',
+  'PENDIENTE_FACTURACION',
   'POR FACTURAR',
+  'FACTURADO',
   'ANULADO'
 ];
 
@@ -101,3 +94,108 @@ export const TIPO_CONTRATACION_VALUES = [
   'OS',
   'CORREO'
 ];
+
+/**
+ * Dynamic automatic status metadata for an OT Financiera (OrdenTrabajoLinea)
+ * without icons/emojis.
+ */
+export function getFinancialStatusInfo(
+  linea: { estado?: string; n_factura?: string; fecha_factura?: string; sub_importe_sin_igv?: number },
+  matchingOt?: any
+) {
+  const rawState = (linea.estado || '').toUpperCase();
+  const hasInvoiceData = Boolean(
+    linea.n_factura &&
+    linea.n_factura.trim() !== '' &&
+    linea.fecha_factura &&
+    (linea.sub_importe_sin_igv || 0) > 0
+  );
+
+  // Automatically Facturado / Completado if amount + invoice number + date exist
+  if (rawState === 'FACTURADO' || rawState === 'COMPLETADO' || hasInvoiceData) {
+    return {
+      key: 'FACTURADO',
+      label: 'Facturado',
+      badgeClass: 'bg-[#E6F7F4] text-[#00B594] border border-emerald-200/80 font-mono font-black'
+    };
+  }
+
+  if (rawState === 'ANULADO') {
+    return {
+      key: 'ANULADO',
+      label: 'Anulado',
+      badgeClass: 'bg-rose-100 text-rose-700 border border-rose-200 font-mono font-bold'
+    };
+  }
+
+  // Derive dynamic status from linked technical OT state if available
+  if (matchingOt) {
+    const otState = (matchingOt.estado || '').toUpperCase();
+
+    // Approved by supervisor -> Pendiente de Facturación
+    if (
+      otState === 'APROBADA' ||
+      otState === 'FIRMADA' ||
+      otState === 'FACTURADA' ||
+      otState === 'CERRADA'
+    ) {
+      return {
+        key: 'PENDIENTE_FACTURACION',
+        label: 'Pendiente de Facturación',
+        badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold'
+      };
+    }
+
+    // Technical visit done -> Pendiente de Informe
+    if (
+      otState === 'INFORME_PENDIENTE' ||
+      otState === 'EN_REVISION' ||
+      otState === 'OBSERVADA'
+    ) {
+      return {
+        key: 'PENDIENTE_INFORME',
+        label: 'Pendiente de Informe',
+        badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold'
+      };
+    }
+
+    // Technical visit not executed yet -> Pendiente de Visita
+    if (
+      otState === 'PROGRAMADA' ||
+      otState === 'ASIGNADA' ||
+      otState === 'EN_CAMINO' ||
+      otState === 'EN_SITIO' ||
+      otState === 'TRABAJO_EN_EJECUCION' ||
+      otState === 'PENDIENTE_PROGRAMACION'
+    ) {
+      return {
+        key: 'PENDIENTE_VISITA',
+        label: 'Pendiente de Visita',
+        badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold'
+      };
+    }
+  }
+
+  // Explicit key fallbacks if set directly on financial line
+  if (rawState === 'PENDIENTE_VISITA') {
+    return {
+      key: 'PENDIENTE_VISITA',
+      label: 'Pendiente de Visita',
+      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold'
+    };
+  }
+
+  if (rawState === 'PENDIENTE_INFORME') {
+    return {
+      key: 'PENDIENTE_INFORME',
+      label: 'Pendiente de Informe',
+      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold'
+    };
+  }
+
+  return {
+    key: 'PENDIENTE_FACTURACION',
+    label: 'Pendiente de Facturación',
+    badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold'
+  };
+}

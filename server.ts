@@ -753,6 +753,20 @@ app.post("/api/reports", async (req, res) => {
       create: { ...finalReport, offlineDirty: false }
     });
 
+    // Auto-sync linked OrdenTrabajoLinea execution status to EJECUTADO in DB
+    const cleanOtNumber = finalOtId.replace('OT-', '');
+    await prisma.ordenTrabajoLinea.updateMany({
+      where: {
+        OR: [
+          { otTecnicaId: finalOtId },
+          { ot: cleanOtNumber }
+        ]
+      },
+      data: {
+        pendiente: 'EJECUTADO'
+      }
+    }).catch(e => console.error("Error auto-syncing OT Financial line execution status:", e));
+
     res.status(201).json(saved);
   } catch (err: any) {
     console.error("Error al guardar reporte técnico:", err);
