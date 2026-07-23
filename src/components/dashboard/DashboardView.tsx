@@ -72,7 +72,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   }, [ots]);
 
-  // Build role-specific KPI cards
+  // Build role-specific KPI cards (4 operational cards)
   const kpiCards: KpiCardData[] = useMemo(() => {
     const totalOts = ots.length || 55;
 
@@ -113,15 +113,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           color: '#8B5CF6'
         },
         {
-          id: 'sla_cumplimiento',
-          title: 'SLA Cumplimiento',
-          value: '99.2%',
-          percentageChange: 'Objetivo: 95%',
-          subtext: 'SLA de atención de supervisor',
+          id: 'tiempo_rev',
+          title: 'Tiempo Prom. Revisión',
+          value: '1.8 hrs',
+          percentageChange: '-15m',
+          subtext: 'SLA de respuesta supervisor',
           badge: { text: 'Óptimo', color: 'emerald' },
           targetTab: 'Supervisor',
-          sparklineData: [96, 97, 98, 97.5, 99, 98.8, 99.2],
-          color: '#00B594'
+          sparklineData: [2.5, 2.2, 2.0, 1.9, 1.8, 1.8, 1.8],
+          color: '#3B82F6'
         }
       ];
     }
@@ -155,24 +155,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           color: '#F59E0B'
         },
         {
-          id: 'proximo_servicio',
+          id: 'ot_cerradas_tech',
           title: 'OT Cerradas',
           value: ejecutadasDelMes.length || 25,
           percentageChange: '+25%',
           subtext: 'Este mes',
-          badge: { text: 'Próximo', color: 'blue' },
+          badge: { text: 'Completado', color: 'blue' },
           targetTab: 'Tecnico',
           sparklineData: [12, 15, 18, 20, 22, 23, 25],
           color: '#8B5CF6'
         },
         {
-          id: 'sla_cumplimiento_tech',
-          title: 'SLA Cumplimiento',
-          value: '99.2%',
-          percentageChange: 'Objetivo: 95%',
-          subtext: 'Llegada puntual y cierre',
+          id: 'efectividad_campo',
+          title: 'Efectividad en Campo',
+          value: '98%',
+          percentageChange: '+2%',
+          subtext: 'Puntualidad y primera visita',
           badge: { text: 'Excelente', color: 'emerald' },
-          sparklineData: [96, 97, 98, 98.5, 99, 99.2],
+          sparklineData: [92, 94, 95, 96, 97, 98, 98],
           color: '#00B594'
         }
       ];
@@ -218,14 +218,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           color: '#8B5CF6'
         },
         {
-          id: 'sla_cumplimiento_ventas',
-          title: 'SLA Cumplimiento',
-          value: '99.2%',
-          percentageChange: 'Objetivo: 95%',
-          subtext: 'Satisfacción de cliente',
-          badge: { text: 'Excelente', color: 'emerald' },
-          sparklineData: [95, 96, 98, 98.5, 99, 99.2],
-          color: '#00B594'
+          id: 'potencia_gestionada',
+          title: 'Potencia Gestionada',
+          value: '4,250 kVA',
+          percentageChange: '+350',
+          subtext: 'Capacidad contratada',
+          badge: { text: 'Capacidad', color: 'emerald' },
+          sparklineData: [3200, 3500, 3800, 4000, 4150, 4250, 4250],
+          color: '#3B82F6'
         }
       ];
     }
@@ -290,13 +290,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onNavigateToTab={onNavigateToTab}
       />
 
-      {/* 2. Grid de 4 KPIs con Sparklines + SLA Card */}
+      {/* 2. Grid de 4 KPIs con Sparklines + SLA Card Única */}
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
         <div className="xl:col-span-4">
           <KpiCardsGrid cards={kpiCards} onNavigateToTab={onNavigateToTab} />
         </div>
 
-        {/* SLA Cumplimiento Card (5th Card in Mockup Header) */}
+        {/* SLA Cumplimiento Card (Única tarjeta SLA a la derecha) */}
         <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">
