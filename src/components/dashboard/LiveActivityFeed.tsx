@@ -18,18 +18,29 @@ export interface ActivityEvent {
 }
 
 export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports, clients }) => {
-  // Helper to format ISO timestamp or fallback time into HH:mm system time
+  // Smart date formatter: Distinguishes 'Hoy', 'Ayer', or specific date + time
   const formatEventTime = (timestamp?: string, fallbackTime?: string) => {
     if (timestamp) {
       const d = new Date(timestamp);
       if (!isNaN(d.getTime())) {
-        return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = d.toDateString() === yesterday.toDateString();
+
+        const timeStr = d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+        if (isToday) return `Hoy ${timeStr}`;
+        if (isYesterday) return `Ayer ${timeStr}`;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${timeStr}`;
       }
     }
     if (fallbackTime && fallbackTime.includes(':')) {
-      return fallbackTime;
+      return `Hoy ${fallbackTime}`;
     }
-    return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `Hoy ${new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
   };
 
   // Generate real dynamic events from reports and OTs
@@ -92,7 +103,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
     events.push(
       {
         id: 'ev_sys_1',
-        time: h1,
+        time: `Hoy ${h1}`,
         actor: 'Juan Córdova',
         action: 'inició servicio preventivo en',
         target: 'BBVA Perú (Sede Central)',
@@ -100,7 +111,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
       },
       {
         id: 'ev_sys_2',
-        time: h2,
+        time: `Hoy ${h2}`,
         actor: 'Pedro Ruiz',
         action: 'completó protocolo de pruebas en',
         target: 'UPS-03 (Clínica Internacional)',
@@ -108,7 +119,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
       },
       {
         id: 'ev_sys_3',
-        time: h3,
+        time: `Hoy ${h3}`,
         actor: 'Área Comercial',
         action: 'registró adenda contractual con',
         target: 'Banco de Crédito del Perú',
@@ -142,7 +153,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           </h3>
           <p className="text-xs text-slate-400 font-medium mt-0.5">
-            Eventos e hitos operativos registrados hoy
+            Últimos eventos e hitos operativos registrados
           </p>
         </div>
         <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
@@ -160,7 +171,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
               key={ev.id}
               className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-start gap-3 hover:bg-white hover:border-slate-200 transition-all text-left"
             >
-              <span className="text-[11px] font-mono font-black text-slate-400 shrink-0 pt-0.5">
+              <span className="text-[10px] font-mono font-black text-slate-500 shrink-0 pt-0.5 bg-slate-100 px-2 py-0.5 rounded-md">
                 {ev.time}
               </span>
               <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border ${style.bg}`}>
