@@ -307,7 +307,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 5. Panel Doble: Actividad en Tiempo Real + Ranking de Equipos con Fallas (Fase 2) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LiveActivityFeed ots={ots} reports={reports} clients={clients} />
-        <RankingEquiposFallas clients={clients} ots={ots} onNavigateToTab={onNavigateToTab} />
+        <RankingEquiposFallas clients={clients} ots={ots} reports={reports} onNavigateToTab={onNavigateToTab} />
       </div>
 
       {/* 6. Evolución Operativa y Gráfica Principal */}
