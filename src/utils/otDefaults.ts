@@ -96,22 +96,27 @@ export const TIPO_CONTRATACION_VALUES = [
 ];
 
 /**
- * Returns dynamic status metadata for an OT Financiera (OrdenTrabajoLinea)
- * synced with the operational state of the linked technical OT.
+ * Dynamic automatic status metadata for an OT Financiera (OrdenTrabajoLinea)
+ * without icons/emojis.
  */
 export function getFinancialStatusInfo(
-  linea: { estado?: string; n_factura?: string; fecha_factura?: string },
+  linea: { estado?: string; n_factura?: string; fecha_factura?: string; sub_importe_sin_igv?: number },
   matchingOt?: any
 ) {
   const rawState = (linea.estado || '').toUpperCase();
+  const hasInvoiceData = Boolean(
+    linea.n_factura &&
+    linea.n_factura.trim() !== '' &&
+    linea.fecha_factura &&
+    (linea.sub_importe_sin_igv || 0) > 0
+  );
 
-  // If already billed with invoice number and date saved
-  if (rawState === 'FACTURADO' || rawState === 'COMPLETADO') {
+  // Automatically Facturado / Completado if amount + invoice number + date exist
+  if (rawState === 'FACTURADO' || rawState === 'COMPLETADO' || hasInvoiceData) {
     return {
       key: 'FACTURADO',
       label: 'Facturado',
-      badgeClass: 'bg-[#E6F7F4] text-[#00B594] border border-emerald-200/80 font-mono font-black',
-      icon: '🔒'
+      badgeClass: 'bg-[#E6F7F4] text-[#00B594] border border-emerald-200/80 font-mono font-black'
     };
   }
 
@@ -119,8 +124,7 @@ export function getFinancialStatusInfo(
     return {
       key: 'ANULADO',
       label: 'Anulado',
-      badgeClass: 'bg-rose-100 text-rose-700 border border-rose-200 font-mono font-bold',
-      icon: '🚫'
+      badgeClass: 'bg-rose-100 text-rose-700 border border-rose-200 font-mono font-bold'
     };
   }
 
@@ -128,7 +132,7 @@ export function getFinancialStatusInfo(
   if (matchingOt) {
     const otState = (matchingOt.estado || '').toUpperCase();
 
-    // Approved by supervisor -> Ready for Billing
+    // Approved by supervisor -> Pendiente de Facturación
     if (
       otState === 'APROBADA' ||
       otState === 'FIRMADA' ||
@@ -138,12 +142,11 @@ export function getFinancialStatusInfo(
       return {
         key: 'PENDIENTE_FACTURACION',
         label: 'Pendiente de Facturación',
-        badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold',
-        icon: '💳'
+        badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold'
       };
     }
 
-    // Technical visit done -> Report pending creation/review
+    // Technical visit done -> Pendiente de Informe
     if (
       otState === 'INFORME_PENDIENTE' ||
       otState === 'EN_REVISION' ||
@@ -152,12 +155,11 @@ export function getFinancialStatusInfo(
       return {
         key: 'PENDIENTE_INFORME',
         label: 'Pendiente de Informe',
-        badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold',
-        icon: '⏳'
+        badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold'
       };
     }
 
-    // Technical visit not executed yet
+    // Technical visit not executed yet -> Pendiente de Visita
     if (
       otState === 'PROGRAMADA' ||
       otState === 'ASIGNADA' ||
@@ -169,8 +171,7 @@ export function getFinancialStatusInfo(
       return {
         key: 'PENDIENTE_VISITA',
         label: 'Pendiente de Visita',
-        badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold',
-        icon: '📅'
+        badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold'
       };
     }
   }
@@ -180,8 +181,7 @@ export function getFinancialStatusInfo(
     return {
       key: 'PENDIENTE_VISITA',
       label: 'Pendiente de Visita',
-      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold',
-      icon: '📅'
+      badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200 font-mono font-bold'
     };
   }
 
@@ -189,24 +189,13 @@ export function getFinancialStatusInfo(
     return {
       key: 'PENDIENTE_INFORME',
       label: 'Pendiente de Informe',
-      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold',
-      icon: '⏳'
-    };
-  }
-
-  if (rawState === 'PENDIENTE_FACTURACION' || rawState === 'POR FACTURAR') {
-    return {
-      key: 'PENDIENTE_FACTURACION',
-      label: 'Pendiente de Facturación',
-      badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold',
-      icon: '💳'
+      badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-mono font-bold'
     };
   }
 
   return {
     key: 'PENDIENTE_FACTURACION',
     label: 'Pendiente de Facturación',
-    badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold',
-    icon: '💳'
+    badgeClass: 'bg-blue-100 text-blue-800 border border-blue-200 font-mono font-extrabold'
   };
 }

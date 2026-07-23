@@ -352,11 +352,11 @@ export default function TablaOrdenesTrabajo({
               className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#00B594]"
             >
               <option value="">Estado Fact...</option>
-              <option value="PENDIENTE_VISITA">📅 Pendiente de Visita</option>
-              <option value="PENDIENTE_INFORME">⏳ Pendiente de Informe</option>
-              <option value="PENDIENTE_FACTURACION">💳 Pendiente de Facturación</option>
-              <option value="FACTURADO">🔒 Facturado</option>
-              <option value="ANULADO">🚫 Anulado</option>
+              <option value="PENDIENTE_VISITA">Pendiente de Visita</option>
+              <option value="PENDIENTE_INFORME">Pendiente de Informe</option>
+              <option value="PENDIENTE_FACTURACION">Pendiente de Facturación</option>
+              <option value="FACTURADO">Facturado</option>
+              <option value="ANULADO">Anulado</option>
             </select>
           </div>
           
@@ -500,12 +500,46 @@ export default function TablaOrdenesTrabajo({
 
                   const isCompletada = line.estado === 'FACTURADO' || (line.estado as string) === 'COMPLETADO';
 
+                  // Automatic Execution state calculation
+                  const otStateUpper = matchingOt ? (matchingOt.estado as string).toUpperCase() : '';
+                  const isEjecutado = Boolean(
+                    report ||
+                    line.pendiente === 'EJECUTADO' ||
+                    (matchingOt && (
+                      otStateUpper === 'INFORME_PENDIENTE' ||
+                      otStateUpper === 'EN_REVISION' ||
+                      otStateUpper === 'APROBADA' ||
+                      otStateUpper === 'FIRMADA' ||
+                      otStateUpper === 'FACTURADA' ||
+                      otStateUpper === 'CERRADA' ||
+                      otStateUpper === 'EN_CAMINO' ||
+                      otStateUpper === 'EN_SITIO' ||
+                      otStateUpper === 'TRABAJO_EN_EJECUCION' ||
+                      otStateUpper === 'COMPLETADA'
+                    ))
+                  );
+                  const executionText = line.pendiente === 'ANULADO' ? 'ANULADO' : isEjecutado ? 'EJECUTADO' : 'POR EJECUTAR';
+
+                  const otTecnicaStateLabel = matchingOt ? (
+                    otStateUpper === 'INFORME_PENDIENTE' ? 'Técnica: Pendiente de Informe' :
+                    otStateUpper === 'EN_REVISION' ? 'Técnica: Informe en Revisión' :
+                    otStateUpper === 'APROBADA' || otStateUpper === 'FIRMADA' ? 'Técnica: Informe Aprobado' :
+                    otStateUpper === 'PROGRAMADA' || otStateUpper === 'ASIGNADA' ? 'Técnica: Visita Programada' :
+                    otStateUpper === 'EN_CAMINO' || otStateUpper === 'EN_SITIO' || otStateUpper === 'TRABAJO_EN_EJECUCION' ? 'Técnica: En Ejecución' :
+                    `Técnica: ${matchingOt.estado}`
+                  ) : null;
+
                   return (
                     <tr key={line.id} className={`hover:bg-slate-50/50 transition-colors ${isOverdue ? 'bg-rose-50/25' : ''}`}>
                       <td className="px-4 py-3.5">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
                           <span className="text-[9px] text-slate-400 font-bold font-mono">Marco: #{line.ot_marco}</span>
+                          {otTecnicaStateLabel && (
+                            <span className="text-[8.5px] font-bold font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-max mt-0.5">
+                              {otTecnicaStateLabel}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3.5 max-w-xs">
@@ -548,8 +582,7 @@ export default function TablaOrdenesTrabajo({
                         {(() => {
                           const statusInfo = getFinancialStatusInfo(line, matchingOt);
                           return (
-                            <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 w-max ${statusInfo.badgeClass}`}>
-                              {statusInfo.icon && <span>{statusInfo.icon}</span>}
+                            <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center justify-center w-max ${statusInfo.badgeClass}`}>
                               <span>{statusInfo.label}</span>
                             </span>
                           );
@@ -557,13 +590,13 @@ export default function TablaOrdenesTrabajo({
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
-                          line.pendiente === 'EJECUTADO'
-                            ? 'bg-blue-100 text-blue-700'
-                            : line.pendiente === 'POR EJECUTAR'
-                            ? 'bg-slate-100 text-slate-600'
-                            : 'bg-rose-100 text-rose-700'
+                          executionText === 'EJECUTADO'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : executionText === 'POR EJECUTAR'
+                            ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                            : 'bg-rose-100 text-rose-700 border border-rose-200'
                         }`}>
-                          {line.pendiente}
+                          {executionText}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
