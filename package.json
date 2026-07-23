@@ -9,7 +9,10 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:e2e": "npx tsx scratch/e2e-test-runner.ts",
+    "test:e2e:fresh": "npx tsx scratch/wipe-operational-db.ts && npx tsx scratch/e2e-test-runner.ts",
+    "db:wipe": "npx tsx scratch/wipe-operational-db.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.712.0",

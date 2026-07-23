@@ -157,20 +157,30 @@ export const PipelineOTs: React.FC<PipelineOTsProps> = ({ ots, onNavigateToTab }
       </div>
 
       {/* Multi-segment Color Bar */}
-      <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex gap-0.5 mb-2">
+      <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex gap-0.5 mb-3">
         {stages.map(stg => (
           <div
             key={stg.id}
-            style={{ width: `${Math.max(2, stg.percentage)}%` }}
+            style={{ width: `${ots.length > 0 ? stg.percentage : 20}%` }}
             className={`h-full ${stg.barColor} transition-all duration-500`}
             title={`${stg.label}: ${stg.count} (${stg.percentage}%)`}
           />
         ))}
       </div>
 
-      <div className="flex justify-end">
-        <span className="text-[11px] font-mono font-bold text-slate-500">
-          Total: {ots.length} OT activas
+      {/* Leyenda de Colores del Pipeline */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
+        <div className="flex flex-wrap items-center gap-4">
+          {stages.map(stg => (
+            <div key={stg.id} className="flex items-center gap-1.5 font-medium text-slate-600">
+              <span className={`w-2.5 h-2.5 rounded-full ${stg.barColor} shrink-0`}></span>
+              <span>{stg.label}</span>
+              <span className="font-mono font-bold text-slate-800">({stg.count})</span>
+            </div>
+          ))}
+        </div>
+        <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+          Total: {ots.length} OTs
         </span>
       </div>
     </div>

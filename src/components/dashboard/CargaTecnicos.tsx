@@ -27,8 +27,8 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
       o => o.tecnicoTitularId === tech.id || o.tecnicoTitular === tech.username || o.tecnicoApoyoId === tech.id
     );
     const count = assignedOts.length;
-    // Calculate load percentage (assuming 5 OTs is 100% capacity)
-    const loadPct = Math.min(100, Math.max(20, count > 0 ? Math.round((count / 5) * 100) : 40));
+    // Calculate load percentage (5 active OTs is 100% capacity)
+    const loadPct = count > 0 ? Math.min(100, Math.round((count / 5) * 100)) : 0;
     const styleColor = colors[idx % colors.length];
 
     const initials = tech.username
@@ -51,14 +51,14 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
   techStats.sort((a, b) => b.count - a.count);
 
   return (
-    <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between">
+    <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between text-left">
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <span>Carga del Equipo Técnico</span>
               <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full">
-                {tecnicos.length || 11} conectados
+                {tecnicos.length} registrados
               </span>
             </h3>
             <p className="text-xs text-slate-400 font-medium mt-0.5">
@@ -69,7 +69,7 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
 
         <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
           {techStats.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">No hay técnicos registrados</p>
+            <p className="text-xs text-slate-400 text-center py-8">No hay técnicos registrados</p>
           ) : (
             techStats.map(({ tech, count, loadPct, styleColor, initials }) => (
               <div
@@ -100,16 +100,6 @@ export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavi
             ))
           )}
         </div>
-      </div>
-
-      <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
-        <button
-          onClick={() => onNavigateToTab?.('Monitoreo')}
-          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
-        >
-          <span>Ver todo el equipo</span>
-          <span>→</span>
-        </button>
       </div>
     </div>
   );
