@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Client, OT, TechnicalReport } from '../../types';
+import { ShieldAlert } from 'lucide-react';
 
 interface RankingEquiposFallasProps {
   clients: Client[];
@@ -14,59 +15,54 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
   reports = [],
   onNavigateToTab,
 }) => {
-  // Build items from real DB or fallback to dynamic mockup items
-  const items = [
-    {
-      rank: '1.',
-      rankColor: 'text-rose-500',
-      tag: 'UPS-TRIPP-42',
-      tipoCat: '(UPS)',
-      causa: 'Protector Térmico disparado',
-      incidenciasCount: 5,
-      barBg: 'bg-rose-500',
-      textColor: 'text-rose-500'
-    },
-    {
-      rank: '2.',
-      rankColor: 'text-amber-500',
-      tag: 'CLIM-PREC-02',
-      tipoCat: '(Climatización)',
-      causa: 'Banco de Condensadores en falla',
-      incidenciasCount: 3,
-      barBg: 'bg-amber-500',
-      textColor: 'text-amber-500'
-    },
-    {
-      rank: '3.',
-      rankColor: 'text-yellow-500',
-      tag: 'BATT-48V-01',
-      tipoCat: '(Baterías)',
-      causa: 'Voltaje fuera de rango',
-      incidenciasCount: 2,
-      barBg: 'bg-yellow-500',
-      textColor: 'text-yellow-600'
-    },
-    {
-      rank: '4.',
-      rankColor: 'text-yellow-600',
-      tag: 'TRANSF-500-01',
-      tipoCat: '(Transformador)',
-      causa: 'Sobrecalentamiento',
-      incidenciasCount: 2,
-      barBg: 'bg-yellow-500',
-      textColor: 'text-yellow-600'
-    },
-    {
-      rank: '5.',
-      rankColor: 'text-emerald-500',
-      tag: 'TABL-PRINC-01',
-      tipoCat: '(Tablero)',
-      causa: 'Breaker con falla intermitente',
-      incidenciasCount: 1,
-      barBg: 'bg-emerald-500',
-      textColor: 'text-emerald-600'
-    }
-  ];
+  // Build items 100% dynamically from real DB reports and OTs
+  const items = useMemo(() => {
+    const equipFailMap: Record<string, { tag: string; tipoCat: string; causa: string; count: number }> = {};
+
+    reports.forEach(r => {
+      if (!r.equipoId && !r.otId) return;
+      const tag = r.equipoId || r.otId || 'Equipo';
+
+      // Check if report has observations, bypass, or repair needed
+      const hasFalla = Boolean(
+        r.observacionesDiagnostico ||
+        r.comentariosAdicionales ||
+        r.indicadoresBateria?.bypassActivo ||
+        r.pasos?.paso1_funcionamiento === 'bypass' ||
+        r.pasos?.paso6_observaciones
+      );
+
+      if (hasFalla) {
+        if (!equipFailMap[tag]) {
+          equipFailMap[tag] = {
+            tag,
+            tipoCat: r.indicadoresBateria?.bypassActivo ? '(Bypass)' : '(Mantenimiento)',
+            causa: r.observacionesDiagnostico || r.comentariosAdicionales || r.pasos?.paso6_observaciones || 'Observación registrada en informe',
+            count: 0
+          };
+        }
+        equipFailMap[tag].count += 1;
+      }
+    });
+
+    const rankList = Object.values(equipFailMap)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const rankColors = ['text-rose-500', 'text-amber-500', 'text-yellow-500', 'text-yellow-600', 'text-emerald-500'];
+    const barBgs = ['bg-rose-500', 'bg-amber-500', 'bg-yellow-500', 'bg-yellow-500', 'bg-emerald-500'];
+
+    return rankList.map((item, idx) => ({
+      rank: `${idx + 1}.`,
+      rankColor: rankColors[idx] || 'text-slate-500',
+      tag: item.tag,
+      tipoCat: item.tipoCat,
+      causa: item.causa,
+      incidenciasCount: item.count,
+      barBg: barBgs[idx] || 'bg-slate-400',
+      textColor: rankColors[idx] || 'text-slate-500'
+    }));
+  }, [reports, ots]);
 
   return (
     <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between text-left">
@@ -82,56 +78,56 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
           </div>
         </div>
 
-        <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
-          {items.map((item) => (
-            <div
-              key={item.tag}
-              className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center justify-between gap-3 hover:bg-white hover:border-slate-200 transition-all"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className={`text-base font-black font-mono shrink-0 ${item.rankColor}`}>
-                  {item.rank}
-                </span>
-
-                <div className="min-w-0">
-                  <div className="flex items-baseline gap-1.5 truncate">
-                    <h4 className="text-xs font-black font-mono text-slate-900 truncate">
-                      {item.tag}
-                    </h4>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {item.tipoCat}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium truncate">
-                    {item.causa}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="w-20 bg-slate-200/80 h-2 rounded-full overflow-hidden hidden sm:block">
-                  <div
-                    className={`h-full ${item.barBg} rounded-full`}
-                    style={{ width: `${Math.min(100, (item.incidenciasCount / 5) * 100)}%` }}
-                  />
-                </div>
-                <span className={`text-xs font-black font-mono shrink-0 w-24 text-right ${item.textColor}`}>
-                  {item.incidenciasCount} {item.incidenciasCount === 1 ? 'incidencia' : 'incidencias'}
-                </span>
-              </div>
+        {items.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+              <ShieldAlert size={20} />
             </div>
-          ))}
-        </div>
-      </div>
+            <p className="text-xs font-bold text-slate-700">Sin incidencias registradas</p>
+            <p className="text-[11px] text-slate-400 mt-1">No hay fallas ni observaciones reportadas en la base de datos.</p>
+          </div>
+        ) : (
+          <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
+            {items.map((item) => (
+              <div
+                key={item.tag}
+                className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center justify-between gap-3 hover:bg-white hover:border-slate-200 transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`text-base font-black font-mono shrink-0 ${item.rankColor}`}>
+                    {item.rank}
+                  </span>
 
-      <div className="pt-3 border-t border-slate-100 mt-2 flex justify-center">
-        <button
-          onClick={() => onNavigateToTab?.('Monitoreo')}
-          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
-        >
-          <span>Ver ranking completo</span>
-          <span>→</span>
-        </button>
+                  <div className="min-w-0">
+                    <div className="flex items-baseline gap-1.5 truncate">
+                      <h4 className="text-xs font-black font-mono text-slate-900 truncate">
+                        {item.tag}
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {item.tipoCat}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                      {item.causa}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end shrink-0">
+                  <span className={`text-xs font-black font-mono ${item.textColor}`}>
+                    {item.incidenciasCount} fallas
+                  </span>
+                  <div className="w-14 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                    <div
+                      className={`h-full ${item.barBg} rounded-full`}
+                      style={{ width: `${Math.min(100, item.incidenciasCount * 20)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

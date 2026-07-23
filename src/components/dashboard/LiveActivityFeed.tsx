@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { OT, TechnicalReport, Client } from '../../types';
-import { ShieldAlert, Play, FileText, Zap, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Play, FileText, Zap, CheckCircle2, Clock } from 'lucide-react';
 
 interface LiveActivityFeedProps {
   ots: OT[];
@@ -21,59 +21,63 @@ export interface ActivityEvent {
 }
 
 export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports, clients, onNavigateToTab }) => {
-  // Mockup matched live feed events
-  const mockEvents: ActivityEvent[] = [
-    {
-      id: 'ev_1',
-      time: '11:36 AM',
-      actor: 'Supervisor',
-      action: 'aprobó Informe Técnico de',
-      target: 'Cliente Demo 178352024 S.A.C. - OT-20005-1',
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      Icon: ShieldAlert
-    },
-    {
-      id: 'ev_2',
-      time: '11:28 AM',
-      actor: 'Técnico Pedro R.',
-      action: 'inició trabajo en campo -',
-      target: 'OT-20039-2',
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      Icon: Play
-    },
-    {
-      id: 'ev_3',
-      time: '11:15 AM',
-      actor: 'Informe técnico',
-      action: 'enviado para revisión -',
-      target: 'OT-20038-1',
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      Icon: FileText
-    },
-    {
-      id: 'ev_4',
-      time: '11:08 AM',
-      actor: 'Nueva OT',
-      action: 'creada por Operaciones -',
-      target: 'OT-20041-1',
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      Icon: Zap
-    },
-    {
-      id: 'ev_5',
-      time: '10:59 AM',
-      actor: 'Técnico Ana G.',
-      action: 'llegó a sitio -',
-      target: 'OT-20037-1',
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      Icon: CheckCircle2
-    }
-  ];
+  // Build 100% dynamic events from real DB OTs & Reports
+  const events: ActivityEvent[] = useMemo(() => {
+    const list: ActivityEvent[] = [];
+
+    // Map recent reports
+    reports.slice(0, 3).forEach(r => {
+      list.push({
+        id: `rep_${r.id}`,
+        time: 'Reciente',
+        actor: 'Informe Técnico',
+        action: 'registrado/actualizado -',
+        target: `${r.otId || 'OT'} (${r.tecnico1 || 'Técnico'})`,
+        iconBg: 'bg-[#E6F7F4]',
+        iconColor: 'text-[#00B594]',
+        Icon: FileText
+      });
+    });
+
+    // Map recent OTs
+    ots.slice(0, 5).forEach(o => {
+      const clientName = clients.find(c => c.id === o.clientId)?.razonSocial || o.clientId || 'Cliente';
+      let icon = Zap;
+      let bg = 'bg-blue-100';
+      let color = 'text-blue-600';
+      let actionText = 'creada en sistema -';
+
+      if (o.estado === 'Aprobada' || o.estado === 'Cerrada' || o.estado === 'Facturada') {
+        icon = CheckCircle2;
+        bg = 'bg-emerald-100';
+        color = 'text-emerald-600';
+        actionText = 'finalizada y aprobada -';
+      } else if (o.estado === 'Trabajo en Ejecución' || o.estado === 'En Sitio' || o.estado === 'En Camino') {
+        icon = Play;
+        bg = 'bg-amber-100';
+        color = 'text-amber-600';
+        actionText = 'en proceso en campo -';
+      } else if (o.estado === 'En Revisión' || o.estado === 'Informe Pendiente') {
+        icon = ShieldAlert;
+        bg = 'bg-purple-100';
+        color = 'text-purple-600';
+        actionText = 'pendiente de revisión -';
+      }
+
+      list.push({
+        id: `ot_${o.id}`,
+        time: o.fechaProgramada || 'Hoy',
+        actor: o.tecnicoTitular || 'Operaciones',
+        action: actionText,
+        target: `${clientName} (${o.id})`,
+        iconBg: bg,
+        iconColor: color,
+        Icon: icon
+      });
+    });
+
+    return list.slice(0, 5);
+  }, [ots, reports, clients]);
 
   return (
     <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between text-left">
@@ -82,51 +86,55 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({ ots, reports
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
               <span>Actividad en Tiempo Real</span>
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className={`w-2.5 h-2.5 rounded-full ${events.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
             </h3>
             <p className="text-xs text-slate-400 font-medium mt-0.5">
-              Últimos eventos registrados
+              Últimos eventos registrados en la base de datos
             </p>
           </div>
         </div>
 
-        <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
-          {mockEvents.map((ev) => {
-            const Icon = ev.Icon;
-            return (
-              <div
-                key={ev.id}
-                className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all text-left"
-              >
-                <span className="text-xs font-mono font-bold text-slate-400 shrink-0 w-16">
-                  {ev.time}
-                </span>
+        {events.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+              <Clock size={20} />
+            </div>
+            <p className="text-xs font-bold text-slate-700">Sin actividad en tiempo real</p>
+            <p className="text-[11px] text-slate-400 mt-1">No hay órdenes de trabajo ni informes registrados en la BD.</p>
+          </div>
+        ) : (
+          <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
+            {events.map((ev) => {
+              const Icon = ev.Icon;
+              return (
+                <div
+                  key={ev.id}
+                  className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all text-left"
+                >
+                  <div className={`w-9 h-9 rounded-xl ${ev.iconBg} ${ev.iconColor} flex items-center justify-center shrink-0`}>
+                    <Icon size={18} />
+                  </div>
 
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${ev.iconBg}`}>
-                  <Icon size={13} className={ev.iconColor} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-black text-slate-800 truncate">
+                        {ev.actor}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-slate-400 shrink-0">
+                        {ev.time}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                      <span className="font-medium text-slate-400">{ev.action}</span>{' '}
+                      <span className="font-bold text-slate-700">{ev.target}</span>
+                    </p>
+                  </div>
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-slate-700 leading-snug truncate">
-                    <strong className="font-extrabold text-slate-900">{ev.actor}</strong>{' '}
-                    <span className="text-slate-600">{ev.action}</span>{' '}
-                    <strong className="font-extrabold text-slate-900">{ev.target}</strong>
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="pt-3 border-t border-slate-100 mt-2 flex justify-center">
-        <button
-          onClick={() => onNavigateToTab?.('Supervisor')}
-          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1 cursor-pointer"
-        >
-          <span>Ver todas las actividades</span>
-          <span>→</span>
-        </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

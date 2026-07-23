@@ -14,21 +14,20 @@ export const CumplimientoChart: React.FC<CumplimientoChartProps> = ({ ots }) => 
     const today = new Date();
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    let totalCumplimientoSum = 0;
-
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
       const dayName = `${dayNames[d.getDay()]} ${d.getDate()}`;
 
-      // Filter OTs for this date or distribute realistic daily stats from DB
+      // Filter OTs for this exact date
       const otDay = ots.filter(o => o.fechaProgramada === dateStr);
-      const programadasCount = otDay.length || Math.floor(Math.random() * 8) + 12;
-      const completadasCount = otDay.filter(o => o.estado === OTStatus.APROBADA || o.estado === OTStatus.CERRADA || o.estado === OTStatus.FACTURADA).length || Math.floor(programadasCount * (0.8 + Math.random() * 0.15));
+      const programadasCount = otDay.length;
+      const completadasCount = otDay.filter(
+        o => o.estado === OTStatus.APROBADA || o.estado === OTStatus.CERRADA || o.estado === OTStatus.FACTURADA || o.estado === OTStatus.FIRMADA
+      ).length;
 
-      const cumplimientoPct = programadasCount > 0 ? Math.min(100, Math.round((completadasCount / programadasCount) * 100)) : 85;
-      totalCumplimientoSum += cumplimientoPct;
+      const cumplimientoPct = programadasCount > 0 ? Math.min(100, Math.round((completadasCount / programadasCount) * 100)) : 0;
 
       days.push({
         dayName,
@@ -38,13 +37,17 @@ export const CumplimientoChart: React.FC<CumplimientoChartProps> = ({ ots }) => 
       });
     }
 
-    const avgCumplimiento = Math.round(totalCumplimientoSum / 7);
+    const totalScheduledOverall = ots.length;
+    const totalCompletedOverall = ots.filter(
+      o => o.estado === OTStatus.APROBADA || o.estado === OTStatus.CERRADA || o.estado === OTStatus.FACTURADA || o.estado === OTStatus.FIRMADA
+    ).length;
+    const avgCumplimiento = totalScheduledOverall > 0 ? Math.round((totalCompletedOverall / totalScheduledOverall) * 100) : 0;
 
     return { days, avgCumplimiento };
   }, [ots]);
 
   return (
-    <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between">
+    <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div>
           <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -57,7 +60,7 @@ export const CumplimientoChart: React.FC<CumplimientoChartProps> = ({ ots }) => 
         </div>
 
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200/60 self-start sm:self-center font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className={`w-2 h-2 rounded-full ${dailyData.avgCumplimiento > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
           Promedio: {dailyData.avgCumplimiento}%
         </span>
       </div>

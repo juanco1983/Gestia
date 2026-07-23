@@ -321,21 +321,6 @@ export default function App() {
   }, [userLogs]);
 
   useEffect(() => {
-    // Inject at least one unassigned OT ONLY if both local and server are empty and we are initialized
-    const hasUnassigned = ots.some(ot => ot.estado === OTStatus.CREADA || ot.estado === OTStatus.PENDIENTE_PROGRAMACION);
-    if (!hasUnassigned && ots.length === 0) {
-      const demoUnassigned: OT = {
-        id: `OT-${Math.floor(5000 + Math.random() * 999)}`,
-        clientId: 'client_2', // America Movil
-        tipoMantenimiento: ServiceType.PREVENTIVO,
-        tipoEquipo: EquipmentType.UPS,
-        potenciaKva: 30,
-        fechaProgramada: new Date().toISOString().split('T')[0],
-        tecnicoTitular: '', // unassigned
-        estado: OTStatus.CREADA
-      };
-      setOts(prev => [demoUnassigned, ...prev]);
-    }
     localStorage.setItem('gestia_ots', JSON.stringify(ots));
   }, [ots]);
 
