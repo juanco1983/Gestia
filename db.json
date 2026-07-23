@@ -514,66 +514,8 @@
       "ipAddress": "192.168.10.35"
     }
   ],
-  "clients": [
-    {
-      "id": "client_1",
-      "razonSocial": "Clínica Internacional",
-      "ruc": "20100112233",
-      "direccionSede": "Av. Garcilaso de la Vega 1420",
-      "distrito": "Cercado de Lima",
-      "contactoNombre": "Juan Córdova",
-      "contactoEmail": "juan.cordova@materiagris.pe",
-      "contactoTelefono": "994512903"
-    },
-    {
-      "id": "client_2",
-      "razonSocial": "Banco de Crédito del Perú",
-      "ruc": "20100047218",
-      "direccionSede": "Calle Centenario 156",
-      "distrito": "La Molina",
-      "contactoNombre": "Ing. Soporte BCP",
-      "contactoEmail": "bcp_soporte@bcp.com.pe",
-      "contactoTelefono": "987654321"
-    },
-    {
-      "id": "client_1782527554237",
-      "razonSocial": "MACADU Links SAC",
-      "ruc": "20100349061",
-      "direccionSede": "Luis Felipe de las Casas",
-      "distrito": "Ventanilla",
-      "contactoNombre": "Matteo Cordova",
-      "contactoEmail": "m.cordova@macadulinks.com",
-      "contactoTelefono": "989655592"
-    },
-    {
-      "id": "client_1782527812373",
-      "razonSocial": "Materia Gris SAC",
-      "ruc": "20600215532",
-      "direccionSede": "Domingo Orue",
-      "distrito": "SUrquillo",
-      "contactoNombre": "Carlos Durand",
-      "contactoEmail": "carlos.durand@materiagris.pe",
-      "contactoTelefono": "992441522"
-    }
-  ],
-  "contracts": [
-    {
-      "id": "contra_1",
-      "clientId": "client_1",
-      "tipoEquipo": "UPS",
-      "visitasAnuales": 4,
-      "fechaInicio": "2026-01-01",
-      "fechaFin": "2026-12-31"
-    },
-    {
-      "id": "contra_2",
-      "clientId": "client_2",
-      "tipoEquipo": "Climatización de Precisión",
-      "visitasAnuales": 6,
-      "fechaInicio": "2026-02-15",
-      "fechaFin": "2027-02-14"
-    }
-  ],
+  "clients": [],
+  "contracts": [],
   "ots": [],
   "reports": [],
   "ordenesTrabajo": [],
@@ -1132,5 +1074,7 @@
       "ipAddress": "192.168.10.35"
     }
   ],
-  "ordenesTrabajoLinea": []
+  "ordenesTrabajoLinea": [],
+  "equipments": [],
+  "otEquipoAsignaciones": []
 }

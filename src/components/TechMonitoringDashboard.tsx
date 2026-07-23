@@ -302,8 +302,38 @@ export default function TechMonitoringDashboard({
     return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   };
 
-  const getClientName = (clientId: string) => {
-    return clients.find(c => c.id === clientId)?.razonSocial || 'Cliente no encontrado';
+  const getClientName = (clientId?: string, ot?: any) => {
+    if (!clientId && !ot) return 'Cliente General';
+
+    // 1. Direct lookup by client.id
+    if (clientId) {
+      const directClient = clients.find(c => c.id === clientId);
+      if (directClient) return directClient.razonSocial;
+    }
+
+    // 2. Lookup by ot.contratoId
+    const targetContratoId = ot?.contratoId;
+    if (targetContratoId) {
+      const contract = (contratosNuevos || []).find((ct: any) => ct.id === targetContratoId);
+      if (contract) {
+        if (contract.cliente) return contract.cliente;
+        if (contract.clientId) {
+          const contractClient = clients.find(c => c.id === contract.clientId);
+          if (contractClient) return contractClient.razonSocial;
+        }
+      }
+    }
+
+    // 3. Partial match or fallback
+    if (clientId) {
+      const nameMatch = clients.find(c => 
+        c.id.toLowerCase() === clientId.toLowerCase() || 
+        c.razonSocial.toLowerCase().includes(clientId.toLowerCase())
+      );
+      if (nameMatch) return nameMatch.razonSocial;
+    }
+
+    return clientId || 'Cliente General';
   };
 
   const getTechWorkload = (techName: string) => {
@@ -1483,7 +1513,7 @@ export default function TechMonitoringDashboard({
                                         <span className="font-mono text-[9px] font-bold">{otInSlot.id}</span>
                                         <span className="text-[8px] font-bold opacity-75 truncate max-w-[40px]" title={otInSlot.tecnicoTitular}>{otInSlot.tecnicoTitular?.split(' ')[0]}</span>
                                       </div>
-                                      <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(otInSlot.clientId)}</span>
+                                      <span className="font-bold text-[9px] leading-tight line-clamp-1">{getClientName(otInSlot.clientId, otInSlot)}</span>
                                     </div>
                                 ))}
                               </div>

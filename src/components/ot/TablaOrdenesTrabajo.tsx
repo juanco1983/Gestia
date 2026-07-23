@@ -543,11 +543,20 @@ export default function TablaOrdenesTrabajo({
                         </div>
                       </td>
                       <td className="px-4 py-3.5 max-w-xs">
-                        <div className="truncate text-xs font-black text-slate-800" title={line.razon_social}>{line.razon_social}</div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                          <span className="font-mono bg-slate-100 text-slate-600 px-1 rounded font-bold">{line.empresa}</span>
-                          <span>• {line.comercial || 'Sin comercial'}</span>
-                        </div>
+                        {(() => {
+                          const resolvedRazonSocial = (line.razon_social && line.razon_social !== 'Cliente General')
+                            ? line.razon_social
+                            : (clients?.find(c => c.id === line.clientId)?.razonSocial || 'Cliente General');
+                          return (
+                            <>
+                              <div className="truncate text-xs font-black text-slate-800" title={resolvedRazonSocial}>{resolvedRazonSocial}</div>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                <span className="font-mono bg-slate-100 text-slate-600 px-1 rounded font-bold">{line.empresa && line.empresa !== 'Cliente General' ? line.empresa : resolvedRazonSocial.split(' ')[0]}</span>
+                                <span>• {line.comercial || 'Sin comercial'}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-sans">

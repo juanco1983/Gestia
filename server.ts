@@ -443,8 +443,10 @@ app.post("/api/ots", async (req, res) => {
     let clientReasonSocial = "Cliente General";
     let clientRuc = "S/D";
     let clientContact = "Responsable";
-    if (otData.clientId) {
-      const client = await prisma.client.findUnique({ where: { id: otData.clientId } });
+    let targetClientId = otData.clientId || null;
+
+    if (targetClientId) {
+      const client = await prisma.client.findUnique({ where: { id: targetClientId } });
       if (client) {
         clientReasonSocial = client.razonSocial;
         clientRuc = client.ruc;
@@ -461,7 +463,33 @@ app.post("/api/ots", async (req, res) => {
         contractNum = contract.n_contrato || "S/D";
         contractOc = contract.oc || "S/D";
         contractComercial = contract.comercial || "S/D";
+
+        if (clientReasonSocial === "Cliente General") {
+          if (contract.cliente) {
+            clientReasonSocial = contract.cliente;
+          }
+          if (contract.clientId) {
+            targetClientId = contract.clientId;
+            const clientFromContract = await prisma.client.findUnique({ where: { id: contract.clientId } });
+            if (clientFromContract) {
+              clientReasonSocial = clientFromContract.razonSocial;
+              clientRuc = clientFromContract.ruc;
+              clientContact = clientFromContract.contactoNombre;
+            }
+          }
+        }
       }
+    }
+
+    if (clientReasonSocial === "Cliente General" && otData.equipoId) {
+      const equipo = await prisma.equipo.findUnique({ where: { id: otData.equipoId } });
+      if (equipo && (equipo as any).cliente) {
+        clientReasonSocial = (equipo as any).cliente;
+      }
+    }
+
+    if (targetClientId && !otData.clientId) {
+      otData.clientId = targetClientId;
     }
 
     const maxMarco = await prisma.ordenTrabajoLinea.aggregate({ _max: { ot_marco: true } });
@@ -484,7 +512,7 @@ app.post("/api/ots", async (req, res) => {
       fecha: currentDateStr,
       nombre_solicitante: clientContact,
       razon_social: clientReasonSocial,
-      clientId: otData.clientId || null,
+      clientId: otData.clientId || targetClientId || null,
       empresa: clientReasonSocial,
       descripcion: `${otData.tipoMantenimiento || 'Servicio'} de ${otData.tipoEquipo || 'Equipo'} - Código OT: ${otData.id || ''}`,
       n_cotizacion: contractNum,
@@ -1873,6 +1901,46 @@ async function runDataFixes() {
       });
       console.log("[Data Fix] Fixed cont_251 clientId mapping to Clínica Internacional.");
     }
+
+    // 3. Check and fix Omnia Medica SAC mapping (OM-CL-001)
+    const omniaClient = await prisma.client.findUnique({ where: { id: 'OM-CL-001' } });
+    if (!omniaClient) {
+      await prisma.client.create({
+        data: {
+          id: 'OM-CL-001',
+          razonSocial: 'Omnia Medica SAC',
+          ruc: '20608899123',
+          direccionSede: 'Av. Las Camelias 450',
+          distrito: 'San Isidro',
+          pais: 'Perú',
+          provincia: 'Lima',
+          contactoNombre: 'Responsable Ómnia',
+          contactoEmail: 'contacto@omniamedica.com',
+          contactoTelefono: '912345678'
+        }
+      });
+      console.log("[Data Fix] Client created: Omnia Medica SAC (OM-CL-001)");
+    }
+
+    await prisma.oT.updateMany({
+      where: { contratoId: 'OM-CO-001' },
+      data: { clientId: 'OM-CL-001' }
+    });
+    await prisma.ordenTrabajoLinea.updateMany({
+      where: {
+        OR: [
+          { contratoId: 'OM-CO-001' },
+          { clientId: 'OM-CL-001' },
+          { ot: { contains: 'OM-CO-001' } }
+        ]
+      },
+      data: {
+        razon_social: 'Omnia Medica SAC',
+        empresa: 'Omnia Medica SAC',
+        clientId: 'OM-CL-001'
+      }
+    });
+    console.log("[Data Fix] Fixed Omnia Medica SAC OTs and Lineas.");
   } catch (err) {
     console.error("[Data Fix Error] Failed to run database fixes:", err);
   }
