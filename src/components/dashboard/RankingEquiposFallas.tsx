@@ -15,13 +15,28 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
   reports = [],
   onNavigateToTab,
 }) => {
-  // Build items 100% dynamically from real DB reports and OTs
+  // Build items 100% dynamically from real DB reports and OTs with human-readable equipment names and client names
   const items = useMemo(() => {
-    const equipFailMap: Record<string, { tag: string; tipoCat: string; causa: string; count: number }> = {};
+    const equipFailMap: Record<string, { tag: string; clientName: string; tipoCat: string; causa: string; count: number }> = {};
 
     reports.forEach(r => {
       if (!r.equipoId && !r.otId) return;
-      const tag = r.equipoId || r.otId || 'Equipo';
+
+      // Find associated OT and Client
+      const linkedOt = ots.find(o => o.id === r.otId || o.id === r.equipoId);
+      const linkedClient = clients.find(c => c.id === (linkedOt?.clientId || r.otId));
+      const clientName = linkedClient?.razonSocial || (linkedOt as any)?.cliente || 'Cliente Registrado';
+
+      // Format a clean, human-readable equipment name
+      let equipTag = '';
+      if (linkedOt?.tipoEquipo) {
+        equipTag = `${linkedOt.tipoEquipo} ${linkedOt.potenciaKva ? `${linkedOt.potenciaKva}kVA` : ''}`.trim();
+      } else {
+        equipTag = 'Equipo Industrial';
+      }
+
+      // Unique key per equipment and client
+      const itemKey = `${equipTag} (${clientName})`;
 
       // Check if report has observations, bypass, or repair needed
       const hasFalla = Boolean(
@@ -33,15 +48,16 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
       );
 
       if (hasFalla) {
-        if (!equipFailMap[tag]) {
-          equipFailMap[tag] = {
-            tag,
+        if (!equipFailMap[itemKey]) {
+          equipFailMap[itemKey] = {
+            tag: equipTag,
+            clientName,
             tipoCat: r.indicadoresBateria?.bypassActivo ? '(Bypass)' : '(Mantenimiento)',
             causa: r.observacionesDiagnostico || r.comentariosAdicionales || r.pasos?.paso6_observaciones || 'Observación registrada en informe',
             count: 0
           };
         }
-        equipFailMap[tag].count += 1;
+        equipFailMap[itemKey].count += 1;
       }
     });
 
@@ -56,13 +72,14 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
       rank: `${idx + 1}.`,
       rankColor: rankColors[idx] || 'text-slate-500',
       tag: item.tag,
+      clientName: item.clientName,
       tipoCat: item.tipoCat,
       causa: item.causa,
       incidenciasCount: item.count,
       barBg: barBgs[idx] || 'bg-slate-400',
       textColor: rankColors[idx] || 'text-slate-500'
     }));
-  }, [reports, ots]);
+  }, [reports, ots, clients]);
 
   return (
     <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-full flex flex-col justify-between text-left">
@@ -107,6 +124,9 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
                         {item.tipoCat}
                       </span>
                     </div>
+                    <p className="text-[10px] text-emerald-700 font-bold font-mono truncate mt-0.5">
+                      🏢 {item.clientName}
+                    </p>
                     <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
                       {item.causa}
                     </p>

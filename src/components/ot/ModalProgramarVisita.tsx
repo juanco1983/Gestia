@@ -32,14 +32,29 @@ export default function ModalProgramarVisita({
   // Wizard active step (1 to 5)
   const [step, setStep] = useState(1);
 
-  // 1. Equipments list resolution
+  // 1. Equipments list resolution (contract direct + adenda equipments combined)
   const equipments: Equipo[] = useMemo(() => {
+    if (!contract) return [];
+    const directEquips = contract.equipos || [];
+    let adendaEquips: Equipo[] = [];
     if (adenda) {
-      return adenda.equiposAdenda
+      adendaEquips = adenda.equiposAdenda
         ? adenda.equiposAdenda.map((ea: any) => ea.equipo).filter(Boolean)
         : [];
     }
-    return contract.equipos || [];
+    if (adenda && adendaEquips.length > 0) {
+      return adendaEquips;
+    }
+    const allAdendaEquips = (contract.ampliaciones || []).flatMap((a: any) =>
+      (a.equiposAdenda || []).map((ea: any) => ea.equipo).filter(Boolean)
+    );
+    const combined = [...directEquips, ...allAdendaEquips];
+    const seen = new Set();
+    return combined.filter(e => {
+      if (!e || seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
   }, [contract, adenda]);
 
   const [serviceType, setServiceType] = useState<ServiceType>(ServiceType.PREVENTIVO);

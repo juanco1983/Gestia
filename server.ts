@@ -363,11 +363,32 @@ app.get("/api/clients", async (req, res) => {
   }
 });
 
+async function generateClientCode(): Promise<string> {
+  const count = await prisma.client.count();
+  return `CLI-${(count + 1).toString().padStart(3, '0')}`;
+}
+
+async function generateContractCode(): Promise<string> {
+  const count = await prisma.contratoNuevo.count();
+  return `COT-2026-${(count + 1).toString().padStart(3, '0')}`;
+}
+
+async function generateOtCode(): Promise<string> {
+  const count = await prisma.oT.count();
+  return `OT-2026-${(count + 1).toString().padStart(3, '0')}`;
+}
+
+async function generateStandaloneEquipoCode(tipo?: string): Promise<string> {
+  const count = await prisma.equipo.count();
+  const typePrefix = (tipo || '').toUpperCase().includes('UPS') ? 'UPS' : 'TAB';
+  return `EQ-${typePrefix}-${(count + 1).toString().padStart(3, '0')}`;
+}
+
 app.post("/api/clients", async (req, res) => {
   try {
     const newClient = req.body;
-    if (!newClient.id) {
-      newClient.id = `client_${Date.now()}`;
+    if (!newClient.id || newClient.id.startsWith('client_')) {
+      newClient.id = await generateClientCode();
     } else {
       const existing = await prisma.client.findUnique({
         where: { id: newClient.id }
@@ -429,14 +450,22 @@ app.get("/api/ots", async (req, res) => {
 app.post("/api/ots", async (req, res) => {
   try {
     const { contratoId, adendaId, costo_estimado_usd, ...otData } = req.body;
+    if (!otData.id || otData.id.startsWith('OT-1')) {
+      otData.id = await generateOtCode();
+    }
 
     // Auto-derive tipoEquipo and potenciaKva from Equipo if equipoId is set
     if (otData.equipoId) {
       const equipo = await prisma.equipo.findUnique({ where: { id: otData.equipoId } });
       if (equipo) {
         if (!otData.tipoEquipo) otData.tipoEquipo = equipo.tipo;
-        if (!otData.potenciaKva) otData.potenciaKva = equipo.potenciaKva;
+        if (otData.potenciaKva === undefined || otData.potenciaKva === null) {
+          otData.potenciaKva = equipo.potenciaKva ?? 0;
+        }
       }
+    }
+    if (otData.potenciaKva === undefined || otData.potenciaKva === null) {
+      otData.potenciaKva = 0;
     }
 
     // Auto-create matching OrdenTrabajoLinea in database
@@ -533,6 +562,7 @@ app.post("/api/ots", async (req, res) => {
       comercial: contractComercial,
       contratoId: contratoId || null,
       adendaId: adendaId || null,
+      otTecnicaId: otData.id || null,
       equipoId: otData.equipoId || null
     };
 
@@ -583,56 +613,63 @@ app.post("/api/ots", async (req, res) => {
       ]);
       return res.status(201).json(created);
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error creating OT:", err);
-    res.status(500).json({ error: "Error al crear la OT" });
+    res.status(500).json({ error: "Error al crear la OT", details: err?.message || String(err) });
   }
 });
 
 app.put("/api/ots/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const { id: _, correccionesSupervisor, ...bodyData } = req.body;
     const updatedOt = await prisma.oT.update({
       where: { id },
-      data: req.body
+      data: bodyData
     });
+
+    if (correccionesSupervisor) {
+      await prisma.technicalReport.updateMany({
+        where: { otId: id },
+        data: { correccionesSupervisor }
+      }).catch(() => {});
+    }
 
     if (updatedOt.estado === "Conformidad Firmada (Listo para Facturar)" || 
         updatedOt.estado === "Aprobada" || 
         updatedOt.estado === "Firmada") {
+      // Search by otFinancieraId OR by OT number — always sync regardless of whether otFinancieraId is set
       const finId = updatedOt.otFinancieraId;
-      if (finId) {
-        // Try finding by id, then try finding by ot number
-        const lines = await prisma.ordenTrabajoLinea.findMany({
-          where: {
-            OR: [
-              { id: finId },
-              { ot: updatedOt.id },
-              { ot: updatedOt.id.replace('OT-', '') }
-            ]
-          }
-        });
+      const lines = await prisma.ordenTrabajoLinea.findMany({
+        where: {
+          OR: [
+            ...(finId ? [{ id: finId }] : []),
+            { otTecnicaId: updatedOt.id },
+            { ot: updatedOt.id },
+            { ot: updatedOt.id.replace('OT-', '') }
+          ]
+        }
+      });
 
-        for (const line of lines) {
-          const statusArray: any[] = Array.isArray(line.estatus) ? line.estatus : [];
-          const alreadyHasLog = statusArray.some((e: any) => e.texto && e.texto.includes("marcada como EJECUTADO"));
-          if (!alreadyHasLog) {
-            statusArray.push({
-              fecha: new Date().toISOString().split("T")[0],
-              autor: "Sistema Automatizado",
-              texto: `Aprobación o Firma registrada. OT Técnica ${updatedOt.id} marcada como EJECUTADO y lista para facturar.`
-            });
-          }
-          await prisma.ordenTrabajoLinea.update({
-            where: { id: line.id },
-            data: {
-              pendiente: "EJECUTADO",
-              estado: "POR FACTURAR",
-              listaParaFacturar: true,
-              estatus: statusArray
-            }
+      for (const line of lines) {
+        const statusArray: any[] = Array.isArray(line.estatus) ? line.estatus : [];
+        const alreadyHasLog = statusArray.some((e: any) => e.texto && e.texto.includes("marcada como EJECUTADO"));
+        if (!alreadyHasLog) {
+          statusArray.push({
+            fecha: new Date().toISOString().split("T")[0],
+            autor: "Sistema Automatizado",
+            texto: `Aprobación o Firma registrada. OT Técnica ${updatedOt.id} marcada como EJECUTADO y lista para facturar.`
           });
         }
+        await prisma.ordenTrabajoLinea.update({
+          where: { id: line.id },
+          data: {
+            pendiente: "EJECUTADO",
+            estado: "POR FACTURAR",
+            listaParaFacturar: true,
+            estatus: statusArray
+          }
+        });
       }
     }
 
@@ -691,8 +728,8 @@ app.put("/api/ots/:id", async (req, res) => {
     }
 
     res.json(updatedOt);
-  } catch (err) {
-    res.status(404).json({ error: "Orden de Trabajo no encontrada" });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || "Error al actualizar la Orden de Trabajo" });
   }
 });
 
@@ -783,17 +820,22 @@ app.post("/api/reports", async (req, res) => {
 
     // Auto-sync linked OrdenTrabajoLinea execution status to EJECUTADO in DB
     const cleanOtNumber = finalOtId.replace('OT-', '');
-    await prisma.ordenTrabajoLinea.updateMany({
+    const syncRes = await prisma.ordenTrabajoLinea.updateMany({
       where: {
         OR: [
           { otTecnicaId: finalOtId },
+          { ot: finalOtId },
           { ot: cleanOtNumber }
         ]
       },
       data: {
         pendiente: 'EJECUTADO'
       }
-    }).catch(e => console.error("Error auto-syncing OT Financial line execution status:", e));
+    }).catch(e => {
+      console.error("Error auto-syncing OT Financial line execution status:", e);
+      return { count: 0 };
+    });
+    console.log(`[Report Sync] Updated ${syncRes?.count ?? 0} OrdenTrabajoLinea for OT ${finalOtId} (clean: ${cleanOtNumber})`);
 
     res.status(201).json(saved);
   } catch (err: any) {
@@ -1046,7 +1088,10 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, ...rest } = req.body;
-    const insertData = { ...rest, factura: n_factura || undefined }; // undefined preserves existing
+    // Only set factura from n_factura if n_factura is explicitly provided — avoid overwriting with undefined
+    const insertData = n_factura !== undefined
+      ? { ...rest, factura: n_factura || null }
+      : rest;
     
     const updatedLine = await prisma.ordenTrabajoLinea.update({
       where: { id },
@@ -1408,10 +1453,10 @@ app.post("/api/equipos", async (req: any, res) => {
   try {
     const body = req.body;
     let codigo = body.codigo;
-    if (!codigo) {
+    if (!codigo || codigo.startsWith('EQ-1')) {
       codigo = body.contratoId
         ? await generateEquipoCodigo(body.contratoId)
-        : `EQ-${Date.now()}`;
+        : await generateStandaloneEquipoCode(body.tipo);
     }
     const created = await prisma.equipo.create({
       data: {
@@ -1420,7 +1465,7 @@ app.post("/api/equipos", async (req: any, res) => {
         marca: body.marca,
         modelo: body.modelo,
         serie: body.serie,
-        potenciaKva: body.potenciaKva ? parseFloat(body.potenciaKva) : undefined,
+        potenciaKva: (body.potenciaKva !== undefined && body.potenciaKva !== null && body.potenciaKva !== '') ? parseFloat(body.potenciaKva) : 0,
         ubicacion: body.ubicacion,
         estado: body.estado || 'Operativo',
         clienteId: body.clienteId,
@@ -1661,7 +1706,12 @@ app.get("/api/contratos-comerciales", async (req, res) => {
 app.post("/api/contratos-comerciales", async (req, res) => {
   try {
     const { pdf_base64, pdf_name, ampliaciones, equiposAdenda, equipos, ...newContrato } = req.body;
-    if (!newContrato.id) newContrato.id = `cont_${Date.now()}`;
+    if (!newContrato.id || newContrato.id.startsWith('cont_')) {
+      newContrato.id = await generateContractCode();
+    }
+    if (!newContrato.n_contrato) {
+      newContrato.n_contrato = newContrato.id;
+    }
     if (pdf_base64 && pdf_name) {
       newContrato.pdf_url = await uploadContractBase64ToS3(pdf_base64, newContrato.id, pdf_name);
     }

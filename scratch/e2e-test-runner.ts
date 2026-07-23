@@ -123,10 +123,13 @@ async function runCase1(): Promise<void> {
     const { ok, status, data } = await api('POST', '/api/clients', {
       razonSocial: 'ALPHA TECH E2E S.A.C.',
       ruc: '20601234001',
-      direccion: 'Av. Javier Prado Este 1234, San Isidro, Lima',
-      telefono: '01-6543210',
-      email: 'operaciones@alphatechE2E.com.pe',
+      direccionSede: 'Av. Javier Prado Este 1234, San Isidro, Lima',
+      distrito: 'San Isidro',
+      provincia: 'Lima',
+      pais: 'Peru',
       contactoNombre: 'Carlos Ramos E2E',
+      contactoEmail: 'operaciones@alphatechE2E.com.pe',
+      contactoTelefono: '01-6543210',
     });
 
     assert(ok, 'POST /api/clients → 201 Created', !ok ? data : undefined);
@@ -144,16 +147,16 @@ async function runCase1(): Promise<void> {
   logStep('PASO 2: Crear Contrato Comercial');
   {
     const { ok, data } = await api('POST', '/api/contratos-comerciales', {
-      n_contrato: 'COT-E2E-001',
       cliente: 'ALPHA TECH E2E S.A.C.',
       clientId,
       fecha_inicio: '2026-07-01',
       fecha_fin: '2027-06-30',
-      monto: 12000,
+      monto_sin_igv: 12000,
       moneda: 'PEN',
-      tipo_servicio: 'Preventivo Anual',
-      descripcion: 'Mantenimiento preventivo anual de equipos UPS - TEST E2E',
+      tipo_contrato: 'Preventivo Anual',
+      detalle: 'Mantenimiento preventivo anual de equipos UPS - TEST E2E',
       estado: 'VIGENTE',
+      anio: 2026,
     });
 
     assert(ok, 'POST /api/contratos-comerciales → 201 Created', !ok ? data : undefined);
@@ -161,7 +164,7 @@ async function runCase1(): Promise<void> {
       contratoId = data.id;
       logStep(`Contrato creado: ${contratoId}`);
       assert(data.cliente === 'ALPHA TECH E2E S.A.C.', 'Nombre del cliente guardado en contrato');
-      assert(data.n_contrato === 'COT-E2E-001', 'N° de contrato guardado correctamente');
+      assert(data.n_contrato?.startsWith('COT-'), `N° de contrato autogenerado correctamente (${data.n_contrato})`);
     }
   }
 
@@ -170,23 +173,29 @@ async function runCase1(): Promise<void> {
   // ─── PASO 3: Agregar Equipo al Contrato ─────────────────
   logStep('PASO 3: Agregar Equipo al Contrato');
   {
-    const { ok, data } = await api('POST', `/api/contracts/${contratoId}/equipos`, {
+    // Step 3a: Create the equipo first
+    const { ok: createOk, data: createData } = await api('POST', '/api/equipos', {
       tipo: 'UPS',
       marca: 'APC',
       modelo: 'Smart-UPS 3000',
       serie: `SN-APC-E2E-001`,
       potenciaKva: 20,
       ubicacion: 'Sala de Servidores - Piso 3',
-      mantenimientosPorAnio: 2,
       estado: 'Operativo',
+      contratoId,
+      clienteId: clientId,
     });
+    assert(createOk, 'POST /api/equipos (UPS APC) → 201 Created', !createOk ? createData : undefined);
 
-    assert(ok, `POST /api/contracts/${contratoId}/equipos → 201 Created`, !ok ? data : undefined);
-    if (data?.id) {
-      equipoId = data.id;
-      logStep(`Equipo creado: ${equipoId} — APC Smart-UPS 3000`);
-      assert(data.tipo === 'UPS', 'Tipo de equipo guardado correctamente');
-      assert(data.potenciaKva === 20, 'Potencia kVA guardada correctamente');
+    if (createData?.id) {
+      equipoId = createData.id;
+      logStep(`Equipo creado: ${equipoId} — ${createData.marca} ${createData.modelo}`);
+      assert(createData.tipo === 'UPS', 'Tipo de equipo guardado correctamente');
+      assert(parseFloat(createData.potenciaKva) === 20, 'Potencia kVA guardada correctamente');
+
+      // Step 3b: Link equipo to contract
+      const { ok: linkOk, data: linkData } = await api('POST', `/api/contracts/${contratoId}/equipos`, { equipoId });
+      assert(linkOk, `Equipo vinculado al contrato ${contratoId}`, !linkOk ? linkData : undefined);
     }
   }
 
@@ -215,18 +224,27 @@ async function runCase1(): Promise<void> {
 
     // Add equipment to adenda
     if (adendaId) {
-      const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/ampliaciones/${adendaId}/equipos`, {
+      // Create equipo for adenda first
+      const { ok: eqCreateOk, data: eqCreateData } = await api('POST', '/api/equipos', {
         tipo: 'UPS',
         marca: 'Eaton',
         modelo: '9PX 6000',
         serie: `SN-EATON-E2E-002`,
         potenciaKva: 30,
         ubicacion: 'Sala Backup - Sótano 1',
-        mantenimientosPorAnio: 2,
         estado: 'Operativo',
+        clienteId: clientId,
       });
-      assert(eqOk, `POST equipo a adenda ${adendaId} → 201`, !eqOk ? eqData : undefined);
-      if (eqData?.id) { logStep(`Equipo de adenda creado: ${eqData.id}`); }
+      assert(eqCreateOk, 'POST /api/equipos (Eaton adenda) → 201 Created', !eqCreateOk ? eqCreateData : undefined);
+
+      if (eqCreateData?.id) {
+        // Link equipo to adenda
+        const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/ampliaciones/${adendaId}/equipos`, {
+          equipoId: eqCreateData.id
+        });
+        assert(eqOk, `Equipo Eaton vinculado a adenda ${adendaId}`, !eqOk ? eqData : undefined);
+        if (eqData) { logStep(`Equipo de adenda vinculado: ${eqCreateData.id}`); }
+      }
     }
   }
 
@@ -258,7 +276,7 @@ async function runCase1(): Promise<void> {
       tipoEquipo: 'UPS',
       potenciaKva: 20,
       fechaProgramada: new Date().toISOString().split('T')[0],
-      horaInicio: '09:00',
+      horaProgramada: '09:00',
       tecnicoTitular: tecnico?.username || 'Técnico Test',
       tecnicoTitularId: tecnico?.id || undefined,
       estado: 'Programada',
@@ -307,9 +325,9 @@ async function runCase1(): Promise<void> {
   logStep('PASO 8: Registrar Informe Técnico');
   {
     const { ok, data } = await api('POST', '/api/reports', {
+      id: `report_c1_${Date.now()}`,
       otId,
       equipoId: equipoId || undefined,
-      voltajeEntrada: 220,
       voltajeSalida: 220,
       indicadoresBateria: {
         nivelCarga: 85,
@@ -378,21 +396,23 @@ async function runCase1(): Promise<void> {
     const fechaFactura = new Date().toISOString().split('T')[0];
     const { ok, data } = await api('PUT', `/api/ot-lineas/${otLineaId}`, {
       sub_importe_sin_igv: 6000,
+      sub_importe_inc_igv: 7080,
       n_factura: 'F001-E2E-001245',
-      fecha_factura: fechaFactura,
+      fecha_facturacion: fechaFactura,
       estado: 'FACTURADO',
+      pendiente: 'FACTURADO',
     });
 
     assert(ok, `PUT /api/ot-lineas/${otLineaId} → Facturación guardada`, !ok ? data : undefined);
     if (data) {
       logStep(`OT Financiera actualizada. Estado: ${data.estado}`);
       assert(
-        data.sub_importe_sin_igv === 6000 || parseFloat(data.sub_importe_sin_igv) === 6000,
+        parseFloat(data.sub_importe_sin_igv) === 6000,
         `Importe guardado correctamente (${data.sub_importe_sin_igv})`
       );
       assert(
-        data.factura === 'F001-E2E-001245' || data.n_factura === 'F001-E2E-001245',
-        `N° Factura guardado correctamente`
+        data.factura === 'F001-E2E-001245',
+        `N° Factura guardado correctamente (${data.factura})`
       );
     }
   } else {
@@ -422,10 +442,13 @@ async function runCase2(): Promise<void> {
     const { ok, data } = await api('POST', '/api/clients', {
       razonSocial: 'BETA SOLUTIONS E2E S.R.L.',
       ruc: '20507654002',
-      direccion: 'Calle Los Laureles 456, Miraflores, Lima',
-      telefono: '01-7654321',
-      email: 'mantenimiento@betaE2E.com.pe',
+      direccionSede: 'Calle Los Laureles 456, Miraflores, Lima',
+      distrito: 'Miraflores',
+      provincia: 'Lima',
+      pais: 'Peru',
       contactoNombre: 'Lucía Mendoza E2E',
+      contactoEmail: 'mantenimiento@betaE2E.com.pe',
+      contactoTelefono: '01-7654321',
     });
 
     assert(ok, 'POST /api/clients → 201 Created', !ok ? data : undefined);
@@ -442,16 +465,16 @@ async function runCase2(): Promise<void> {
   logStep('PASO 2: Crear Contrato + Equipo Tablero');
   {
     const { ok: ctOk, data: ctData } = await api('POST', '/api/contratos-comerciales', {
-      n_contrato: 'COT-E2E-002',
       cliente: 'BETA SOLUTIONS E2E S.R.L.',
       clientId,
       fecha_inicio: '2026-07-01',
       fecha_fin: '2027-06-30',
-      monto: 8500,
+      monto_sin_igv: 8500,
       moneda: 'PEN',
-      tipo_servicio: 'Correctivo + Preventivo',
-      descripcion: 'Mantenimiento correctivo de tableros eléctricos - TEST E2E',
+      tipo_contrato: 'Correctivo + Preventivo',
+      detalle: 'Mantenimiento correctivo de tableros eléctricos - TEST E2E',
       estado: 'VIGENTE',
+      anio: 2026,
     });
 
     assert(ctOk, 'POST /api/contratos-comerciales → 201 Created', !ctOk ? ctData : undefined);
@@ -460,21 +483,24 @@ async function runCase2(): Promise<void> {
       logStep(`Contrato creado: ${contratoId}`);
 
       // Add equipment
-      const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/equipos`, {
+      const { ok: eqCreateOk, data: eqCreateData } = await api('POST', '/api/equipos', {
         tipo: 'Tablero Eléctrico',
         marca: 'ABB',
         modelo: 'TRITON 400A',
         serie: 'SN-ABB-E2E-088',
         potenciaKva: 0,
         ubicacion: 'Sub-estación principal - Piso 1',
-        mantenimientosPorAnio: 4,
         estado: 'Operativo',
+        contratoId,
+        clienteId: clientId,
       });
+      assert(eqCreateOk, 'POST /api/equipos (ABB Tablero) → 201', !eqCreateOk ? eqCreateData : undefined);
 
-      assert(eqOk, `POST equipo a contrato → 201`, !eqOk ? eqData : undefined);
-      if (eqData?.id) {
-        equipoId = eqData.id;
-        logStep(`Equipo creado: ${equipoId} — ABB TRITON 400A`);
+      if (eqCreateData?.id) {
+        equipoId = eqCreateData.id;
+        logStep(`Equipo ABB creado: ${equipoId}`);
+        const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/equipos`, { equipoId });
+        assert(eqOk, `Equipo ABB vinculado al contrato`, !eqOk ? eqData : undefined);
       }
     }
   }
@@ -497,18 +523,26 @@ async function runCase2(): Promise<void> {
     if (latestAdenda?.id) {
       logStep(`Adenda creada: ${latestAdenda.id}`);
 
-      // Add Schneider equipo to adenda
-      const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/ampliaciones/${latestAdenda.id}/equipos`, {
+      // Create Schneider equipo first, then link to adenda
+      const { ok: eqCreateOk, data: eqCreateData } = await api('POST', '/api/equipos', {
         tipo: 'Tablero Eléctrico',
         marca: 'Schneider',
         modelo: 'Prisma G 250A',
         serie: 'SN-SCHN-E2E-045',
         potenciaKva: 0,
         ubicacion: 'Sub-estación secundaria - Sótano',
-        mantenimientosPorAnio: 2,
         estado: 'Operativo',
+        clienteId: clientId,
       });
-      assert(eqOk, 'POST equipo a adenda → 201', !eqOk ? eqData : undefined);
+      assert(eqCreateOk, 'POST /api/equipos (Schneider) → 201', !eqCreateOk ? eqCreateData : undefined);
+
+      if (eqCreateData?.id) {
+        const { ok: eqOk, data: eqData } = await api('POST', `/api/contracts/${contratoId}/ampliaciones/${latestAdenda.id}/equipos`, {
+          equipoId: eqCreateData.id
+        });
+        assert(eqOk, 'POST equipo a adenda → 201', !eqOk ? eqData : undefined);
+        if (eqOk) { logStep(`Equipo Schneider vinculado a adenda: ${eqCreateData.id}`); }
+      }
     } else {
       logWarn('No se obtuvo ID de adenda');
     }
@@ -528,7 +562,7 @@ async function runCase2(): Promise<void> {
       tipoEquipo: 'Tablero Eléctrico',
       potenciaKva: 0,
       fechaProgramada: new Date().toISOString().split('T')[0],
-      horaInicio: '10:00',
+      horaProgramada: '10:00',
       tecnicoTitular: tecnico?.username || 'Técnico Test',
       tecnicoTitularId: tecnico?.id || undefined,
       estado: 'Programada',
@@ -568,6 +602,7 @@ async function runCase2(): Promise<void> {
   logStep('PASO 5: Registrar Informe con BYPASS ACTIVO (anomalía)');
   {
     const { ok, data } = await api('POST', '/api/reports', {
+      id: `report_c2a_${Date.now()}`,
       otId,
       equipoId: equipoId || undefined,
       voltajeEntrada: 215,
@@ -622,6 +657,7 @@ async function runCase2(): Promise<void> {
   logStep('PASO 6B: Técnico CORRIGE y reenvía informe');
   {
     const { ok, data } = await api('POST', '/api/reports', {
+      id: `report_c2b_${Date.now()}`,
       otId,
       equipoId: equipoId || undefined,
       voltajeEntrada: 215,
@@ -676,16 +712,18 @@ async function runCase2(): Promise<void> {
   if (otLineaId) {
     const { ok, data } = await api('PUT', `/api/ot-lineas/${otLineaId}`, {
       sub_importe_sin_igv: 2125,
+      sub_importe_inc_igv: 2507.5,
       n_factura: 'F001-E2E-001246',
-      fecha_factura: new Date().toISOString().split('T')[0],
+      fecha_facturacion: new Date().toISOString().split('T')[0],
       estado: 'FACTURADO',
+      pendiente: 'FACTURADO',
     });
 
     assert(ok, `PUT /api/ot-lineas/${otLineaId} → Facturación guardada`, !ok ? data : undefined);
     if (data) {
       assert(
-        data.factura === 'F001-E2E-001246' || data.n_factura === 'F001-E2E-001246',
-        `N° Factura guardado correctamente`
+        data.factura === 'F001-E2E-001246',
+        `N° Factura guardado correctamente (${data.factura})`
       );
       assert(
         parseFloat(data.sub_importe_sin_igv) === 2125,
@@ -718,7 +756,7 @@ async function verifyDashboardData(): Promise<void> {
   const contratoCount = Array.isArray(contratos) ? contratos.filter((c: any) => c.n_contrato?.includes('E2E')).length : 0;
   const otCount = Array.isArray(ots) ? ots.length : 0;
   const reportCount = Array.isArray(reports) ? reports.length : 0;
-  const lineasAprobadas = Array.isArray(lineas) ? lineas.filter((l: any) => l.pendiente === 'EJECUTADO').length : 0;
+  const lineasAprobadas = Array.isArray(lineas) ? lineas.filter((l: any) => l.pendiente === 'EJECUTADO' || l.pendiente === 'FACTURADO' || l.estado === 'FACTURADO').length : 0;
 
   log(`\n  ${C.cyan}${C.bold}📊 Estado Final de BD:${C.reset}`);
   log(`  ${C.dim}Clientes E2E creados:          ${clientCount}${C.reset}`);
@@ -731,7 +769,7 @@ async function verifyDashboardData(): Promise<void> {
   assert(contratoCount >= 2, `Al menos 2 contratos E2E creados (encontrados: ${contratoCount})`);
   assert(otCount >= 2, `Al menos 2 OTs creadas (encontradas: ${otCount})`);
   assert(reportCount >= 2, `Al menos 2 informes técnicos (encontrados: ${reportCount})`);
-  assert(lineasAprobadas >= 2, `Al menos 2 OTs Financieras con pendiente=EJECUTADO (encontradas: ${lineasAprobadas})`);
+  assert(lineasAprobadas >= 2, `Al menos 2 OTs Financieras ejecutadas/facturadas (encontradas: ${lineasAprobadas})`);
 
   // Verify no ghost OTs (OT that have no linked contract)
   if (Array.isArray(ots)) {
