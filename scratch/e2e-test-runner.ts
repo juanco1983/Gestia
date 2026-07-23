@@ -18,8 +18,8 @@ import 'dotenv/config';
 
 // ─── Configuración ───────────────────────────────────────────
 const BASE_URL = process.argv.find(a => a.startsWith('--base-url='))?.split('=')[1] || 'http://localhost:3000';
-const ADMIN_EMAIL = 'admin';
-const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'admin123';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@mafort.pe';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'mafort';
 
 // ─── Estado global del test ──────────────────────────────────
 let TOKEN = '';
