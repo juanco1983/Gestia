@@ -1092,6 +1092,25 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
     const { id } = req.params;
     const updatePayload = { ...req.body };
 
+    // Guard: bloquear cualquier modificación si la línea ya está FACTURADA.
+    // La OT facturada es de solo lectura (verificación en el backend como fuente
+    // de verdad; el frontend también aplica readOnly, pero aquí nos defended contra
+    // cualquier cliente fuera de la UI oficial).
+    const existing = await prisma.ordenTrabajoLinea.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Línea no encontrada" });
+      return;
+    }
+    const existingEstado = (existing.estado || existing.pendiente || '').toString().toUpperCase();
+    if (existingEstado === 'FACTURADO') {
+      res.status(409).json({
+        error: "La línea ya está facturada y no puede modificarse",
+        code: "LINE_LOCKED_FACTURADO",
+        line: existing
+      });
+      return;
+    }
+
     // Standardized automatic status determination: If invoice number is provided -> FACTURADO
     const invNumber = (updatePayload.n_factura || '').toString().trim();
     if (invNumber !== '') {
@@ -1176,7 +1195,7 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
 
     res.json(updatedLine);
   } catch (err) {
-    res.status(404).json({ error: "Línea no encontrada" });
+    res.status(500).json({ error: "Error al actualizar la línea de OT" });
   }
 });
 
