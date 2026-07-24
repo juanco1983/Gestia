@@ -100,19 +100,16 @@ export const TIPO_CONTRATACION_VALUES = [
  * without icons/emojis.
  */
 export function getFinancialStatusInfo(
-  linea: { estado?: string; n_factura?: string; fecha_factura?: string; sub_importe_sin_igv?: number },
+  linea: { estado?: string; pendiente?: string; n_factura?: string; factura?: string; fecha_factura?: string; fecha_facturacion?: string; sub_importe_sin_igv?: number; monto_marco_sin_igv?: number },
   matchingOt?: any
 ) {
   const rawState = (linea.estado || '').toUpperCase();
-  const hasInvoiceData = Boolean(
-    linea.n_factura &&
-    linea.n_factura.trim() !== '' &&
-    linea.fecha_factura &&
-    (linea.sub_importe_sin_igv || 0) > 0
-  );
+  const rawPendiente = (linea.pendiente || '').toUpperCase();
+  const invoiceNum = (linea.n_factura || (linea as any).factura || '').toString().trim();
+  const hasInvoiceNum = Boolean(invoiceNum !== '');
 
-  // Automatically Facturado / Completado if amount + invoice number + date exist
-  if (rawState === 'FACTURADO' || rawState === 'COMPLETADO' || hasInvoiceData) {
+  // Automatically Facturado if invoice number exists OR state/pendiente is FACTURADO
+  if (rawState === 'FACTURADO' || rawPendiente === 'FACTURADO' || rawState === 'COMPLETADO' || hasInvoiceNum) {
     return {
       key: 'FACTURADO',
       label: 'Facturado',

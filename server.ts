@@ -1060,14 +1060,9 @@ app.post("/api/sync", async (req, res) => {
 app.get("/api/ot-lineas", async (req, res) => {
   try {
     const rawLineas = await prisma.ordenTrabajoLinea.findMany();
-    // Map Prisma field 'factura' to frontend field 'n_factura'
-    const mapped = rawLineas.map((linea: any) => {
-      const { factura, ...rest } = linea;
-      return { ...rest, n_factura: factura || '', factura };
-    });
-    res.json(mapped);
+    res.json(rawLineas);
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    res.status(500).json({ error: "Error al obtener líneas de OT" });
   }
 });
 
@@ -1075,27 +1070,29 @@ app.post("/api/ot-lineas", async (req, res) => {
   try {
     const newLinea = req.body;
     if (!newLinea.id) newLinea.id = `otl_${Date.now()}`;
-    const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, ...rest } = newLinea;
-    const insertData = { ...rest, factura: n_factura || null };
-    const created = await prisma.ordenTrabajoLinea.create({ data: insertData });
+    const created = await prisma.ordenTrabajoLinea.create({ data: newLinea });
     res.status(201).json(created);
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    res.status(500).json({ error: "Error al crear línea de OT" });
   }
 });
 
 app.put("/api/ot-lineas/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, ...rest } = req.body;
-    // Only set factura from n_factura if n_factura is explicitly provided — avoid overwriting with undefined
-    const insertData = n_factura !== undefined
-      ? { ...rest, factura: n_factura || null }
-      : rest;
-    
+    const updatePayload = { ...req.body };
+
+    // Standardized automatic status determination: If invoice number is provided -> FACTURADO
+    const invNumber = (updatePayload.n_factura || updatePayload.factura || '').toString().trim();
+    if (invNumber !== '') {
+      updatePayload.n_factura = invNumber;
+      updatePayload.estado = 'FACTURADO';
+      updatePayload.pendiente = 'FACTURADO';
+    }
+
     const updatedLine = await prisma.ordenTrabajoLinea.update({
       where: { id },
-      data: insertData
+      data: updatePayload
     });
 
     if (updatedLine.ot_marco) {
@@ -1142,7 +1139,7 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
       let totalFacturadoSinIgv = 0;
       let totalFacturadoIncIgv = 0;
       for (const line of contractLines) {
-        if (line.factura || line.estado === 'FACTURADO' || line.pendiente === 'EJECUTADO') {
+        if (line.factura || line.estado === 'FACTURADO' || line.pendiente === 'FACTURADO' || line.pendiente === 'EJECUTADO') {
           const valSinIgv = line.sub_importe_sin_igv || line.monto_marco_sin_igv || 0;
           const valIncIgv = line.sub_importe_inc_igv || line.monto_marco_inc_igv || Number((valSinIgv * 1.18).toFixed(2));
           totalFacturadoSinIgv += valSinIgv;
