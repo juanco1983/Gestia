@@ -135,7 +135,7 @@ model OrdenTrabajoLinea {
   anio_prog_facturacion  Float
   mes_prog_servicio      String
   mes_prog_facturacion   String
-  factura                String?
+  n_factura              String?   @map("factura")
   tipo_venta             String
   comercial              String
   comercialId            String?
@@ -145,7 +145,7 @@ model OrdenTrabajoLinea {
   pendiente              String
   oc                     String?
   estado                 String
-  fecha_facturacion      String?
+  fecha_factura          String?   @map("fecha_facturacion")
   vencimiento_factura    String?
   monto_factura_inc_igv  Float?
   pagado                 String?
