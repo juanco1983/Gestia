@@ -192,6 +192,43 @@ app.get("/api/db-dump", async (req: any, res) => {
   }
 });
 
+app.post("/api/admin/wipe-operational-db", async (req: any, res) => {
+  if (!req.user || req.user.role !== "Administrador") {
+    return res.status(403).json({ error: "Acceso denegado: Se requiere rol de Administrador" });
+  }
+  try {
+    const deletedReports = await prisma.technicalReport.deleteMany();
+    const deletedAsignaciones = await prisma.otEquipoAsignacion.deleteMany();
+    const deletedServicios = await prisma.servicioEquipo.deleteMany();
+    const deletedOts = await prisma.oT.deleteMany();
+    const deletedOtLineas = await prisma.ordenTrabajoLinea.deleteMany();
+    const deletedEquipoAmpliaciones = await prisma.equipoAmpliacion.deleteMany();
+    const deletedEquipos = await prisma.equipo.deleteMany();
+    const deletedAdendas = await prisma.contratoAmpliacion.deleteMany();
+    const deletedContratos = await prisma.contratoNuevo.deleteMany();
+    const deletedClients = await prisma.client.deleteMany();
+
+    res.json({
+      message: "Base de datos operacional reseteada con éxito a 0 registros",
+      summary: {
+        technicalReports: deletedReports.count,
+        otEquipoAsignaciones: deletedAsignaciones.count,
+        servicioEquipos: deletedServicios.count,
+        ots: deletedOts.count,
+        ordenTrabajoLineas: deletedOtLineas.count,
+        equipoAmpliaciones: deletedEquipoAmpliaciones.count,
+        equipos: deletedEquipos.count,
+        contratoAmpliaciones: deletedAdendas.count,
+        contratosNuevos: deletedContratos.count,
+        clients: deletedClients.count
+      }
+    });
+  } catch (err) {
+    console.error("Error al limpiar base de datos en nube:", err);
+    res.status(500).json({ error: "Error al resetear la base de datos" });
+  }
+});
+
 app.get("/api/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany();
