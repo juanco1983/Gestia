@@ -849,7 +849,7 @@ export default function App() {
   };
 
   const handleUpdateOtLinea = async (updated: OrdenTrabajoLinea) => {
-    setOtLineas(prev => {
+    setOrdenesTrabajo(prev => {
       const nextLines = prev.map(l => (l.id === updated.id ? updated : l));
 
       // Instantly update contract balance and consumption in memory
@@ -859,7 +859,7 @@ export default function App() {
           if (c.id === targetContratoId || c.n_contrato === targetContratoId) {
             const allContractLines = nextLines.filter(l => l.contratoId === c.id || l.otTecnicaId);
             const totalFacturado = allContractLines.reduce((acc, l) => {
-              if (l.factura || l.estado === 'FACTURADO' || l.pendiente === 'EJECUTADO') {
+              if (l.n_factura || l.estado === 'FACTURADO' || l.pendiente === 'EJECUTADO') {
                 return acc + (l.sub_importe_sin_igv || l.monto_marco_sin_igv || 0);
               }
               return acc;

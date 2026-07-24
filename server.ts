@@ -558,7 +558,7 @@ app.post("/api/ots", async (req, res) => {
       tipo_venta: 'MANTENIMIENTO',
       pendiente: 'POR EJECUTAR',
       estado: 'POR FACTURAR',
-      factura: '',
+      n_factura: '',
       comercial: contractComercial,
       contratoId: contratoId || null,
       adendaId: adendaId || null,
@@ -980,14 +980,25 @@ app.post("/api/sync", async (req, res) => {
 
     if (Array.isArray(ordenesTrabajo)) {
       for (const sol of ordenesTrabajo) {
-        const { n_factura, nro_guia_informe, observacion, seguimiento, tipo_contratacion, creadoPor, creadoEn, modificadoPor, modificadoEn, anio_factura, mes_factura, fecha_factura, ...rest } = sol;
-        const insertData = { ...rest, factura: n_factura || null };
+        // Descartamos los campos UI-only que NO existen en el schema Prisma
+        // (ver Documentacion/data_dictionary.md → 'Campos removidos en
+        // homologacion'). Los campos canonicos del schema que si deseamos
+        // persistir (n_factura, fecha_factura, sub_importe_sin_igv, etc.)
+        // pasan intactos en `rest`.
+        const {
+          nro_guia_informe, observacion, seguimiento, tipo_contratacion,
+          creadoPor, creadoEn, modificadoPor, modificadoEn,
+          anio_factura, mes_factura,
+          dia_prog_servicio, dia_prog_facturacion,
+          ...rest
+        } = sol;
+        const insertData = { ...rest };
         const existing = await prisma.ordenTrabajoLinea.findUnique({ where: { id: sol.id } });
         if (existing) {
           if (existing.estado === 'FACTURADO' && insertData.estado !== 'FACTURADO') {
             insertData.estado = existing.estado;
             insertData.pendiente = existing.pendiente;
-            insertData.factura = existing.factura;
+            insertData.n_factura = existing.n_factura;
           }
           await prisma.ordenTrabajoLinea.update({ where: { id: sol.id }, data: insertData });
         } else {
@@ -1032,11 +1043,10 @@ app.post("/api/sync", async (req, res) => {
       }
     }
     
-    // Helper to map Prisma field 'factura' to frontend field 'n_factura'
-    const mapLineaToFrontend = (linea: any) => {
-      const { factura, ...rest } = linea;
-      return { ...rest, n_factura: factura || '', factura };
-    };
+    // Helper: el cliente Prisma ya devuelve los campos con su nombre canonico
+    // (n_factura, fecha_factura) segun el schema. Los aliases @map son solo a
+    // nivel de columna DB, no afectan el cliente. No se requiere mapeo.
+    const mapLineaToFrontend = (linea: any) => linea;
 
     // Return all data
     const rawLineas = await prisma.ordenTrabajoLinea.findMany();
@@ -1083,7 +1093,7 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
     const updatePayload = { ...req.body };
 
     // Standardized automatic status determination: If invoice number is provided -> FACTURADO
-    const invNumber = (updatePayload.n_factura || updatePayload.factura || '').toString().trim();
+    const invNumber = (updatePayload.n_factura || '').toString().trim();
     if (invNumber !== '') {
       updatePayload.n_factura = invNumber;
       updatePayload.estado = 'FACTURADO';
@@ -1139,7 +1149,7 @@ app.put("/api/ot-lineas/:id", async (req, res) => {
       let totalFacturadoSinIgv = 0;
       let totalFacturadoIncIgv = 0;
       for (const line of contractLines) {
-        if (line.factura || line.estado === 'FACTURADO' || line.pendiente === 'FACTURADO' || line.pendiente === 'EJECUTADO') {
+        if (line.n_factura || line.estado === 'FACTURADO' || line.pendiente === 'FACTURADO' || line.pendiente === 'EJECUTADO') {
           const valSinIgv = line.sub_importe_sin_igv || line.monto_marco_sin_igv || 0;
           const valIncIgv = line.sub_importe_inc_igv || line.monto_marco_inc_igv || Number((valSinIgv * 1.18).toFixed(2));
           totalFacturadoSinIgv += valSinIgv;

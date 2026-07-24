@@ -182,9 +182,7 @@ export default function OrdenesTrabajoView({
             autor: currentUser.email,
             texto: `Línea anulada lógicamente por ${currentUser.username}.`
           }
-        ],
-        modificadoPor: currentUser.email,
-        modificadoEn: new Date().toISOString().split('T')[0]
+        ]
       };
       onUpdateLinea(updated);
     }
@@ -203,9 +201,7 @@ export default function OrdenesTrabajoView({
 
     const updatedLine: OrdenTrabajoLinea = {
       ...selectedLineForComments,
-      estatus: [...selectedLineForComments.estatus, newComment],
-      modificadoPor: currentUser.email,
-      modificadoEn: new Date().toISOString().split('T')[0]
+      estatus: [...(selectedLineForComments.estatus || []), newComment]
     };
 
     onUpdateLinea(updatedLine);
@@ -221,48 +217,41 @@ export default function OrdenesTrabajoView({
       'N° OC/OS', 'Moneda', 'Monto Marco Sin IGV', 'Monto Marco Con IGV', 
       'Sub Importe Sin IGV', 'Sub Importe Con IGV', 'Total USD', 
       'Año Prog Facturación', 'Mes Prog Servicio', 'Mes Prog Facturación', 
-      'Tipo Venta', 'Pendiente', 'Estado', 'N° Factura', 
-      'Año Factura', 'Mes Factura', 'Fecha Factura', 'Nro Guía/Informe', 
-      'Observación', 'Seguimiento', 'Tipo Contratación', 'Comercial',
-      'Creado Por', 'Creado En'
+      'Tipo Venta', 'Pendiente', 'Estado', 'N° Factura', 'Fecha Factura',
+      'Comercial'
     ];
 
-    const rows = lineas.map(line => [
-      line.anio,
-      line.ot_marco,
-      line.ot,
-      line.mes,
-      line.fecha,
-      `"${line.nombre_solicitante.replace(/"/g, '""')}"`,
-      `"${line.razon_social.replace(/"/g, '""')}"`,
-      `"${line.empresa.replace(/"/g, '""')}"`,
-      `"${(line.descripcion || '').replace(/"/g, '""')}"`,
-      `"${(line.n_cotizacion || '').replace(/"/g, '""')}"`,
-      `"${(line.n_oc_os || '').replace(/"/g, '""')}"`,
-      line.simbolo_moneda,
-      line.monto_marco_sin_igv,
-      line.monto_marco_inc_igv,
-      line.sub_importe_sin_igv,
-      line.sub_importe_inc_igv,
-      line.total_usd,
-      line.anio_prog_facturacion,
-      line.mes_prog_servicio,
-      line.mes_prog_facturacion,
-      line.tipo_venta,
-      line.pendiente,
-      line.estado,
-      `"${(line.n_factura || '').replace(/"/g, '""')}"`,
-      line.anio_factura || '',
-      line.mes_factura || '',
-      line.fecha_factura || '',
-      `"${(line.nro_guia_informe || '').replace(/"/g, '""')}"`,
-      `"${(line.observacion || '').replace(/"/g, '""')}"`,
-      `"${(line.seguimiento || '').replace(/"/g, '""')}"`,
-      line.tipo_contratacion,
-      `"${line.comercial.replace(/"/g, '""')}"`,
-      line.creadoPor,
-      line.creadoEn
-    ]);
+    const rows = lineas.map(line => {
+      const parts = (line.fecha_factura || '').split('-');
+      return [
+        line.anio,
+        line.ot_marco,
+        line.ot,
+        line.mes,
+        line.fecha,
+        `"${line.nombre_solicitante.replace(/"/g, '""')}"`,
+        `"${line.razon_social.replace(/"/g, '""')}"`,
+        `"${line.empresa.replace(/"/g, '""')}"`,
+        `"${(line.descripcion || '').replace(/"/g, '""')}"`,
+        `"${(line.n_cotizacion || '').replace(/"/g, '""')}"`,
+        `"${(line.n_oc_os || '').replace(/"/g, '""')}"`,
+        line.simbolo_moneda,
+        line.monto_marco_sin_igv,
+        line.monto_marco_inc_igv,
+        line.sub_importe_sin_igv,
+        line.sub_importe_inc_igv,
+        line.total_usd,
+        line.anio_prog_facturacion,
+        line.mes_prog_servicio,
+        line.mes_prog_facturacion,
+        line.tipo_venta,
+        line.pendiente,
+        line.estado,
+        `"${(line.n_factura || '').replace(/"/g, '""')}"`,
+        line.fecha_factura || '',
+        `"${(line.comercial || '').replace(/"/g, '""')}"`
+      ];
+    });
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');

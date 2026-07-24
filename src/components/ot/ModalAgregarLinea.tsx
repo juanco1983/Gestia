@@ -24,12 +24,8 @@ export default function ModalAgregarLinea({
     sub_importe_inc_igv: 0,
     anio_prog_facturacion: new Date().getFullYear(),
     mes_prog_servicio: MESES_ESPANOL[new Date().getMonth()],
-    dia_prog_servicio: new Date().getDate(),
     mes_prog_facturacion: MESES_ESPANOL[new Date().getMonth()],
-    dia_prog_facturacion: new Date().getDate(),
-    tipo_venta: 'MANTENIMIENTO' as any,
-    observacion: '',
-    seguimiento: ''
+    tipo_venta: 'MANTENIMIENTO' as any
   });
 
   const cleanString = (val: string) => val.trim().toUpperCase();
@@ -80,17 +76,11 @@ export default function ModalAgregarLinea({
       total_usd: Number(totalUsd.toFixed(2)),
       anio_prog_facturacion: Number(addLineForm.anio_prog_facturacion) || new Date().getFullYear(),
       mes_prog_servicio: cleanString(addLineForm.mes_prog_servicio),
-      dia_prog_servicio: Number(addLineForm.dia_prog_servicio) || undefined,
       mes_prog_facturacion: cleanString(addLineForm.mes_prog_facturacion),
-      dia_prog_facturacion: Number(addLineForm.dia_prog_facturacion) || undefined,
       tipo_venta: addLineForm.tipo_venta || parentTemplate.tipo_venta,
       pendiente: 'POR EJECUTAR',
       estado: 'POR FACTURAR',
       n_factura: '',
-      nro_guia_informe: '',
-      observacion: addLineForm.observacion.trim(),
-      seguimiento: addLineForm.seguimiento.trim(),
-      tipo_contratacion: parentTemplate.tipo_contratacion,
       estatus: [
         {
           fecha: new Date().toISOString().split('T')[0],
@@ -98,9 +88,7 @@ export default function ModalAgregarLinea({
           texto: `Línea #${nextCorrelative} agregada al Marco #${otMarcoNum} por ${currentUser.username}.`
         }
       ],
-      comercial: parentTemplate.comercial,
-      creadoPor: currentUser.email,
-      creadoEn: new Date().toISOString().split('T')[0]
+      comercial: parentTemplate.comercial
     };
 
     onAddLinea(newLine);
@@ -173,41 +161,34 @@ export default function ModalAgregarLinea({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Prog Servicio</label>
-              <input
-                type="date"
-                value={`${new Date().getFullYear()}-${String(MESES_ESPANOL.indexOf(addLineForm.mes_prog_servicio) + 1).padStart(2, '0')}-${String(addLineForm.dia_prog_servicio || 1).padStart(2, '0')}`}
-                onChange={(e) => {
-                  const date = new Date(e.target.value + 'T00:00:00');
-                  if (!isNaN(date.getTime())) {
-                    setAddLineForm({
-                      ...addLineForm,
-                      mes_prog_servicio: MESES_ESPANOL[date.getMonth()],
-                      dia_prog_servicio: date.getDate()
-                    });
-                  }
-                }}
+              <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Mes Prog Servicio</label>
+              <select
+                value={addLineForm.mes_prog_servicio}
+                onChange={(e) => setAddLineForm({ ...addLineForm, mes_prog_servicio: e.target.value })}
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
-              />
+              >
+                {MESES_ESPANOL.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
             <div>
-              <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Prog Facturación</label>
-              <input
-                type="date"
-                value={`${addLineForm.anio_prog_facturacion}-${String(MESES_ESPANOL.indexOf(addLineForm.mes_prog_facturacion) + 1).padStart(2, '0')}-${String(addLineForm.dia_prog_facturacion || 1).padStart(2, '0')}`}
-                onChange={(e) => {
-                  const date = new Date(e.target.value + 'T00:00:00');
-                  if (!isNaN(date.getTime())) {
-                    setAddLineForm({
-                      ...addLineForm,
-                      anio_prog_facturacion: date.getFullYear(),
-                      mes_prog_facturacion: MESES_ESPANOL[date.getMonth()],
-                      dia_prog_facturacion: date.getDate()
-                    });
-                  }
-                }}
-                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
-              />
+              <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Año/Mes Prog Facturación</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="2000"
+                  max="2100"
+                  value={addLineForm.anio_prog_facturacion}
+                  onChange={(e) => setAddLineForm({ ...addLineForm, anio_prog_facturacion: Number(e.target.value) })}
+                  className="w-24 bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
+                />
+                <select
+                  value={addLineForm.mes_prog_facturacion}
+                  onChange={(e) => setAddLineForm({ ...addLineForm, mes_prog_facturacion: e.target.value })}
+                  className="flex-1 bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
+                >
+                  {MESES_ESPANOL.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -220,17 +201,6 @@ export default function ModalAgregarLinea({
             >
               {TIPO_VENTA_VALUES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Observación Operacional</label>
-            <input
-              type="text"
-              placeholder="Ej. Visita programada fin de mes"
-              value={addLineForm.observacion}
-              onChange={(e) => setAddLineForm({ ...addLineForm, observacion: e.target.value })}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800"
-            />
           </div>
 
           <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-150">

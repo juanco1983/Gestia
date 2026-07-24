@@ -264,7 +264,7 @@ export default function ClientesContratosView({
     tipo_contrato: '',
     fecha_inicio: '',
     fecha_fin: '',
-    estado: 'VIGENTE' as 'VIGENTE' | 'TERMINADO' | 'ANULADO',
+    estado: 'VIGENTE' as string,
     comercialId: '',
     comentarios: '',
     presupuesto_total_usd: '',

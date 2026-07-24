@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  ShieldCheck, 
-  FileText, 
-  ThumbsUp, 
-  ThumbsDown, 
-  DownloadCloud, 
-  AlertTriangle, 
-  CheckSquare, 
+import {
+  ShieldCheck,
+  FileText,
+  ThumbsUp,
+  ThumbsDown,
+  DownloadCloud,
+  AlertTriangle,
+  CheckSquare,
+  CheckCircle2,
   Info,
   Printer,
   FileCheck2,

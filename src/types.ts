@@ -187,20 +187,25 @@ export interface ComentarioEstatus {
 }
 
 export interface OrdenTrabajoLinea {
-  id: string; // unique internal ID
+  // Fuente de verdad: prisma/schema.prisma → model OrdenTrabajoLinea.
+  // Los campos se nombran EXACTAMENTE como en el schema; cualquier alias
+  // legacy (p.ej. "factura" para n_factura, "fecha_facturacion" para
+  // fecha_factura) se gestiona SOLO en el backend con @map del schema, y el
+  // frontend siempre usa los nombres canónicos.
+  id: string;
   anio: number;
   ot_marco: number;
-  ot: string; // "{ot_marco}-{correlativo}"
-  mes: string; // ENE, FEB, etc.
-  fecha: string; // YYYY-MM-DD
+  ot: string;
+  mes: string;
+  fecha: string;
   nombre_solicitante: string;
-  clientId?: string; // Phase 4: reference to Client.id
-  razon_social: string; // Replaced by clientId, kept for compatibility
+  clientId?: string;
+  razon_social: string;
   empresa: string;
   descripcion: string;
-  n_cotizacion: string;
-  n_oc_os: string;
-  simbolo_moneda: '$' | 'S/';
+  n_cotizacion?: string;
+  n_oc_os?: string;
+  simbolo_moneda: string;
   monto_marco_sin_igv: number;
   monto_marco_inc_igv: number;
   sub_importe_sin_igv: number;
@@ -208,29 +213,30 @@ export interface OrdenTrabajoLinea {
   total_usd: number;
   anio_prog_facturacion: number;
   mes_prog_servicio: string;
-  dia_prog_servicio?: number;
   mes_prog_facturacion: string;
-  dia_prog_facturacion?: number;
-  tipo_venta: 'ALQUILER' | 'MANTENIMIENTO' | 'SERVICIO' | 'SUMINISTRO' | 'EMERGENCIA' | 'INSTALACION' | 'REPARACION' | 'PROYECTO' | 'ANULADO';
-  pendiente: 'EJECUTADO' | 'POR EJECUTAR' | 'ANULADO';
+  n_factura?: string;
+  tipo_venta: string;
+  comercial: string;
+  comercialId?: string;
+  area?: string;
+  periodo?: string;
+  h2h_bcp?: string;
+  pendiente: 'EJECUTADO' | 'POR EJECUTAR' | 'ANULADO' | 'FACTURADO';
+  oc?: string;
   estado: 'FACTURADO' | 'POR FACTURAR' | 'ANULADO';
-  n_factura: string;
-  anio_factura?: number;
-  mes_factura?: string;
   fecha_factura?: string;
-  nro_guia_informe: string;
-  observacion: string;
-  seguimiento: string;
-  tipo_contratacion: 'CONTRATO' | 'OC' | 'OS' | 'CORREO';
-  estatus: ComentarioEstatus[];
-  comercialId?: string; // Phase 4: references User.id (Ventas)
-  comercial: string; // Replaced by comercialId, kept for compatibility
-  creadoPor: string;
-  creadoEn: string;
-  modificadoPor?: string;
-  modificadoEn?: string;
-  otTecnicaId?: string; // Phase 1: Vínculo con OT técnica
-  listaParaFacturar?: boolean; // Phase 6: Indica si la OT ya fue firmada
+  vencimiento_factura?: string;
+  monto_factura_inc_igv?: number;
+  pagado?: string;
+  fecha_pago?: string;
+  dias_pago?: number;
+  detraccion?: string;
+  fecha_detraccion?: string;
+  dias_detraccion?: number;
+  bcp?: string;
+  listaParaFacturar?: boolean;
+  otTecnicaId?: string;
+  estatus?: ComentarioEstatus[];
   contratoId?: string;
   adendaId?: string;
   equipoId?: string;
@@ -250,27 +256,46 @@ export interface ContratoAmpliacion {
 }
 
 export interface Contrato {
+  // Fuente de verdad: prisma/schema.prisma → model ContratoNuevo.
+  // nozzle: en frontend usamos Contrato (este) como tipo equivalente al
+  // ContratoNuevo del backend. Cualquier campo del schema se refle aquí.
   id: string;
-  clientId?: string; // Phase 4: References Client.id
-  cliente: string; // Replaced by clientId, kept for compatibility
-  tipo_contrato: string;
-  fecha_inicio: string;
-  fecha_fin: string;
+  anio?: number;
+  n_contrato?: string;
+  comercial?: string;
+  comercialId?: string;
+  cliente?: string;
+  clientId?: string;
+  detalle?: string;
+  monto_sin_igv?: number;
+  monto_inc_igv?: number;
+  monto_facturar_sin_igv?: number;
+  monto_facturar_inc_igv?: number;
+  monto_facturado_sin_igv?: number;
+  monto_facturado_inc_igv?: number;
+  por_facturar_sin_igv?: number;
+  por_facturar_inc_igv?: number;
+  monto_pagado_sin_igv?: number;
+  monto_pagado_inc_igv?: number;
+  pendiente_pago_sin_igv?: number;
+  pendiente_pago_inc_igv?: number;
+  vence?: string;
+  oc?: string;
+  h2h_bcp?: string;
+  estado?: string;
+  tipo_contract?: string;
+  tipo_contrato?: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
   fecha_fin_original?: string;
-  estado: 'VIGENTE' | 'TERMINADO' | 'ANULADO';
-  comercialId?: string; // Phase 4: References User.id (Ventas)
-  comercial: string; // Replaced by comercialId, kept for compatibility
-  comentarios: string;
+  comentarios?: string;
+  presupuesto_total_usd?: number;
+  saldo_disponible_usd?: number;
   monto_original?: number;
   moneda?: string;
   pdf_url?: string;
   ampliaciones?: ContratoAmpliacion[];
   equipos?: Equipo[];
-  // Phase 3: Merged technical contract fields
-  tipoEquipo?: EquipmentType;
-  visitasAnuales?: number;
-  presupuesto_total_usd?: number;
-  saldo_disponible_usd?: number;
 }
 
 export interface TargetVentas {
