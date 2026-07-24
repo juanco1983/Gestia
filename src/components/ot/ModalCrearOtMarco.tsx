@@ -174,17 +174,11 @@ export default function ModalCrearOtMarco({
       total_usd: Number(totalUsd.toFixed(2)),
       anio_prog_facturacion: Number(marcoForm.anio_prog_facturacion) || new Date().getFullYear(),
       mes_prog_servicio: cleanString(marcoForm.mes_prog_servicio),
-      dia_prog_servicio: Number(marcoForm.dia_prog_servicio) || undefined,
       mes_prog_facturacion: cleanString(marcoForm.mes_prog_facturacion),
-      dia_prog_facturacion: Number(marcoForm.dia_prog_facturacion) || undefined,
       tipo_venta: marcoForm.tipo_venta,
       pendiente: 'POR EJECUTAR',
       estado: 'POR FACTURAR',
       n_factura: '',
-      nro_guia_informe: '',
-      observacion: marcoForm.observacion.trim(),
-      seguimiento: marcoForm.seguimiento.trim(),
-      tipo_contratacion: marcoForm.tipo_contratacion,
       estatus: [
         {
           fecha: new Date().toISOString().split('T')[0],
@@ -193,8 +187,6 @@ export default function ModalCrearOtMarco({
         }
       ],
       comercial: marcoForm.comercial.trim(),
-      creadoPor: currentUser.email,
-      creadoEn: new Date().toISOString().split('T')[0],
       contratoId: marcoForm.contratoId || undefined,
       adendaId: marcoForm.adendaId || undefined,
       equipoId: marcoForm.equipoId || undefined

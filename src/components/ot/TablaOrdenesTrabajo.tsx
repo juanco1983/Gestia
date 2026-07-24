@@ -578,10 +578,10 @@ export default function TablaOrdenesTrabajo({
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {line.n_factura || line.factura ? (
+                        {line.n_factura ? (
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-700 font-mono">{line.n_factura || line.factura}</span>
-                            <span className="text-[9px] text-slate-400 font-mono">{line.fecha_factura || line.fecha_facturacion}</span>
+                            <span className="text-xs font-bold text-slate-700 font-mono">{line.n_factura}</span>
+                            <span className="text-[9px] text-slate-400 font-mono">{line.fecha_factura}</span>
                           </div>
                         ) : (
                           <span className="text-[10px] text-slate-400 font-medium italic">— No emitida</span>

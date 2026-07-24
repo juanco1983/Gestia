@@ -17,7 +17,6 @@ export default function ModalEditarLinea({
   editingLine,
   setEditingLine,
   tipoCambio,
-  currentUser,
   clients,
   onUpdateLinea,
   onClose
@@ -29,10 +28,10 @@ export default function ModalEditarLinea({
     e.preventDefault();
 
     const subSinIgv = Number(editingLine.sub_importe_sin_igv) || Number(editingLine.monto_marco_sin_igv) || 0;
-    const invNumber = (editingLine.n_factura || (editingLine as any).factura || '').toString().trim();
+    const invNumber = (editingLine.n_factura || '').toString().trim();
     const hasInvoiceNumber = Boolean(invNumber !== '');
     const today = new Date().toISOString().split('T')[0];
-    const effectiveInvoiceDate = editingLine.fecha_factura || editingLine.fecha_facturacion || today;
+    const effectiveInvoiceDate = editingLine.fecha_factura || today;
 
     // Automatic status determination: If invoice number or amount exists -> Automatically FACTURADO
     let autoEstado = editingLine.estado;
@@ -50,16 +49,12 @@ export default function ModalEditarLinea({
     const updatedLine: OrdenTrabajoLinea = {
       ...editingLine,
       n_factura: invNumber ? invNumber.toUpperCase() : '',
-      factura: invNumber ? invNumber.toUpperCase() : '',
       fecha_factura: effectiveInvoiceDate,
-      fecha_facturacion: effectiveInvoiceDate,
       sub_importe_sin_igv: subSinIgv,
       sub_importe_inc_igv: Number((subSinIgv * 1.18).toFixed(2)),
       total_usd: Number(totalUsd.toFixed(2)),
       estado: autoEstado,
-      pendiente: autoPendiente,
-      modificadoPor: currentUser.email,
-      modificadoEn: today
+      pendiente: autoPendiente
     };
 
     onUpdateLinea(updatedLine);
@@ -167,13 +162,10 @@ export default function ModalEditarLinea({
                     onChange={(e) => {
                       const date = e.target.value;
                       const parts = date.split('-');
-                      const y = parts.length > 0 ? parseInt(parts[0]) : undefined;
                       const mIndex = parts.length > 1 ? parseInt(parts[1]) - 1 : 0;
                       setEditingLine({
                         ...editingLine,
-                        fecha_factura: date,
-                        anio_factura: y,
-                        mes_factura: MESES_ESPANOL[mIndex]
+                        fecha_factura: date
                       });
                     }}
                     className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono text-slate-800 focus:outline-none focus:border-[#00B594]"
@@ -187,41 +179,32 @@ export default function ModalEditarLinea({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Prog Servicio</label>
-                <input
-                  type="date"
-                  value={`${new Date().getFullYear()}-${String(MESES_ESPANOL.indexOf(editingLine.mes_prog_servicio) + 1).padStart(2, '0')}-${String(editingLine.dia_prog_servicio || 1).padStart(2, '0')}`}
-                  onChange={(e) => {
-                    const date = new Date(e.target.value + 'T00:00:00');
-                    if (!isNaN(date.getTime())) {
-                      setEditingLine({
-                        ...editingLine,
-                        mes_prog_servicio: MESES_ESPANOL[date.getMonth()],
-                        dia_prog_servicio: date.getDate()
-                      });
-                    }
-                  }}
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Mes Prog Servicio</label>
+                <select
+                  value={editingLine.mes_prog_servicio || ''}
+                  onChange={(e) => setEditingLine({ ...editingLine, mes_prog_servicio: e.target.value })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
-                />
+                >
+                  {MESES_ESPANOL.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
               </div>
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Fecha Prog Facturación</label>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Mes Prog Facturación</label>
                 <input
-                  type="date"
-                  value={`${editingLine.anio_prog_facturacion}-${String(MESES_ESPANOL.indexOf(editingLine.mes_prog_facturacion) + 1).padStart(2, '0')}-${String(editingLine.dia_prog_facturacion || 1).padStart(2, '0')}`}
-                  onChange={(e) => {
-                    const date = new Date(e.target.value + 'T00:00:00');
-                    if (!isNaN(date.getTime())) {
-                      setEditingLine({
-                        ...editingLine,
-                        anio_prog_facturacion: date.getFullYear(),
-                        mes_prog_facturacion: MESES_ESPANOL[date.getMonth()],
-                        dia_prog_facturacion: date.getDate()
-                      });
-                    }
-                  }}
+                  type="number"
+                  min="2000"
+                  max="2100"
+                  value={editingLine.anio_prog_facturacion || new Date().getFullYear()}
+                  onChange={(e) => setEditingLine({ ...editingLine, anio_prog_facturacion: Number(e.target.value) })}
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs"
                 />
+                <select
+                  value={editingLine.mes_prog_facturacion || ''}
+                  onChange={(e) => setEditingLine({ ...editingLine, mes_prog_facturacion: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-mono text-xs mt-2"
+                >
+                  {MESES_ESPANOL.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
               </div>
             </div>
 
@@ -232,29 +215,6 @@ export default function ModalEditarLinea({
                   <span>{statusInfo.label}</span>
                   <span className="text-[9px] text-slate-400 uppercase font-mono">Auto</span>
                 </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado Ejecución</label>
-                <select
-                  value={editingLine.pendiente}
-                  onChange={(e) => setEditingLine({ ...editingLine, pendiente: e.target.value as any })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-semibold"
-                >
-                  {PENDIENTE_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
-              <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Nro Guía / Informe</label>
-                <input
-                  type="text"
-                  placeholder="Ej: GR-1204"
-                  value={editingLine.nro_guia_informe || ''}
-                  onChange={(e) => setEditingLine({ ...editingLine, nro_guia_informe: e.target.value.toUpperCase() })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-850"
-                />
               </div>
               <div>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Vendedor / Comercial</label>
@@ -268,23 +228,14 @@ export default function ModalEditarLinea({
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Observaciones Operacionales</label>
-              <input
-                type="text"
-                value={editingLine.observacion || ''}
-                onChange={(e) => setEditingLine({ ...editingLine, observacion: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Notas Seguimiento Comercial</label>
-              <input
-                type="text"
-                value={editingLine.seguimiento || ''}
-                onChange={(e) => setEditingLine({ ...editingLine, seguimiento: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
-              />
+              <label className="text-[10px] font-extrabold uppercase text-slate-400 block font-mono">Estado Ejecución</label>
+              <select
+                value={editingLine.pendiente}
+                onChange={(e) => setEditingLine({ ...editingLine, pendiente: e.target.value as any })}
+                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-semibold"
+              >
+                {PENDIENTE_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             </div>
           </div>
 
