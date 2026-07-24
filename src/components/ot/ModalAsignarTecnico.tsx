@@ -182,9 +182,16 @@ export default function ModalAsignarTecnico({
     return list;
   }, [matchingOt, fallbackTechId, fallbackFecha, fallbackHora, fallbackHoraFin, additionalTechIds, assignmentsState, ots, clients, technicians, equipos]);
 
+  const isLockedState = Boolean(matchingOt && ['Trabajo en Ejecución', 'En Ejecución', 'Completada', 'Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(matchingOt.estado));
+
   const handleSave = async () => {
     if (!matchingOt) {
       alert("No se encontró una OT técnica vinculada a esta línea financiera.");
+      return;
+    }
+
+    if (isLockedState) {
+      alert(`REGLA DE NEGOCIO: La OT Técnica ${matchingOt.id} ya se encuentra en estado "${matchingOt.estado}". No se puede modificar ni reasignar técnicos para un trabajo que ya está en ejecución o finalizado.`);
       return;
     }
 
@@ -289,6 +296,13 @@ export default function ModalAsignarTecnico({
         </div>
 
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
+          {isLockedState && (
+            <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs font-bold font-mono">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+              <span>TRABAJO EN EJECUCIÓN O FINALIZADO: La OT se encuentra en estado "{matchingOt?.estado}". No se permite reasignar técnicos.</span>
+            </div>
+          )}
+
           {!matchingOt && (
             <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-2 text-amber-700 text-xs">
               <Users size={14} className="shrink-0 mt-0.5" />
