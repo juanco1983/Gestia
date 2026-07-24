@@ -643,15 +643,18 @@ export default function TablaOrdenesTrabajo({
                             <span>{isCompletada ? 'Ver' : 'Editar'}</span>
                           </button>
 
-                          {onAssignTechClick && !isCompletada && (
-                            <button
-                              onClick={() => onAssignTechClick(line)}
-                              className="p-1 bg-[#E6F7F4] border border-emerald-100 rounded-md hover:bg-emerald-100 text-[#00B594] cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
-                              title="Asignar Técnicos"
-                            >
-                              Asignar
-                            </button>
-                          )}
+                          {(() => {
+                            const isOtLockedState = Boolean(matchingOt && ['Trabajo en Ejecución', 'En Ejecución', 'Completada', 'Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(matchingOt.estado));
+                            return onAssignTechClick && !isCompletada && !isOtLockedState ? (
+                              <button
+                                onClick={() => onAssignTechClick(line)}
+                                className="p-1 bg-[#E6F7F4] border border-emerald-100 rounded-md hover:bg-emerald-100 text-[#00B594] cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
+                                title="Asignar Técnicos"
+                              >
+                                Asignar
+                              </button>
+                            ) : null;
+                          })()}
                           <button
                             onClick={() => onCommentsClick(line)}
                             className="p-1 bg-slate-50 border border-slate-150 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 cursor-pointer relative transition-colors"

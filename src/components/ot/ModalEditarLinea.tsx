@@ -28,20 +28,19 @@ export default function ModalEditarLinea({
   const handleEditLineSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const subSinIgv = Number(editingLine.sub_importe_sin_igv) || 0;
-    const hasInvoiceNumber = Boolean(editingLine.n_factura && editingLine.n_factura.trim() !== '');
-    const hasInvoiceDate = Boolean(editingLine.fecha_factura && editingLine.fecha_factura.trim() !== '');
+    const subSinIgv = Number(editingLine.sub_importe_sin_igv) || Number(editingLine.monto_marco_sin_igv) || 0;
+    const invNumber = (editingLine.n_factura || (editingLine as any).factura || '').toString().trim();
+    const hasInvoiceNumber = Boolean(invNumber !== '');
+    const today = new Date().toISOString().split('T')[0];
+    const effectiveInvoiceDate = editingLine.fecha_factura || editingLine.fecha_facturacion || today;
 
-    // Partial invoice data validation warning
-    if ((hasInvoiceNumber || hasInvoiceDate) && (!hasInvoiceNumber || !hasInvoiceDate || subSinIgv <= 0)) {
-      alert('REGLA DE NEGOCIO: Para completar y marcar como Facturado, debe ingresar el Sub Importe (mayor a 0), el número de factura y la fecha de emisión.');
-      return;
-    }
-
-    // Automatic status determination: If amount + invoice number + invoice date exist -> Automatically FACTURADO (Completado)
+    // Automatic status determination: If invoice number or amount exists -> Automatically FACTURADO
     let autoEstado = editingLine.estado;
-    if (subSinIgv > 0 && hasInvoiceNumber && hasInvoiceDate) {
+    let autoPendiente = editingLine.pendiente;
+
+    if (hasInvoiceNumber || subSinIgv > 0) {
       autoEstado = 'FACTURADO';
+      autoPendiente = 'FACTURADO';
     }
 
     // Auto calculate Total USD for this specific line
@@ -50,12 +49,17 @@ export default function ModalEditarLinea({
 
     const updatedLine: OrdenTrabajoLinea = {
       ...editingLine,
+      n_factura: invNumber ? invNumber.toUpperCase() : '',
+      factura: invNumber ? invNumber.toUpperCase() : '',
+      fecha_factura: effectiveInvoiceDate,
+      fecha_facturacion: effectiveInvoiceDate,
       sub_importe_sin_igv: subSinIgv,
       sub_importe_inc_igv: Number((subSinIgv * 1.18).toFixed(2)),
       total_usd: Number(totalUsd.toFixed(2)),
       estado: autoEstado,
+      pendiente: autoPendiente,
       modificadoPor: currentUser.email,
-      modificadoEn: new Date().toISOString().split('T')[0]
+      modificadoEn: today
     };
 
     onUpdateLinea(updatedLine);

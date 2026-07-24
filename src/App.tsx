@@ -849,26 +849,35 @@ export default function App() {
   };
 
   const handleUpdateOtLinea = async (updated: OrdenTrabajoLinea) => {
-    setOrdenesTrabajo(prev => prev.map(l => {
-      if (l.id === updated.id) {
-        return updated;
+    setOtLineas(prev => {
+      const nextLines = prev.map(l => (l.id === updated.id ? updated : l));
+
+      // Instantly update contract balance and consumption in memory
+      const targetContratoId = updated.contratoId || ots.find(o => o.id === updated.otTecnicaId)?.contratoId;
+      if (targetContratoId) {
+        setContratosNuevos(prevContratos => prevContratos.map(c => {
+          if (c.id === targetContratoId || c.n_contrato === targetContratoId) {
+            const allContractLines = nextLines.filter(l => l.contratoId === c.id || l.otTecnicaId);
+            const totalFacturado = allContractLines.reduce((acc, l) => {
+              if (l.factura || l.estado === 'FACTURADO' || l.pendiente === 'EJECUTADO') {
+                return acc + (l.sub_importe_sin_igv || l.monto_marco_sin_igv || 0);
+              }
+              return acc;
+            }, 0);
+            const presupuesto = c.monto_sin_igv || c.presupuesto_total_usd || c.monto_original || 0;
+            return {
+              ...c,
+              monto_facturado_sin_igv: totalFacturado,
+              saldo_disponible_usd: Math.max(0, presupuesto - totalFacturado)
+            };
+          }
+          return c;
+        }));
       }
-      if (l.ot_marco === updated.ot_marco) {
-        return {
-          ...l,
-          razon_social: updated.razon_social,
-          empresa: updated.empresa,
-          n_cotizacion: updated.n_cotizacion,
-          n_oc_os: updated.n_oc_os,
-          descripcion: updated.descripcion,
-          simbolo_moneda: updated.simbolo_moneda,
-          monto_marco_sin_igv: updated.monto_marco_sin_igv,
-          monto_marco_inc_igv: updated.monto_marco_inc_igv,
-          comercial: updated.comercial,
-        };
-      }
-      return l;
-    }));
+
+      return nextLines;
+    });
+
     try {
       await fetchWithAuth(`/api/ot-lineas/${updated.id}`, {
         method: 'PUT',

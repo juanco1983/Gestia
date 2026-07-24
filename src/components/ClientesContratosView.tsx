@@ -1414,10 +1414,14 @@ export default function ClientesContratosView({
           ) : contratoViewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredContratos.map((contrato) => {
-                const presupuesto = contrato.presupuesto_total_usd;
-                const saldo = contrato.saldo_disponible_usd ?? presupuesto;
-                const consumo = presupuesto ? presupuesto - saldo : 0;
-                const pct = (presupuesto && presupuesto > 0) ? (consumo / presupuesto) * 100 : 0;
+                const presupuesto = contrato.monto_sin_igv || contrato.presupuesto_total_usd || contrato.monto_original || 0;
+                const facturado = contrato.monto_facturado_sin_igv || 0;
+                const saldo = contrato.saldo_disponible_usd !== undefined && contrato.saldo_disponible_usd !== null 
+                  ? contrato.saldo_disponible_usd 
+                  : Math.max(0, presupuesto - facturado);
+                const consumo = facturado > 0 ? facturado : Math.max(0, presupuesto - saldo);
+                const pct = presupuesto > 0 ? (consumo / presupuesto) * 100 : 0;
+                const currSymbol = contrato.moneda === 'USD' ? '$' : 'S/';
                 
                 let progressColor = "bg-[#00B594]";
                 if (pct >= 95) progressColor = "bg-rose-500";
@@ -1439,7 +1443,7 @@ export default function ClientesContratosView({
                         <h3 className="text-xs font-black text-slate-800 line-clamp-1 group-hover:text-[#00B594] transition-colors">
                           {contrato.cliente}
                         </h3>
-                        <div className="text-[9px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.id}</div>
+                        <div className="text-[9px] text-[#00B594] font-mono font-bold mt-0.5">{contrato.n_contrato || contrato.id}</div>
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <span className="text-[10px] text-slate-400 font-semibold truncate max-w-xs">{contrato.tipo_contrato}</span>
                         </div>
@@ -1462,18 +1466,18 @@ export default function ClientesContratosView({
                         </div>
                       </div>
 
-                      {presupuesto ? (
+                      {presupuesto > 0 ? (
                         <div className="pt-3 border-t border-slate-100 space-y-1.5">
                           <div className="flex justify-between text-[10px] font-bold">
                             <span className="text-slate-450">Consumo ({pct.toFixed(0)}%):</span>
-                            <span className="text-slate-700">${consumo.toFixed(0)} / ${presupuesto.toFixed(0)}</span>
+                            <span className="text-slate-700">{currSymbol}{consumo.toFixed(0)} / {currSymbol}{presupuesto.toFixed(0)}</span>
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                             <div className={`h-1.5 rounded-full ${progressColor} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
                           </div>
                           <div className="flex justify-between text-[9px] text-slate-400">
                             <span>Saldo disponible:</span>
-                            <span className="font-mono font-bold text-slate-605">${saldo.toFixed(2)}</span>
+                            <span className="font-mono font-bold text-slate-605">{currSymbol}{saldo.toFixed(2)}</span>
                           </div>
                         </div>
                       ) : (
@@ -1540,11 +1544,16 @@ export default function ClientesContratosView({
                         <div className="text-xs font-bold text-slate-600">{contrato.comercial}</div>
                       </td>
                       <td className="px-5 py-4">
-                        {contrato.presupuesto_total_usd ? (() => {
-                          const presupuesto = contrato.presupuesto_total_usd;
-                          const saldo = contrato.saldo_disponible_usd ?? presupuesto;
-                          const consumo = presupuesto - saldo;
-                          const pct = presupuesto > 0 ? (consumo / presupuesto) * 100 : 0;
+                        {(() => {
+                          const presupuesto = contrato.monto_sin_igv || contrato.presupuesto_total_usd || contrato.monto_original || 0;
+                          if (!presupuesto) return <span className="text-[10px] font-medium text-slate-400 italic">No definido</span>;
+                          const facturado = contrato.monto_facturado_sin_igv || 0;
+                          const saldo = contrato.saldo_disponible_usd !== undefined && contrato.saldo_disponible_usd !== null 
+                            ? contrato.saldo_disponible_usd 
+                            : Math.max(0, presupuesto - facturado);
+                          const consumo = facturado > 0 ? facturado : Math.max(0, presupuesto - saldo);
+                          const pct = (consumo / presupuesto) * 100;
+                          const currSymbol = contrato.moneda === 'USD' ? '$' : 'S/';
                           
                           let badgeClass = "bg-[#E6F7F4] text-[#00B594] border-[#00B594]/20";
                           if (pct >= 95) badgeClass = "bg-rose-100 text-rose-600 border-rose-200";
@@ -1556,13 +1565,11 @@ export default function ClientesContratosView({
                                 {pct.toFixed(0)}% CONSUMIDO
                               </span>
                               <span className="text-[10px] font-bold text-slate-600">
-                                Saldo: ${saldo.toFixed(2)}
+                                Saldo: {currSymbol}{saldo.toFixed(2)}
                               </span>
                             </div>
                           );
-                        })() : (
-                          <span className="text-[10px] font-medium text-slate-400 italic">No definido</span>
-                        )}
+                        })()}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
