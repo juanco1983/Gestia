@@ -129,6 +129,14 @@ persista como `Json?`.
 | `modificadoEn` | String | string | Sí | Auditoría |
 | `offlineDirty` | Boolean? | boolean? | No | Flag sincronización |
 | `fotos` | Json (array) | string[] | Sí | Array Base64 |
+| `informeN` | String? | string? | No | N° informe (PDF) |
+| `hojaServicioN` | String? | string? | No | N° hoja servicio (PDF) |
+| `asunto` | String? | string? | No | Asunto (PDF) |
+| `fechaServicio` | String? | string? | No | Fecha servicio (PDF) |
+| `horaInicio` | String? | string? | No | Hora inicio (PDF) |
+| `tecnico1` | String? | string? | No | Técnico 1 (PDF) |
+| `tecnico2` | String? | string? | No | Técnico 2 (PDF) |
+| `antecedentes` | String? | string? | No | Antecedentes (PDF) |
 | `accionesRealizadas` | Json? | string[]? | No | Checklist |
 | `pasos` | Json? | shape? | No | Cronograma fases |
 | `caracteristicas` | Json? | Record<string,string>? | No | K/V técnico |
@@ -278,14 +286,155 @@ Fuente: `prisma/schema.prisma` → `model ContratoAmpliacion`.
 
 ## 9. `Equipo`, `EquipoAmpliacion`, `ServicioEquipo`, `OtEquipoAsignacion`
 
-Fuente: `prisma/schema.prisma`. Reflejan íntegramente el schema sin
-modificaciones de campos. Los tipos TS en `src/types.ts` son verbatim.
+Fuente: `prisma/schema.prisma`. Los tipos TS en `src/types.ts` son verbatim.
 
-## 10. Auxiliares: `TargetVenta`, `UserActivityLog`, ubigeo
+### 9.1 `Equipo` — Inventario de equipos
 
-Fuente: `prisma/schema.prisma`. `TargetVenta` (metas), `UserActivityLog`
-(auditoría), `Pais`/`Provincia`/`Distrito` (ubigeo Perú). Sin discrepancias
-con TS.
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id @default(uuid()) | string | Sí | UUID |
+| `codigo` | String @unique | string | Sí | Código único |
+| `tipo` | String | string | Sí | Tipo de equipo |
+| `marca` | String? | string? | No | Marca |
+| `modelo` | String? | string? | No | Modelo |
+| `serie` | String? | string? | No | N° serie |
+| `potenciaKva` | Float? | number? | No | Potencia |
+| `ubicacion` | String? | string? | No | Ubicación |
+| `clienteId` | String? | string? | No | FK `Client.id` (soft) |
+| `contratoId` | String? | string? | No | FK `ContratoNuevo.id` |
+| `contrato` | ContratoNuevo? | Contrato? | No | Relación (onDelete: SetNull) |
+| `estado` | String @default("Operativo") | string | Sí | Estado operativo |
+| `fotos` | Json? | string[]? | No | Fotos (Base64) |
+| `especificaciones` | Json? | Record<string,string>? | No | K/V técnico |
+| `creadoEn` | DateTime @default(now()) | string | Sí | Auditoría |
+| `actualizadoEn` | DateTime @updatedAt | string | Sí | Auditoría |
+| `adensasOrigen` | EquipoAmpliacion[] | EquipoAmpliacion[]? | No | Adendas que incluyen este equipo |
+| `servicios` | ServicioEquipo[] | ServicioEquipo[]? | No | Servicios asociados |
+
+> [!WARNING]
+> **Typo conocido**: el campo `adensasOrigen` debiera ser `adendasOrigen` (falta una
+> "d"). El typo es **consistente** en schema, `src/types.ts`, `server.ts` (includes
+> Prisma) y componentes (`ModalCrearOtMarco.tsx`, `VentasView.tsx`). No rompe
+> runtime. Renombrarlo requiere migración DB + actualizar 5-6 archivos; se deja
+> pendiente por riesgo/beneficio.
+
+### 9.2 `EquipoAmpliacion` — Pivote adenda ↔ equipo
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id @default(uuid()) | string | Sí | UUID |
+| `adendaId` | String | string | Sí | FK `ContratoAmpliacion.id` |
+| `adenda` | ContratoAmpliacion | ContratoAmpliacion | Sí | Relación (onDelete: Cascade) |
+| `equipoId` | String | string | Sí | FK `Equipo.id` |
+| `equipo` | Equipo | Equipo | Sí | Relación (onDelete: Cascade) |
+| `creadoEn` | DateTime @default(now()) | string | Sí | Auditoría |
+
+Restricciones: `@@unique([adendaId, equipoId])`.
+
+### 9.3 `ServicioEquipo` — Servicios efectuados a un equipo
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id @default(uuid()) | string | Sí | UUID |
+| `equipoId` | String | string | Sí | FK `Equipo.id` |
+| `equipo` | Equipo | Equipo | Sí | Relación (onDelete: Cascade) |
+| `otId` | String | string | Sí | FK `OT.id` (soft) |
+| `fecha` | String | string | Sí | Fecha servicio |
+| `tipo` | String | string | Sí | Tipo servicio |
+| `estado_post` | String | string | Sí | Estado posterior |
+| `tecnicoTitular` | String | string | Sí | Técnico titular |
+| `hallazgos` | String? | string? | No | Hallazgos |
+| `recomendaciones` | String? | string? | No | Recomendaciones |
+| `fotos` | Json? | string[]? | No | Fotos (Base64) |
+| `creadoEn` | DateTime @default(now()) | string | Sí | Auditoría |
+
+Restricciones: `@@index([equipoId])`.
+
+### 9.4 `OtEquipoAsignacion` — Asignación OT ↔ equipo (multi-equipo)
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id @default(cuid()) | string | Sí | CUID |
+| `otId` | String | string | Sí | FK `OT.id` (soft) |
+| `equipoId` | String | string | Sí | FK `Equipo.id` (soft) |
+| `tecnicoTitularId` | String? | string? | No | FK `User.id` (titular) |
+| `tecnicoTitular` | String? | string? | No | Nombre titular (denorm.) |
+| `tecnicoApoyoId` | String? | string? | No | FK `User.id` (apoyo) |
+| `tecnicoApoyo` | String? | string? | No | Nombre apoyo (denorm.) |
+| `fecha` | String? | string? | No | Fecha |
+| `hora` | String? | string? | No | Inicio |
+| `horaFin` | String? | string? | No | Fin |
+| `creadoEn` | DateTime @default(now()) | string | Sí | Auditoría |
+
+Restricciones: `@@unique([otId, equipoId])`, `@@index([otId])`.
+
+## 10. Auxiliares: `TipoContrato`, `TargetVenta`, `UserActivityLog`, ubigeo
+
+Fuente: `prisma/schema.prisma`. Sin discrepancias con TS.
+
+### 10.1 `TipoContrato` — Catálogo de tipos de contrato
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id @default(uuid()) | string | Sí | UUID |
+| `name` | String @unique | string | Sí | Nombre del tipo (único) |
+
+> [!NOTE]
+> `TipoContrato` es un catálogo simple (id + name). No tiene relaciones
+> declaradas; `ContratoNuevo.tipo_contrato` stores el nombre como `String?` (soft
+> FK al `name`). No aparece referenciado desde `ContratoNuevo` via `@relation`.
+
+### 10.2 `TargetVenta` — Metas comerciales
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id | string | Sí | ID |
+| `anio` | Int | number | Sí | Año |
+| `mes_num` | Int | number | Sí | N° mes (1-12) |
+| `mes` | String | string | Sí | Nombre mes |
+| `target_ventas_usd` | Float | number | Sí | Meta USD |
+
+### 10.3 `UserActivityLog` — Auditoría de acciones de usuario
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id | string | Sí | ID |
+| `timestamp` | String | string | Sí | Marca temporal |
+| `userEmail` | String | string | Sí | Email usuario |
+| `action` | String | string | Sí | Acción realizada |
+| `details` | String | string | Sí | Detalles |
+| `ipAddress` | String | string | Sí | IP origen |
+
+### 10.4 Ubigeo Perú: `Pais` / `Provincia` / `Distrito`
+
+Catálogo geográfico en cascada. Relaciones con `onDelete: Cascade`.
+
+**`Pais`**
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id | string | Sí | ID |
+| `nombre` | String | string | Sí | Nombre país |
+| `provincias` | Provincia[] | Provincia[]? | No | Relación 1:N |
+
+**`Provincia`**
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id | string | Sí | ID |
+| `nombre` | String | string | Sí | Nombre provincia |
+| `paisId` | String | string | Sí | FK `Pais.id` |
+| `pais` | Pais | Pais | Sí | Relación (onDelete: Cascade) |
+| `distritos` | Distrito[] | Distrito[]? | No | Relación 1:N |
+
+**`Distrito`**
+
+| Campo | Tipo Prisma | TS | Req. | Descripción |
+|:---|:---|:---|:---:|:---|
+| `id` | String @id | string | Sí | ID |
+| `nombre` | String | string | Sí | Nombre distrito |
+| `provinciaId` | String | string | Sí | FK `Provincia.id` |
+| `provincia` | Provincia | Provincia | Sí | Relación (onDelete: Cascade) |
 
 ---
 
