@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestia · Mockup Inventario de Equipos</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F2F6F4; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============ SECCIÓN 1: VISTA LISTADO ============ -->
+<div class="text-center py-3 bg-slate-900 text-white">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 1 · Vista de Listado</span>
+</div>
+
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="bg-white border-r border-slate-100 w-60 flex-shrink-0 p-4 sticky top-0 h-screen overflow-y-auto">
+    <div class="flex items-center gap-2 mb-6 px-2">
+      <div class="w-8 h-8 rounded-xl bg-[#0F9E82] flex items-center justify-center">
+        <i data-lucide="activity" class="text-white" style="width:16px;height:16px"></i>
+      </div>
+      <div>
+        <div class="text-xs font-black font-display text-slate-900 leading-tight">GESTIA</div>
+        <div class="text-[9px] font-mono uppercase tracking-wider text-slate-400">HUB & CONTROL</div>
+      </div>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="layout-dashboard" style="width:15px;height:15px"></i>Dashboard</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="building-2" style="width:15px;height:15px"></i>Comercial</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="file-text" style="width:15px;height:15px"></i>Gestión de OT</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="calendar" style="width:15px;height:15px"></i>Operaciones</a>
+      <!-- ITEM NUEVO -->
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm cursor-pointer">
+        <i data-lucide="boxes" style="width:15px;height:15px"></i>Inventario de Equipos
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="wrench" style="width:15px;height:15px"></i>Técnicos</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="shield-check" style="width:15px;height:15px"></i>Supervisión</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="trending-up" style="width:15px;height:15px"></i>Portal de Ventas</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="briefcase" style="width:15px;height:15px"></i>Portal Cliente</a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"><i data-lucide="users" style="width:15px;height:15px"></i>Administración</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 p-6 overflow-x-auto">
+    <!-- Header card -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col lg:flex-row justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-black text-slate-900 font-display">Inventario de Equipos</h1>
+        <p class="text-xs text-slate-400 font-bold font-mono uppercase tracking-wider mt-1">Vista consolidada de equipos, modelos, series, estado e historial de servicio</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><i data-lucide="download" style="width:14px;height:14px"></i>Exportar</button>
+        <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><i data-lucide="plus" style="width:14px;height:14px"></i>Agregar Equipo</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="boxes" class="text-slate-500" style="width:14px;height:14px"></i></div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Total Equipos</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 font-mono">247</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center"><i data-lucide="shield-check" class="text-emerald-500" style="width:14px;height:14px"></i></div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Operativos</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 font-mono">198</div>
+        <div class="text-[10px] text-emerald-600 font-mono mt-1">80.2%</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center"><i data-lucide="wrench" class="text-amber-500" style="width:14px;height:14px"></i></div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">En Obs. / Repar.</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 font-mono">12 + 9</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center"><i data-lucide="calendar-clock" class="text-sky-500" style="width:14px;height:14px"></i></div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Próximas Visitas</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 font-mono">23</div>
+      </div>
+    </div>
+
+    <!-- Barra de acción -->
+    <div class="flex flex-col lg:flex-row justify-between gap-3 mb-4">
+      <div class="relative w-full lg:max-w-md">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" style="width:14px;height:14px"></i>
+        <input type="text" placeholder="Buscar por código, serie, marca, modelo..." class="bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3.5 text-xs font-mono w-full focus:outline-none focus:border-slate-400">
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="bg-slate-50 p-1 rounded-xl border border-slate-100 inline-flex gap-1">
+          <button class="bg-slate-900 text-white shadow-sm rounded-lg px-3 py-1.5 text-xs font-bold">Todos</button>
+          <button class="text-slate-500 hover:bg-slate-100/60 rounded-lg px-3 py-1.5 text-xs font-bold">Operativo</button>
+          <button class="text-slate-500 hover:bg-slate-100/60 rounded-lg px-3 py-1.5 text-xs font-bold">En Reparación</button>
+          <button class="text-slate-500 hover:bg-slate-100/60 rounded-lg px-3 py-1.5 text-xs font-bold">Baja</button>
+        </div>
+        <button class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono flex items-center gap-2 hover:bg-slate-100"><i data-lucide="building" style="width:12px;height:12px"></i>Empresa</button>
+        <button class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono flex items-center gap-2 hover:bg-slate-100"><i data-lucide="filter" style="width:12px;height:12px"></i>Tipo</button>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-slate-50/50 border-b border-slate-100">
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Código</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Modelo</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Serie</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Voltaje Ult. Inf.</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Empresa</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Estado</th>
+            <th class="text-left px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Visitas (H/F)</th>
+            <th class="text-right px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Filas -->
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-001</td>
+            <td class="px-4 py-3 text-xs text-slate-700">S3 20KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-83746291</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Mafort SAC</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">12 / 2</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-002</td>
+            <td class="px-4 py-3 text-xs text-slate-700">SMH 10KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-92837461</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Asequia Del Norte</td>
+            <td class="px-4 py-3"><span class="bg-amber-100 text-amber-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">En Reparación</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">7 / 0</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-003</td>
+            <td class="px-4 py-3 text-xs text-slate-700">S3 30KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-72638495</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Minera Aurífera</td>
+            <td class="px-4 py-3"><span class="bg-orange-100 text-orange-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">En Observación</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">18 / 1</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-004</td>
+            <td class="px-4 py-3 text-xs text-slate-700">SMH 15KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-10293847</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Mafort SAC</td>
+            <td class="px-4 py-3"><span class="bg-blue-100 text-blue-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">En Almacén</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">3 / 0</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-005</td>
+            <td class="px-4 py-3 text-xs text-slate-700">S3 40KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-56473829</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Constructora Andina</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">9 / 3</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-006</td>
+            <td class="px-4 py-3 text-xs text-slate-700">SMH 5KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-91827364</td>
+            <td class="px-4 py-3 text-xs text-slate-400 font-mono">—</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Transportes Lima</td>
+            <td class="px-4 py-3"><span class="bg-rose-100 text-rose-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Baja</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">5 / 0</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-007</td>
+            <td class="px-4 py-3 text-xs text-slate-700">S3 60KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-82736491</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Mafort SAC</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">14 / 1</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-008</td>
+            <td class="px-4 py-3 text-xs text-slate-700">SMH 20KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-73829104</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Asequia Del Norte</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">11 / 2</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-009</td>
+            <td class="px-4 py-3 text-xs text-slate-700">S3 10KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-64738291</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Minera Aurífera</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">6 / 1</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+          <tr class="border-t border-slate-100 hover:bg-slate-50/50">
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">EQ-010</td>
+            <td class="px-4 py-3 text-xs text-slate-700">SMH 30KVA</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">SN-38495061</td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">220V</td>
+            <td class="px-4 py-3 text-xs text-slate-700">Constructora Andina</td>
+            <td class="px-4 py-3"><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span></td>
+            <td class="px-4 py-3 text-xs text-slate-700 font-mono">8 / 4</td>
+            <td class="px-4 py-3 text-right"><button class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5"><i data-lucide="eye" style="width:14px;height:14px"></i></button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+        <span class="text-xs text-slate-500 font-mono">Mostrando 1-10 de 247</span>
+        <div class="flex gap-1">
+          <button class="text-slate-400 hover:text-slate-700 rounded-lg p-1.5 hover:bg-slate-100"><i data-lucide="chevron-left" style="width:14px;height:14px"></i></button>
+          <button class="text-slate-400 hover:text-slate-700 rounded-lg p-1.5 hover:bg-slate-100"><i data-lucide="chevron-right" style="width:14px;height:14px"></i></button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ SECCIÓN 2: DRAWER DE DETALLE ============ -->
+<div class="text-center py-3 bg-slate-900 text-white">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 2 · Drawer de Detalle del Equipo</span>
+</div>
+
+<div class="relative min-h-screen bg-slate-100/60">
+  <!-- Tabla difuminada de fondo -->
+  <div class="p-6 opacity-30 pointer-events-none">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+      <div class="h-4 w-1/3 bg-slate-200 rounded mb-3"></div>
+      <div class="h-3 w-full bg-slate-100 rounded mb-2"></div>
+      <div class="h-3 w-full bg-slate-100 rounded mb-2"></div>
+      <div class="h-3 w-full bg-slate-100 rounded mb-2"></div>
+      <div class="h-3 w-2/3 bg-slate-100 rounded"></div>
+    </div>
+  </div>
+
+  <!-- Drawer -->
+  <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-xs flex justify-end">
+    <div class="bg-white w-full max-w-md h-full ml-auto shadow-2xl overflow-y-auto">
+      <!-- Header del drawer -->
+      <div class="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+        <div>
+          <div class="text-lg font-black text-slate-900 font-mono">EQ-001</div>
+          <div class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Detalle del Equipo</div>
+        </div>
+        <button class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <!-- Ficha técnica -->
+        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider">Ficha Técnica</h3>
+            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase tracking-wide py-0.5 px-2 rounded-full">Operativo</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Modelo</div><div class="text-slate-700 font-semibold">S3 20KVA</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Serie</div><div class="text-slate-700 font-mono">SN-83746291</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Marca</div><div class="text-slate-700 font-semibold">Mafort</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Tipo</div><div class="text-slate-700 font-semibold">UPS</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Potencia</div><div class="text-slate-700 font-mono">20 KVA</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Ubicación</div><div class="text-slate-700 font-semibold">Sede Lima</div></div>
+          </div>
+          <button class="mt-4 w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i data-lucide="refresh-cw" style="width:12px;height:12px"></i>Cambiar Estado</button>
+        </div>
+
+        <!-- Empresa y Contrato -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Empresa y Contrato</h3>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">Razón Social</span><span class="text-slate-700 font-semibold">Mafort SAC</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">RUC</span><span class="text-slate-700 font-mono">20512345678</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Contrato</span><span class="text-slate-700 font-mono">CT-2024-007</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Vigencia</span><span class="text-slate-700 font-mono">01 Ene 2024 — 31 Dic 2026</span></div>
+          </div>
+        </div>
+
+        <!-- Voltaje último informe -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Voltaje Último Informe</h3>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Entrada</div><div class="text-slate-900 font-mono font-bold text-lg">220V</div></div>
+            <div><div class="text-[10px] text-slate-400 font-mono uppercase">Salida</div><div class="text-slate-900 font-mono font-bold text-lg">220V</div></div>
+          </div>
+          <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-3">Voltaje es atributo del último informe técnico, no del equipo</p>
+        </div>
+
+        <!-- Visitas Históricas -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Visitas Históricas (12)</h3>
+          <div class="space-y-3">
+            <div class="border-l-2 border-slate-200 pl-4 ml-2">
+              <div class="flex justify-between text-xs"><span class="text-slate-700 font-semibold">15 Jul 2026</span><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Operativo</span></div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">Carlos Ocsa · Preventivo</div>
+            </div>
+            <div class="border-l-2 border-slate-200 pl-4 ml-2">
+              <div class="flex justify-between text-xs"><span class="text-slate-700 font-semibold">12 Jun 2026</span><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Operativo</span></div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">Carlos Ocsa · Calibración</div>
+            </div>
+            <div class="border-l-2 border-slate-200 pl-4 ml-2">
+              <div class="flex justify-between text-xs"><span class="text-slate-700 font-semibold">15 May 2026</span><span class="bg-amber-100 text-amber-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">En Reparación</span></div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">Luis Tananta · Correctivo</div>
+            </div>
+            <div class="border-l-2 border-slate-200 pl-4 ml-2">
+              <div class="flex justify-between text-xs"><span class="text-slate-700 font-semibold">10 Abr 2026</span><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Operativo</span></div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">Carlos Ocsa · Preventivo</div>
+            </div>
+            <div class="border-l-2 border-slate-200 pl-4 ml-2">
+              <div class="flex justify-between text-xs"><span class="text-slate-700 font-semibold">05 Mar 2026</span><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Operativo</span></div>
+              <div class="text-[11px] text-slate-500 font-mono mt-0.5">Luis Tananta · Preventivo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visitas Futuras -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Visitas Futuras (2)</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <div><div class="text-slate-700 font-semibold">12 Ago 2026</div><div class="text-[11px] text-slate-500 font-mono">Mant. Preventivo</div></div>
+              <span class="bg-blue-100 text-blue-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Asignada</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <div><div class="text-slate-700 font-semibold">30 Ago 2026</div><div class="text-[11px] text-slate-500 font-mono">Calibración</div></div>
+              <span class="bg-amber-100 text-amber-700 text-[10px] font-bold font-mono uppercase py-0.5 px-2 rounded-full">Programada</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informes Técnicos -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Informes Técnicos (3)</h3>
+          <div class="space-y-2">
+            <a class="flex items-center justify-between text-xs font-mono text-slate-700 hover:text-slate-900 cursor-pointer"><span>INF-2026-001 · 15 Jul 2026</span><i data-lucide="external-link" style="width:12px;height:12px"></i></a>
+            <a class="flex items-center justify-between text-xs font-mono text-slate-700 hover:text-slate-900 cursor-pointer"><span>INF-2026-002 · 12 Jun 2026</span><i data-lucide="external-link" style="width:12px;height:12px"></i></a>
+            <a class="flex items-center justify-between text-xs font-mono text-slate-700 hover:text-slate-900 cursor-pointer"><span>INF-2026-003 · 15 May 2026</span><i data-lucide="external-link" style="width:12px;height:12px"></i></a>
+          </div>
+        </div>
+
+        <!-- Footer del drawer -->
+        <div class="flex gap-2 pt-2">
+          <button class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i data-lucide="pencil" style="width:12px;height:12px"></i>Editar Equipo</button>
+          <button class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><i data-lucide="trash-2" style="width:12px;height:12px"></i>Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SECCIÓN 3: ESTADO VACÍO ============ -->
+<div class="text-center py-3 bg-slate-900 text-white">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 3 · Estado Vacío</span>
+</div>
+
+<div class="min-h-screen p-6">
+  <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6">
+    <h1 class="text-2xl font-black text-slate-900 font-display">Inventario de Equipos</h1>
+    <p class="text-xs text-slate-400 font-bold font-mono uppercase tracking-wider mt-1">Vista consolidada de equipos, modelos, series, estado e historial de servicio</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="boxes" class="text-slate-400" style="width:14px;height:14px"></i></div><span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Total Equipos</span></div>
+      <div class="text-2xl font-black text-slate-400 font-mono">0</div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="shield-check" class="text-slate-400" style="width:14px;height:14px"></i></div><span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Operativos</span></div>
+      <div class="text-2xl font-black text-slate-400 font-mono">0</div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="wrench" class="text-slate-400" style="width:14px;height:14px"></i></div><span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">En Obs. / Repar.</span></div>
+      <div class="text-2xl font-black text-slate-400 font-mono">0</div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="calendar-clock" class="text-slate-400" style="width:14px;height:14px"></i></div><span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">Próximas Visitas</span></div>
+      <div class="text-2xl font-black text-slate-400 font-mono">0</div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm py-16 px-6 text-center">
+    <i data-lucide="boxes" class="text-slate-300 mx-auto" style="width:64px;height:64px"></i>
+    <h3 class="text-lg font-bold text-slate-700 font-display mt-4">Aún no hay equipos registrados</h3>
+    <p class="text-xs text-slate-500 mt-1">Crea el primer equipo para empezar a gestionar el inventario.</p>
+    <button class="mt-6 bg-[#0F9E82] hover:bg-[#0B3B34] text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2"><i data-lucide="plus" style="width:14px;height:14px"></i>Agregar Equipo</button>
+  </div>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
