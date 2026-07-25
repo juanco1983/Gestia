@@ -29,6 +29,7 @@ import {
   Cpu
 } from 'lucide-react';
 import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
+import { useLocalToast } from './shared/ToastModal';
 import { 
   ALL_ACCIONES, 
   DEFAULT_RECOMENDACIONES, 
@@ -65,6 +66,8 @@ export default function TecnicoView({
   otEquipoAsignaciones
 }: TecnicoViewProps) {
   const isTechUser = currentUser?.role === 'Tecnico';
+
+  const { notifySuccess, notifyError, notifyOffline, toastView } = useLocalToast();
 
   const mockTechName = currentUser?.username || "Carlos Ocsa";
   
@@ -256,7 +259,7 @@ export default function TecnicoView({
 
     localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
     if (showNotification) {
-      alert("💾 BORRADOR GUARDADO LOCALMENTE:\n\nLos cambios actuales se han guardado de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.");
+      notifySuccess('Borrador Guardado', 'Los cambios se guardaron de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.');
     }
   };
 
@@ -576,12 +579,12 @@ export default function TecnicoView({
       setFotosLabeled(def.fotosLabeled);
     }
 
-    alert("⚡ AUTOCOMPLETADO EXITOSO: El informe de campo ha sido rellenado con datos predeterminados consistentes y el set completo de fotografías de alineación correspondientes a la potencia. ¡Revise y apruebe!");
+    notifySuccess('Autocompletado Exitoso', 'El informe de campo ha sido rellenado con datos predeterminados consistentes y el set completo de fotografías de alineación correspondientes a la potencia. Revise y apruebe.');
   };
 
   const handlePhotoUpload = (index: number, file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert("Por favor, seleccione un archivo de imagen válido (JPG, PNG, etc.).");
+      notifyError('Archivo no Válido', 'Seleccione un archivo de imagen válido (JPG, PNG, etc.).');
       return;
     }
 
@@ -686,7 +689,7 @@ export default function TecnicoView({
     // Check if there are empty photo slots
     const missingPhotos = fotosLabeled.filter(f => !f.base64);
     if (missingPhotos.length > 0) {
-      alert(`⚠️ ERROR DE COBERTURA CONTRACTUAL S.L.A:\n\nSegún la orden de trabajo para un equipo de potencia de ${selectedOt.potenciaKva} KVA, se requieren exactamente ${fotosLabeled.length} fotografías con la alineación y encuadre correspondientes. Aún le faltan ingresar ${missingPhotos.length} fotos. Use el botón 'Autocompletar' o cargue fotos manuales en todas las cajas.`);
+      notifyError('Error de Cobertura S.L.A', `Según la orden de trabajo para un equipo de potencia de ${selectedOt.potenciaKva} KVA, se requieren exactamente ${fotosLabeled.length} fotografías con la alineación y encuadre correspondientes. Aún le faltan ingresar ${missingPhotos.length} fotos. Use el botón 'Autocompletar' o cargue fotos manuales en todas las cajas.`);
       return;
     }
 
@@ -754,11 +757,11 @@ export default function TecnicoView({
       compiledReport.offlineDirty = true;
       onSaveReportOffline(compiledReport);
       onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
-      alert(`⚠️ TRABAJO FISCAL COMPILADO Y CACHEADO LOCALMENTE (MODO DE SÓTANO):\n\nEl sistema de sincronización offline de Mafort ha encolado este reporte de ${fotosLabeled.length} fotografías de manera segura. Al reconectarse a internet, subirá inmediatamente.`);
+      notifyOffline('Reporte Cacheado Localmente', `El sistema de sincronización offline de Mafort ha encolado este reporte de ${fotosLabeled.length} fotografías de manera segura. Al reconectarse a internet, subirá inmediatamente.`);
     } else {
       onSaveReportOffline(compiledReport);
       onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
-      alert(`✅ INFORME DE AUDIO-VISTA ADJUNTO PROCESADO EXITOSAMENTE:\n\nSe ha estructurado y subido el informe técnico con la numeración oficial en formato doble marco a la nube para aprobación.`);
+      notifySuccess('Informe Procesado Exitosamente', 'Se ha estructurado y subido el informe técnico con la numeración oficial en formato doble marco a la nube para aprobación.');
     }
 
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
@@ -2180,6 +2183,7 @@ export default function TecnicoView({
         )}
       </div>
 
+      {toastView}
     </div>
   );
 }
