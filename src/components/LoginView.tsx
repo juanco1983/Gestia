@@ -11,6 +11,7 @@ import {
   Landmark
 } from 'lucide-react';
 import { User } from '../types';
+import { useLocalToast } from './shared/ToastModal';
 
 interface LoginViewProps {
   users: User[];
@@ -23,6 +24,7 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showTestUsers, setShowTestUsers] = useState(false);
+  const { notifyInfo, toastView } = useLocalToast();
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +249,10 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
               <button
                 type="button"
                 onClick={() => {
-                  alert("Microsoft Office 365 SSO: La integración corporativa con Azure Active Directory (Azure AD) está en preparación. Estará disponible próximamente.");
+                  notifyInfo(
+                    'Office 365 SSO Próximamente',
+                    'La integración corporativa con Azure Active Directory (Azure AD) está en preparación y estará disponible próximamente.'
+                  );
                 }}
                 className="w-full bg-white text-ink-soft border border-hairline font-medium py-2.5 px-4 rounded-sm text-[13px] cursor-not-allowed opacity-75 flex items-center justify-center gap-2"
               >
@@ -349,6 +354,7 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
 
       </div>
 
+      {toastView}
     </div>
   );
 }
