@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport } from '../types';
 import DocumentFormat from './DocumentFormat';
+import { useLocalToast } from './shared/ToastModal';
 
 interface ClienteViewProps {
   ots: OT[];
@@ -31,6 +32,8 @@ export default function ClienteView({
   const signableOts = ots.filter(o => o.estado === OTStatus.APROBADA || o.estado === OTStatus.FIRMADA);
 
   const [selectedOt, setSelectedOt] = useState<OT | null>(null);
+  
+  const { notifySuccess, toastView } = useLocalToast();
   
   // Custom Canvas Drawing pad
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -135,7 +138,10 @@ export default function ClienteView({
     }
 
     onUpdateOtStatus(selectedOt.id, OTStatus.FIRMADA);
-    alert(`🎉 ¡SLA FIRMADO Y CONCLUIDO CON ÉXITO!\n\nSe ha estresado la conformidad del cliente y archivado las mediciones de entrada/salida. El informe técnico oficial está listo para auditoría final.`);
+    notifySuccess(
+      'Firma Exitosa',
+      'Se ha registrado la conformidad del cliente y archivado las mediciones. El informe técnico oficial está listo para auditoría final.'
+    );
     setSelectedOt(null);
   };
 
@@ -323,6 +329,7 @@ export default function ClienteView({
         )}
       </div>
 
+      {toastView}
     </div>
   );
 }

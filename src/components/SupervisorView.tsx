@@ -22,6 +22,7 @@ import {
 import { OT, OTStatus, Client, TechnicalReport, OtEquipoAsignacion } from '../types';
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
+import { useLocalToast } from './shared/ToastModal';
 
 interface SupervisorViewProps {
   ots: OT[];
@@ -47,6 +48,7 @@ export default function SupervisorView({
   const [correccionText, setCorreccionText] = useState<string>('');
   const [simulatedDocxDownloaded, setSimulatedDocxDownloaded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'resumen' | 'previsualizacion'>('resumen');
+  const { notifySuccess, notifyError, toastView } = useLocalToast();
   const [globalSearch, setGlobalSearch] = useState('');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(100);
@@ -79,11 +81,11 @@ export default function SupervisorView({
     if (!selectedOt) return;
     const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
     if (isApprovedOrCompleted) {
-      alert('Este informe ya ha sido APROBADO previamente y no se pueden realizar nuevas aprobaciones.');
+      notifyError('Acción Restringida', 'Este informe ya ha sido aprobado previamente y no se pueden realizar nuevas aprobaciones.');
       return;
     }
     onUpdateOtStatus(selectedOt.id, OTStatus.APROBADA);
-    alert(`⚡ INFORME APROBADO: Notificación automatizada enviada con éxito al cliente para firma de conformidad.`);
+    notifySuccess('Informe Aprobado', 'Se envió la notificación automatizada al cliente para firma de conformidad.');
     setSelectedOt(null);
   };
 
@@ -91,11 +93,11 @@ export default function SupervisorView({
     if (!selectedOt) return;
     const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
     if (isApprovedOrCompleted) {
-      alert('Este informe ya ha sido APROBADO previamente y no puede ser cancelado ni rechazado.');
+      notifyError('Acción Restringida', 'No se puede cancelar ni rechazar un informe ya aprobado.');
       return;
     }
     if (!correccionText.trim()) {
-      alert("ATENCIÓN: Debe redactar una nota de corrección explicando qué mediciones o fotos se deben re-evaluar.");
+      notifyError('Validación Requerida', 'Debe redactar una nota de corrección explicando qué mediciones o fotos se deben re-evaluar.');
       return;
     }
 
@@ -109,7 +111,7 @@ export default function SupervisorView({
     }
 
     onUpdateOtStatus(selectedOt.id, OTStatus.OBSERVADA);
-    alert(`❌ ENVIADO A CORRECCIÓN: El informe del equipo ha regresado a la bandeja de trabajo del técnico con las anotaciones correspondientes.`);
+    notifySuccess('Enviado a Corrección', 'El informe regresó a la bandeja del técnico con las anotaciones correspondientes.');
     setSelectedOt(null);
   };
 
@@ -127,7 +129,7 @@ export default function SupervisorView({
     };
     const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
     if (!report) {
-      alert("ATENCIÓN: El informe técnico aún no ha sido redactado por el personal técnico.");
+      notifyError('Informe no Redactado', 'El informe técnico aún no ha sido redactado por el personal técnico.');
       return;
     }
 
@@ -923,7 +925,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                             handleSelectOt(ot);
                             document.getElementById('supervisor-parent-container')?.scrollIntoView({ behavior: 'smooth' });
                           } else {
-                            alert("La orden de trabajo de este informe ya no se encuentra activa en el sistema.");
+                            notifyError('OT Inactiva', 'La orden de trabajo de este informe ya no se encuentra activa en el sistema.');
                           }
                         }}
                         className="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 px-2.5 py-1.5 rounded-xl font-bold font-sans transition-all flex items-center gap-1 ml-auto border border-slate-200 hover:border-indigo-200 cursor-pointer"
@@ -1049,6 +1051,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
           </div>
         );
       })()}
+      {toastView}
     </div>
   );
 }
