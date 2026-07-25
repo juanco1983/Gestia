@@ -396,6 +396,57 @@ el futuro se desea un toast transitorio (auto-dismiss 3s) para mensajes
 puros de éxito, agregar el tipo `'toast'` al `ToastState` y un `setTimeout`
 en el `notify()`. **No introducir** otra librería (`sonner`, `react-hot-toast`).
 
+### 5.5 Patrón canónico — `<ConfirmModal>` (confirmaciones binarias)
+
+> [!IMPORTANT]
+> Para acciones **destructivas o irreversibles** (eliminar, anular,
+> finalizar, resetear) el `window.confirm()` nativo está prohibido. El
+> patrón canónico es `<ConfirmModal>` + hook `useConfirm`, complementary al
+> `<ToastModal>` (que es solo informativo con 1 botón).
+
+Componente shared: `src/components/shared/ConfirmModal.tsx`.
+Hook: `useConfirm()` — devuelve `{ confirm, closeConfirm, confirmView }`.
+API:
+```ts
+type ConfirmTone = 'danger' | 'warning' | 'info';
+interface ConfirmOptions {
+  title: string;
+  message: string;
+  confirmLabel?: string;   // default: 'Confirmar'
+  cancelLabel?: string;    // default: 'Cancelar'
+  tone?: ConfirmTone;      // default: 'warning'
+}
+const { confirm, confirmView } = useConfirm();
+const ok = await confirm({
+  title: 'Anular Línea de OT',
+  message: '¿Está seguro de anular lógicamente la línea de OT #OT-001? Se marcará como ANULADO.',
+  confirmLabel: 'Anular',
+  tone: 'danger'
+});
+if (ok) { /* ejecutar acción irreversible */ }
+```
+
+Reuso del shell visual del `<ToastModal>` (mismo `bg-slate-900/60 backdrop-blur-xs`, misma card `bg-white border-slate-200 max-w-sm rounded-3xl p-5 shadow-2xl`, mismo header `flex items-center gap-3 pb-2 border-b border-slate-100`). Diferencias:
+- **2 botones** (Cancelar + Confirmar) en `justify-end gap-2`, no uno solo.
+- **Confirm `autoFocus`** + atajos teclado: `Enter` = confirmar, `Esc` = cancelar.
+- **Icono `AlertTriangle`** (en vez de `CheckCircle2`/`XCircle`/`Cloud`/`Info`).
+- **Etiquetas intensidad (`tone`)**:
+  - `danger` (eliminar/anular/bajas definitivas): icono rosa, botón `bg-rose-500`.
+  - `warning` (finalizar/reset por defecto): icono amber, botón `bg-teal-brand`.
+  - `info` (confirmaciones no destructivas): icono sky, botón `bg-slate-800`.
+- **`<dialog open>`** nativo para foco gestionado por el browser + `aria-modal`, `aria-labelledby`, `aria-describedby` (WCAG AA).
+- `confirmView` se renderiza una sola vez, al final del `return` del componente, junto a `toastView`.
+
+Convenciones de uso:
+
+| Escenario | tone | title | confirmLabel sugerido |
+|---|---|---|---|
+| Anular OT | `danger` | "Anular Línea de OT" | "Anular" |
+| Eliminar usuario | `danger` | "Eliminar Usuario" | "Eliminar" |
+| Finalizar servicio | `warning` | "Finalizar Servicio" | "Finalizar" |
+| Reset formulario (perder borrador) | `warning` | "Restablecer Formulario" | "Restablecer" |
+| Cambio de estado reversible | `info` | "Confirmar Cambio" | "Aplicar" |
+
 ---
 
 ## 6. Iconografía
