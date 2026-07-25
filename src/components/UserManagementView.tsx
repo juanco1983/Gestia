@@ -18,6 +18,7 @@ import {
 import { User, UserActivityLog } from '../types';
 import { APP_MODULES } from '../modulesConfig';
 import { useLocalToast } from './shared/ToastModal';
+import { useConfirm } from './shared/ConfirmModal';
 
 export const AVAILABLE_MODULES = APP_MODULES.map(m => ({
   id: m.id,
@@ -84,6 +85,7 @@ export default function UserManagementView({
   // Logs category filter
   const [logFilter, setLogFilter] = useState<string>('ALL');
   const { notifySuccess, notifyError, toastView } = useLocalToast();
+  const { confirm, confirmView } = useConfirm();
 
   const filteredUsers = users.filter(u => 
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -567,8 +569,14 @@ export default function UserManagementView({
                               </button>
                               {onDeleteUser && !isCurrentUser && (
                                 <button
-                                  onClick={() => {
-                                    if (confirm(`¿Está seguro de eliminar de forma permanente a ${user.username}? Esta acción auditará la baja.`)) {
+                                  onClick={async () => {
+                                    const ok = await confirm({
+                                      title: 'Eliminar Usuario',
+                                      message: `¿Está seguro de eliminar de forma permanente a ${user.username}? Esta acción auditará la baja.`,
+                                      confirmLabel: 'Eliminar',
+                                      tone: 'danger'
+                                    });
+                                    if (ok) {
                                       onDeleteUser(user.id);
                                     }
                                   }}
@@ -893,6 +901,7 @@ export default function UserManagementView({
       )}
 
       {toastView}
+      {confirmView}
     </div>
   );
 }

@@ -24,6 +24,7 @@ import ModalCrearOtMarco from './ot/ModalCrearOtMarco';
 import ModalAgregarLinea from './ot/ModalAgregarLinea';
 import ModalEditarLinea from './ot/ModalEditarLinea';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
+import { useConfirm } from './shared/ConfirmModal';
 
 interface OrdenesTrabajoViewProps {
   lineas: OrdenTrabajoLinea[];
@@ -58,6 +59,8 @@ export default function OrdenesTrabajoView({
 }: OrdenesTrabajoViewProps) {
   // Navigation tabs: 'lista' | 'analytics' | 'targets' | 'comercial'
   const [subTab, setSubTab] = useState<'lista' | 'analytics' | 'targets' | 'comercial'>('lista');
+
+  const { confirm, confirmView } = useConfirm();
 
   // Modals state
   const [showCreateMarcoModal, setShowCreateMarcoModal] = useState(false);
@@ -168,8 +171,14 @@ export default function OrdenesTrabajoView({
   }, [lineas, targetVentas]);
 
   // Handle Logical Cancellation
-  const handleCancelLine = (line: OrdenTrabajoLinea) => {
-    if (window.confirm(`¿Está seguro de anular lógicamente la línea de OT #${line.ot}? Se marcará como ANULADO.`)) {
+  const handleCancelLine = async (line: OrdenTrabajoLinea) => {
+    const ok = await confirm({
+      title: 'Anular Línea de OT',
+      message: `¿Está seguro de anular lógicamente la línea de OT #${line.ot}? Se marcará como ANULADO.`,
+      confirmLabel: 'Anular',
+      tone: 'danger'
+    });
+    if (ok) {
       const updated: OrdenTrabajoLinea = {
         ...line,
         pendiente: 'ANULADO',
@@ -565,6 +574,7 @@ export default function OrdenesTrabajoView({
         />
       )}
 
+      {confirmView}
     </div>
   );
 }
