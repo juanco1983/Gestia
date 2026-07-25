@@ -118,7 +118,7 @@ function getPalette(type: ToastType) {
       return {
         Icon: CheckCircle2,
         iconBg: 'bg-emerald-50 border border-emerald-100 text-emerald-500',
-        buttonBg: 'bg-[--color-teal-brand] hover:bg-teal-deep text-white shadow-sm'
+        buttonBg: 'bg-teal-brand hover:bg-teal-deep text-white shadow-sm'
       };
     case 'error':
       return {
