@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo, Client } from '../../types';
 import { checkTechnicianConflicts } from '../../utils/conflictChecker';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface ModalProgramarVisitaProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function ModalProgramarVisita({
 
   // Wizard active step (1 to 5)
   const [step, setStep] = useState(1);
+  const { notifySuccess, notifyError, toastView } = useLocalToast();
 
   // 1. Equipments list resolution (contract direct + adenda equipments combined)
   const equipments: Equipo[] = useMemo(() => {
@@ -257,17 +259,17 @@ export default function ModalProgramarVisita({
     e.preventDefault();
 
     if (activeSelectedEquips.length === 0) {
-      alert("⚠️ Debes seleccionar al menos un equipo para programar el servicio.");
+      notifyError('Validación Requerida', 'Debes seleccionar al menos un equipo para programar el servicio.');
       setStep(2);
       return;
     }
     if (!primaryTechId) {
-      alert("⚠️ Debes asignar un Técnico Titular.");
+      notifyError('Validación Requerida', 'Debes asignar un Técnico Titular.');
       setStep(4);
       return;
     }
     if (!fecha) {
-      alert("⚠️ Por favor selecciona una fecha para la visita.");
+      notifyError('Validación Requerida', 'Por favor selecciona una fecha para la visita.');
       setStep(3);
       return;
     }
@@ -341,11 +343,11 @@ export default function ModalProgramarVisita({
         });
       }
 
-      alert(`✅ Servicio programado correctamente. Se crearon ${activeSelectedEquips.length} OTs de forma individual.`);
+      notifySuccess('Servicio Programado', `Se crearon ${activeSelectedEquips.length} OTs de forma individual.`);
       onClose();
     } catch (err: any) {
       console.error("Error al programar visitas del servicio:", err);
-      alert("❌ Ocurrió un error al guardar la programación.");
+      notifyError('Error al Guardar', 'Ocurrió un error al guardar la programación.');
     } finally {
       setIsSaving(false);
     }
@@ -353,15 +355,15 @@ export default function ModalProgramarVisita({
 
   const handleNext = () => {
     if (step === 2 && activeSelectedEquips.length === 0) {
-      alert("⚠️ Selecciona al menos un equipo antes de continuar.");
+      notifyError('Validación Requerida', 'Selecciona al menos un equipo antes de continuar.');
       return;
     }
     if (step === 3 && !fecha) {
-      alert("⚠️ Debes indicar la fecha del servicio.");
+      notifyError('Validación Requerida', 'Debes indicar la fecha del servicio.');
       return;
     }
     if (step === 4 && !primaryTechId) {
-      alert("⚠️ Asigna un Técnico Titular antes de continuar.");
+      notifyError('Validación Requerida', 'Asigna un Técnico Titular antes de continuar.');
       return;
     }
     setStep(prev => prev + 1);
@@ -874,6 +876,7 @@ export default function ModalProgramarVisita({
         </div>
 
       </div>
+      {toastView}
     </div>
   );
 }

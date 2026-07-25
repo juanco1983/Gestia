@@ -28,6 +28,7 @@ import {
 import { Client, Contract, OT, ServiceType, EquipmentType, OTStatus, TechnicalReport, Contrato } from '../types';
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
+import { useLocalToast } from './shared/ToastModal';
 
 function CircularProgress({ value, max, text, colorClass, trailColorClass = "stroke-slate-100/70" }: { value: number; max: number; text: string; colorClass: string; trailColorClass?: string }) {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
@@ -120,6 +121,7 @@ export default function VentasView({
     fechaInicio: '',
     fechaFin: ''
   });
+  const { notifyError, toastView } = useLocalToast();
 
   // Form inputs - OT
   const [otForm, setOtForm] = useState({
@@ -412,14 +414,14 @@ export default function VentasView({
     if (!selectedOt) return;
     const report = reports.find(r => r.otId === selectedOt.id);
     if (!report) {
-      alert("ATENCIÓN: El informe técnico aún no ha sido redactado por el personal técnico.");
+      notifyError('Informe no Redactado', 'El informe técnico aún no ha sido redactado por el personal técnico.');
       return;
     }
 
     // Open a new browser tab/window synchronously to prevent pop-up blocker issues in frames
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert("El navegador bloqueó la ventana emergente para exportar a PDF. Por favor, habilite los permisos de ventanas emergentes (pop-ups) para esta página en la barra de direcciones de su navegador para permitir la descarga directa.");
+      notifyError('Pop-up Bloqueado', 'El navegador bloqueó la ventana emergente para exportar a PDF. Habilite los permisos de ventanas emergentes para esta página.');
       return;
     }
 
@@ -559,7 +561,7 @@ export default function VentasView({
 
       } catch (err) {
         console.error(err);
-        alert('Error al preparar el documento imprimible. Intente de nuevo.');
+        notifyError('Error al Preparar PDF', 'Ocurrió un error al preparar el documento imprimible. Intente de nuevo.');
       } finally {
         setIsGeneratingPdf(false);
         setPdfOt(null);
@@ -581,7 +583,7 @@ export default function VentasView({
     };
     const report = reports.find(r => r.otId === selectedOt.id);
     if (!report) {
-      alert("ATENCIÓN: El informe técnico aún no ha sido redactado por el personal técnico.");
+      notifyError('Informe no Redactado', 'El informe técnico aún no ha sido redactado por el personal técnico.');
       return;
     }
 
@@ -1774,6 +1776,7 @@ export default function VentasView({
           </div>
         );
       })()}
+      {toastView}
     </div>
   );
 }

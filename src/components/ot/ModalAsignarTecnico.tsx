@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, UserPlus, Users, Trash2, Calendar, Clock, Cpu, AlertTriangle } from 'lucide-react';
 import { OrdenTrabajoLinea, OT, User, OTStatus, Equipo, Client } from '../../types';
 import { checkTechnicianConflicts } from '../../utils/conflictChecker';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface ModalAsignarTecnicoProps {
   linea: OrdenTrabajoLinea;
@@ -65,6 +66,8 @@ export default function ModalAsignarTecnico({
         .catch(err => console.error("Error fetching client equipments:", err));
     }
   }, [matchingOt?.clientId]);
+
+  const { notifySuccess, notifyError, toastView } = useLocalToast();
 
   // Fetch existing assignments for this OT
   useEffect(() => {
@@ -186,12 +189,12 @@ export default function ModalAsignarTecnico({
 
   const handleSave = async () => {
     if (!matchingOt) {
-      alert("No se encontró una OT técnica vinculada a esta línea financiera.");
+      notifyError('OT no Encontrada', 'No se encontró una OT técnica vinculada a esta línea financiera.');
       return;
     }
 
     if (isLockedState) {
-      alert(`REGLA DE NEGOCIO: La OT Técnica ${matchingOt.id} ya se encuentra en estado "${matchingOt.estado}". No se puede modificar ni reasignar técnicos para un trabajo que ya está en ejecución o finalizado.`);
+      notifyError('Acción Restringida', `La OT Técnica ${matchingOt.id} ya se encuentra en estado "${matchingOt.estado}". No se puede modificar ni reasignar técnicos para un trabajo en ejecución o finalizado.`);
       return;
     }
 
@@ -245,7 +248,7 @@ export default function ModalAsignarTecnico({
         };
 
         onUpdateOT(updatedOt);
-        alert("✅ Asignaciones y programaciones de equipos guardadas con éxito.");
+        notifySuccess('Asignación Exitosa', 'Las asignaciones y programaciones de equipos se guardaron correctamente.');
       } else {
         // Fallback: single assignment at OT level
         const primaryTech = technicians.find(t => t.id === fallbackTechId);
@@ -264,11 +267,11 @@ export default function ModalAsignarTecnico({
         };
 
         onUpdateOT(updatedOt);
-        alert("✅ Asignación general de OT guardada con éxito.");
+        notifySuccess('Asignación Exitosa', 'La asignación general de la OT se guardó correctamente.');
       }
     } catch (err) {
       console.error("Error saving assignments:", err);
-      alert("Hubo un error al guardar las asignaciones.");
+      notifyError('Error al Guardar', 'Hubo un error al guardar las asignaciones.');
     }
   };
 
@@ -571,6 +574,7 @@ export default function ModalAsignarTecnico({
           </button>
         </div>
       </div>
+      {toastView}
     </div>
   );
 }
