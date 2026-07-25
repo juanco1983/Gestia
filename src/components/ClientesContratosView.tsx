@@ -864,7 +864,7 @@ export default function ClientesContratosView({
     if (isGeneratingReportePdf) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('El navegador bloqueó la ventana emergente. Habilite los pop-ups para esta página.');
+      setAlertState({ show: true, type: 'error', title: 'Pop-up Bloqueado', message: 'El navegador bloqueó la ventana emergente. Habilite los pop-ups para esta página.' });
       return;
     }
     try {
@@ -878,12 +878,12 @@ export default function ClientesContratosView({
       const report = allReports.find(r => r.otId === otId);
       if (!ot) {
         printWindow.close();
-        alert('No se encontró la Orden de Trabajo.');
+        setAlertState({ show: true, type: 'error', title: 'OT no Encontrada', message: 'No se encontró la Orden de Trabajo.' });
         return;
       }
       if (!report) {
         printWindow.close();
-        alert('Esta OT aún no tiene informe técnico redactado.');
+        setAlertState({ show: true, type: 'error', title: 'Informe no Disponible', message: 'Esta OT aún no tiene informe técnico redactado.' });
         return;
       }
       const client = clients.find(c => c.id === ot.clientId) || null;
