@@ -13,6 +13,7 @@ import UserManagementView from './components/UserManagementView';
 import TechMonitoringDashboard from './components/TechMonitoringDashboard';
 import DashboardView from './components/dashboard/DashboardView';
 import { APP_MODULES } from './modulesConfig';
+import { useLocalToast } from './components/shared/ToastModal';
 import { 
   AlertCircle, 
   Terminal, 
@@ -191,6 +192,8 @@ export default function App() {
 
   // Logout confirmation state
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { notifyError, notifyInfo, toastView } = useLocalToast();
 
   // Persistent States loaded from localStorage
   const [clients, setClients] = useState<Client[]>(() => {
@@ -633,7 +636,7 @@ export default function App() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        alert(`No se pudo crear la OT: ${errorData.error || 'Error desconocido'}`);
+        notifyError('Error al Crear OT', `No se pudo crear la OT: ${errorData.error || 'Error desconocido'}`);
         return;
       }
 
@@ -1412,7 +1415,7 @@ export default function App() {
             <div className="flex items-center gap-2 text-slate-400">
               <button 
                 type="button"
-                onClick={() => alert(`🔔 Notificaciones de SLA Gestia: Cuenta con ${otsRevision} órdenes de trabajo pendientes de firma o revisión en el servidor.`)}
+                onClick={() => notifyInfo('Notificaciones SLA', `Cuenta con ${otsRevision} órdenes de trabajo pendientes de firma o revisión en el servidor.`)}
                 className="p-1.5 bg-white hover:bg-slate-50 text-slate-500 rounded-lg border border-slate-200 relative hover:text-slate-700 cursor-pointer"
               >
                 <Bell size={14} />
@@ -1662,6 +1665,7 @@ export default function App() {
           </div>
         </div>
       )}
+      {toastView}
     </div>
   );
 }
