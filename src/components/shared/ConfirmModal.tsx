@@ -43,7 +43,7 @@ const TONE_PALETTE: Record<ConfirmTone, {
   },
   warning: {
     iconBg: 'bg-amber-50 border border-amber-100 text-amber-500',
-    confirmBg: 'bg-[--color-teal-brand] hover:bg-teal-deep text-white shadow-sm'
+    confirmBg: 'bg-teal-brand hover:bg-teal-deep text-white shadow-sm'
   },
   info: {
     iconBg: 'bg-sky-50 border border-sky-100 text-sky-500',
