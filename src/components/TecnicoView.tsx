@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
 import { useLocalToast } from './shared/ToastModal';
+import { useConfirm } from './shared/ConfirmModal';
 import { 
   ALL_ACCIONES, 
   DEFAULT_RECOMENDACIONES, 
@@ -68,6 +69,7 @@ export default function TecnicoView({
   const isTechUser = currentUser?.role === 'Tecnico';
 
   const { notifySuccess, notifyError, notifyOffline, toastView } = useLocalToast();
+  const { confirm, confirmView } = useConfirm();
 
   const mockTechName = currentUser?.username || "Carlos Ocsa";
   
@@ -926,8 +928,14 @@ export default function TecnicoView({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm("¿Seguro que desea restablecer el formulario? Se borrará el borrador local y se volverán a cargar los valores por defecto.")) {
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: 'Restablecer Formulario',
+                      message: '¿Seguro que desea restablecer el formulario? Se borrará el borrador local y se volverán a cargar los valores por defecto.',
+                      confirmLabel: 'Restablecer',
+                      tone: 'warning'
+                    });
+                    if (ok) {
                       localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
                       setDraftLoadedMessage(null);
                       // Reload defaults
@@ -2124,8 +2132,14 @@ export default function TecnicoView({
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                if (window.confirm('¿Está seguro de finalizar el servicio? Se registrará la hora de término de los trabajos.')) {
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'Finalizar Servicio',
+                                  message: '¿Está seguro de finalizar el servicio? Se registrará la hora de término de los trabajos.',
+                                  confirmLabel: 'Finalizar',
+                                  tone: 'warning'
+                                });
+                                if (ok) {
                                   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                                   onUpdateOt({
                                     ...selectedOt,
@@ -2184,6 +2198,7 @@ export default function TecnicoView({
       </div>
 
       {toastView}
+      {confirmView}
     </div>
   );
 }
