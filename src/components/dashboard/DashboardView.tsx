@@ -318,19 +318,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* SLA Cumplimiento Card (Única tarjeta SLA 100% dinámica) */}
-        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)] min-w-0">
+          <div className="flex items-center justify-between min-w-0">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">
               SLA Cumplimiento
             </span>
-            <span className={`w-2 h-2 rounded-full ${ots.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
+            <span className={`w-2 h-2 rounded-full shrink-0 ${ots.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
           </div>
 
-          <div className="my-2">
+          <div className="my-2 min-w-0">
             <span className="text-3xl font-mono font-black text-slate-900 leading-none">
               {slaPercentage}%
             </span>
-            <p className="text-[11px] text-slate-400 font-medium mt-1">
+            <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
               {ots.length > 0 ? `Objetivo: 95% (${ejecutadasDelMes.length}/${ots.length})` : 'Sin OTs registradas'}
             </p>
           </div>

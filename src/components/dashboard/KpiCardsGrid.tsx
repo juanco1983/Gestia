@@ -105,25 +105,25 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ cards, onNavigateToT
               </div>
 
               {card.badge && (
-                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border ${getBadgeClass(card.badge.color)}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border whitespace-nowrap shrink-0 ${getBadgeClass(card.badge.color)}`}>
                   {card.badge.text}
                 </span>
               )}
             </div>
 
-            <div className="flex items-end justify-between mt-1">
-              <div>
-                <div className="flex items-baseline gap-2">
+            <div className="flex items-end justify-between mt-1 min-w-0">
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2 min-w-0">
                   <span className="text-3xl font-mono font-black text-slate-900 leading-none group-hover:text-[#00B594] transition-colors">
                     {card.value}
                   </span>
                   {card.percentageChange && (
-                    <span className="text-xs font-bold font-mono text-emerald-600">
+                    <span className="text-xs font-bold font-mono text-emerald-600 whitespace-nowrap shrink-0">
                       {card.percentageChange}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
                   {card.subtext}
                 </p>
               </div>
