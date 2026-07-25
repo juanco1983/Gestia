@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { INITIAL_CLIENTS, INITIAL_CONTRACTS, INITIAL_OTS, INITIAL_USERS, INITIAL_LOGS } from './mockData';
 import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType, OtEquipoAsignacion } from './types';
 import { INITIAL_ORDENES_TRABAJO, INITIAL_CONTRATOS_NUEVOS, INITIAL_TARGET_VENTAS } from './utils/otDefaults';
@@ -187,8 +187,34 @@ export default function App() {
   // Real-time online state
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
-  // Sidebar visibility state
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  // Sidebar visibility state (inicia cerrada en mobile/tablet, abierta en desktop lg+)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(min-width: 1024px)').matches;
+  });
+  const isSidebarOpenRef = useRef(isSidebarOpen);
+  isSidebarOpenRef.current = isSidebarOpen;
+
+  // Cerrar sidebar automaticamente al pasar a mobile/tablet (<lg)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (!e.matches && isSidebarOpenRef.current) setIsSidebarOpen(false);
+    };
+    media.addEventListener('change', handler);
+    return () => media.removeEventListener('change', handler);
+  }, []);
+
+  // Cerrar drawer con Escape (mobile/tablet overlay)
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isSidebarOpen]);
 
   // Logout confirmation state
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -1210,9 +1236,28 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] bg-canvas flex font-sans text-slate-800" id="mafort-app-wrapper">
-      
-      {/* 1. LEFT SIDEBAR (Sticky full-height pane) */}
-      <aside className={`bg-teal-deep text-[#DDEFE9] flex flex-col justify-between shrink-0 h-[100dvh] sticky top-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[248px]' : 'w-0 overflow-hidden'}`} id="sidebar-panel">
+
+      {/* 1. LEFT SIDEBAR - drawer overlay en mobile/tablet (<lg), sticky pane en desktop (lg+) */}
+      {/* Backdrop oscuro solo en mobile/tablet cuando drawer abierto */}
+      {isSidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          bg-teal-deep text-[#DDEFE9] flex flex-col justify-between shrink-0 h-[100dvh] transition-all duration-300 ease-in-out
+          ${isSidebarOpen
+            ? 'w-[248px] lg:sticky lg:top-0 fixed inset-y-0 left-0 z-50 shadow-2xl lg:shadow-none'
+            : 'lg:sticky lg:top-0 w-0 lg:overflow-hidden fixed inset-y-0 left-0 z-50 overflow-hidden'}
+        `}
+        id="sidebar-panel"
+        aria-label="Menu principal de navegacion"
+        aria-hidden={!isSidebarOpen}
+      >
         <div className="flex flex-col pt-5 px-4 overflow-y-auto flex-1">
           
           {/* Sidebar Header / Brand (GESTIA) */}
@@ -1276,10 +1321,15 @@ export default function App() {
               return (
                 <button
                   key={link.id}
-                  onClick={() => setCurrentRole(link.id as any)}
+                  onClick={() => {
+                    setCurrentRole(link.id as any);
+                    if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 1024px)').matches) {
+                      setIsSidebarOpen(false);
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-all text-left cursor-pointer relative group ${
-                    isSelected 
-                      ? 'bg-white/9 text-white font-medium' 
+                    isSelected
+                      ? 'bg-white/9 text-white font-medium'
                       : 'text-[#B9DACE] hover:text-white hover:bg-white/6'
                   }`}
                 >
@@ -1331,10 +1381,13 @@ export default function App() {
           
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             {/* Hamburger menu */}
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 cursor-pointer shrink-0"
               title={isSidebarOpen ? "Ocultar menú" : "Mostrar menú"}
+              aria-expanded={isSidebarOpen}
+              aria-controls="sidebar-panel"
+              aria-label={isSidebarOpen ? "Ocultar menú de navegación" : "Mostrar menú de navegación"}
             >
               <Menu size={16} />
             </button>
