@@ -80,10 +80,17 @@ Para cada request:
 
 ### Git workflow (regla estricta)
 
+- **Toda nueva feature/fix/refactor DEBE iniciarse en una rama NUEVA**
+  con prefijo `feature/`, `fix/`, `refactor/` o `docs/` según el tipo. Nunca
+  commitear directo a `dev` ni `main`. Nunca reutilizar una rama existente
+  cuyo contexto no coincida — si llega una nueva tarea, crea otra rama nueva
+  partiendo del estado actual (`git checkout -b <nueva-rama>`). Esto permite
+  revertir cambios aislados sin contaminar otros trabajos en curso.
 - **Todo commit DEBE ir seguido de `git push`** al remoto. No dejar commits en local.
 - Regla general: si commiteaste, push al instante. Si no vas a push, no commitees.
 - Antes de commitear: verificar `git status`, `git diff` y `git log` recientes para mantener contexto limpio.
 - Commits atómicos por cambio conceptual. Mensajes siguiendo el estilo del repo (ver `git log` recientes): `tipo(scope): descripcion` en español.
+- Antes de mergear a `dev`/`main` se hace PR, no push directo.
 
 ### Anti-racionalización
 

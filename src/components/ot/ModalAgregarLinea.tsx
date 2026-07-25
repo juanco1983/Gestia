@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { OrdenTrabajoLinea } from '../../types';
 import { MESES_ESPANOL, TIPO_VENTA_VALUES } from '../../utils/otDefaults';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface ModalAgregarLineaProps {
   lineas: OrdenTrabajoLinea[];
@@ -27,6 +28,7 @@ export default function ModalAgregarLinea({
     mes_prog_facturacion: MESES_ESPANOL[new Date().getMonth()],
     tipo_venta: 'MANTENIMIENTO' as any
   });
+  const { notifyError, toastView } = useLocalToast();
 
   const cleanString = (val: string) => val.trim().toUpperCase();
 
@@ -37,7 +39,7 @@ export default function ModalAgregarLinea({
     const otMarcoNum = addLineForm.ot_marco;
     const parentLines = lineas.filter(l => l.ot_marco === otMarcoNum);
     if (parentLines.length === 0) {
-      alert(`La OT Marco #${otMarcoNum} no existe en el sistema. Primero regístrela.`);
+      notifyError('OT Marco no Encontrada', `La OT Marco #${otMarcoNum} no existe en el sistema. Primero regístrela.`);
       return;
     }
 
@@ -221,6 +223,7 @@ export default function ModalAgregarLinea({
 
         </form>
       </div>
+      {toastView}
     </div>
   );
 }

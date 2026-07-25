@@ -3,6 +3,7 @@ import { Layers, CheckCircle2, AlertCircle, Clock, Search, MessageSquare, X, Che
 import { OrdenTrabajoLinea, OT, TechnicalReport, Client } from '../../types';
 import { TIPO_VENTA_VALUES, ESTADO_VALUES, PENDIENTE_VALUES, MESES_ESPANOL, getFinancialStatusInfo } from '../../utils/otDefaults';
 import DocumentFormat from '../DocumentFormat';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface TablaOrdenesTrabajoProps {
   lineas: OrdenTrabajoLinea[]; // All lineas (or filtered from outside)
@@ -48,18 +49,19 @@ export default function TablaOrdenesTrabajo({
   const [zoom, setZoom] = useState(90);
   const [pdfOt, setPdfOt] = useState<OT | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const { notifyError, toastView } = useLocalToast();
 
   const handleDownloadPDF = async (ot: OT) => {
     if (!ot) return;
     const report = reports?.find(r => r.otId === ot.id);
     if (!report) {
-      alert("ATENCIÓN: El informe técnico aún no ha sido redactado.");
+      notifyError('Informe no Redactado', 'El informe técnico aún no ha sido redactado por el personal técnico.');
       return;
     }
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert("El navegador bloqueó la ventana emergente para exportar a PDF. Por favor, habilite los permisos de ventanas emergentes para descargar.");
+      notifyError('Pop-up Bloqueado', 'El navegador bloqueó la ventana emergente para exportar a PDF. Habilite los permisos de ventanas emergentes para descargar.');
       return;
     }
 
@@ -851,6 +853,7 @@ export default function TablaOrdenesTrabajo({
         })()}
 
       </div>
+      {toastView}
     </div>
   );
 }
