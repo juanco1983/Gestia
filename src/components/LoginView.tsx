@@ -104,9 +104,9 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
       </div>
 
       {/* Stage Container */}
-      <div className="relative z-10 w-full max-w-[960px] grid grid-cols-1 md:grid-cols-[1.05fr_1fr] bg-white rounded-[28px] overflow-hidden shadow-[0_30px_80px_-30px_rgba(11,59,52,0.25)] border border-hairline my-auto">
-        
-        {/* Left Panel — Brand / Signature Pulse */}
+      <div className="relative z-10 w-full max-w-[960px] flex flex-col gap-3 md:grid md:grid-cols-[1.05fr_1fr] bg-white md:rounded-[28px] rounded-2xl overflow-hidden shadow-[0_30px_80px_-30px_rgba(11,59,52,0.25)] border border-hairline my-auto">
+
+        {/* Left Panel — Brand / Signature Pulse (DESKTOP ONLY) */}
         <div className="hidden md:flex bg-gradient-to-br from-teal-deep to-[#12806A] text-white p-14 flex-col justify-between relative select-none">
           <div className="flex items-center gap-3">
             <svg className="w-9.5 h-9.5" viewBox="0 0 40 40" fill="none">
@@ -158,10 +158,46 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
 
         {/* Right Panel — Form */}
         <div className="p-8 sm:p-14 flex flex-col justify-center">
-          
-          {/* Logo visible only in Mobile */}
-          <div className="flex md:hidden flex-col items-center mb-6 w-full max-w-[200px] mx-auto select-none">
-            <img src="/logo.png" className="w-full h-auto object-contain" alt="Gestia Logo" />
+
+          {/* Brand Panel Compact — MOBILE ONLY (reemplaza logo PNG mini) */}
+          <div className="md:hidden bg-gradient-to-br from-teal-deep to-[#12806A] text-white rounded-2xl p-5 flex flex-col gap-4 mb-4 relative overflow-hidden select-none">
+            <div className="flex items-center gap-2.5">
+              <svg className="w-7 h-7 shrink-0" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="19" stroke="#8FF0D2" strokeWidth="1.4" opacity="0.6"/>
+                <path d="M12 22 L17 14 L21 24 L25 16 L29 22" stroke="#8FF0D2" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+              <div className="leading-tight">
+                <h1 className="font-display font-semibold text-base tracking-[0.4px]">GESTIA</h1>
+                <small className="block text-[8.5px] text-[#BFE6DB] tracking-[1px] uppercase font-normal">Gestión inteligente de servicios de campo</small>
+              </div>
+            </div>
+
+            <svg viewBox="0 0 320 28" preserveAspectRatio="none" className="w-full h-7">
+              <path
+                className="stroke-[#8FF0D2] stroke-[2px] fill-none stroke-linecap-round stroke-linejoin-round drop-shadow-[0_0_4px_rgba(143,240,210,0.6)]"
+                d="M0 14 L80 14 L96 4 L112 24 L124 14 L320 14"
+              />
+              <circle cx="112" cy="24" r="3" className="fill-[#8FF0D2]" />
+            </svg>
+
+            <h2 className="font-display font-semibold text-[15px] leading-tight tracking-tight text-white">
+              Tu pulso operativo en tiempo real.
+            </h2>
+
+            <div className="flex gap-4 pt-1">
+              <div className="space-y-0.5">
+                <b className="font-mono text-sm font-medium block">23.0</b>
+                <span className="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">días ciclo</span>
+              </div>
+              <div className="space-y-0.5">
+                <b className="font-mono text-sm font-medium block">99.4%</b>
+                <span className="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">uptime</span>
+              </div>
+              <div className="space-y-0.5">
+                <b className="font-mono text-sm font-medium block">+120</b>
+                <span className="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">técnicos</span>
+              </div>
+            </div>
           </div>
 
           <div className="mb-8 text-left">
