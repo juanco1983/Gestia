@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { User, UserActivityLog } from '../types';
 import { APP_MODULES } from '../modulesConfig';
+import { useLocalToast } from './shared/ToastModal';
 
 export const AVAILABLE_MODULES = APP_MODULES.map(m => ({
   id: m.id,
@@ -82,6 +83,7 @@ export default function UserManagementView({
 
   // Logs category filter
   const [logFilter, setLogFilter] = useState<string>('ALL');
+  const { notifySuccess, notifyError, toastView } = useLocalToast();
 
   const filteredUsers = users.filter(u => 
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,12 +100,12 @@ export default function UserManagementView({
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername || !newEmail || !newArea || !newPassword) {
-      alert("Por favor, complete todos los campos obligatorios, incluyendo la contraseña.");
+      notifyError('Validación Requerida', 'Complete todos los campos obligatorios, incluyendo la contraseña.');
       return;
     }
 
     if (users.some(u => u.email.toLowerCase() === newEmail.trim().toLowerCase())) {
-      alert("Este correo electrónico ya se encuentra registrado.");
+      notifyError('Correo ya Registrado', 'Este correo electrónico ya se encuentra registrado.');
       return;
     }
 
@@ -146,7 +148,7 @@ export default function UserManagementView({
   const handleToggleStatus = (user: User) => {
     // Self-suspending safety lock
     if (user.email === currentUser.email) {
-      alert("🔒 BLOQUEO DE SEGURIDAD AUTO-SABOTAJE: No se permite suspender su propia sesión activa en este momento.");
+      notifyError('Acción Restringida', 'No se permite suspender su propia sesión activa.');
       return;
     }
 
@@ -175,7 +177,7 @@ export default function UserManagementView({
 
   const saveEdit = (userId: string) => {
     if (!editUsername || !editArea) {
-      alert("El nombre de usuario y el departamento no pueden estar vacíos.");
+      notifyError('Validación Requerida', 'El nombre de usuario y el departamento no pueden estar vacíos.');
       return;
     }
 
@@ -209,7 +211,7 @@ export default function UserManagementView({
     e.preventDefault();
     if (!resetPasswordUser) return;
     if (!newPasswordForReset.trim()) {
-      alert("Por favor, ingrese la nueva contraseña.");
+      notifyError('Validación Requerida', 'Ingrese la nueva contraseña.');
       return;
     }
 
@@ -228,7 +230,7 @@ export default function UserManagementView({
 
     setResetPasswordUser(null);
     setNewPasswordForReset('');
-    alert("🔑 Contraseña actualizada exitosamente.");
+    notifySuccess('Contraseña Actualizada', 'La contraseña se actualizó exitosamente.');
   };
 
   const sortedLogs = [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -890,6 +892,7 @@ export default function UserManagementView({
         </div>
       )}
 
+      {toastView}
     </div>
   );
 }
