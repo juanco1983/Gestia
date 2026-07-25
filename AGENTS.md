@@ -41,6 +41,57 @@ Este proyecto usa el paquete [addyosmani/agent-skills](https://github.com/addyos
 - Nunca implementar directamente si un skill aplica.
 - Seguir el workflow del skill exactamente (no aplicarlo parcialmente).
 
+### Mockup visual obligatorio (antes de implementar)
+
+> **Toda nueva funcionalidad, vista, modal o componente nuevo DEBE
+> entregar primero un mockup visual al usuario para validación estética y
+> de distribución, ANTES de escribir código de producción.**
+
+- El mockup se entrega como un único archivo HTML autocontenido
+  (Tailwind CDN + Google Fonts Sora/Inter/IBM Plex Mono + iconos
+  `lucide` desde CDN) que reproduzca el patrón canónico del Dashboard
+  (tokens de `guia_ui_ux.md §2`, layout `bg-white rounded-2xl border border-slate-100`,
+  badges, header card, etc.).
+- Debe mostrar TODAS las pantallas relevantes del módulo (listado, detalle,
+  form, drawer, estados vacíos/loading) en un solo HTML o enlaces entre
+  archivos, para que el usuario pueda aprobar o pedir ajustes.
+- No se inicia la fase `BUILD` (`incremental-implementation`) hasta que el
+  usuario apruebe explícitamente el mockup.
+- Ajustes estéticos o de distribución se iteran sobre el mockup, no sobre
+  el código de producción.
+- Para modificaciones pequeñas a vista existente, igualmente se entrega
+  mockup del antes/después si el cambio altera layout, jerarquía visual o
+ amaño.
+
+### Planes de trabajo — organización por tipo
+
+> **Todo plan de mejora, feature, fix, refactor o cambio de infra DEBE
+> guardarse en `Documentacion/planes/<tipo>/` y agruparse por categoría.**
+> Si la subcarpeta del tipo no existe, se crea al momento de generar el
+> primer plan de esa categoría.
+
+**Categorías vigentes:**
+
+| Subcarpeta | Aplica a |
+|---|---|
+| `Documentacion/planes/UX-UI/` | Homologación UI/UX, rediseños de vistas, mudanza de patrones (ToastModal, ConfirmModal, tokens, etc.) |
+| `Documentacion/planes/features/` | Nuevos módulos o funcionalidades (ej: Inventario de Equipos, nuevo reporte) |
+| `Documentacion/planes/fixes/` | Correcciones de bugs, fallos puntuales, hot-fixes documentados |
+| `Documentacion/planes/refactors/` | Refactorings no UX (simplificación, reestructuración de código, deuda técnica) |
+| `Documentacion/planes/infra/` | Cambios de infraestructura, CI/CD, deploy, BD, migraciones Prisma |
+
+**Reglas:**
+
+- Un plan = un archivo Markdown con nombre `YYYY-MM-DD-<slug-descriptivo>.md`
+  (ej: `2026-07-25-inventario-equipos.md`).
+- Cada plan DEBE contener: contexto, alcance, criterios de aceptación,
+  desglose de tareas (inProgress/completed), riesgos y dependencias.
+- Si el plan tiene mockup, el HTML del mockup se guarda en
+  `Documentacion/mockups/<slug>.html` y se enlaza desde el plan.
+- Sin excepciones: nunca dejar planes sueltos en la raíz de
+  `Documentacion/planes/`. Los planes preexistentes se mantienen donde están
+  por compatibilidad histórica, pero todo plan NUEVO sigue esta regla.
+
 ### Mapeo de intención → skill
 
 El agente debe mapear automáticamente la intención del usuario:
