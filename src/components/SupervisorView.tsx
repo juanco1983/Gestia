@@ -23,6 +23,7 @@ import { OT, OTStatus, Client, TechnicalReport, OtEquipoAsignacion } from '../ty
 import DocumentFormat from './DocumentFormat';
 import { ALL_ACCIONES } from '../utils/reportDefaults';
 import { useLocalToast } from './shared/ToastModal';
+import ErrorBoundary from './shared/ErrorBoundary';
 
 interface SupervisorViewProps {
   ots: OT[];
@@ -61,7 +62,11 @@ export default function SupervisorView({
 
   // Retrieve current report associated with selected OT and equipo
   const getAssociatedReport = (otId: string, equipoId?: string) => {
-    if (equipoId) return reports.find(r => r.otId === otId && r.equipoId === equipoId);
+    if (equipoId) {
+      const exact = reports.find(r => r.otId === otId && r.equipoId === equipoId);
+      if (exact) return exact;
+      return reports.find(r => r.otId === otId && r.equipoId && r.equipoId.split(',').map(x => x.trim()).includes(equipoId));
+    }
     return reports.find(r => r.otId === otId);
   };
 
@@ -485,6 +490,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
   });
 
   return (
+    <ErrorBoundary>
     <div className="space-y-6 animate-fade-in" id="supervisor-parent-container">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans text-slate-800" id="supervisor-dashboard-container">
         {/* Submitted reports stack */}
@@ -1053,5 +1059,6 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
       })()}
       {toastView}
     </div>
+    </ErrorBoundary>
   );
 }
