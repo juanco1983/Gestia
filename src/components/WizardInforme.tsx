@@ -3,6 +3,7 @@ import { OT, Client, ServiceType, TechnicalReport, EquipmentType } from '../type
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
 import { ALL_ACCIONES, generateDefaultReport, getTechnicalSvg, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
+import { compressBase64Image } from '../utils/imageCompressor';
 
 interface WizardInformeProps {
   ot: OT;
@@ -502,19 +503,21 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
       if (!files) return;
       Array.from(files).forEach(file => {
         const reader = new FileReader();
-        reader.onload = (ev) => {
-          const dataUrl = ev.target?.result as string;
-          setCapturedPhotos(prev => [...prev, { dataUrl, assigned: false }]);
+        reader.onload = async (ev) => {
+          const rawDataUrl = ev.target?.result as string;
+          const compressed = await compressBase64Image(rawDataUrl, 800, 600, 0.75);
+          setCapturedPhotos(prev => [...prev, { dataUrl: compressed, assigned: false }]);
         };
         reader.readAsDataURL(file);
       });
     };
 
-    const assignPhotoToSlot = (photoIdx: number, slotIdx: number) => {
+    const assignPhotoToSlot = async (photoIdx: number, slotIdx: number) => {
       const photo = capturedPhotos[photoIdx];
       if (!photo || photo.assigned) return;
+      const compressed = await compressBase64Image(photo.dataUrl, 800, 600, 0.75);
       const updated = [...fotosLabeled];
-      updated[slotIdx] = { ...updated[slotIdx], base64: photo.dataUrl };
+      updated[slotIdx] = { ...updated[slotIdx], base64: compressed };
       setFotosLabeled(updated);
       const newCaptured = [...capturedPhotos];
       newCaptured[photoIdx] = { ...newCaptured[photoIdx], assigned: true };

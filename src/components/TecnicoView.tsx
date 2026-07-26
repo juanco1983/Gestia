@@ -265,9 +265,16 @@ export default function TecnicoView({
       recomendaciones
     };
 
-    localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
-    if (showNotification) {
-      notifySuccess('Borrador Guardado', 'Los cambios se guardaron de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.');
+    try {
+      localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+      if (showNotification) {
+        notifySuccess('Borrador Guardado', 'Los cambios se guardaron de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.');
+      }
+    } catch (e) {
+      console.warn('Error al guardar borrador en localStorage:', e);
+      if (showNotification) {
+        notifySuccess('Borrador Guardado (En Memoria)', 'Los cambios están guardados en esta sesión.');
+      }
     }
   };
 
@@ -280,24 +287,24 @@ export default function TecnicoView({
         informeN,
         hojaServicioN,
         asunto,
-      fechaServicio,
-      horaInicio,
-      horaFin,
-      tipoServicio,
-      tecnico1,
-      tecnico2,
-      antecedentes,
-      accionesRealizadas,
-      pasosLista: (() => {
-        const template = getTemplate(tipoServicio);
-        const pasoTexts = [paso1, paso2, paso3, paso4, paso5, paso6];
-        return template.pasos.map((desc, i) => ({
-          numero: i + 1,
-          titulo: desc,
-          descripcion: pasoTexts[i]?.trim() || desc
-        }));
-      })(),
-      pasos: {
+        fechaServicio,
+        horaInicio,
+        horaFin,
+        tipoServicio,
+        tecnico1,
+        tecnico2,
+        antecedentes,
+        accionesRealizadas,
+        pasosLista: (() => {
+          const template = getTemplate(tipoServicio);
+          const pasoTexts = [paso1, paso2, paso3, paso4, paso5, paso6];
+          return template.pasos.map((desc, i) => ({
+            numero: i + 1,
+            titulo: desc,
+            descripcion: pasoTexts[i]?.trim() || desc
+          }));
+        })(),
+        pasos: {
           paso1,
           paso1_si_no,
           paso1_funcionamiento,
@@ -329,7 +336,11 @@ export default function TecnicoView({
         },
         recomendaciones
       };
-    localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+      try {
+        localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+      } catch (e) {
+        console.warn('Error en auto-guardado local (cuota excedida):', e);
+      }
     }, 1500); // 1.5s debounce to avoid spamming localStorage
     
     return () => clearTimeout(timer);

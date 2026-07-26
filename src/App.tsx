@@ -342,35 +342,35 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_users', JSON.stringify(users));
+    try { localStorage.setItem('gestia_users', JSON.stringify(users)); } catch (e) {}
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_user_logs', JSON.stringify(userLogs));
+    try { localStorage.setItem('gestia_user_logs', JSON.stringify(userLogs)); } catch (e) {}
   }, [userLogs]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_ots', JSON.stringify(ots));
+    try { localStorage.setItem('gestia_ots', JSON.stringify(ots)); } catch (e) {}
   }, [ots]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_clients', JSON.stringify(clients));
+    try { localStorage.setItem('gestia_clients', JSON.stringify(clients)); } catch (e) {}
   }, [clients]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_contracts', JSON.stringify(contracts));
+    try { localStorage.setItem('gestia_contracts', JSON.stringify(contracts)); } catch (e) {}
   }, [contracts]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_ots', JSON.stringify(ots));
-  }, [ots]);
-
-  useEffect(() => {
-    localStorage.setItem('gestia_reports', JSON.stringify(reports));
+    try {
+      localStorage.setItem('gestia_reports', JSON.stringify(reports));
+    } catch (e) {
+      console.warn("No se pudo guardar la lista de informes completa en localStorage:", e);
+    }
   }, [reports]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_ordenes_trabajo', JSON.stringify(ordenesTrabajo));
+    try { localStorage.setItem('gestia_ordenes_trabajo', JSON.stringify(ordenesTrabajo)); } catch (e) {}
   }, [ordenesTrabajo]);
 
   // Local/offline sync between ordenesTrabajo (financial/billing cuotas) and ots (operational tasks)
@@ -484,15 +484,15 @@ export default function App() {
   }, [ordenesTrabajo, clients]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_contratos_nuevos', JSON.stringify(contratosNuevos));
+    try { localStorage.setItem('gestia_contratos_nuevos', JSON.stringify(contratosNuevos)); } catch (e) {}
   }, [contratosNuevos]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_target_ventas', JSON.stringify(targetVentas));
+    try { localStorage.setItem('gestia_target_ventas', JSON.stringify(targetVentas)); } catch (e) {}
   }, [targetVentas]);
 
   useEffect(() => {
-    localStorage.setItem('gestia_offline_queue', JSON.stringify(offlineQueue));
+    try { localStorage.setItem('gestia_offline_queue', JSON.stringify(offlineQueue)); } catch (e) {}
   }, [offlineQueue]);
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
