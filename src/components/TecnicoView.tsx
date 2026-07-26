@@ -38,6 +38,8 @@ import {
   generateDefaultReport,
   getTechnicalSvg
 } from '../utils/reportDefaults';
+import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
+import WizardInforme from './WizardInforme';
 
 interface TecnicoViewProps {
   ots: OT[];
@@ -103,6 +105,7 @@ export default function TecnicoView({
   const [isEditingReport, setIsEditingReport] = useState<boolean>(false);
   const [showOtSalesInfo, setShowOtSalesInfo] = useState<boolean>(true);
   const [draftLoadedMessage, setDraftLoadedMessage] = useState<string | null>(null);
+  const [showWizard, setShowWizard] = useState<boolean>(true);
 
   const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
   const [clientEquipos, setClientEquipos] = useState<Equipo[]>([]);
@@ -138,6 +141,8 @@ export default function TecnicoView({
   const [asunto, setAsunto] = useState<string>('');
   const [fechaServicio, setFechaServicio] = useState<string>('');
   const [horaInicio, setHoraInicio] = useState<string>('09:00 AM');
+  const [horaFin, setHoraFin] = useState<string>('');
+  const [tipoServicio, setTipoServicio] = useState<ServiceType>(ServiceType.PREVENTIVO);
   const [tecnico1, setTecnico1] = useState<string>(mockTechName);
   const [tecnico2, setTecnico2] = useState<string>('Ninguno');
   const [antecedentes, setAntecedentes] = useState<string>('');
@@ -274,13 +279,24 @@ export default function TecnicoView({
         informeN,
         hojaServicioN,
         asunto,
-        fechaServicio,
-        horaInicio,
-        tecnico1,
-        tecnico2,
-        antecedentes,
-        accionesRealizadas,
-        pasos: {
+      fechaServicio,
+      horaInicio,
+      horaFin,
+      tipoServicio,
+      tecnico1,
+      tecnico2,
+      antecedentes,
+      accionesRealizadas,
+      pasosLista: (() => {
+        const template = getTemplate(tipoServicio);
+        const pasoTexts = [paso1, paso2, paso3, paso4, paso5, paso6];
+        return template.pasos.map((desc, i) => ({
+          numero: i + 1,
+          titulo: desc,
+          descripcion: pasoTexts[i]?.trim() || desc
+        }));
+      })(),
+      pasos: {
           paso1,
           paso1_si_no,
           paso1_funcionamiento,
@@ -317,7 +333,7 @@ export default function TecnicoView({
     
     return () => clearTimeout(timer);
   }, [
-    selectedOt, informeN, hojaServicioN, asunto, fechaServicio, horaInicio,
+    selectedOt, informeN, hojaServicioN, asunto, fechaServicio, horaInicio, horaFin, tipoServicio,
     tecnico1, tecnico2, antecedentes, accionesRealizadas,
     paso1, paso1_si_no, paso1_funcionamiento, paso1_bypass,
     paso2, paso3, paso4, paso5, paso6, paso6_concluido, paso6_observaciones,
@@ -326,6 +342,27 @@ export default function TecnicoView({
     anioBaterias, temperaturaSala, estadoOperativo, inversorOperandoPorcentaje,
     recomendaciones
   ]);
+
+  // Sync photo slots when tipoServicio changes
+  useEffect(() => {
+    if (!selectedOt) return;
+    const targetCount = getPhotoSlotsForTipo(tipoServicio, selectedOt.potenciaKva);
+    const baseSlots = getPhotoSlotsForKva(selectedOt.potenciaKva);
+    const currentCount = fotosLabeled.length;
+    const hasRealPhotos = fotosLabeled.some(f => f.base64);
+    if (currentCount === targetCount && hasRealPhotos) return;
+    setFotosLabeled(
+      Array.from({ length: targetCount }).map((_, i) => {
+        const existing = fotosLabeled[i];
+        const slotName = baseSlots[i] || `Foto S.L.A Slot #${i + 1}`;
+        return {
+          slotName,
+          base64: existing?.base64 || '',
+          description: existing?.description || `Verificación: ${slotName}`
+        };
+      })
+    );
+  }, [tipoServicio, selectedOt]);
 
   const handleSelectOt = (ot: OT) => {
     setSelectedOt(ot);
@@ -349,6 +386,8 @@ export default function TecnicoView({
         setAsunto(draft.asunto || '');
         setFechaServicio(draft.fechaServicio || '');
         setHoraInicio(draft.horaInicio || '09:00 AM');
+        setHoraFin(draft.horaFin || '');
+        setTipoServicio(draft.tipoServicio || ot.tipoMantenimiento || ServiceType.PREVENTIVO);
         setTecnico1(draft.tecnico1 || mockTechName);
         setTecnico2(draft.tecnico2 || 'Ninguno');
         setAntecedentes(draft.antecedentes || '');
@@ -413,6 +452,8 @@ export default function TecnicoView({
       setAsunto(existingReport.asunto || '');
       setFechaServicio(existingReport.fechaServicio || '');
       setHoraInicio(existingReport.horaInicio || '09:00 AM');
+      setHoraFin(existingReport.horaFin || '');
+      setTipoServicio(existingReport.tipoServicio || ot.tipoMantenimiento || ServiceType.PREVENTIVO);
       setTecnico1(existingReport.tecnico1 || mockTechName);
       setTecnico2(existingReport.tecnico2 || 'Ninguno');
       setAntecedentes(existingReport.antecedentes || '');
@@ -471,6 +512,8 @@ export default function TecnicoView({
     setAsunto(def.asunto || '');
     setFechaServicio(def.fechaServicio || '');
     setHoraInicio(def.horaInicio || '09:00 AM');
+    setHoraFin(def.horaFin || '');
+    setTipoServicio(def.tipoServicio || ot.tipoMantenimiento || ServiceType.PREVENTIVO);
     setTecnico1(def.tecnico1 || mockTechName);
     setTecnico2(def.tecnico2 || 'Ninguno');
     setAntecedentes(def.antecedentes || '');
@@ -512,13 +555,15 @@ export default function TecnicoView({
 
     setRecomendaciones(def.recomendaciones || []);
 
-    // Set up photo inputs matching exact required list of capacity
-    const requiredSlots = getPhotoSlotsForKva(ot.potenciaKva);
-    setFotosLabeled(requiredSlots.map(slotName => ({
-      slotName,
-      base64: '',
-      description: `Verificación: ${slotName}`
-    })));
+    // Set up photo inputs matching exact required list of capacity + tipo
+    const targetCount = getPhotoSlotsForTipo(tipoServicio, ot.potenciaKva);
+    const baseSlots = getPhotoSlotsForKva(ot.potenciaKva);
+    setFotosLabeled(
+      Array.from({ length: targetCount }).map((_, i) => {
+        const slotName = baseSlots[i] || `Foto S.L.A Slot #${i + 1}`;
+        return { slotName, base64: '', description: `Verificación: ${slotName}` };
+      })
+    );
 
     if (ot.estado === OTStatus.PROGRAMADA || ot.estado === OTStatus.OBSERVADA) {
       onUpdateOtStatus(ot.id, OTStatus.TRABAJO_EN_EJECUCION);
@@ -537,6 +582,8 @@ export default function TecnicoView({
     setAsunto(def.asunto || '');
     setFechaServicio(def.fechaServicio || '');
     setHoraInicio(def.horaInicio || '09:00 AM');
+    setHoraFin(def.horaFin || '');
+    setTipoServicio(def.tipoServicio || selectedOt.tipoMantenimiento || ServiceType.PREVENTIVO);
     setAntecedentes(def.antecedentes || '');
     setAccionesRealizadas(def.accionesRealizadas || []);
     setPaso1(def.pasos?.paso1 || '');
@@ -698,6 +745,8 @@ export default function TecnicoView({
     const compiledReport: TechnicalReport = {
       id: `rep_${Date.now()}`,
       otId: selectedOt.id,
+      tipoServicio: tipoServicio,
+      horaFin: horaFin || undefined,
       equipoId: selectedEquipoId || undefined,
       voltajeEntrada: parseFloat(medicionesEntrada.lnVoltaje[0]) || 220,
       voltajeSalida: parseFloat(medicionesSalida.lnVoltaje[0]) || 220,
@@ -769,6 +818,28 @@ export default function TecnicoView({
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
     setSelectedOt(null);
   };
+
+  const handleWizardComplete = (report: TechnicalReport) => {
+    if (!selectedOt) return;
+    if (!isOnline) {
+      report.offlineDirty = true;
+      onSaveReportOffline(report);
+      onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
+      notifyOffline('Reporte Cacheado Localmente', 'El wizard ha encolado este reporte. Al reconectarse, subirá automáticamente.');
+    } else {
+      onSaveReportOffline(report);
+      onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
+      notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
+    }
+    localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+    setSelectedOt(null);
+    setIsEditingReport(false);
+  };
+
+  const clientForWizard = useMemo(() => {
+    if (!selectedOt) return null;
+    return clients.find(c => c.id === selectedOt.clientId) || null;
+  }, [selectedOt, clients]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans text-slate-800" id="tecnico-portal-container">
@@ -859,6 +930,17 @@ export default function TecnicoView({
       {/* Editor Main Board */}
       <div className={`${isEditingReport ? 'lg:col-span-3' : 'lg:col-span-2'} bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden`}>
         {isEditingReport && selectedOt ? (
+          showWizard && clientForWizard ? (
+            <div className="p-5">
+              <WizardInforme
+                ot={selectedOt}
+                client={clientForWizard}
+                initialReport={undefined}
+                onComplete={handleWizardComplete}
+                onCancel={() => setIsEditingReport(false)}
+              />
+            </div>
+          ) : (
           <form onSubmit={handleSubmitReport} className="flex flex-col h-full">
             
             {/* Context bar with prefill help */}
@@ -908,16 +990,27 @@ export default function TecnicoView({
 
               </div>
               {/* AUTOMATION TRIGGERS */}
-              <button
-                type="button"
-                onClick={handlePrefillAllWithMafortDefaults}
-                disabled={selectedOt.estado === OTStatus.EN_REVISION || selectedOt.estado === OTStatus.APROBADA || selectedOt.estado === OTStatus.FIRMADA}
-                className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-500 text-white font-sans font-extrabold px-4 py-2 rounded-xl text-[11px] flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all active:scale-95 border border-white/10"
-                title="Sincroniza y rellena con el estándar de la reunión Mafort"
-              >
-                <Sparkles size={14} className="text-amber-300 animate-spin-slow drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-                <span className="tracking-tight">¿Autocompletar con Datos Oficiales?</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowWizard(prev => !prev)}
+                  className={`px-3 py-2 rounded-lg text-[9px] font-bold font-mono transition-all cursor-pointer border ${
+                    showWizard ? 'bg-teal-500/20 text-teal-300 border-teal-500/30' : 'bg-slate-700/50 text-slate-300 border-slate-600/50 hover:bg-slate-600/70'
+                  }`}
+                >
+                  {showWizard ? 'Wizard Activo' : 'Formulario Clásico'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrefillAllWithMafortDefaults}
+                  disabled={selectedOt.estado === OTStatus.EN_REVISION || selectedOt.estado === OTStatus.APROBADA || selectedOt.estado === OTStatus.FIRMADA}
+                  className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-500 text-white font-sans font-extrabold px-4 py-2 rounded-xl text-[11px] flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all active:scale-95 border border-white/10"
+                  title="Sincroniza y rellena con el estándar de la reunión Mafort"
+                >
+                  <Sparkles size={14} className="text-amber-300 animate-spin-slow drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                  <span className="tracking-tight">¿Autocompletar con Datos Oficiales?</span>
+                </button>
+              </div>
             </div>
 
             {draftLoadedMessage && (
@@ -947,6 +1040,8 @@ export default function TecnicoView({
                         setAsunto(def.asunto || '');
                         setFechaServicio(def.fechaServicio || '');
                         setHoraInicio(def.horaInicio || '09:00 AM');
+                        setHoraFin(def.horaFin || '');
+                        setTipoServicio(def.tipoServicio || selectedOt.tipoMantenimiento || ServiceType.PREVENTIVO);
                         setTecnico1(def.tecnico1 || mockTechName);
                         setTecnico2(def.tecnico2 || 'Ninguno');
                         setAntecedentes(def.antecedentes || '');
@@ -987,12 +1082,14 @@ export default function TecnicoView({
                         setInversorOperandoPorcentaje(def.revisionNormas?.inversorOperandoPorcentaje || 30);
 
                         setRecomendaciones(def.recomendaciones || []);
-                        const requiredSlots = getPhotoSlotsForKva(selectedOt.potenciaKva);
-                        setFotosLabeled(requiredSlots.map(slotName => ({
-                          slotName,
-                          base64: '',
-                          description: `Verificación: ${slotName}`
-                        })));
+                        const targetCount = getPhotoSlotsForTipo(tipoServicio, selectedOt.potenciaKva);
+                        const baseSlots = getPhotoSlotsForKva(selectedOt.potenciaKva);
+                        setFotosLabeled(
+                          Array.from({ length: targetCount }).map((_, i) => {
+                            const slotName = baseSlots[i] || `Foto S.L.A Slot #${i + 1}`;
+                            return { slotName, base64: '', description: `Verificación: ${slotName}` };
+                          })
+                        );
                       }
                     }
                   }}
@@ -1100,11 +1197,56 @@ export default function TecnicoView({
                 );
               })()}
               
-              {/* SECTION 1: REPORT NUMBERS AND ASUNTO */}
+              {/* SECTION 0: TIPO DE SERVICIO + HORA FIN */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-                  <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">1</span>
-                  <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Ficha de Portada & Identificadores</h3>
+                  <span className="w-5 h-5 rounded bg-teal-500 text-white font-bold text-xs flex items-center justify-center font-mono">0</span>
+                  <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Tipo de Servicio</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-mono uppercase mb-1">Seleccione el tipo de servicio ejecutado</label>
+                    <select
+                      value={tipoServicio}
+                      onChange={(e) => setTipoServicio(e.target.value as ServiceType)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono font-bold"
+                    >
+                      {Object.values(ServiceType).map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-mono uppercase mb-1">Hora de Finalización</label>
+                    <input
+                      type="time"
+                      value={horaFin}
+                      onChange={(e) => setHoraFin(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-50 border border-teal-200 rounded-full text-[9px] font-bold font-mono text-teal-700">
+                    {getTemplate(tipoServicio).pasos.length} pasos
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-bold font-mono text-slate-600">
+                    {getTemplate(tipoServicio).tieneBaterias ? 'Baterias: Si' : 'Baterias: No'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-bold font-mono text-slate-600">
+                    Fotos: {getTemplate(tipoServicio).fotosMin}+
+                  </span>
+                </div>
+              </div>
+
+              {/* SECTION 1: REPORT NUMBERS AND ASUNTO */}
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">1</span>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Datos de Cabecera</h3>
+                    <p className="text-[10px] text-slate-400">Autocompletado desde OT + Cliente. Todos editables.</p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1175,11 +1317,14 @@ export default function TecnicoView({
 
 
               {/* SECTION 2: ACTIONS REALIZADAS CHECKLIST */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-                  <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">2</span>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">2</span>
                   <div className="flex-1 flex justify-between items-center">
-                    <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Acciones Realizadas en Campo (Pág 2 checklist)</h3>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Acciones Realizadas</h3>
+                      <p className="text-[10px] text-slate-400">24 checkboxes con presets por tipo de servicio.</p>
+                    </div>
                     <div className="space-x-2">
                       <button 
                         type="button" 
@@ -1220,10 +1365,13 @@ export default function TecnicoView({
 
 
               {/* SECTION 3: PROCEDIMIENTOS CRONOGRAMA */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-                  <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">3</span>
-                  <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Cronograma Técnico - Procedimientos Pasos 1 a 6</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">3</span>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Pasos del Procedimiento</h3>
+                    <p className="text-[10px] text-slate-400">Lista dinámica según tipo de servicio.</p>
+                  </div>
                 </div>
 
                 <div className="space-y-3.5">
@@ -1356,10 +1504,13 @@ export default function TecnicoView({
 
 
               {/* SECTION 4: ELECTRICAL MEASUREMENTS PARAMS PÁG 8 */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-                  <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">4</span>
-                  <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Mediciones de Entrada (Ingreso) y Salida (Carga)</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">4</span>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Mediciones Eléctricas</h3>
+                    <p className="text-[10px] text-slate-400">Condicional por tipo. Trifásico R/S/T vs Monofásico.</p>
+                  </div>
                 </div>
 
                 {/* Grid layout for Entrada parameters */}
@@ -1558,13 +1709,16 @@ export default function TecnicoView({
 
 
               {/* SECTION 5: ALIGNED PHYSICAL PHOTO SLOTS (Pág 5/6/7) */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">5</span>
-                    <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">
-                      Registro de Evidencias (Encuadre S.L.A)
-                    </h3>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-bold font-mono">5</span>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">
+                        Fotografías del Servicio
+                      </h3>
+                      <p className="text-[10px] text-slate-400">Slots según tipo + potencia. Cámara o galería.</p>
+                    </div>
                   </div>
                   <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-150 px-2.5 py-0.5 rounded font-bold">
                     Requiere {fotosLabeled.length} Fotos
@@ -1749,10 +1903,13 @@ export default function TecnicoView({
 
 
               {/* SECTION 6: COMPLIANCE, SYSTEM AND PREDEFINED RECOMMENDATIONS */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
-                  <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center font-mono">6</span>
-                  <h3 className="text-xs font-bold text-slate-950 uppercase font-mono tracking-wide">Comprobación de Normas S.L.A y Recomendaciones</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">6</span>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Diagnóstico + Recomendaciones</h3>
+                    <p className="text-[10px] text-slate-400">Bullets editables con presets por tipo de servicio.</p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1840,51 +1997,53 @@ export default function TecnicoView({
 
             </div>
 
-            {/* Offline notification banner & submission */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-              <div className="flex items-center gap-2.5">
-                {isOnline ? (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-650 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200 font-sans">
-                    <span className="w-2 h-2 rounded bg-emerald-500 animate-pulse"></span>
-                    <span>ONLINE: Enlace principal listo (200 OK)</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-rose-650 font-bold bg-rose-50 px-2 py-1 rounded border border-rose-200 font-sans">
-                    <WifiOff size={13} className="text-rose-500" />
-                    <span>OFFLINE: Se guardará localmente</span>
-                  </div>
-                )}
-              </div>
-
+            {/* SECTION 10: REVISION FINAL */}
+            <div className="bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm space-y-3 border-l-4 border-l-emerald-400">
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingReport(false)}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-lg text-xs font-mono transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => saveActiveDraft(true)}
-                  disabled={selectedOt?.estado === OTStatus.EN_REVISION || selectedOt?.estado === OTStatus.APROBADA || selectedOt?.estado === OTStatus.FIRMADA}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-4 py-2 rounded-lg text-xs font-sans transition-colors flex items-center gap-1.5 shadow-md shadow-blue-500/10 cursor-pointer"
-                >
-                  <Save size={14} />
-                  <span>Guardar Borrador</span>
-                </button>
-                <button
-                  type="submit"
-                  disabled={selectedOt?.estado === OTStatus.EN_REVISION || selectedOt?.estado === OTStatus.APROBADA || selectedOt?.estado === OTStatus.FIRMADA}
-                  className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 text-slate-950 font-extrabold px-5 py-2 rounded-lg text-xs font-sans tracking-wide uppercase transition-colors shadow-md shadow-amber-500/10 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FileCheck size={14} />
-                  <span>{selectedOt?.estado === OTStatus.EN_REVISION ? 'En Revisión...' : selectedOt?.estado === OTStatus.APROBADA || selectedOt?.estado === OTStatus.FIRMADA ? 'Aprobado' : 'Enviar para Aprobación S.L.A'}</span>
-                </button>
+                <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold font-mono">7</span>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Revisión Final y Envío</h3>
+                  <p className="text-[10px] text-slate-400">Resumen del informe antes de enviar.</p>
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-[11px]">
+                <div className="flex justify-between"><span className="text-slate-500">Tipo Servicio:</span><span className="font-bold text-slate-700">{tipoServicio}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Informe N:</span><span className="text-slate-700">{informeN || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Pasos:</span><span className="text-slate-700">{getTemplate(tipoServicio).pasos.length}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Fotos:</span><span className="text-slate-700">{fotosLabeled.filter(f => f.base64).length}/{fotosLabeled.length}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Online:</span>
+                  <span className={isOnline ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>{isOnline ? 'Conectado' : 'Offline'}</span>
+                </div>
+                <hr className="border-slate-200 my-1" />
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingReport(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveActiveDraft(true)}
+                    disabled={selectedOt?.estado === OTStatus.EN_REVISION || selectedOt?.estado === OTStatus.APROBADA || selectedOt?.estado === OTStatus.FIRMADA}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    Guardar Borrador
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={selectedOt?.estado === OTStatus.EN_REVISION || selectedOt?.estado === OTStatus.APROBADA || selectedOt?.estado === OTStatus.FIRMADA}
+                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
+                  >
+                    Enviar Informe
+                  </button>
+                </div>
               </div>
             </div>
 
           </form>
+          )
         ) : (
           /* When isEditingReport is false */
           selectedOt ? (

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Informe Adaptativo por Tipo de Servicio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #F2F6F4; }
+    .font-display { font-family: 'Sora', sans-serif; }
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+    .pdf-page {
+      width: 100%; max-width: 800px; background: white; border: 1px solid #cbd5e1;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 28px 36px;
+      display: flex; flex-direction: column; margin: 0 auto;
+    }
+    .pdf-page.with-min-height { min-height: 1050px; }
+    .photo-slot {
+      border: 1px dashed #cbd5e1; background: #f8fafc; aspect-ratio: 4/3;
+      display: flex; align-items: center; justify-content: center;
+      color: #94a3b8; font-size: 9px; text-transform: uppercase;
+    }
+    .tab-btn.active { background: #0F9E82; color: white; border-color: #0F9E82; }
+    .tab-btn { transition: all 0.15s ease; cursor: pointer; }
+    .badge-type { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+    .wizard-step-card { transition: all 0.2s ease; }
+    .wizard-step-card:hover { border-color: #0F9E82; box-shadow: 0 2px 12px rgba(15,158,130,0.1); }
+    .section-divider { border: 0; height: 1px; background: linear-gradient(to right, transparent, #cbd5e1, transparent); margin: 24px 0; }
+    @media print { body { background: white; } .no-print { display: none !important; } .pdf-page { box-shadow: none; border: 1px solid #ccc; page-break-after: always; } }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== TOP BAR ==================== -->
+  <header class="bg-white border-b border-slate-200 no-print">
+    <div class="max-w-[1280px] mx-auto px-6 py-3 flex items-center justify-between">
+      <div>
+        <h1 class="font-display font-black text-lg text-slate-900">Mockup: Informe Adaptativo</h1>
+        <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Documentacion/mockups/informe-adaptativo.html</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="badge-type bg-amber-50 text-amber-700 border border-amber-200/60">PRE-APROBACION</span>
+        <span class="text-[10px] text-slate-400 font-mono">v1.1</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== NAV TABS ==================== -->
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 no-print shadow-sm">
+    <div class="max-w-[1280px] mx-auto px-6 py-2 flex gap-1 overflow-x-auto text-nowrap">
+      <button class="tab-btn active px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-teal-50 border-teal-200 text-teal-700" data-tab="tipos">9 Tipos Servicio</button>
+      <button class="tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-50 border-slate-200 text-slate-500" data-tab="wizard">Wizard Completo</button>
+      <button class="tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-50 border-slate-200 text-slate-500" data-tab="caso">Caso de Prueba</button>
+      <button class="tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-50 border-slate-200 text-slate-500" data-tab="mediciones">Mediciones</button>
+      <button class="tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-50 border-slate-200 text-slate-500" data-tab="fotos">Grid Fotos</button>
+      <button class="tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-50 border-slate-200 text-slate-500" data-tab="header">Header/Footer</button>
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- TAB: 9 TIPOS DE SERVICIO -->
+  <!-- ============================================================ -->
+  <section id="tab-tipos" class="tab-content max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <h2 class="font-display font-black text-xl text-slate-900">9 Tipos de Servicio Soportados (V1)</h2>
+      <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">Derivado del analisis de 19 plantillas PDF reales de Mafort</p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="type-cards-container">
+      <template id="type-card-tpl">
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="badge-type bg-teal-50 text-teal-700 border border-teal-200/60 type-badge"></span>
+            <span class="text-[10px] font-mono text-slate-400 type-key"></span>
+          </div>
+          <p class="text-xs text-slate-500 type-desc"></p>
+          <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+            <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">Pasos</span><br><span class="font-bold text-slate-700 type-pasos"></span></div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">Fotos</span><br><span class="font-bold text-slate-700 type-fotos"></span></div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">Baterias</span><br><span class="font-bold text-slate-700 type-baterias"></span></div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">Paginas</span><br><span class="font-bold text-slate-700 type-paginas"></span></div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TAB: WIZARD COMPLETO (TODOS LOS 10 PASOS VISIBLES) -->
+  <!-- ============================================================ -->
+  <section id="tab-wizard" class="tab-content hidden max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <h2 class="font-display font-black text-xl text-slate-900">Wizard del Tecnico — 10 Pasos Completos</h2>
+      <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">Flujo guiado que reemplaza el formulario unico actual. Todos los pasos son visibles y editables.</p>
+    </div>
+
+    <!-- Step progress bar -->
+    <div class="flex flex-wrap gap-2">
+      <div class="px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-[10px] font-bold font-mono">1. Tipo</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">2. Cabecera</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">3. Antecedentes</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">4. Acciones</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">5. Pasos</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">6. Caracteristicas</div>
+      <div class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold font-mono">7. Fotos</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">8. Mediciones</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">9. Diagnostico</div>
+      <div class="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold font-mono">10. Revision</div>
+    </div>
+
+    <!-- ALL 10 STEPS stacked vertically so none are hidden -->
+    <div class="space-y-4">
+
+      <!-- STEP 1 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold font-mono">1</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Identificar Tipo de Servicio</h3><p class="text-[10px] text-slate-400">Si la OT ya tiene tipo asignado, se salta. Si no, selector con 9 opciones.</p></div>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <div class="p-2 rounded-xl border-2 border-teal-200 bg-teal-50 text-[10px] font-bold text-teal-700 text-center">Preventivo</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Predictivo</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Correctivo</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Instalacion</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Visita Tecnica</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Cambio Baterias</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Fault Over</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Apagado/Enc.</div>
+          <div class="p-2 rounded-xl border border-slate-200 bg-white text-[10px] text-slate-500 text-center">Rev. Diagnostico</div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">2</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Datos de Cabecera</h3><p class="text-[10px] text-slate-400">Autocompletado desde OT + Cliente. Todos editables.</p></div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 text-[11px]">
+          <div class="flex flex-col gap-1"><label class="text-[10px] text-slate-400 font-mono uppercase">Informe N</label><input type="text" value="INF-2026-0235" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" /></div>
+          <div class="flex flex-col gap-1"><label class="text-[10px] text-slate-400 font-mono uppercase">Hoja Servicio N</label><input type="text" value="HS-2026-0235" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" /></div>
+          <div class="flex flex-col gap-1"><label class="text-[10px] text-slate-400 font-mono uppercase">Fecha</label><input type="text" value="25/07/2026" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" /></div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1">Hora Inicio <span class="bg-blue-50 text-blue-600 text-[7px] px-1.5 py-0.5 rounded font-bold">Auto</span></label>
+            <div class="relative">
+              <input type="text" value="09:00" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" />
+              <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[7px] text-blue-500 font-mono">desde EN_EJECUCION</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-slate-400 font-mono uppercase">Hora Fin</label>
+            <input type="text" value="13:30" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" />
+          </div>
+          <div class="flex flex-col gap-1"><label class="text-[10px] text-slate-400 font-mono uppercase">Tecnico 1</label><input type="text" value="Carlos Ocsa" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" /></div>
+          <div class="flex flex-col gap-1"><label class="text-[10px] text-slate-400 font-mono uppercase">Tecnico 2</label><input type="text" value="Juan Cordova" class="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all" /></div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">3</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Antecedentes</h3><p class="text-[10px] text-slate-400">Texto autogenerado segun tipo de servicio. Editable.</p></div>
+        </div>
+        <textarea rows="3" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">Se acordo con el cliente la ejecucion del servicio de Mantenimiento Preventivo del equipo UPS Vertiv GXT5 de 60KVA, ubicado en el cuarto electrico piso 4, a fin de garantizar su correcto funcionamiento y prolongar su vida util.</textarea>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">4</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Acciones Realizadas (24 checkboxes)</h3><p class="text-[10px] text-slate-400">Con presets por tipo de servicio. Marcar/desmarcar segun corresponda.</p></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-[11px]">
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Revision general</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Limpieza general</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Ajuste mecanico</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Ajuste bornes</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Revision control</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Baterias</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Tarjeta fuentes</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Tarjeta proteccion</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Tarjeta control</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Tarjeta medicion</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Panel remoto</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Indicadores luminosos</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Sensores</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Elementos de medicion</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Transformador</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Reles</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Filtros</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Tablero Bypass</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Condensadores</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Accesorios</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Arranque del equipo</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Prueba en vacio</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" checked class="accent-teal-600" /><span class="text-slate-700">Pruebas con carga</span></label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1"><input type="checkbox" class="accent-teal-600" /><span class="text-slate-400">Instalacion del equipo</span></label>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">5</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Pasos del Procedimiento</h3><p class="text-[10px] text-slate-400">Lista dinamica segun tipo de servicio. Solo editable descripcion, no numero de pasos.</p></div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-start gap-3 bg-slate-50 rounded-xl p-3"><span class="font-mono font-bold text-teal-700 text-[11px] shrink-0 mt-0.5">PASO 1</span><textarea rows="1" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40">Revision de componentes internos y externos del equipo UPS.</textarea></div>
+          <div class="flex items-start gap-3 bg-slate-50 rounded-xl p-3"><span class="font-mono font-bold text-teal-700 text-[11px] shrink-0 mt-0.5">PASO 2</span><textarea rows="1" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40">Limpieza de tarjetas electronicas y filtros de aire.</textarea></div>
+          <div class="flex items-start gap-3 bg-slate-50 rounded-xl p-3"><span class="font-mono font-bold text-teal-700 text-[11px] shrink-0 mt-0.5">PASO 3</span><textarea rows="1" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40">Verificacion y ajuste de bornes de conexion.</textarea></div>
+          <div class="flex items-start gap-3 bg-slate-50 rounded-xl p-3"><span class="font-mono font-bold text-teal-700 text-[11px] shrink-0 mt-0.5">PASO 4</span><textarea rows="1" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand/40">Medicion de parametros electricos de entrada y salida.</textarea></div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 italic">Predictivo mostraria 11-14 pasos. Visita Tecnica solo 3. Correctivo 3-5.</p>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">6</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Caracteristicas del equipo + Vista Panoramica</h3><p class="text-[10px] text-slate-400">Datos cargados desde equipo registrado en contrato. Si no hay, ingreso manual.</p></div>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200/60 rounded-full text-[8px] font-bold font-mono text-emerald-700">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Datos cargados desde equipo registrado
+          </span>
+          <button class="text-[8px] text-slate-400 hover:text-slate-600 underline">cambiar a ingreso manual</button>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="space-y-2 text-[11px]">
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Ubicacion</span><input type="text" value="Cuarto electrico piso 4" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Equipo</span><input type="text" value="UPS Vertiv GXT5" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Potencia</span><input type="text" value="60 KVA / 48 KW" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Marca</span><input type="text" value="Vertiv" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Serie</span><input type="text" value="GXT5-60K-XXXX" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+            <div class="flex items-center gap-2"><span class="text-slate-400 w-28 font-mono text-[10px] shrink-0">Fases</span><input type="text" value="Trifasico" class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-emerald-50/30" /></div>
+          </div>
+          <div class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span class="text-[10px] text-slate-400 mt-1">Subir Vista Panoramica</span>
+            <button class="mt-2 px-3 py-1 bg-teal-brand text-white text-[10px] font-bold rounded-lg">Seleccionar foto</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-amber-100 p-5 shadow-sm border-l-4 border-l-amber-400">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-bold font-mono">7</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Fotografias del Servicio</h3><p class="text-[10px] text-slate-400">Tomar foto con la camara de la tablet/telefono o seleccionar de galeria. Drag-and-drop en desktop.</p></div>
+        </div>
+        <!-- Action bar: camera / gallery -->
+        <div class="flex flex-wrap gap-2 mb-3 p-2 bg-slate-50 rounded-xl">
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white text-[10px] font-bold rounded-lg transition-all active:scale-95">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Tomar Foto (Camara)
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-bold rounded-lg transition-all active:scale-95">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Galeria
+          </button>
+          <span class="text-[9px] text-slate-400 self-center ml-auto">8 slots requeridos para este tipo</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors relative group">
+            <div class="photo-slot h-16 text-[6px] flex-col">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span class="text-[6px] mt-0.5">Tocar para foto</span>
+            </div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">CARACTERISTICAS UPS</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors relative group">
+            <div class="photo-slot h-16 text-[6px] flex-col">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span class="text-[6px] mt-0.5">Tocar para foto</span>
+            </div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">ESTADO INICIAL</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors relative group">
+            <div class="photo-slot h-16 text-[6px]"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">RETIRO CUBIERTAS</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors">
+            <div class="photo-slot h-16"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">LIMPIEZA</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors">
+            <div class="photo-slot h-16"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">TARJETAS</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors">
+            <div class="photo-slot h-16"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">PANEL CONTROL</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors">
+            <div class="photo-slot h-16"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">BATERIAS</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-2 text-center cursor-pointer hover:border-teal-300 transition-colors">
+            <div class="photo-slot h-16"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <span class="text-[8px] text-slate-400 font-mono block mt-1">VISTA FINAL</span>
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2">+8 slots en pagina 2 si aplica (potencia >= 60 KVA o Predictivo). Total: 8-24 fotos segun tipo.</p>
+      </div>
+
+      <!-- STEP 8 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">8</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Mediciones (Condicional por Tipo)</h3><p class="text-[10px] text-slate-400">Baterias si aplica, Electricas si aplica. Trifasico R/S/T vs Monofasico L1-N/L2.</p></div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <!-- Baterias sub-section -->
+          <div class="border border-slate-200 rounded-xl p-3">
+            <h4 class="text-[10px] font-bold text-slate-700 font-mono uppercase mb-2">Baterias (B1)</h4>
+            <div class="flex gap-2 text-[10px] mb-2"><input type="text" placeholder="# Bateria" class="w-12 px-1 py-0.5 border border-slate-200 rounded text-center" value="01"/><input type="text" placeholder="VDC" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="13.52"/><input type="text" placeholder="mOhm" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="18.5"/><input type="text" placeholder="SOH %" class="w-14 px-1 py-0.5 border border-slate-200 rounded text-center" value="92"/></div>
+            <div class="flex gap-2 text-[10px] mb-2"><input type="text" placeholder="#" class="w-12 px-1 py-0.5 border border-slate-200 rounded text-center" value="02"/><input type="text" placeholder="VDC" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="13.48"/><input type="text" placeholder="mOhm" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="19.2"/><input type="text" placeholder="SOH %" class="w-14 px-1 py-0.5 border border-slate-200 rounded text-center" value="90"/></div>
+            <div class="flex gap-2 text-[10px]"><input type="text" placeholder="#" class="w-12 px-1 py-0.5 border border-slate-200 rounded text-center" value="03"/><input type="text" placeholder="VDC" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="13.55"/><input type="text" placeholder="mOhm" class="w-16 px-1 py-0.5 border border-slate-200 rounded text-center" value="17.8"/><input type="text" placeholder="SOH %" class="w-14 px-1 py-0.5 border border-slate-200 rounded text-center" value="95"/></div>
+            <button class="mt-2 text-[10px] text-teal-700 font-bold flex items-center gap-1 hover:underline">+ Agregar fila</button>
+          </div>
+          <!-- Electricas sub-section -->
+          <div class="border border-slate-200 rounded-xl p-3">
+            <h4 class="text-[10px] font-bold text-slate-700 font-mono uppercase mb-2">Electricas (Trifasico)</h4>
+            <div class="grid grid-cols-4 gap-1 text-[9px] font-mono text-center">
+              <span class="text-slate-400">Param</span><span class="text-slate-500 font-bold">R</span><span class="text-slate-500 font-bold">S</span><span class="text-slate-500 font-bold">T</span>
+              <span class="text-left text-slate-400">L-N V</span><input type="text" value="230" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="231" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="229" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" />
+              <span class="text-left text-slate-400">L-N A</span><input type="text" value="45.2" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="44.8" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="45.6" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" />
+              <span class="text-left text-slate-400">Frec Hz</span><input type="text" value="60.0" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" disabled /><input type="text" value="" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" disabled />
+              <span class="text-left text-slate-400">L-L V</span><input type="text" value="398" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="400" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" /><input type="text" value="397" class="w-full px-1 py-0.5 border border-slate-200 rounded text-center" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold font-mono">9</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Diagnostico + Recomendaciones</h3><p class="text-[10px] text-slate-400">Bullets editables con presets por tipo de servicio.</p></div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <h4 class="text-[10px] font-bold text-slate-600 font-mono uppercase mb-2">Diagnostico</h4>
+            <div class="space-y-1">
+              <div class="flex gap-2"><input type="checkbox" checked class="accent-teal-600 mt-1" /><input type="text" value="El equipo UPS se encuentra OPERATIVO, parametros dentro de tolerancia." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+              <div class="flex gap-2"><input type="checkbox" checked class="accent-teal-600 mt-1" /><input type="text" value="Baterias con SOH promedio 85%, monitoreo continuo recomendado." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+              <div class="flex gap-2"><input type="checkbox" class="accent-teal-600 mt-1" /><input type="text" value="No se detectan alarmas activas en el panel de control." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-[10px] font-bold text-slate-600 font-mono uppercase mb-2">Recomendaciones</h4>
+            <div class="space-y-1">
+              <div class="flex gap-2"><input type="checkbox" checked class="accent-teal-600 mt-1" /><input type="text" value="Programar siguiente mantenimiento preventivo en 6 meses." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+              <div class="flex gap-2"><input type="checkbox" checked class="accent-teal-600 mt-1" /><input type="text" value="Monitorear estado de baterias trimestralmente." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+              <div class="flex gap-2"><input type="checkbox" class="accent-teal-600 mt-1" /><input type="text" value="Considerar reemplazo preventivo de baterias en 12 meses." class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-lg" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 10 -->
+      <div class="wizard-step-card bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm border-l-4 border-l-emerald-400">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold font-mono">10</span>
+          <div><h3 class="font-bold text-slate-900 text-sm">Revision Final y Envio</h3><p class="text-[10px] text-slate-400">Resumen de todo el informe antes de enviar. Boton de guardar/enviar.</p></div>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-[11px]">
+          <div class="flex justify-between"><span class="text-slate-500">Tipo Servicio:</span><span class="font-bold text-slate-700">Preventivo</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Informe N:</span><span class="text-slate-700">INF-2026-0235</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Cliente:</span><span class="text-slate-700">TANTA EL POLO S.A.C</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Pasos completados:</span><span class="text-slate-700">4/4</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Fotos capturadas:</span><span class="text-slate-700">8/8</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Mediciones ingresadas:</span><span class="text-emerald-600 font-bold">Completas</span></div>
+          <hr class="border-slate-200 my-1">
+          <div class="flex justify-end gap-2 pt-2">
+            <button class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">Guardar Borrador</button>
+            <button class="px-4 py-2 bg-teal-brand hover:bg-teal-deep text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95">Enviar Informe</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TAB: CASO DE PRUEBA -->
+  <!-- ============================================================ -->
+  <section id="tab-caso" class="tab-content hidden max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-display font-black text-xl text-slate-900">Caso de Prueba: Preventivo Trifasico 60KVA</h2>
+          <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">OT-042 | TANTA EL POLO S.A.C | UPS Vertiv GXT5 60KVA | INF-2026-0235</p>
+        </div>
+        <span class="badge-type bg-teal-50 text-teal-700 border border-teal-200/60">Preventivo</span>
+      </div>
+    </div>
+
+    <!-- Scenario context -->
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"><span class="text-[10px] text-slate-400 font-mono uppercase">Cliente</span><p class="font-bold text-slate-800 text-sm mt-1">TANTA EL POLO S.A.C</p></div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"><span class="text-[10px] text-slate-400 font-mono uppercase">Equipo</span><p class="font-bold text-slate-800 text-sm mt-1">UPS Vertiv GXT5 60KVA Trifasico</p></div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"><span class="text-[10px] text-slate-400 font-mono uppercase">Ubicacion</span><p class="font-bold text-slate-800 text-sm mt-1">Cuarto Electrico Piso 4, San Isidro</p></div>
+    </div>
+
+    <!-- Full PDF preview (6 pages scrolleables) -->
+    <div class="space-y-6">
+      <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><span class="w-6 h-6 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center text-[10px] font-bold">PDF</span> Informe Final Generado (6 paginas)</h3>
+
+      <!-- PAGE 1: PORTADA -->
+      <div class="pdf-page with-min-height">
+        <div class="flex items-center gap-4 pb-4 border-b-2 border-teal-deep mb-6">
+          <div class="leading-tight"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div><div class="text-[8px] text-slate-500 font-mono">SERVICE S.A.C</div></div>
+          <div class="flex-1 text-center"><div class="text-[11px] font-bold text-slate-800 uppercase leading-tight">Servicio de Mantenimiento Preventivo de</div><div class="text-[10px] font-bold text-slate-700 uppercase">UPS Vertiv GXT5 de 60KVA</div></div>
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-deep flex items-center justify-center text-white text-[8px] font-bold">M</div>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center gap-6">
+          <div class="text-center space-y-2"><div class="text-[18px] font-display font-black text-slate-900 uppercase tracking-wider">Informe de Servicio</div><div class="text-[11px] font-mono text-teal-deep font-bold">INF-2026-0235</div></div>
+          <div class="w-full max-w-md border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-1.5 text-[10px]">
+            <div class="flex"><span class="text-slate-400 w-24 font-mono uppercase tracking-wider">Empresa:</span><span class="text-slate-800 font-medium">TANTA EL POLO S.A.C</span></div>
+            <div class="flex"><span class="text-slate-400 w-24 font-mono uppercase tracking-wider">Local:</span><span class="text-slate-800 font-medium">San Isidro</span></div>
+            <div class="flex"><span class="text-slate-400 w-24 font-mono uppercase tracking-wider">Direccion:</span><span class="text-slate-800 font-medium">Av. Principal 1234</span></div>
+            <div class="flex"><span class="text-slate-400 w-24 font-mono uppercase tracking-wider">Contacto:</span><span class="text-slate-800 font-medium">Juan Perez</span></div>
+            <div class="flex"><span class="text-slate-400 w-24 font-mono uppercase tracking-wider">Email:</span><span class="text-slate-800 font-medium">jperez@tanta.pe</span></div>
+          </div>
+        </div>
+        <div class="border-t border-slate-200 pt-2 mt-6 text-[7px] text-slate-400 text-center">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709</div>
+      </div>
+
+      <!-- PAGE 2: INFORME TECNICO -->
+      <div class="pdf-page with-min-height">
+        <div class="border-b-2 border-teal-deep pb-2 mb-2">
+          <div class="grid grid-cols-12 gap-1 text-[10px]">
+            <div class="col-span-3"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div><div class="text-[7px] text-slate-400 font-mono">SERVICE S.A.C</div></div>
+            <div class="col-span-6 text-center"><div class="font-bold text-slate-800 text-[10px] uppercase leading-tight">Servicio de Mantenimiento Preventivo de UPS 60KVA</div></div>
+            <div class="col-span-3 text-right text-[7px] text-slate-400"><div>RUC: 20523456789</div></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 gap-1 text-[7px] text-slate-500 font-mono uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">
+          <div class="col-span-4">Elaborado por: MAFORT SERVICE S.A.C</div>
+          <div class="col-span-3">Date: 25/07/2026</div>
+          <div class="col-span-3">Referente: INFORME #0235</div>
+          <div class="col-span-2 text-right">OT #OT-042</div>
+        </div>
+        <h2 class="text-[11px] font-bold text-slate-900 uppercase text-center border-b border-slate-300 pb-1 mb-3">Informe Tecnico</h2>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-[8px] mb-3">
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">EMPRESA:</span><span class="text-slate-800 font-medium">TANTA EL POLO S.A.C</span></div>
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">FECHA:</span><span class="text-slate-800 font-medium">25/07/2026</span></div>
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">LOCAL:</span><span class="text-slate-800 font-medium">San Isidro</span></div>
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">HORA INICIO:</span><span class="text-slate-800 font-medium">09:00</span></div>
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">ASUNTO:</span><span class="text-slate-800 font-medium">Mantenimiento Preventivo</span></div>
+          <div class="flex"><span class="text-slate-400 w-24 font-mono">TECNICO:</span><span class="text-slate-800 font-medium">Carlos Ocsa</span></div>
+        </div>
+        <h3 class="text-[9px] font-bold text-slate-700 uppercase mb-1">Antecedentes:</h3>
+        <p class="text-[8px] text-slate-600 leading-relaxed mb-2 bg-slate-50 p-2 rounded">Se acordo con el cliente la ejecucion del servicio de Mantenimiento Preventivo del equipo UPS Vertiv GXT5 de 60KVA, ubicado en el cuarto electrico piso 4, a fin de garantizar su correcto funcionamiento y prolongar su vida util.</p>
+        <h3 class="text-[9px] font-bold text-slate-700 uppercase mb-1">Acciones Realizadas:</h3>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[7px] mb-2">
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Revision general</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Limpieza general</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Ajuste mecanico</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Ajuste bornes</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Baterias</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Arranque del equipo</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Prueba en vacio</span></div>
+          <div class="flex items-center gap-1"><span class="text-teal-700 text-[6px]">●</span><span>Pruebas con carga</span></div>
+        </div>
+        <h3 class="text-[9px] font-bold text-slate-700 uppercase mb-1">Procedimiento:</h3>
+        <div class="space-y-0.5 text-[8px]">
+          <div><span class="font-bold text-teal-700 font-mono">PASO N 1:</span> Revision de componentes internos y externos del equipo UPS.</div>
+          <div><span class="font-bold text-teal-700 font-mono">PASO N 2:</span> Limpieza de tarjetas electronicas y filtros de aire.</div>
+          <div><span class="font-bold text-teal-700 font-mono">PASO N 3:</span> Verificacion y ajuste de bornes de conexion.</div>
+          <div><span class="font-bold text-teal-700 font-mono">PASO N 4:</span> Medicion de parametros electricos de entrada y salida.</div>
+        </div>
+        <div class="mt-auto border-t border-slate-200 pt-2 text-[7px] text-slate-400">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709 <span class="float-right">Pag. 2</span></div>
+      </div>
+
+      <!-- PAGE 3: CARACTERISTICAS -->
+      <div class="pdf-page with-min-height">
+        <div class="border-b-2 border-teal-deep pb-2 mb-2"><div class="grid grid-cols-12 gap-1 text-[10px]"><div class="col-span-3"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div></div><div class="col-span-6 text-center"><div class="font-bold text-slate-800 text-[10px] uppercase">Mantenimiento Preventivo UPS 60KVA</div></div><div class="col-span-3"></div></div></div>
+        <div class="grid grid-cols-12 gap-1 text-[7px] text-slate-500 font-mono uppercase tracking-wider mb-3 pb-1 border-b border-slate-200"><div class="col-span-4">Elaborado por: MAFORT SERVICE S.A.C</div><div class="col-span-3">Date: 25/07/2026</div><div class="col-span-3">Referente: INFORME #0235</div><div class="col-span-2 text-right">OT #OT-042</div></div>
+        <h2 class="text-[11px] font-bold text-slate-900 uppercase text-center border-b border-slate-300 pb-1 mb-3">Caracteristicas de los Equipos</h2>
+        <div class="grid grid-cols-12 gap-4">
+          <div class="col-span-7 space-y-0.5 text-[8px]">
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Ubicacion:</span><span class="text-slate-800">Cuarto electrico piso 4</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Equipo:</span><span class="text-slate-800">UPS Vertiv GXT5</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Potencia:</span><span class="text-slate-800">60 KVA / 48 KW</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Marca:</span><span class="text-slate-800">Vertiv</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Serie:</span><span class="text-slate-800">GXT5-60K-XXXX</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Modelo:</span><span class="text-slate-800">GXT5-60KVA</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Tension Entrada:</span><span class="text-slate-800">380/400/415 VAC 3PH+N+G</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Tension Salida:</span><span class="text-slate-800">380/400/415 VAC 3PH+N+G</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Fases:</span><span class="text-slate-800">Trifasico</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Ano Fabricacion:</span><span class="text-slate-800">2022</span></div>
+            <div class="flex"><span class="text-slate-400 w-28 font-mono">• Estado:</span><span class="text-emerald-600 font-bold">OPERATIVO</span></div>
+            <div class="border-t border-slate-200 pt-1 mt-2"><div class="text-[8px] font-bold text-slate-700 mb-0.5">Bco. Bateria Interno:</div>
+              <div class="flex"><span class="text-slate-400 w-28 font-mono">• # Baterias:</span><span class="text-slate-800">40</span></div>
+              <div class="flex"><span class="text-slate-400 w-28 font-mono">• Voltaje/Amperaje:</span><span class="text-slate-800">12VDC / 9Ah</span></div>
+              <div class="flex"><span class="text-slate-400 w-28 font-mono">• Ano Fabricacion:</span><span class="text-slate-800">2024</span></div>
+            </div>
+          </div>
+          <div class="col-span-5 space-y-2"><div class="photo-slot h-28 text-[7px]">Vista Panoramica</div><div class="photo-slot h-20 text-[7px]">UPS</div></div>
+        </div>
+        <div class="mt-auto border-t border-slate-200 pt-2 text-[7px] text-slate-400">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709 <span class="float-right">Pag. 3</span></div>
+      </div>
+
+      <!-- PAGE 4: FOTOS -->
+      <div class="pdf-page with-min-height">
+        <div class="border-b-2 border-teal-deep pb-2 mb-2"><div class="grid grid-cols-12 gap-1 text-[10px]"><div class="col-span-3"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div></div><div class="col-span-6 text-center"><div class="font-bold text-slate-800 text-[10px] uppercase">Mantenimiento Preventivo UPS 60KVA</div></div><div class="col-span-3"></div></div></div>
+        <div class="grid grid-cols-12 gap-1 text-[7px] text-slate-500 font-mono uppercase tracking-wider mb-3 pb-1 border-b border-slate-200"><div class="col-span-4">Elaborado por: MAFORT SERVICE S.A.C</div><div class="col-span-3">Date: 25/07/2026</div><div class="col-span-3">Referente: INFORME #0235</div><div class="col-span-2 text-right">OT #OT-042</div></div>
+        <h2 class="text-[10px] font-bold text-slate-900 uppercase text-center mb-3">Fotografias del Servicio de Mantenimiento (1/2)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">01. CARACTERISTICAS DE UPS</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">02. ESTADO INICIAL DEL EQUIPO</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">03. RETIRO DE CUBIERTAS</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">04. LIMPIEZA CON BROCHA</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">05. LIMPIEZA CON SOPLADORA</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">06. LIMPIEZA VENTILADORES</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">07. TARJETAS ELECTRONICAS</div></div>
+          <div><div class="photo-slot h-28"></div><div class="text-[6px] text-slate-400 font-mono text-center mt-0.5">08. PANEL DE CONTROL</div></div>
+        </div>
+        <div class="mt-auto border-t border-slate-200 pt-2 text-[7px] text-slate-400">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709 <span class="float-right">Pag. 4</span></div>
+      </div>
+
+      <!-- PAGE 5: MEDICIONES + BATERIAS -->
+      <div class="pdf-page with-min-height">
+        <div class="border-b-2 border-teal-deep pb-2 mb-2"><div class="grid grid-cols-12 gap-1 text-[10px]"><div class="col-span-3"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div></div><div class="col-span-6 text-center"><div class="font-bold text-slate-800 text-[10px] uppercase">Mantenimiento Preventivo UPS 60KVA</div></div><div class="col-span-3"></div></div></div>
+        <div class="grid grid-cols-12 gap-1 text-[7px] text-slate-500 font-mono uppercase tracking-wider mb-3 pb-1 border-b border-slate-200"><div class="col-span-4">Elaborado por: MAFORT SERVICE S.A.C</div><div class="col-span-3">Date: 25/07/2026</div><div class="col-span-3">Referente: INFORME #0235</div><div class="col-span-2 text-right">OT #OT-042</div></div>
+
+        <h2 class="text-[9px] font-bold text-slate-700 uppercase mb-2">Medicion Banco de Baterias (12VDC - 9Ah)</h2>
+        <div class="grid grid-cols-2 gap-4 text-[7px] mb-3">
+          <div>
+            <table class="w-full border-collapse"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[6px]"><th class="p-1">#</th><th class="p-1">V. Flot (VDC)</th><th class="p-1">IR (mOhm)</th><th class="p-1">SOH %</th></tr></thead>
+              <tbody><tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">01</td><td class="p-1 text-center font-mono">13.52</td><td class="p-1 text-center font-mono">18.5</td><td class="p-1 text-center font-mono text-emerald-600">92</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">02</td><td class="p-1 text-center font-mono">13.48</td><td class="p-1 text-center font-mono">19.2</td><td class="p-1 text-center font-mono text-emerald-600">90</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">03</td><td class="p-1 text-center font-mono">13.55</td><td class="p-1 text-center font-mono">17.8</td><td class="p-1 text-center font-mono text-emerald-600">95</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">04</td><td class="p-1 text-center font-mono">13.50</td><td class="p-1 text-center font-mono">18.1</td><td class="p-1 text-center font-mono text-emerald-600">93</td></tr></tbody></table>
+          </div>
+          <div>
+            <div class="border border-slate-200 rounded-lg p-2">
+              <div class="text-[6px] font-mono text-slate-500 text-center mb-1">Voltaje Flotacion B1 (VDC)</div>
+              <svg viewBox="0 0 240 70" class="w-full h-14"><line x1="30" y1="60" x2="230" y2="60" stroke="#cbd5e1" stroke-width="0.5"/><line x1="30" y1="10" x2="30" y2="60" stroke="#cbd5e1" stroke-width="0.5"/><rect x="40" y="12" width="14" height="48" fill="#0F9E82" rx="1"/><rect x="62" y="16" width="14" height="44" fill="#0F9E82" rx="1"/><rect x="84" y="10" width="14" height="50" fill="#10B981" rx="1"/><rect x="106" y="14" width="14" height="46" fill="#0F9E82" rx="1"/><text x="42" y="64" font-size="4" fill="#94a3b8" font-family="IBM Plex Mono">1</text><text x="64" y="64" font-size="4" fill="#94a3b8" font-family="IBM Plex Mono">2</text><text x="86" y="64" font-size="4" fill="#94a3b8" font-family="IBM Plex Mono">3</text><text x="108" y="64" font-size="4" fill="#94a3b8" font-family="IBM Plex Mono">4</text></svg>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="text-[9px] font-bold text-slate-700 uppercase mb-2">Mediciones Electricas</h2>
+        <div class="grid grid-cols-3 gap-2 text-[7px]">
+          <div><h3 class="font-bold text-slate-500 uppercase text-[6px] mb-0.5 text-center">Entrada del UPS</h3>
+            <table class="w-full border-collapse"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[5px]"><th class="p-1 text-left">Param</th><th class="p-1">R</th><th class="p-1">S</th><th class="p-1">T</th></tr></thead>
+              <tbody><tr class="border-b border-slate-100"><td class="p-1">L-N V</td><td class="p-1 text-center">230</td><td class="p-1 text-center">231</td><td class="p-1 text-center">229</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">L-N A</td><td class="p-1 text-center">45</td><td class="p-1 text-center">44</td><td class="p-1 text-center">46</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">Frec Hz</td><td class="p-1 text-center" colspan="3">60</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">L-L V</td><td class="p-1 text-center">398</td><td class="p-1 text-center">400</td><td class="p-1 text-center">397</td></tr></tbody></table></div>
+          <div><h3 class="font-bold text-slate-500 uppercase text-[6px] mb-0.5 text-center">Bypass</h3>
+            <table class="w-full border-collapse"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[5px]"><th class="p-1 text-left">Param</th><th class="p-1">R</th><th class="p-1">S</th><th class="p-1">T</th></tr></thead>
+              <tbody><tr class="border-b border-slate-100"><td class="p-1">L-N V</td><td class="p-1 text-center">231</td><td class="p-1 text-center">230</td><td class="p-1 text-center">230</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">Frec Hz</td><td class="p-1 text-center" colspan="3">60</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">L-L V</td><td class="p-1 text-center">400</td><td class="p-1 text-center">401</td><td class="p-1 text-center">399</td></tr></tbody></table></div>
+          <div><h3 class="font-bold text-slate-500 uppercase text-[6px] mb-0.5 text-center">Salida del UPS</h3>
+            <table class="w-full border-collapse"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[5px]"><th class="p-1 text-left">Param</th><th class="p-1">R</th><th class="p-1">S</th><th class="p-1">T</th></tr></thead>
+              <tbody><tr class="border-b border-slate-100"><td class="p-1">L-N V</td><td class="p-1 text-center">230</td><td class="p-1 text-center">230</td><td class="p-1 text-center">229</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">L-N A</td><td class="p-1 text-center">44</td><td class="p-1 text-center">43</td><td class="p-1 text-center">45</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">Frec Hz</td><td class="p-1 text-center" colspan="3">60</td></tr>
+              <tr class="border-b border-slate-100"><td class="p-1">L-L V</td><td class="p-1 text-center">398</td><td class="p-1 text-center">399</td><td class="p-1 text-center">398</td></tr></tbody></table></div>
+        </div>
+        <div class="mt-auto border-t border-slate-200 pt-2 text-[7px] text-slate-400">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709 <span class="float-right">Pag. 5</span></div>
+      </div>
+
+      <!-- PAGE 6: DIAGNOSTICO + FIRMA -->
+      <div class="pdf-page with-min-height">
+        <div class="border-b-2 border-teal-deep pb-2 mb-2"><div class="grid grid-cols-12 gap-1 text-[10px]"><div class="col-span-3"><div class="font-bold text-blue-800 text-sm">Mafor<span class="text-emerald-500">t</span></div></div><div class="col-span-6 text-center"><div class="font-bold text-slate-800 text-[10px] uppercase">Mantenimiento Preventivo UPS 60KVA</div></div><div class="col-span-3"></div></div></div>
+        <div class="grid grid-cols-12 gap-1 text-[7px] text-slate-500 font-mono uppercase tracking-wider mb-3 pb-1 border-b border-slate-200"><div class="col-span-4">Elaborado por: MAFORT SERVICE S.A.C</div><div class="col-span-3">Date: 25/07/2026</div><div class="col-span-3">Referente: INFORME #0235</div><div class="col-span-2 text-right">OT #OT-042</div></div>
+        <h2 class="text-[10px] font-bold text-slate-900 uppercase mb-2">Diagnostico</h2>
+        <div class="space-y-0.5 text-[8px] mb-3">
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">El equipo UPS se encuentra en estado OPERATIVO, con parametros electricos dentro de tolerancia.</span></div>
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">Las baterias presentan un estado de salud (SOH) promedio de 92%, optimo.</span></div>
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">No se detectan alarmas activas en el panel de control.</span></div>
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">El sistema de ventilacion opera correctamente.</span></div>
+        </div>
+        <h2 class="text-[10px] font-bold text-slate-900 uppercase mb-2">Recomendaciones</h2>
+        <div class="space-y-0.5 text-[8px] mb-4">
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">Programar el siguiente mantenimiento preventivo en 6 meses.</span></div>
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">Monitorear el estado de las baterias trimestralmente.</span></div>
+          <div class="flex gap-2"><span class="text-teal-700">●</span><span class="text-slate-600">Mantener el area de ventilacion libre de obstrucciones.</span></div>
+        </div>
+        <div class="border-t border-slate-300 pt-4 mt-auto">
+          <div class="text-[8px] text-slate-500 italic">Sin otro particular.</div>
+          <div class="text-[8px] text-slate-500 italic mt-1">Atentamente,</div>
+          <div class="grid grid-cols-2 gap-8 mt-6">
+            <div class="text-center"><div class="border-b border-slate-400 pb-1 mb-1 min-h-[40px]"></div><div class="text-[8px] font-bold text-slate-800">MAFORT SERVICE S.A.C</div><div class="text-[7px] text-slate-500">SOPORTE TECNICO</div></div>
+            <div class="text-center"><div class="border-b border-slate-400 pb-1 mb-1 min-h-[40px]"><div class="photo-slot h-10 w-24 mx-auto text-[6px]">Firma Cliente</div></div><div class="text-[8px] font-bold text-slate-800">CLIENTE</div><div class="text-[7px] text-slate-500">RESPONSABLE DE SEDE</div></div>
+          </div>
+        </div>
+        <div class="mt-2 border-t border-slate-200 pt-2 text-[7px] text-slate-400">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco | ventas@mafortservice.com | OF: 5442114 EMERGENCIAS: 999 993 709 <span class="float-right">Pag. 6</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TAB: MEDICIONES -->
+  <!-- ============================================================ -->
+  <section id="tab-mediciones" class="tab-content hidden max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <h2 class="font-display font-black text-xl text-slate-900">3 Variantes de Mediciones</h2>
+      <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">Seleccion automatica segun potencia (>=40 KVA = trifasico) y tipo de servicio (baterias condicional)</p>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-2 mb-3"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">3~</span><div><h3 class="font-bold text-slate-900 text-sm">Trifasico (>=40 KVA)</h3><p class="text-[9px] text-slate-400 font-mono">R / S / T + L-L</p></div></div>
+        <table class="w-full border-collapse text-[8px]"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[7px]"><th class="p-1.5 text-left">Parametro</th><th class="p-1.5">R</th><th class="p-1.5">S</th><th class="p-1.5">T</th></tr></thead>
+          <tbody><tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">L-N Voltaje (VAC)</td><td class="p-1.5 text-center font-mono text-slate-700">230</td><td class="p-1.5 text-center font-mono text-slate-700">231</td><td class="p-1.5 text-center font-mono text-slate-700">229</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">L-N Intensidad (A)</td><td class="p-1.5 text-center font-mono text-slate-700">45.2</td><td class="p-1.5 text-center font-mono text-slate-700">44.8</td><td class="p-1.5 text-center font-mono text-slate-700">45.6</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">Frecuencia (Hz)</td><td class="p-1.5 text-center font-mono text-slate-700" colspan="3">60.0</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">L-L Voltaje (VAC)</td><td class="p-1.5 text-center font-mono text-slate-700">398</td><td class="p-1.5 text-center font-mono text-slate-700">400</td><td class="p-1.5 text-center font-mono text-slate-700">397</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">Factor Potencia</td><td class="p-1.5 text-center font-mono text-slate-700">0.98</td><td class="p-1.5 text-center font-mono text-slate-700">0.97</td><td class="p-1.5 text-center font-mono text-slate-700">0.98</td></tr></tbody></table>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-2 mb-3"><span class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs">1~</span><div><h3 class="font-bold text-slate-900 text-sm">Monofasico (<40 KVA)</h3><p class="text-[9px] text-slate-400 font-mono">L1-N / L2 + L-G / N-G</p></div></div>
+        <table class="w-full border-collapse text-[8px]"><thead><tr class="bg-slate-100 text-slate-500 font-mono uppercase text-[7px]"><th class="p-1.5 text-left">Parametro</th><th class="p-1.5">L1-N/L2</th></tr></thead>
+          <tbody><tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">L-N Voltaje (V)</td><td class="p-1.5 text-center font-mono text-slate-700">230.5</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">L-G Voltaje (V)</td><td class="p-1.5 text-center font-mono text-slate-700">228.1</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">N-G Voltaje (V)</td><td class="p-1.5 text-center font-mono text-slate-700">2.4</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">Frecuencia (Hz)</td><td class="p-1.5 text-center font-mono text-slate-700">60.0</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1.5 text-slate-500">Corriente Trabajo (A)</td><td class="p-1.5 text-center font-mono text-slate-700">18.5</td></tr></tbody></table>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div class="flex items-center gap-2 mb-3"><span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">B1</span><div><h3 class="font-bold text-slate-900 text-sm">Baterias B1/B2 + SVG</h3><p class="text-[9px] text-slate-400 font-mono">Voltaje Flotacion + Resistencia Interna + SOH</p></div></div>
+        <table class="w-full border-collapse text-[7px] mb-2"><thead><tr class="bg-emerald-50 text-emerald-700 font-mono uppercase text-[6px]"><th class="p-1">#</th><th class="p-1">V. Flot</th><th class="p-1">IR</th><th class="p-1">SOH</th></tr></thead>
+          <tbody><tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">01</td><td class="p-1 text-center font-mono">13.52</td><td class="p-1 text-center font-mono">18.5</td><td class="p-1 text-center font-mono text-emerald-600">92</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">02</td><td class="p-1 text-center font-mono">13.48</td><td class="p-1 text-center font-mono">19.2</td><td class="p-1 text-center font-mono text-emerald-600">90</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">03</td><td class="p-1 text-center font-mono">13.55</td><td class="p-1 text-center font-mono">17.8</td><td class="p-1 text-center font-mono text-emerald-600">95</td></tr>
+          <tr class="border-b border-slate-100"><td class="p-1 text-center font-mono">04</td><td class="p-1 text-center font-mono">13.50</td><td class="p-1 text-center font-mono">18.1</td><td class="p-1 text-center font-mono text-emerald-600">93</td></tr></tbody></table>
+        <div class="border border-slate-200 rounded-lg p-2"><div class="text-[7px] font-mono text-slate-500 text-center mb-1">Voltaje Flotacion B1 (VDC)</div>
+          <svg viewBox="0 0 240 70" class="w-full h-14"><line x1="30" y1="60" x2="230" y2="60" stroke="#cbd5e1" stroke-width="0.5"/><line x1="30" y1="10" x2="30" y2="60" stroke="#cbd5e1" stroke-width="0.5"/><rect x="40" y="12" width="14" height="48" fill="#0F9E82" rx="1"/><rect x="62" y="16" width="14" height="44" fill="#0F9E82" rx="1"/><rect x="84" y="10" width="14" height="50" fill="#10B981" rx="1"/><rect x="106" y="14" width="14" height="46" fill="#0F9E82" rx="1"/><rect x="128" y="18" width="14" height="42" fill="#0F9E82" rx="1"/><rect x="150" y="20" width="14" height="40" fill="#10B981" rx="1"/><rect x="172" y="14" width="14" height="46" fill="#0F9E82" rx="1"/><rect x="194" y="10" width="14" height="50" fill="#0F9E82" rx="1"/><text x="42" y="64" font-size="4" fill="#94a3b8">1</text><text x="64" y="64" font-size="4" fill="#94a3b8">2</text><text x="86" y="64" font-size="4" fill="#94a3b8">3</text><text x="108" y="64" font-size="4" fill="#94a3b8">4</text><text x="130" y="64" font-size="4" fill="#94a3b8">5</text><text x="152" y="64" font-size="4" fill="#94a3b8">6</text><text x="174" y="64" font-size="4" fill="#94a3b8">7</text><text x="196" y="64" font-size="4" fill="#94a3b8">8</text></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TAB: FOTOS -->
+  <!-- ============================================================ -->
+  <section id="tab-fotos" class="tab-content hidden max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <h2 class="font-display font-black text-xl text-slate-900">Grid de Fotografias</h2>
+      <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">2 columnas x N filas = 8 fotos por pagina. Paginas = ceil(totalFotos / 8)</p>
+    </div>
+    <div class="pdf-page !min-h-0 !p-6">
+      <div class="text-[9px] font-bold text-slate-700 uppercase text-center mb-3">Fotografias del Servicio (Pagina 1 de 2)</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">01. CARACTERISTICAS DE UPS</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">02. ESTADO INICIAL DEL EQUIPO</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">03. RETIRO DE CUBIERTAS</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">04. LIMPIEZA GENERAL</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">05. LIMPIEZA SOPLADORA</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">06. TARJETAS ELECTRONICAS</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">07. PANEL DE CONTROL</span></div></div>
+        <div><div class="photo-slot h-28 flex-col gap-1"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span class="text-[6px]">08. BATERIAS INTERNAS</span></div></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <h3 class="font-bold text-slate-900 text-sm mb-2">Slots de Fotos por Potencia</h3>
+      <div class="grid grid-cols-4 gap-2 text-[9px] font-mono">
+        <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">&lt;=10 KVA:</span><br><span class="font-bold text-slate-700">8 fotos</span></div>
+        <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">20-40 KVA:</span><br><span class="font-bold text-slate-700">12 fotos</span></div>
+        <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">60-80 KVA:</span><br><span class="font-bold text-slate-700">16 fotos</span></div>
+        <div class="bg-slate-50 rounded-lg p-2 text-center"><span class="text-slate-400">&gt;=120 KVA:</span><br><span class="font-bold text-slate-700">20-24 fotos</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- TAB: HEADER/FOOTER -->
+  <!-- ============================================================ -->
+  <section id="tab-header" class="tab-content hidden max-w-[1280px] mx-auto px-6 py-6 space-y-6">
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <h2 class="font-display font-black text-xl text-slate-900">Master Template: Header + Footer</h2>
+      <p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-1">Patron identico en todas las paginas del PDF replicando las 19 plantillas reales</p>
+    </div>
+    <div class="pdf-page !min-h-0 !p-6">
+      <h3 class="text-[9px] font-bold text-slate-500 font-mono uppercase tracking-wider mb-3">Header (se repite en cada pagina)</h3>
+      <div class="border border-slate-300">
+        <div class="bg-white p-3 space-y-1"><div class="text-[11px] font-bold text-slate-800 text-center uppercase">Servicio de Mantenimiento Preventivo de</div><div class="text-[10px] font-bold text-slate-700 text-center uppercase">UPS Vertiv GXT5 de 60KVA</div><div class="text-[9px] text-slate-500 text-center">Area: Cuarto electrico piso 4</div><div class="text-[9px] font-bold text-slate-600 text-center">MAFORT SERVICE S.A.C</div></div>
+        <div class="grid grid-cols-12 gap-0 border-t border-slate-900 text-[7px]">
+          <div class="col-span-4 p-1.5 border-r border-slate-300"><span class="text-slate-500 font-mono uppercase">Elaborado por:</span><br/><span class="font-bold text-slate-800">MAFORT SERVICE S.A.C</span></div>
+          <div class="col-span-3 p-1.5 border-r border-slate-300"><span class="text-slate-500 font-mono uppercase">Date</span><br/><span class="text-slate-800">25/07/2026</span></div>
+          <div class="col-span-3 p-1.5 border-r border-slate-300"><span class="text-slate-500 font-mono uppercase">Referente</span><br/><span class="text-slate-800">INFORME #0235</span></div>
+          <div class="col-span-2 p-1.5"><span class="text-slate-500 font-mono uppercase">OT</span><br/><span class="text-slate-800">#OT-042</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="pdf-page !min-h-0 !p-6">
+      <h3 class="text-[9px] font-bold text-slate-500 font-mono uppercase tracking-wider mb-3">Footer (sticky al final de cada pagina)</h3>
+      <div class="border-t border-slate-300 pt-2 text-[7px] text-slate-400 text-center">Jr. Cerro Azul 597, Urb. San Ignacio de Monterrico, Surco: ventas@mafortservice.com / ventas2@mafortservice.com<span class="float-right font-mono">Pag. N</span><br/>OF: 5442114 EMERGENCIAS: 999 993 709 Telf.: 998 194 696</div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-slate-200 bg-white mt-8 no-print">
+    <div class="max-w-[1280px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] text-slate-400">
+      <span class="font-mono">Mockup v1.1 — 2026-07-25</span>
+      <span>Documentacion/mockups/informe-adaptativo.html</span>
+    </div>
+  </footer>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // Tab navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'bg-teal-50', 'border-teal-200', 'text-teal-700');
+          b.classList.add('bg-slate-50', 'border-slate-200', 'text-slate-500');
+        });
+        btn.classList.add('active', 'bg-teal-50', 'border-teal-200', 'text-teal-700');
+        btn.classList.remove('bg-slate-50', 'border-slate-200', 'text-slate-500');
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // Build type cards
+    const tipos = [
+      { key: 'PREVENTIVO', display: 'Preventivo', desc: 'Mantenimiento programado del equipo UPS. Pasos estandar 4-6, baterias opcional, 2 pags fotos.', pasos: '4-6', fotos: '8-16', baterias: 'Opc', paginas: '6-7' },
+      { key: 'PREDICTIVO', display: 'Predictivo', desc: 'Analisis profundo con mediciones. 11-14 pasos, baterias con tabla + graficos SVG, 2-3 pags fotos.', pasos: '11-14', fotos: '16-24', baterias: 'Si', paginas: '8-10' },
+      { key: 'CORRECTIVO', display: 'Correctivo', desc: 'Reparacion de falla. 3-5 pasos, sin tablas de mediciones, 1-2 pags fotos pequenas.', pasos: '3-5', fotos: '4-8', baterias: 'No', paginas: '4-5' },
+      { key: 'INSTALACION', display: 'Instalacion', desc: 'Instalacion de equipo nuevo. 4-5 pasos, sin baterias, 2 pags fotos, carga por fase.', pasos: '4-5', fotos: '16-24', baterias: 'No', paginas: '6-7' },
+      { key: 'VISITA_TECNICA', display: 'Visita Tecnica', desc: 'Atencion de emergencia con historial de alarmas. 3 pasos, baterias en display.', pasos: '3', fotos: '8-16', baterias: 'Si', paginas: '6-7' },
+      { key: 'CAMBIO_BATERIAS', display: 'Cambio Baterias', desc: 'Reemplazo de bancos. 4 pasos, mediciones post-cambio con tabla B1/B2.', pasos: '4', fotos: '16', baterias: 'Si', paginas: '6-7' },
+      { key: 'PRUEBAS_FAULT_OVER', display: 'Fault Over', desc: 'Pruebas de transferencia. 5 pasos, baterias pre/prueba, 1 pag fotos.', pasos: '5', fotos: '8', baterias: 'Si', paginas: '5-6' },
+      { key: 'APAGADO_ENCENDIDO', display: 'Apagado/Enc.', desc: 'Cold start. 5 pasos, sin baterias, 1 pag fotos.', pasos: '5', fotos: '8', baterias: 'No', paginas: '5-6' },
+      { key: 'REVISION_DIAGNOSTICO', display: 'Rev. Diagnostico', desc: 'Diagnostico express. 3 pasos, baterias opcional, 1 pag fotos minima.', pasos: '3', fotos: '4-8', baterias: 'Opc', paginas: '4-5' }
+    ];
+    const container = document.getElementById('type-cards-container');
+    const tpl = document.getElementById('type-card-tpl');
+    tipos.forEach(t => {
+      const c = tpl.content.cloneNode(true);
+      c.querySelector('.type-badge').textContent = t.display;
+      c.querySelector('.type-key').textContent = t.key;
+      c.querySelector('.type-desc').textContent = t.desc;
+      c.querySelector('.type-pasos').textContent = t.pasos;
+      c.querySelector('.type-fotos').textContent = t.fotos;
+      c.querySelector('.type-baterias').textContent = t.baterias;
+      c.querySelector('.type-paginas').textContent = t.paginas;
+      container.appendChild(c);
+    });
+    lucide.createIcons();
+  </script>
+</body>
+</html>

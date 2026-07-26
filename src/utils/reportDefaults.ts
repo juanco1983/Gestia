@@ -294,6 +294,7 @@ export function generateDefaultReport(ot: OT, client: Client): TechnicalReport {
   return {
     id: `rep_${Date.now()}`,
     otId: ot.id,
+    tipoServicio: ot.tipoMantenimiento,
     voltajeEntrada: isHighPower ? 380 : 220,
     voltajeSalida: isHighPower ? 380 : 220,
     indicadoresBateria: {

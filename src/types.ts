@@ -1,8 +1,17 @@
 export enum ServiceType {
   PREVENTIVO = 'Preventivo',
+  PREDICTIVO = 'Predictivo',
   CORRECTIVO = 'Correctivo',
+  INSTALACION = 'Instalacion',
+  VISITA_TECNICA = 'Visita Tecnica',
+  CAMBIO_BATERIAS = 'Cambio Baterias',
+  PRUEBAS_FAULT_OVER = 'Pruebas Fault Over',
+  APAGADO_ENCENDIDO = 'Apagado Y Encendido',
+  REVISION_DIAGNOSTICO = 'Revision Y Diagnostico',
   EMERGENCIA = 'Emergencia'
 }
+
+export type ServiceTypeKey = Exclude<`${ServiceType}`, ''>;
 
 export enum EquipmentType {
   UPS = 'UPS',
@@ -110,6 +119,7 @@ export interface TechnicalReport {
   asunto?: string;
   fechaServicio?: string;
   horaInicio?: string;
+  horaFin?: string; // Hora de finalizacion del trabajo en sitio
   tecnico1?: string;
   tecnico2?: string;
   antecedentes?: string;
@@ -127,6 +137,35 @@ export interface TechnicalReport {
     paso6_concluido?: 'si' | 'no';
     paso6_observaciones?: string;
   };
+  // Nuevos campos adaptativos (todos opcionales para backward compat)
+  tipoServicio?: ServiceType;
+  panoramaFoto?: string; // Base64 VISTA PANORAMICA
+  pasosLista?: Array<{ numero: number; titulo?: string; descripcion: string }>;
+  medicionesBypass?: {
+    lnVoltaje: [string, string, string];
+    frecuencia: [string, string, string];
+    llVoltaje: [string, string, string];
+  };
+  medicionesBaterias?: {
+    banco1?: Array<{ numero: number; voltajeFlotacion: string; resistenciaInterna?: string; soh?: number }>;
+    banco2?: Array<{ numero: number; voltajeFlotacion: string; resistenciaInterna?: string; soh?: number }>;
+    notas?: string;
+  };
+  parametrosCarga?: {
+    kva: [string, string, string];
+    kw: [string, string, string];
+    kvar?: [string, string, string];
+    porcentaje: [string, string, string];
+    factorCresta?: [string, string, string];
+  };
+  historialAlarmas?: Array<{
+    numero: number;
+    evento: string;
+    fecha: string;
+    hora: string;
+    codigo: string;
+    descripcion: string;
+  }>;
   caracteristicas?: Record<string, string>; // UBICACION, EQUIPO, POTENCIA, MARCA, etc.
   fotosLabeled?: Array<{ slotName: string; base64: string; description?: string }>;
   medicionesEntrada?: {

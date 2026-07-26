@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestia · Mockup Login Mobile (Bug 1)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F2F6F4; margin: 0; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+  .phone-frame { width: 390px; height: 760px; background: #F2F6F4; border: 14px solid #0F172A; border-radius: 48px; box-shadow: 0 30px 80px -20px rgba(11,59,52,0.3); overflow: hidden; position: relative; }
+  .phone-notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 130px; height: 26px; background: #0F172A; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; z-index: 30; }
+  .phone-scroll { width: 100%; height: 100%; overflow-y: auto; padding-top: 32px; }
+  .phone-scroll::-webkit-scrollbar { width: 0; }
+  .wave { stroke-dasharray: 4 2; animation: dash 1.2s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -12; } }
+</style>
+</head>
+<body class="text-slate-800">
+
+<div class="text-center py-3 bg-slate-900 text-white mb-2">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Login Mobile (390px · iPhone) — Mockup Bug 1</span>
+</div>
+
+<div class="flex flex-wrap justify-center gap-10 p-6">
+
+<!-- ============================================================ -->
+<!-- OPCIÓN A — VERSIÓN ACTUAL (solo formulario, marca oculta)    -->
+<!-- ============================================================ -->
+<div class="flex flex-col items-center">
+  <h3 class="text-sm font-bold text-slate-700 font-display mb-3">A · Actual (sólo formulario)</h3>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-scroll">
+      <div class="min-h-full flex items-center justify-center p-5 relative overflow-hidden">
+        <!-- Aurora blur fondo -->
+        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <span class="absolute w-[320px] h-[320px] rounded-full bg-[#BDEBDC] opacity-35 -top-[100px] -left-[80px]" style="filter:blur(70px)"></span>
+          <span class="absolute w-[280px] h-[280px] rounded-full bg-[#D6D6F7] opacity-35 -bottom-[120px] -right-[60px]" style="filter:blur(70px)"></span>
+        </div>
+        <!-- Card login -->
+        <div class="relative z-10 w-full bg-white rounded-[28px] overflow-hidden shadow-[0_30px_80px_-30px_rgba(11,59,52,0.25)] border border-slate-200 my-auto">
+          <div class="p-7 flex flex-col justify-center">
+            <!-- Logo mini PNG -->
+            <div class="flex flex-col items-center mb-5 w-full max-w-[160px] mx-auto select-none">
+              <div class="w-20 h-20 rounded-2xl bg-teal-deep flex items-center justify-center mb-2">
+                <span class="text-white font-display font-black text-2xl tracking-wide">G</span>
+              </div>
+              <span class="text-[9px] font-mono uppercase tracking-widest text-slate-400">placeholder /logo.png</span>
+            </div>
+            <div class="mb-5 text-left">
+              <h2 class="font-display text-xl font-semibold tracking-tight text-slate-900">Bienvenido de nuevo</h2>
+              <p class="text-xs text-slate-500 mt-1">Ingresa tus credenciales para acceder al sistema.</p>
+            </div>
+            <div class="space-y-3 text-left">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-semibold uppercase text-slate-500 tracking-wider">Correo electrónico</label>
+                <input type="text" placeholder="nombre@gestia.com" class="w-full bg-slate-50 border border-slate-200 rounded-md py-2.5 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-all"/>
+              </div>
+              <div class="space-y-1">
+                <label class="block text-[10px] font-semibold uppercase text-slate-500 tracking-wider">Contraseña</label>
+                <div class="relative">
+                  <input type="password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-md py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:border-emerald-500 transition-all"/>
+                  <i data-lucide="eye-off" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" style="width:15px;height:15px"></i>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-1 pb-2 text-xs">
+                <label class="flex items-center gap-1.5 text-slate-500 cursor-pointer">
+                  <input type="checkbox" class="w-3.5 h-3.5 accent-emerald-600 rounded"/>
+                  <span>Recordarme</span>
+                </label>
+                <a class="text-emerald-800 font-semibold hover:underline">¿Olvidaste tu contraseña?</a>
+              </div>
+              <button class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-semibold py-2.5 px-3 rounded-md text-sm flex items-center justify-center gap-2">
+                <i data-lucide="log-in" style="width:14px;height:14px"></i><span>Acceder al sistema</span>
+              </button>
+              <div class="flex items-center gap-2 py-1 text-slate-400 text-xs justify-center">
+                <span class="w-8 h-px bg-slate-200"></span><span>o continúa con</span><span class="w-8 h-px bg-slate-200"></span>
+              </div>
+              <button class="w-full bg-white text-slate-500 border border-slate-200 font-medium py-2 px-3 rounded-md text-xs opacity-75 flex items-center justify-center gap-2 cursor-not-allowed">
+                <span>Iniciar sesión con Office 365 (Próximamente)</span>
+              </button>
+            </div>
+            <!-- Copiloto IA Note -->
+            <div class="mt-5 flex gap-2 items-start bg-indigo-50 rounded-md p-3 border border-indigo-100 text-left">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-none"></span>
+              <p class="text-[11px] text-indigo-900 leading-relaxed"><b>Copiloto activo:</b> al ingresar, Gestia prioriza automáticamente las 2 OTs con riesgo de incumplimiento de SLA esta semana.</p>
+            </div>
+            <button class="w-full text-center mt-4 inline-flex items-center gap-1 justify-center text-slate-500 hover:text-slate-800 text-xs font-medium py-1.5">
+              <i data-lucide="users" style="width:12px;height:12px"></i><span>¿Solo exploras? Ver usuarios de prueba disponibles ↓</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="text-[10px] font-mono uppercase tracking-wide text-slate-400 mt-2 max-w-[390px] text-center">Marca GESTIA no visible · sensación de "login distinto vs escritorio"</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- OPCIÓN B — VERSIÓN PROPUESTA (panel marca compacto arriba)   -->
+<!-- ============================================================ -->
+<div class="flex flex-col items-center">
+  <h3 class="text-sm font-bold text-emerald-700 font-display mb-3">B · Propuesta (marca compacta arriba) ✅ recomendado</h3>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-scroll">
+      <div class="min-h-full flex items-center justify-center p-5 relative overflow-hidden">
+        <!-- Aurora blur fondo -->
+        <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <span class="absolute w-[320px] h-[320px] rounded-full bg-[#BDEBDC] opacity-35 -top-[100px] -left-[80px]" style="filter:blur(70px)"></span>
+          <span class="absolute w-[280px] h-[280px] rounded-full bg-[#D6D6F7] opacity-35 -bottom-[120px] -right-[60px]" style="filter:blur(70px)"></span>
+        </div>
+
+        <div class="relative z-10 w-full flex flex-col gap-3 my-auto">
+
+          <!-- NUEVO: Panel de marca compacto mobile (visible solo <md) -->
+          <div class="bg-gradient-to-br from-teal-deep to-[#12806A] text-white rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden shadow-lg select-none">
+            <!-- Brand row -->
+            <div class="flex items-center gap-2.5">
+              <svg class="w-7 h-7 shrink-0" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="19" stroke="#8FF0D2" stroke-width="1.4" opacity="0.6"/>
+                <path d="M12 22 L17 14 L21 24 L25 16 L29 22" stroke="#8FF0D2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <div class="leading-tight">
+                <h1 class="font-display font-semibold text-base tracking-[0.4px]">GESTIA</h1>
+                <small class="block text-[8.5px] text-[#BFE6DB] tracking-[1px] uppercase font-normal">Gestión inteligente de servicios de campo</small>
+              </div>
+            </div>
+            <!-- Mini waveform (misma liezo del desktop) -->
+            <svg viewBox="0 0 320 28" preserveAspectRatio="none" class="w-full h-7">
+              <path class="wave" stroke="#8FF0D2" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(143,240,210,0.6))" d="M0 14 L80 14 L96 4 L112 24 L124 14 L320 14"/>
+              <circle cx="112" cy="24" r="3" fill="#8FF0D2"/>
+            </svg>
+            <!-- Tagline compacta (versión corta del slogan desktop) -->
+            <h2 class="font-display font-semibold text-[15px] leading-tight tracking-tight text-white">
+              Tu pulso operativo en tiempo real.
+            </h2>
+            <!-- Stats compactas (3) -->
+            <div class="flex gap-4 pt-1">
+              <div class="space-y-0.5">
+                <b class="font-mono text-sm font-medium block">23.0</b>
+                <span class="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">días ciclo</span>
+              </div>
+              <div class="space-y-0.5">
+                <b class="font-mono text-sm font-medium block">99.4%</b>
+                <span class="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">uptime</span>
+              </div>
+              <div class="space-y-0.5">
+                <b class="font-mono text-sm font-medium block">+120</b>
+                <span class="text-[8.5px] text-[#A9DCCC] uppercase tracking-wide">técnicos</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card formulario -->
+          <div class="bg-white rounded-2xl overflow-hidden shadow-[0_20px_50px_-20px_rgba(11,59,52,0.2)] border border-slate-200">
+            <div class="p-6 flex flex-col justify-center">
+              <div class="mb-4 text-left">
+                <h2 class="font-display text-lg font-semibold tracking-tight text-slate-900">Bienvenido de nuevo</h2>
+                <p class="text-xs text-slate-500 mt-1">Ingresa tus credenciales para acceder.</p>
+              </div>
+              <div class="space-y-3 text-left">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-semibold uppercase text-slate-500 tracking-wider">Correo electrónico</label>
+                  <input type="text" placeholder="nombre@gestia.com" class="w-full bg-slate-50 border border-slate-200 rounded-md py-2.5 px-3 text-sm focus:outline-none focus:border-emerald-500 transition-all"/>
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-semibold uppercase text-slate-500 tracking-wider">Contraseña</label>
+                  <div class="relative">
+                    <input type="password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-md py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:border-emerald-500 transition-all"/>
+                    <i data-lucide="eye-off" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" style="width:15px;height:15px"></i>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between pt-1 pb-2 text-xs">
+                  <label class="flex items-center gap-1.5 text-slate-500 cursor-pointer">
+                    <input type="checkbox" class="w-3.5 h-3.5 accent-emerald-600 rounded"/>
+                    <span>Recordarme</span>
+                  </label>
+                  <a class="text-emerald-800 font-semibold hover:underline">¿Olvidaste tu contraseña?</a>
+                </div>
+                <button class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-semibold py-2.5 px-3 rounded-md text-sm flex items-center justify-center gap-2">
+                  <i data-lucide="log-in" style="width:14px;height:14px"></i><span>Acceder al sistema</span>
+                </button>
+                <div class="flex items-center gap-2 py-1 text-slate-400 text-xs justify-center">
+                  <span class="w-8 h-px bg-slate-200"></span><span>o continúa con</span><span class="w-8 h-px bg-slate-200"></span>
+                </div>
+                <button class="w-full bg-white text-slate-500 border border-slate-200 font-medium py-2 px-3 rounded-md text-xs opacity-75 flex items-center justify-center gap-2 cursor-not-allowed">
+                  <span>Iniciar sesión con Office 365 (Próximamente)</span>
+                </button>
+              </div>
+              <!-- Copiloto IA Note -->
+              <div class="mt-4 flex gap-2 items-start bg-indigo-50 rounded-md p-2.5 border border-indigo-100 text-left">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-none"></span>
+                <p class="text-[10.5px] text-indigo-900 leading-relaxed"><b>Copiloto activo:</b> al ingresar, Gestia prioriza automáticamente las 2 OTs con riesgo de incumplimiento de SLA esta semana.</p>
+              </div>
+              <button class="w-full text-center mt-3 inline-flex items-center gap-1 justify-center text-slate-500 hover:text-slate-800 text-xs font-medium py-1.5">
+                <i data-lucide="users" style="width:12px;height:12px"></i><span>¿Solo exploras? Ver usuarios de prueba disponibles ↓</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="text-[10px] font-mono uppercase tracking-wide text-emerald-700 mt-2 max-w-[390px] text-center">Marca GESTIA visible · coherencia con escritorio · sin "login distinto"</p>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- DISEÑO TÉCNICO — NOTAS PARA IMPLEMENTACIÓN                    -->
+<!-- ============================================================ -->
+<div class="max-w-4xl mx-auto mt-8 p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
+  <h3 class="font-display font-bold text-sm text-slate-900 mb-3">Cómo se implementa en LoginView.tsx</h3>
+  <ul class="text-xs text-slate-700 space-y-1.5 font-mono">
+    <li>• <b>Stage container</b> actual (L107): <code>grid grid-cols-1 md:grid-cols-[1.05fr_1fr]</code> → SE MANTIENE</li>
+    <li>• <b>Panel izquierdo</b> (L110-157): se mantiene <code>hidden md:flex</code> (escritorio sin cambios)</li>
+    <li>• <b>NUEVO bloque mobile</b>: insertar después de L107 (stage container), hermano del panel izquierdo <code>hidden</code></li>
+    <li>• <b>Clase</b>: <code>md:hidden</code> + <code>bg-gradient-to-br from-teal-deep to-[#12806A] text-white rounded-2xl p-5 flex flex-col gap-4 mb-3</code></li>
+    <li>• <b>Quitar</b> el logo mini PNG actual (L162-165) <code>flex md:hidden</code> — se reemplaza por el panel de marca nuevo</li>
+    <li>• <b>Waveform</b>: SVG inline escalado (viewBox 0 0 320 28, h-7) — mismo patrón del desktop pero más chico</li>
+    <li>• <b>Stats</b>: 3 columnas (gap-4), mismo data del desktop (23.0 días / 99.4% / +120 técnicos) en font-mono text-sm</li>
+    <li>• <b>Tagline</b>: "Tu pulso operativo en tiempo real." (versión corta del slogan desktop "Cada equipo, cada visita, cada SLA...")</li>
+    <li>• <b>Sin emojis</b>, sin hex crudos nuevos (usa tokens teal-deep, teal-brand) — cumple regla AGENTS.md</li>
+    <li>• <b>Typecheck</b>: tsc --noEmit limpio</li>
+  </ul>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
