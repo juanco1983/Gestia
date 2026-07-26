@@ -819,6 +819,12 @@ async function processReportPhotos(report: any): Promise<{ report: any; uploaded
       clonedReport.firmaCliente = s3Url;
     }
 
+    if (typeof clonedReport.panoramaFoto === "string" && clonedReport.panoramaFoto.startsWith("data:image/")) {
+      const s3Url = await uploadBase64ToS3(clonedReport.panoramaFoto, otId, "panorama");
+      uploadedUrls.push(s3Url);
+      clonedReport.panoramaFoto = s3Url;
+    }
+
     return { report: clonedReport, uploadedUrls };
   } catch (err) {
     for (const url of uploadedUrls) {
