@@ -7,6 +7,7 @@ import DocumentFormat from './DocumentFormat';
 interface WizardInformeProps {
   ot: OT;
   client: Client;
+  equipoId?: string;
   initialReport?: TechnicalReport;
   onComplete: (report: TechnicalReport) => void;
   onDraftChange?: (report: Partial<TechnicalReport>) => void;
@@ -31,7 +32,7 @@ const STEPS: WizardStep[] = [
   { num: 10, label: 'Revisión Final y Vista Previa PDF' },
 ];
 
-export default function WizardInforme({ ot, client, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
+export default function WizardInforme({ ot, client, equipoId, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
   const defaults = useMemo(() => {
     if (initialReport) return initialReport;
     return generateDefaultReport(ot, client);
@@ -175,7 +176,7 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
       otId: ot.id,
       tipoServicio,
       horaFin: horaFin || undefined,
-      equipoId: ot.equipoId || undefined,
+      equipoId: equipoId || ot.equipoId || undefined,
       voltajeEntrada: parseFloat(medicionesEntrada.lnVoltaje[0]) || 220,
       voltajeSalida: parseFloat(medicionesSalida.lnVoltaje[0]) || 220,
       indicadoresBateria: {

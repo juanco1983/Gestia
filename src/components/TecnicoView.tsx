@@ -942,6 +942,7 @@ export default function TecnicoView({
               <WizardInforme
                 ot={selectedOt}
                 client={clientForWizard}
+                equipoId={selectedEquipoId || undefined}
                 initialReport={undefined}
                 onComplete={handleWizardComplete}
                 onCancel={() => setIsEditingReport(false)}
