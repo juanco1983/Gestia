@@ -90,7 +90,7 @@ export default function PaginaInformeTecnico({ report, ot, client, pageNum }: Pa
           <div className="space-y-2">
             {pasosLista.map((paso, idx) => (
               <div key={idx} className="bg-slate-50/50 p-2 border border-slate-200 rounded">
-                <span className="font-extrabold text-indigo-700 block text-[8px] font-mono select-none">PASO N{idx + 1}: {paso.titulo || ''}</span>
+                <span className="font-extrabold text-indigo-700 block text-[8px] font-mono select-none">PASO N{idx + 1}: {(paso as any).titulo || ''}</span>
                 <p className="text-slate-600 mt-0.5 text-[8px] leading-snug">{paso.descripcion}</p>
               </div>
             ))}

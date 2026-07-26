@@ -62,12 +62,21 @@ export default function SupervisorView({
 
   // Retrieve current report associated with selected OT and equipo
   const getAssociatedReport = (otId: string, equipoId?: string) => {
+    if (!otId) return undefined;
+    const cleanOtId = otId.trim().toUpperCase();
+    const matchesOt = (r: TechnicalReport) => Boolean(r.otId && r.otId.trim().toUpperCase() === cleanOtId);
+
     if (equipoId) {
-      const exact = reports.find(r => r.otId === otId && r.equipoId === equipoId);
+      const cleanEqId = equipoId.trim().toUpperCase();
+      const exact = reports.find(r => matchesOt(r) && r.equipoId && r.equipoId.trim().toUpperCase() === cleanEqId);
       if (exact) return exact;
-      return reports.find(r => r.otId === otId && r.equipoId && r.equipoId.split(',').map(x => x.trim()).includes(equipoId));
+
+      const partial = reports.find(r => matchesOt(r) && r.equipoId && r.equipoId.split(',').map(x => x.trim().toUpperCase()).includes(cleanEqId));
+      if (partial) return partial;
     }
-    return reports.find(r => r.otId === otId);
+
+    // Guaranteed fallback: return any report registered for this OT
+    return reports.find(r => matchesOt(r));
   };
 
   const handleSelectOt = (ot: OT) => {

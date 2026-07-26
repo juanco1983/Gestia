@@ -769,7 +769,7 @@ export default function App() {
 
   const handleAddReport = async (newReport: TechnicalReport) => {
     setReports(prev => {
-      const filtered = prev.filter(r => r.otId !== newReport.otId);
+      const filtered = prev.filter(r => !(r.otId === newReport.otId && (newReport.equipoId ? r.equipoId === newReport.equipoId : true)));
       return [...filtered, newReport];
     });
     try {
@@ -786,7 +786,7 @@ export default function App() {
     if (!isOnline) {
       setOfflineQueue([...offlineQueue, report]);
       setReports(prev => {
-        const filtered = prev.filter(r => r.otId !== report.otId);
+        const filtered = prev.filter(r => !(r.otId === report.otId && (report.equipoId ? r.equipoId === report.equipoId : true)));
         return [...filtered, report];
       });
     } else {
@@ -1624,7 +1624,13 @@ export default function App() {
                   reports={[...reports, ...offlineQueue]}
                   onUpdateOtStatus={handleUpdateOtStatus}
                   onUpdateReport={(updatedRep) => {
-                    setReports(prev => prev.map(r => r.id === updatedRep.id ? updatedRep : r));
+                    setReports(prev => {
+                      const exists = prev.some(r => r.id === updatedRep.id || (r.otId === updatedRep.otId && r.equipoId === updatedRep.equipoId));
+                      if (exists) {
+                        return prev.map(r => (r.id === updatedRep.id || (r.otId === updatedRep.otId && r.equipoId === updatedRep.equipoId)) ? updatedRep : r);
+                      }
+                      return [...prev, updatedRep];
+                    });
                   }}
                   otEquipoAsignaciones={otEquipoAsignaciones}
                 />

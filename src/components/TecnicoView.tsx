@@ -446,7 +446,14 @@ export default function TecnicoView({
     setDraftLoadedMessage(null);
     
     // Check if there is an existing report in the global state (submitted before)
-    const existingReport = reports.find(r => r.otId === ot.id && (!currentEquipoId || r.equipoId === currentEquipoId));
+    const cleanOtId = ot.id.trim().toUpperCase();
+    const existingReport = reports.find(r => 
+      r.otId && r.otId.trim().toUpperCase() === cleanOtId && (
+        !currentEquipoId || 
+        (r.equipoId && r.equipoId.trim().toUpperCase() === currentEquipoId.trim().toUpperCase()) ||
+        (r.equipoId && r.equipoId.split(',').map(x => x.trim().toUpperCase()).includes(currentEquipoId.trim().toUpperCase()))
+      )
+    ) || reports.find(r => r.otId && r.otId.trim().toUpperCase() === cleanOtId);
     if (existingReport) {
       setInformeN(existingReport.informeN || '');
       setHojaServicioN(existingReport.hojaServicioN || '');
