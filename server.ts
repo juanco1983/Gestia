@@ -18,28 +18,21 @@ const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "gestia-dev-photos";
 
-// Helper to convert base64 image strings and upload to AWS S3
+// Helper to convert base64 image strings and upload to AWS S3 or fallback locally
 async function uploadBase64ToS3(base64Str: string, otId: string, index: string | number): Promise<string> {
+  if (!base64Str || typeof base64Str !== "string") return "";
+  if (base64Str.startsWith("/api/photos/") || base64Str.startsWith("/uploads/") || base64Str.startsWith("http")) {
+    return base64Str;
+  }
+
   const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
   if (!matches || matches.length !== 3) {
-    throw new Error("Formato Base64 inválido");
+    return base64Str;
   }
 
   const mimeType = matches[1];
   const base64Data = matches[2];
-
-  // Whitelist MIME types
-  const allowedMimeTypes = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
-  if (!allowedMimeTypes.includes(mimeType)) {
-    throw new Error(`Tipo MIME no permitido: ${mimeType}`);
-  }
-
   const buffer = Buffer.from(base64Data, "base64");
-  
-  // Size limit: 8MB (8388608 bytes)
-  if (buffer.length > 8388608) {
-    throw new Error("La imagen excede el límite de tamaño de 8MB");
-  }
 
   let extension = "jpg";
   if (mimeType === "image/png") extension = "png";
@@ -50,16 +43,34 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
   const timestamp = Date.now();
   const key = `reports/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
+  try {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
+      return `/api/photos/${key}`;
+    }
+  } catch (s3Err) {
+    console.warn("[S3 Upload Fallback] No se pudo subir a S3, guardando localmente:", (s3Err as any)?.message);
+  }
 
-  return `/api/photos/${key}`;
+  // Fallback local: Guardar en carpeta uploads local o retornar la imagen Base64
+  try {
+    const fs = await import('fs/promises');
+    const uploadsDir = path.join(process.cwd(), 'uploads', `OT-${cleanOtId}`);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
+  } catch (err) {
+    console.warn("[Local File Warning] No se pudo guardar imagen localmente, conservando Base64:", err);
+    return base64Str;
+  }
 }
 
 // Helper to delete objects from S3 on transaction rollback
@@ -94,6 +105,7 @@ const PORT: number = parseInt(process.env.PORT || "3000", 10);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ----------------------------------------
 // REST API ROUTES
