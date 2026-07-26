@@ -872,8 +872,18 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                       </div>
                     )
                   ) : (
-                    <div className="p-8 text-center text-slate-500 text-xs font-mono">
-                      La data del reporte es ilegible o el técnico aún no inicia el cuestionario.
+                    <div className="p-8 text-center text-slate-500 text-xs font-mono space-y-2">
+                      <div>La data del reporte es ilegible o el técnico aún no inicia el cuestionario.</div>
+                      <div className="text-[10px] text-slate-400 bg-slate-50 p-3 rounded text-left">
+                        <div>OT buscada: <strong>{selectedOt.id}</strong></div>
+                        <div>Equipo ID: <strong>{selectedEquipoId || '(sin equipo)'}</strong></div>
+                        <div>Reportes disponibles: <strong>{reports.length}</strong></div>
+                        {reports.slice(0, 5).map((r, i) => (
+                          <div key={i} className="text-[9px] text-slate-500">
+                            #{i}: otId={r.otId} equipoId={r.equipoId || '(none)'} fotos={r.fotos?.length || 0} fotosLabeled={r.fotosLabeled?.length || 0}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
