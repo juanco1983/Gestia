@@ -63,7 +63,9 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
 
   const [photoPreviewStep, setPhotoPreviewStep] = useState<'capture' | 'label'>('capture');
   const [capturedPhotos, setCapturedPhotos] = useState<{ dataUrl: string; assigned: boolean }[]>([]);
+  const [pdfPreviewPage, setPdfPreviewPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const compiledReport = useMemo(() => buildCompiledReport(), [buildCompiledReport]);
 
   const template = getTemplate(tipoServicio);
   const totalFotos = getPhotoSlotsForTipo(tipoServicio, ot.potenciaKva);
@@ -757,9 +759,6 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
   };
 
   const renderPaso10 = () => {
-    const compiledReport = buildCompiledReport();
-    const [pdfPage, setPdfPage] = useState(0);
-
     const pdfPages = [
       { label: 'Portada', id: 0 },
       { label: 'Informe Técnico', id: 1 },
@@ -813,9 +812,9 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setPdfPage(p.id)}
+                      onClick={() => setPdfPreviewPage(p.id)}
                       className={`px-2 py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
-                        pdfPage === p.id ? 'bg-teal-50 border border-teal-200 text-teal-700' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                        pdfPreviewPage === p.id ? 'bg-teal-50 border border-teal-200 text-teal-700' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                       }`}
                     >
                       {p.label}
@@ -823,7 +822,7 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
                   ))}
                 </div>
               </div>
-              <div className="bg-slate-100 p-3 flex justify-center">
+              <div className="bg-slate-100 p-3 flex justify-center overflow-auto max-h-[600px]">
                 <DocumentFormat report={compiledReport} ot={ot} client={client} />
               </div>
             </div>
