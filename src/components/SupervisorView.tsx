@@ -721,9 +721,9 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                             <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-150">
                               <span className="text-slate-400 block font-mono text-[9px] uppercase">Bypass Estado</span>
                               <strong className={`text-xs block mt-1 font-mono uppercase ${
-                                report.indicadoresBateria.bypassActivo ? 'text-amber-600 font-bold' : 'text-emerald-600'
+                                report.indicadoresBateria?.bypassActivo ? 'text-amber-600 font-bold' : 'text-emerald-600'
                               }`}>
-                                {report.indicadoresBateria.bypassActivo ? 'ACTIVO (BYPASS)' : 'OPERANDO EN INVERSOR'}
+                                {report.indicadoresBateria?.bypassActivo ? 'ACTIVO (BYPASS)' : 'OPERANDO EN INVERSOR'}
                               </strong>
                             </div>
                           </div>
@@ -734,18 +734,46 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                           <h4 className="text-xs font-extrabold text-slate-800 uppercase font-sans">REGISTRO FOTOGRÁFICO DE CONFORMIDAD:</h4>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-sans">
-                            {report.fotosLabeled && report.fotosLabeled.map((slot, idx) => (
-                              <div key={idx} className="border border-slate-200 bg-white p-1 rounded font-sans">
-                                {slot.base64 ? (
-                                  <img src={slot.base64} alt={slot.slotName} className="w-full h-16 object-cover rounded" />
-                                ) : (
-                                  <div className="w-full h-16 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">Sin foto</div>
-                                )}
-                                <span className="text-[7.5px] font-mono text-center block text-slate-500 uppercase mt-1 truncate px-0.5 select-none" title={slot.slotName}>
-                                  {idx+1}. {slot.slotName}
-                                </span>
-                              </div>
-                            ))}
+                            {(() => {
+                              const displayPhotos: { name: string; url: string }[] = [];
+                              if (Array.isArray(report.fotosLabeled) && report.fotosLabeled.length > 0) {
+                                report.fotosLabeled.forEach((slot, idx) => {
+                                  const fallbackUrl = Array.isArray(report.fotos) ? report.fotos[idx] : '';
+                                  displayPhotos.push({
+                                    name: slot.slotName || `Foto ${idx + 1}`,
+                                    url: slot.base64 || (typeof fallbackUrl === 'string' ? fallbackUrl : '')
+                                  });
+                                });
+                              } else if (Array.isArray(report.fotos) && report.fotos.length > 0) {
+                                report.fotos.forEach((imgUrl, idx) => {
+                                  displayPhotos.push({
+                                    name: `Fotografía de Campo ${idx + 1}`,
+                                    url: typeof imgUrl === 'string' ? imgUrl : ''
+                                  });
+                                });
+                              }
+
+                              if (displayPhotos.length === 0) {
+                                return (
+                                  <div className="col-span-full p-4 bg-white border border-slate-200 rounded-lg text-center text-slate-400 text-xs font-mono">
+                                    No hay registros fotográficos adjuntos a este informe.
+                                  </div>
+                                );
+                              }
+
+                              return displayPhotos.map((photo, idx) => (
+                                <div key={idx} className="border border-slate-200 bg-white p-1 rounded font-sans">
+                                  {photo.url ? (
+                                    <img src={photo.url} alt={photo.name} className="w-full h-20 object-cover rounded" />
+                                  ) : (
+                                    <div className="w-full h-20 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400 font-mono">Sin foto</div>
+                                  )}
+                                  <span className="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5 select-none" title={photo.name}>
+                                    {idx + 1}. {photo.name}
+                                  </span>
+                                </div>
+                              ));
+                            })()}
                           </div>
                         </div>
 

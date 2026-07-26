@@ -10,9 +10,14 @@ interface PaginaMedicionesElectricasProps {
   pageNum?: number;
 }
 
-function MedTable({ title, data }: { title: string; data?: { lnVoltaje: [string, string, string]; lnIntensidad?: [string, string, string]; frecuencia: [string, string, string]; llVoltaje: [string, string, string] } }) {
+function MedTable({ title, data }: { title: string; data?: any }) {
   if (!data) return null;
-  const isTrifasico = data.lnVoltaje[0] !== data.lnVoltaje[1] || data.lnVoltaje[0] !== data.lnVoltaje[2] || data.lnVoltaje.some(v => v !== data.lnVoltaje[0]);
+  const lnVolt = Array.isArray(data.lnVoltaje) ? data.lnVoltaje : [data.lnVoltaje || '220', '220', '220'];
+  const lnInt = Array.isArray(data.lnIntensidad) ? data.lnIntensidad : undefined;
+  const freq = Array.isArray(data.frecuencia) ? data.frecuencia : [data.frecuencia || '60', '60', '60'];
+  const llVolt = Array.isArray(data.llVoltaje) ? data.llVoltaje : undefined;
+
+  const isTrifasico = Boolean(lnVolt[0] && (lnVolt[0] !== lnVolt[1] || lnVolt[0] !== lnVolt[2]));
   return (
     <div>
       <h3 className="font-bold text-slate-700 uppercase text-[8px] mb-1 text-center">{title}</h3>
@@ -28,10 +33,29 @@ function MedTable({ title, data }: { title: string; data?: { lnVoltaje: [string,
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Voltaje (VAC)</td><td className="p-1 text-center font-mono" colSpan={isTrifasico ? 1 : undefined}>{data.lnVoltaje[0]}</td>{isTrifasico && <><td className="p-1 text-center font-mono">{data.lnVoltaje[1]}</td><td className="p-1 text-center font-mono">{data.lnVoltaje[2]}</td></>}</tr>
-          {data.lnIntensidad && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Intensidad (A)</td><td className="p-1 text-center font-mono">{data.lnIntensidad[0]}</td>{isTrifasico && <><td className="p-1 text-center font-mono">{data.lnIntensidad[1]}</td><td className="p-1 text-center font-mono">{data.lnIntensidad[2]}</td></>}</tr>}
-          <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Frecuencia (Hz)</td><td className="p-1 text-center font-mono" colSpan={isTrifasico ? 3 : 1}>{data.frecuencia[0]}</td></tr>
-          <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-L Voltaje (VAC)</td><td className="p-1 text-center font-mono">{data.llVoltaje[0]}</td>{isTrifasico && <><td className="p-1 text-center font-mono">{data.llVoltaje[1]}</td><td className="p-1 text-center font-mono">{data.llVoltaje[2]}</td></>}</tr>
+          <tr className="border-b border-slate-200">
+            <td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Voltaje (VAC)</td>
+            <td className="p-1 text-center font-mono" colSpan={isTrifasico ? 1 : undefined}>{lnVolt[0] ?? '220'}</td>
+            {isTrifasico && <><td className="p-1 text-center font-mono">{lnVolt[1] ?? '220'}</td><td className="p-1 text-center font-mono">{lnVolt[2] ?? '220'}</td></>}
+          </tr>
+          {lnInt && (
+            <tr className="border-b border-slate-200">
+              <td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Intensidad (A)</td>
+              <td className="p-1 text-center font-mono">{lnInt[0] ?? '-'}</td>
+              {isTrifasico && <><td className="p-1 text-center font-mono">{lnInt[1] ?? '-'}</td><td className="p-1 text-center font-mono">{lnInt[2] ?? '-'}</td></>}
+            </tr>
+          )}
+          <tr className="border-b border-slate-200">
+            <td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Frecuencia (Hz)</td>
+            <td className="p-1 text-center font-mono" colSpan={isTrifasico ? 3 : 1}>{freq[0] ?? '60'}</td>
+          </tr>
+          {llVolt && (
+            <tr className="border-b border-slate-200">
+              <td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-L Voltaje (VAC)</td>
+              <td className="p-1 text-center font-mono">{llVolt[0] ?? '-'}</td>
+              {isTrifasico && <><td className="p-1 text-center font-mono">{llVolt[1] ?? '-'}</td><td className="p-1 text-center font-mono">{llVolt[2] ?? '-'}</td></>}
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
@@ -66,9 +90,9 @@ export default function PaginaMedicionesElectricas({ report, ot, client, pageNum
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Voltaje (VAC)</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje[0]}</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje[1]}</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje[2]}</td></tr>
-                  <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Frecuencia (Hz)</td><td className="p-1 text-center font-mono" colSpan={3}>{medBypass.frecuencia[0]}</td></tr>
-                  <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-L Voltaje (VAC)</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje[0]}</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje[1]}</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje[2]}</td></tr>
+                  <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-N Voltaje (VAC)</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{medBypass.lnVoltaje?.[2] ?? '-'}</td></tr>
+                  <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Frecuencia (Hz)</td><td className="p-1 text-center font-mono" colSpan={3}>{medBypass.frecuencia?.[0] ?? '-'}</td></tr>
+                  {medBypass.llVoltaje && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">L-L Voltaje (VAC)</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{medBypass.llVoltaje?.[2] ?? '-'}</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -88,11 +112,11 @@ export default function PaginaMedicionesElectricas({ report, ot, client, pageNum
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KVA</td><td className="p-1 text-center font-mono">{carga.kva[0]}</td><td className="p-1 text-center font-mono">{carga.kva[1]}</td><td className="p-1 text-center font-mono">{carga.kva[2]}</td></tr>
-                <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KW</td><td className="p-1 text-center font-mono">{carga.kw[0]}</td><td className="p-1 text-center font-mono">{carga.kw[1]}</td><td className="p-1 text-center font-mono">{carga.kw[2]}</td></tr>
-                <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">% Carga</td><td className="p-1 text-center font-mono">{carga.porcentaje[0]}</td><td className="p-1 text-center font-mono">{carga.porcentaje[1]}</td><td className="p-1 text-center font-mono">{carga.porcentaje[2]}</td></tr>
-                {carga.kvar && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KVAR</td><td className="p-1 text-center font-mono">{carga.kvar[0]}</td><td className="p-1 text-center font-mono">{carga.kvar[1]}</td><td className="p-1 text-center font-mono">{carga.kvar[2]}</td></tr>}
-                {carga.factorCresta && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Factor Cresta</td><td className="p-1 text-center font-mono">{carga.factorCresta[0]}</td><td className="p-1 text-center font-mono">{carga.factorCresta[1]}</td><td className="p-1 text-center font-mono">{carga.factorCresta[2]}</td></tr>}
+                {carga.kva && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KVA</td><td className="p-1 text-center font-mono">{carga.kva?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kva?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kva?.[2] ?? '-'}</td></tr>}
+                {carga.kw && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KW</td><td className="p-1 text-center font-mono">{carga.kw?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kw?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kw?.[2] ?? '-'}</td></tr>}
+                {carga.porcentaje && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">% Carga</td><td className="p-1 text-center font-mono">{carga.porcentaje?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.porcentaje?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.porcentaje?.[2] ?? '-'}</td></tr>}
+                {carga.kvar && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">KVAR</td><td className="p-1 text-center font-mono">{carga.kvar?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kvar?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.kvar?.[2] ?? '-'}</td></tr>}
+                {carga.factorCresta && <tr className="border-b border-slate-200"><td className="p-1 border-r border-slate-200 text-slate-500 font-mono">Factor Cresta</td><td className="p-1 text-center font-mono">{carga.factorCresta?.[0] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.factorCresta?.[1] ?? '-'}</td><td className="p-1 text-center font-mono">{carga.factorCresta?.[2] ?? '-'}</td></tr>}
               </tbody>
             </table>
           </div>
