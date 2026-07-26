@@ -40,6 +40,7 @@ import {
 } from '../utils/reportDefaults';
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
 import WizardInforme from './WizardInforme';
+import ErrorBoundary from './shared/ErrorBoundary';
 
 interface TecnicoViewProps {
   ots: OT[];
@@ -820,20 +821,25 @@ export default function TecnicoView({
   };
 
   const handleWizardComplete = (report: TechnicalReport) => {
-    if (!selectedOt) return;
-    if (!isOnline) {
-      report.offlineDirty = true;
-      onSaveReportOffline(report);
-      onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
-      notifyOffline('Reporte Cacheado Localmente', 'El wizard ha encolado este reporte. Al reconectarse, subirá automáticamente.');
-    } else {
-      onSaveReportOffline(report);
-      onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
-      notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
+    try {
+      if (!selectedOt) return;
+      if (!isOnline) {
+        report.offlineDirty = true;
+        onSaveReportOffline(report);
+        onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
+        notifyOffline('Reporte Cacheado Localmente', 'El wizard ha encolado este reporte. Al reconectarse, subirá automáticamente.');
+      } else {
+        onSaveReportOffline(report);
+        onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
+        notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
+      }
+      localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+      setSelectedOt(null);
+      setIsEditingReport(false);
+    } catch (err) {
+      console.error('handleWizardComplete error:', err);
+      notifyError('Error al Enviar', `Ocurrió un error: ${err instanceof Error ? err.message : 'Desconocido'}`);
     }
-    localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
-    setSelectedOt(null);
-    setIsEditingReport(false);
   };
 
   const clientForWizard = useMemo(() => {
@@ -842,6 +848,7 @@ export default function TecnicoView({
   }, [selectedOt, clients]);
 
   return (
+    <ErrorBoundary>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans text-slate-800" id="tecnico-portal-container">
       
       {/* List of Scheduled Tasks/OTs */}
@@ -938,6 +945,7 @@ export default function TecnicoView({
                 initialReport={undefined}
                 onComplete={handleWizardComplete}
                 onCancel={() => setIsEditingReport(false)}
+                onDraftChange={() => notifySuccess('Borrador Guardado', 'Puedes continuar después. El progreso se guardó en este navegador.')}
               />
             </div>
           ) : (
@@ -2359,5 +2367,6 @@ export default function TecnicoView({
       {toastView}
       {confirmView}
     </div>
+    </ErrorBoundary>
   );
 }

@@ -65,7 +65,69 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
   const [capturedPhotos, setCapturedPhotos] = useState<{ dataUrl: string; assigned: boolean }[]>([]);
   const [pdfPreviewPage, setPdfPreviewPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const compiledReport = useMemo(() => buildCompiledReport(), [buildCompiledReport]);
+  const [draftMsg, setDraftMsg] = useState('');
+
+  const DRAFT_KEY = `mafort_wizard_draft_${ot.id}`;
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        setCurrentStep(draft.currentStep || 1);
+        setCompletedSteps(new Set(draft.completedSteps || []));
+        setSkippedSteps(new Set(draft.skippedSteps || []));
+        if (draft.tipoServicio) setTipoServicio(draft.tipoServicio);
+        if (draft.informeN) setInformeN(draft.informeN);
+        if (draft.hojaServicioN) setHojaServicioN(draft.hojaServicioN);
+        if (draft.fechaServicio) setFechaServicio(draft.fechaServicio);
+        if (draft.horaInicio) setHoraInicio(draft.horaInicio);
+        if (draft.horaFin) setHoraFin(draft.horaFin);
+        if (draft.tecnico1) setTecnico1(draft.tecnico1);
+        if (draft.tecnico2) setTecnico2(draft.tecnico2);
+        if (draft.antecedentes) setAntecedentes(draft.antecedentes);
+        if (draft.accionesRealizadas) setAccionesRealizadas(draft.accionesRealizadas);
+        if (draft.pasosLista) setPasosLista(draft.pasosLista);
+        if (draft.caracteristicas) setCaracteristicas(draft.caracteristicas);
+        if (draft.medicionesEntrada) setMedicionesEntrada(draft.medicionesEntrada);
+        if (draft.medicionesSalida) setMedicionesSalida(draft.medicionesSalida);
+        if (draft.diagnostico) setDiagnostico(draft.diagnostico);
+        if (draft.recomendaciones) setRecomendaciones(draft.recomendaciones);
+        if (draft.fotosLabeled) setFotosLabeled(draft.fotosLabeled);
+        if (draft.panoramaFoto) setPanoramaFoto(draft.panoramaFoto);
+        if (draft.observaciones) setObservaciones(draft.observaciones);
+        if (draft.capturedPhotos) setCapturedPhotos(draft.capturedPhotos);
+        setDraftMsg('Borrador restaurado correctamente');
+      }
+    } catch (e) {
+      console.warn('Error loading wizard draft:', e);
+    }
+  }, []);
+
+  const handleSaveDraft = useCallback(() => {
+    try {
+      const draft = {
+        currentStep,
+        completedSteps: [...completedSteps],
+        skippedSteps: [...skippedSteps],
+        tipoServicio,
+        informeN, hojaServicioN, fechaServicio, horaInicio, horaFin,
+        tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista,
+        caracteristicas, medicionesEntrada, medicionesSalida,
+        diagnostico, recomendaciones, fotosLabeled, panoramaFoto, observaciones,
+        photoPreviewStep, capturedPhotos,
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      setDraftMsg('Borrador guardado');
+      if (onDraftChange) {
+        const partial: Partial<TechnicalReport> = { informeN, hojaServicioN, fechaServicio, horaInicio, horaFin, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, medicionesEntrada, medicionesSalida, observacionesDiagnostico: diagnostico, recomendaciones, fotosLabeled, panoramaFoto, comentariosAdicionales: observaciones };
+        onDraftChange(partial);
+      }
+    } catch (e) {
+      console.warn('Error saving wizard draft:', e);
+      setDraftMsg('Error al guardar borrador');
+    }
+  }, [currentStep, completedSteps, skippedSteps, tipoServicio, informeN, hojaServicioN, fechaServicio, horaInicio, horaFin, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, medicionesEntrada, medicionesSalida, diagnostico, recomendaciones, fotosLabeled, panoramaFoto, observaciones, photoPreviewStep, capturedPhotos, onDraftChange]);
 
   const template = getTemplate(tipoServicio);
   const totalFotos = getPhotoSlotsForTipo(tipoServicio, ot.potenciaKva);
@@ -145,10 +207,19 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
     };
   }, [tipoServicio, horaFin, medicionesEntrada, medicionesSalida, diagnostico, observaciones, fotosLabeled, informeN, hojaServicioN, fechaServicio, horaInicio, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, panoramaFoto, recomendaciones]);
 
+  const clearDraft = useCallback(() => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+  }, [DRAFT_KEY]);
+
   const handleSubmit = useCallback(() => {
-    const report = buildCompiledReport();
-    onComplete(report);
-  }, [buildCompiledReport, onComplete]);
+    try {
+      const report = buildCompiledReport();
+      clearDraft();
+      onComplete(report);
+    } catch (err) {
+      console.error('handleSubmit error:', err);
+    }
+  }, [buildCompiledReport, onComplete, clearDraft]);
 
   const totalPhotoSlots = totalFotos;
   const filledPhotos = fotosLabeled.filter(f => f.base64).length;
@@ -759,6 +830,7 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
   };
 
   const renderPaso10 = () => {
+    const compiledReport = buildCompiledReport();
     const pdfPages = [
       { label: 'Portada', id: 0 },
       { label: 'Informe Técnico', id: 1 },
@@ -870,6 +942,7 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-slate-900 text-base font-display">{STEPS[currentStep - 1]?.label}</h2>
             <p className="text-[11px] text-slate-400">Paso {currentStep} de 10</p>
+            {draftMsg && <p className="text-[9px] text-emerald-600 font-medium mt-0.5">{draftMsg}</p>}
           </div>
         </div>
 
@@ -892,6 +965,10 @@ export default function WizardInforme({ ot, client, initialReport, onComplete, o
             )}
           </div>
           <div className="flex gap-2">
+            <button type="button" onClick={handleSaveDraft} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Guardar Borrador
+            </button>
             <button type="button" onClick={onCancel} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-[11px] font-bold rounded-lg transition-all cursor-pointer">
               Cancelar
             </button>
