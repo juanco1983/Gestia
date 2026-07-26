@@ -772,7 +772,14 @@ export default function App() {
 
   const handleAddReport = async (newReport: TechnicalReport) => {
     setReports(prev => {
-      const filtered = prev.filter(r => !(r.otId === newReport.otId && (newReport.equipoId ? r.equipoId === newReport.equipoId : true)));
+      const filtered = prev.filter(r => {
+        if (r.otId !== newReport.otId) return true;
+        const newIds = (newReport.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
+        const oldIds = (r.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
+        if (newIds.length === 0 && oldIds.length === 0) return false;
+        if (newIds.length === 0 || oldIds.length === 0) return true;
+        return !newIds.some(id => oldIds.includes(id));
+      });
       return [...filtered, newReport];
     });
     try {
@@ -789,7 +796,14 @@ export default function App() {
     if (!isOnline) {
       setOfflineQueue([...offlineQueue, report]);
       setReports(prev => {
-        const filtered = prev.filter(r => !(r.otId === report.otId && (report.equipoId ? r.equipoId === report.equipoId : true)));
+        const filtered = prev.filter(r => {
+          if (r.otId !== report.otId) return true;
+          const newIds = (report.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
+          const oldIds = (r.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
+          if (newIds.length === 0 && oldIds.length === 0) return false;
+          if (newIds.length === 0 || oldIds.length === 0) return true;
+          return !newIds.some(id => oldIds.includes(id));
+        });
         return [...filtered, report];
       });
     } else {

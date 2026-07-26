@@ -863,11 +863,11 @@ export default function TecnicoView({
 
   const clientForWizard = useMemo(() => {
     if (!selectedOt) return null;
-    const found = clients.find(c => c.id === selectedOt.clientId || c.razonSocial?.toLowerCase() === selectedOt.clienteNombre?.toLowerCase());
+    const found = clients.find(c => c.id === selectedOt.clientId);
     if (found) return found;
     return {
       id: selectedOt.clientId || 'client_fallback',
-      razonSocial: selectedOt.clienteNombre || 'Cliente General S.A.',
+      razonSocial: 'Cliente General S.A.',
       ruc: '20100123456',
       direccionSede: 'Sede Central',
       distrito: 'Surco, Lima',
