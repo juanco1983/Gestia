@@ -556,7 +556,10 @@ export default function App() {
         if (Array.isArray(clientsRes)) setClients(clientsRes);
         if (Array.isArray(contractsRes)) setContracts(contractsRes);
         if (Array.isArray(otsRes)) setOts(otsRes);
-        if (Array.isArray(reportsRes)) setReports(reportsRes);
+        if (Array.isArray(reportsRes)) {
+          setReports(reportsRes);
+          localStorage.setItem('gestia_reports', JSON.stringify(reportsRes));
+        }
         if (Array.isArray(otLineasRes)) setOrdenesTrabajo(otLineasRes);
         if (Array.isArray(contratosComercialesRes)) setContratosNuevos(contratosComercialesRes);
         if (Array.isArray(targetVentasRes)) setTargetVentas(targetVentasRes);
