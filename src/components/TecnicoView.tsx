@@ -816,15 +816,15 @@ export default function TecnicoView({
       compiledReport.offlineDirty = true;
       onSaveReportOffline(compiledReport);
       onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
-      notifyOffline('Reporte Cacheado Localmente', `El sistema de sincronización offline de Mafort ha encolado este reporte de ${fotosLabeled.length} fotografías de manera segura. Al reconectarse a internet, subirá inmediatamente.`);
+      notifyOffline('Reporte Cacheado Localmente', 'El sistema de sincronización offline de Mafort ha encolado este reporte de manera segura.');
     } else {
       onSaveReportOffline(compiledReport);
       onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
-      notifySuccess('Informe Procesado Exitosamente', 'Se ha estructurado y subido el informe técnico con la numeración oficial en formato doble marco a la nube para aprobación.');
+      notifySuccess('Informe Procesado Exitosamente', 'Se ha estructurado y subido el informe técnico para aprobación.');
     }
 
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
-    setSelectedOt(null);
+    setSelectedOt(prev => prev ? { ...prev, estado: isOnline ? OTStatus.EN_REVISION : OTStatus.TRABAJO_EN_EJECUCION } : null);
     setIsEditingReport(false);
   };
 
@@ -842,7 +842,7 @@ export default function TecnicoView({
         notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
       }
       localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
-      setSelectedOt(null);
+      setSelectedOt(prev => prev ? { ...prev, estado: isOnline ? OTStatus.EN_REVISION : OTStatus.TRABAJO_EN_EJECUCION } : null);
       setIsEditingReport(false);
     } catch (err) {
       console.error('handleWizardComplete error:', err);
@@ -852,7 +852,18 @@ export default function TecnicoView({
 
   const clientForWizard = useMemo(() => {
     if (!selectedOt) return null;
-    return clients.find(c => c.id === selectedOt.clientId) || null;
+    const found = clients.find(c => c.id === selectedOt.clientId || c.razonSocial?.toLowerCase() === selectedOt.clienteNombre?.toLowerCase());
+    if (found) return found;
+    return {
+      id: selectedOt.clientId || 'client_fallback',
+      razonSocial: selectedOt.clienteNombre || 'Cliente General S.A.',
+      ruc: '20100123456',
+      direccionSede: 'Sede Central',
+      distrito: 'Surco, Lima',
+      contactoNombre: 'Representante Logístico',
+      contactoEmail: 'soporte@clientegeneral.pe',
+      contactoTelefono: '999999999'
+    };
   }, [selectedOt, clients]);
 
   return (
@@ -2068,7 +2079,19 @@ export default function TecnicoView({
             <div className="p-6 md:p-8 space-y-6 font-sans animate-fade-in text-left">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingReport(false);
+                      setSelectedOt(null);
+                    }}
+                    className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors border border-slate-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold font-mono"
+                    title="Volver a la lista de Órdenes de Trabajo"
+                  >
+                    <ArrowLeft size={16} />
+                    <span className="hidden sm:inline">Atrás</span>
+                  </button>
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                     <Briefcase size={22} />
                   </div>
                   <div>
