@@ -15,10 +15,12 @@ interface PaginaFotografiasProps {
 export default function PaginaFotografias({ report, ot, client, pageNum, startIdx = 0, count = 8 }: PaginaFotografiasProps) {
   const photos = Array.from({ length: count }).map((_, i) => {
     const idx = startIdx + i;
-    const existing = report.fotosLabeled?.[idx];
+    const existing = Array.isArray(report.fotosLabeled) ? report.fotosLabeled[idx] : undefined;
+    const fallbackPhoto = Array.isArray(report.fotos) ? report.fotos[idx] : undefined;
+    const imgUrl = (existing?.base64 && existing.base64.trim()) || (typeof fallbackPhoto === 'string' ? fallbackPhoto.trim() : '');
     return {
-      slotName: existing?.slotName || `Foto S.L.A Slot #${idx + 1}`,
-      base64: existing?.base64 || '',
+      slotName: existing?.slotName || `Fotografía de Campo #${idx + 1}`,
+      base64: imgUrl,
       description: existing?.description
     };
   });

@@ -11,7 +11,11 @@ interface PaginaDiagnosticoRecomendacionesProps {
 }
 
 export default function PaginaDiagnosticoRecomendaciones({ report, ot, client, pageNum }: PaginaDiagnosticoRecomendacionesProps) {
-  const recs = report.recomendaciones ?? [];
+  const recs = Array.isArray(report.recomendaciones) 
+    ? report.recomendaciones 
+    : typeof report.recomendaciones === 'string' && (report.recomendaciones as string).trim() 
+    ? [(report.recomendaciones as string).trim()] 
+    : [];
   const diagnostico = report.observacionesDiagnostico || '';
 
   return (

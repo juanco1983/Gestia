@@ -73,7 +73,7 @@ export default function PaginaInformeTecnico({ report, ot, client, pageNum }: Pa
           <h3 className="font-extrabold text-slate-900 font-sans tracking-wide uppercase border-b border-slate-300 pb-0.5 text-[10px]">ACCIONES REALIZADAS:</h3>
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 border border-slate-200 p-3.5 bg-slate-50 rounded-lg">
             {ALL_ACCIONES.map((action, idx) => {
-              const isChecked = report.accionesRealizadas ? report.accionesRealizadas.includes(action) : true;
+              const isChecked = Array.isArray(report.accionesRealizadas) ? report.accionesRealizadas.includes(action) : true;
               return (
                 <div key={idx} className="flex items-center justify-between border-b border-slate-100 pb-0.5 text-[8px] font-sans">
                   <span className="text-slate-700 font-medium">{action}</span>
