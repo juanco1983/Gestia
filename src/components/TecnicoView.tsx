@@ -825,6 +825,7 @@ export default function TecnicoView({
 
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
     setSelectedOt(null);
+    setIsEditingReport(false);
   };
 
   const handleWizardComplete = (report: TechnicalReport) => {

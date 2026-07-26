@@ -408,10 +408,10 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
           <td style="background-color:#1e293b;color:#ffffff;font-weight:bold;font-size:8pt;font-family:Arial,sans-serif;padding:6px;width:25%;">FASE S (ST)</td>
           <td style="background-color:#1e293b;color:#ffffff;font-weight:bold;font-size:8pt;font-family:Arial,sans-serif;padding:6px;width:25%;">FASE T (TR)</td>
         </tr>
-        <tr><td>Voltaje L-N</td><td>${medEnt.lnVoltaje[0]} V</td><td>${medEnt.lnVoltaje[1]} V</td><td>${medEnt.lnVoltaje[2]} V</td></tr>
-        <tr style="background:#f8fafc;"><td>Intensidad L-N</td><td>${medEnt.lnIntensidad[0]} A</td><td>${medEnt.lnIntensidad[1]} A</td><td>${medEnt.lnIntensidad[2]} A</td></tr>
-        <tr><td>Frecuencia</td><td>${medEnt.frecuencia[0]} Hz</td><td>${medEnt.frecuencia[1]} Hz</td><td>${medEnt.frecuencia[2]} Hz</td></tr>
-        <tr style="background:#f8fafc;"><td>Voltaje L-L</td><td>${medEnt.llVoltaje[0]} V</td><td>${medEnt.llVoltaje[1]} V</td><td>${medEnt.llVoltaje[2]} V</td></tr>
+        <tr><td>Voltaje L-N</td><td>${medEnt.lnVoltaje?.[0] ?? '220'} V</td><td>${medEnt.lnVoltaje?.[1] ?? '220'} V</td><td>${medEnt.lnVoltaje?.[2] ?? '220'} V</td></tr>
+        <tr style="background:#f8fafc;"><td>Intensidad L-N</td><td>${medEnt.lnIntensidad?.[0] ?? '0'} A</td><td>${medEnt.lnIntensidad?.[1] ?? '0'} A</td><td>${medEnt.lnIntensidad?.[2] ?? '0'} A</td></tr>
+        <tr><td>Frecuencia</td><td>${medEnt.frecuencia?.[0] ?? '60'} Hz</td><td>${medEnt.frecuencia?.[1] ?? '60'} Hz</td><td>${medEnt.frecuencia?.[2] ?? '60'} Hz</td></tr>
+        <tr style="background:#f8fafc;"><td>Voltaje L-L</td><td>${medEnt.llVoltaje?.[0] ?? '380'} V</td><td>${medEnt.llVoltaje?.[1] ?? '380'} V</td><td>${medEnt.llVoltaje?.[2] ?? '380'} V</td></tr>
       </table>
       <p style="font-weight:bold;color:#1e3a8a;margin-top:12px;">B. SALIDA A CARGA PROTEGIDA</p>
       <table>
@@ -421,15 +421,15 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
           <td style="background-color:#1e293b;color:#ffffff;font-weight:bold;font-size:8pt;font-family:Arial,sans-serif;padding:6px;width:25%;">FASE S (ST)</td>
           <td style="background-color:#1e293b;color:#ffffff;font-weight:bold;font-size:8pt;font-family:Arial,sans-serif;padding:6px;width:25%;">FASE T (TR)</td>
         </tr>
-        <tr><td>Voltaje L-N</td><td>${medSal.lnVoltaje[0]} V</td><td>${medSal.lnVoltaje[1]} V</td><td>${medSal.lnVoltaje[2]} V</td></tr>
-        <tr style="background:#f8fafc;"><td>Intensidad L-N</td><td>${medSal.lnIntensidad[0]} A</td><td>${medSal.lnIntensidad[1]} A</td><td>${medSal.lnIntensidad[2]} A</td></tr>
-        <tr><td>Frecuencia</td><td>${medSal.frecuencia[0]} Hz</td><td>${medSal.frecuencia[1]} Hz</td><td>${medSal.frecuencia[2]} Hz</td></tr>
-        <tr style="background:#f8fafc;"><td>Voltaje L-L</td><td>${medSal.llVoltaje[0]} V</td><td>${medSal.llVoltaje[1]} V</td><td>${medSal.llVoltaje[2]} V</td></tr>
+        <tr><td>Voltaje L-N</td><td>${medSal.lnVoltaje?.[0] ?? '220'} V</td><td>${medSal.lnVoltaje?.[1] ?? '220'} V</td><td>${medSal.lnVoltaje?.[2] ?? '220'} V</td></tr>
+        <tr style="background:#f8fafc;"><td>Intensidad L-N</td><td>${medSal.lnIntensidad?.[0] ?? '0'} A</td><td>${medSal.lnIntensidad?.[1] ?? '0'} A</td><td>${medSal.lnIntensidad?.[2] ?? '0'} A</td></tr>
+        <tr><td>Frecuencia</td><td>${medSal.frecuencia?.[0] ?? '60'} Hz</td><td>${medSal.frecuencia?.[1] ?? '60'} Hz</td><td>${medSal.frecuencia?.[2] ?? '60'} Hz</td></tr>
+        <tr style="background:#f8fafc;"><td>Voltaje L-L</td><td>${medSal.llVoltaje?.[0] ?? '380'} V</td><td>${medSal.llVoltaje?.[1] ?? '380'} V</td><td>${medSal.llVoltaje?.[2] ?? '380'} V</td></tr>
       </table>
       <div class="sect">VII. DIAGNÓSTICO INTEGRAL DE CAMPO</div>
       <div style="font-size:8.5pt;background:#f8fafc;padding:6px;border:1px solid #cbd5e1;margin-top:5px;line-height:1.4;">
         <b>¿OPERACIÓN CON GABINETE?</b> ${gab.cuentaConGabinete === 'si' ? `SI (Estructura: ${gab.tipoEstructura || 'modo Rack'})` : 'NO'}<br/>
-        <b>¿ACOMPAÑADO DE BYPASS ACTIVO?</b> ${report.indicadoresBateria.bypassActivo ? 'SI' : 'NO'}
+        <b>¿ACOMPAÑADO DE BYPASS ACTIVO?</b> ${report.indicadoresBateria?.bypassActivo ? 'SI' : 'NO'}
       </div>
       <div style="margin-top:40px;">${footerH}</div>
     </div>
