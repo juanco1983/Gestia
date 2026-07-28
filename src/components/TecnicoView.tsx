@@ -750,7 +750,7 @@ export default function TecnicoView({
     }
   };
 
-  const handleSubmitReport = (e: React.FormEvent) => {
+  const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOt) return;
 
@@ -823,15 +823,21 @@ export default function TecnicoView({
       recomendaciones
     };
 
-    if (!isOnline) {
-      compiledReport.offlineDirty = true;
-      onSaveReportOffline(compiledReport);
-      onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
-      notifyOffline('Reporte Cacheado Localmente', 'El sistema de sincronización offline de Mafort ha encolado este reporte de manera segura.');
-    } else {
-      onSaveReportOffline(compiledReport);
-      onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
-      notifySuccess('Informe Procesado Exitosamente', 'Se ha estructurado y subido el informe técnico para aprobación.');
+    try {
+      if (!isOnline) {
+        compiledReport.offlineDirty = true;
+        onSaveReportOffline(compiledReport);
+        onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
+        notifyOffline('Reporte Cacheado Localmente', 'El sistema de sincronización offline de Mafort ha encolado este reporte de manera segura.');
+      } else {
+        await onSaveReportOffline(compiledReport);
+        onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
+        notifySuccess('Informe Procesado Exitosamente', 'Se ha estructurado y subido el informe técnico para aprobación.');
+      }
+    } catch (err) {
+      console.error('handleSubmitReport error:', err);
+      notifyError('Error al Enviar', `Ocurrió un error: ${err instanceof Error ? err.message : 'Desconocido'}`);
+      return;
     }
 
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
@@ -839,7 +845,7 @@ export default function TecnicoView({
     setIsEditingReport(false);
   };
 
-  const handleWizardComplete = (report: TechnicalReport) => {
+  const handleWizardComplete = async (report: TechnicalReport) => {
     try {
       if (!selectedOt) return;
       if (!isOnline) {
@@ -848,7 +854,7 @@ export default function TecnicoView({
         onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
         notifyOffline('Reporte Cacheado Localmente', 'El wizard ha encolado este reporte. Al reconectarse, subirá automáticamente.');
       } else {
-        onSaveReportOffline(report);
+        await onSaveReportOffline(report);
         onUpdateOtStatus(selectedOt.id, OTStatus.EN_REVISION);
         notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
       }

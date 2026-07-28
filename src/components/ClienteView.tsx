@@ -42,7 +42,16 @@ export default function ClienteView({
 
   // Retrieve current report associated with selected OT
   const getAssociatedReport = (otId: string) => {
-    return reports.find(r => r.otId === otId);
+    const sorted = [...reports]
+      .filter(r => r.otId === otId)
+      .sort((a, b) => {
+        const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        return dateB - dateA;
+      });
+    const withFotos = sorted.filter(r => r.fotosLabeled?.length || r.fotos?.length);
+    if (withFotos.length > 0) return withFotos[0];
+    return sorted[0];
   };
 
   const handleSelectOt = (ot: OT) => {

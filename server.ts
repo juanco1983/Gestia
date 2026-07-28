@@ -846,6 +846,28 @@ async function processReportPhotos(report: any): Promise<{ report: any; uploaded
   }
 }
 
+const VALID_REPORT_FIELDS = new Set([
+  'id','otId','equipoId','voltajeEntrada','voltajeSalida',
+  'indicadoresBateria','observacionesDiagnostico','comentariosAdicionales',
+  'firmaCliente','correccionesSupervisor','creadoEn','modificadoEn',
+  'offlineDirty','fotos','informeN','hojaServicioN','asunto',
+  'fechaServicio','horaInicio','tecnico1','tecnico2','antecedentes',
+  'accionesRealizadas','pasos','caracteristicas','fotosLabeled',
+  'medicionesEntrada','medicionesSalida','diagnosticoGabinete',
+  'revisionNormas','recomendaciones',
+  'tipoServicio','horaFin','panoramaFoto','pasosLista'
+]);
+
+function sanitizeForPrisma(data: any): any {
+  const clean: any = {};
+  for (const key of Object.keys(data)) {
+    if (VALID_REPORT_FIELDS.has(key)) {
+      clean[key] = data[key];
+    }
+  }
+  return clean;
+}
+
 app.post("/api/reports", async (req, res) => {
   let uploadedUrls: string[] = [];
   try {
@@ -860,17 +882,17 @@ app.post("/api/reports", async (req, res) => {
     const processed = await processReportPhotos(reportBody);
     uploadedUrls = processed.uploadedUrls;
     const finalReport = processed.report;
-    const { otId: finalOtId, ...cleanData } = finalReport;
+    const { otId: finalOtId, id: _reportId, equipoId: _equipoId, ...cleanData } = sanitizeForPrisma(finalReport);
 
+    const upsertWhere = { otId: finalOtId, equipoId: finalReport.equipoId || null };
+    const upsertUpdate = { ...cleanData, offlineDirty: false };
+    const upsertCreate = { ...sanitizeForPrisma(finalReport), offlineDirty: false };
+    console.log("[Upsert] where:", JSON.stringify(upsertWhere));
+    console.log("[Upsert] create keys:", Object.keys(upsertCreate));
     const saved = await prisma.technicalReport.upsert({
-      where: {
-        otId_equipoId: {
-          otId: finalOtId,
-          equipoId: finalReport.equipoId || null
-        }
-      },
-      update: { ...cleanData, offlineDirty: false },
-      create: { ...finalReport, offlineDirty: false }
+      where: { otId_equipoId: upsertWhere },
+      update: upsertUpdate,
+      create: upsertCreate
     });
 
     // Auto-sync linked OrdenTrabajoLinea execution status to EJECUTADO in DB
@@ -894,12 +916,18 @@ app.post("/api/reports", async (req, res) => {
 
     res.status(201).json(saved);
   } catch (err: any) {
-    console.error("Error al guardar reporte técnico:", err);
+    console.error("Error al guardar reporte técnico:", err?.message);
+    console.error("Error stack:", err?.stack);
+    try {
+      const fs = await import('fs/promises');
+      await fs.writeFile(path.join(process.cwd(), 'error-debug.log'), `Time: ${new Date().toISOString()}\nMessage: ${err?.message}\nStack: ${err?.stack}\n\n`, { flag: 'a' });
+    } catch {}
     // Rollback uploads if DB save fails
     for (const url of uploadedUrls) {
       await deleteFromS3(url);
     }
-    res.status(500).json({ error: err.message || "Error al procesar el reporte técnico" });
+    const errMsg = (err?.message || "Error al procesar el reporte técnico").slice(0, 2000);
+    res.status(500).json({ error: errMsg });
   }
 });
 
