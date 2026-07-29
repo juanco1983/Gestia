@@ -146,6 +146,10 @@ persista como `Json?`.
 | `diagnosticoGabinete` | Json? | shape? | No | Gabinete |
 | `revisionNormas` | Json? | shape? | No | Normas |
 | `recomendaciones` | Json? | string[]? | No | Recomendaciones |
+| `tipoServicio` | String? | string? | No | Tipo de servicio formateado (PDF) |
+| `horaFin` | String? | string? | No | Hora fin del servicio (PDF) |
+| `panoramaFoto` | String? | string? | No | Foto panorámica principal |
+| `pasosLista` | Json? | array? | No | Lista de pasos con estado |
 
 ## 6. `OrdenTrabajoLinea` — OT Financiera / Cuota comercial
 
