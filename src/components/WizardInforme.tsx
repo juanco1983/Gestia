@@ -163,7 +163,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
 
   const handlePrev = useCallback(() => {
     if (currentStep > 1) setCurrentStep(s => s - 1);
-  }, []);
+  }, [currentStep]);
 
   const handleSkip = useCallback(() => {
     setSkippedSteps(prev => new Set(prev).add(currentStep));
