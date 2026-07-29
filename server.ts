@@ -872,28 +872,79 @@ app.post("/api/reports", async (req, res) => {
   let uploadedUrls: string[] = [];
   try {
     const reportBody = req.body;
+    console.log("[POST /api/reports] incoming keys:", Object.keys(reportBody || {}));
+    console.log("[POST /api/reports] otId:", reportBody?.otId);
+    console.log("[POST /api/reports] equipoId:", reportBody?.equipoId);
+    console.log("[POST /api/reports] id:", reportBody?.id);
+    console.log("[POST /api/reports] fotosLabeled type:", Array.isArray(reportBody?.fotosLabeled) ? `array(${reportBody.fotosLabeled.length})` : typeof reportBody?.fotosLabeled);
+    if (Array.isArray(reportBody?.fotosLabeled) && reportBody.fotosLabeled.length > 0) {
+      console.log("[POST /api/reports] fotosLabeled[0] keys:", Object.keys(reportBody.fotosLabeled[0] || {}));
+      console.log("[POST /api/reports] fotosLabeled[0].base64 type:", typeof reportBody.fotosLabeled[0]?.base64);
+      const b64 = reportBody.fotosLabeled[0]?.base64;
+      console.log("[POST /api/reports] fotosLabeled[0].base64 startsWith:", typeof b64 === 'string' ? b64.slice(0, 80) : b64);
+    }
+    console.log("[POST /api/reports] ALL keys:", JSON.stringify(Object.keys(reportBody || {})));
     const { otId, ...data } = reportBody;
+
+    // Log completo del body para diagnóstico
+    try {
+      const fs = await import('fs/promises');
+      const safeLog = JSON.stringify(reportBody, (k, v) => {
+        if (typeof v === 'string' && v.length > 100) return v.slice(0, 100) + `...(${v.length} chars)`;
+        return v;
+      }, 2);
+      await fs.writeFile(path.join(process.cwd(), 'request-debug.log'), `${new Date().toISOString()}\n${safeLog}\n\n`, { flag: 'a' });
+    } catch {}
 
     if (!otId) {
       return res.status(400).json({ error: "otId es obligatorio" });
     }
 
-    // Process and upload photos to S3
+    // Process and upload photos to S3 or local storage
     const processed = await processReportPhotos(reportBody);
     uploadedUrls = processed.uploadedUrls;
     const finalReport = processed.report;
-    const { otId: finalOtId, id: _reportId, equipoId: _equipoId, ...cleanData } = sanitizeForPrisma(finalReport);
 
-    const upsertWhere = { otId: finalOtId, equipoId: finalReport.equipoId || null };
-    const upsertUpdate = { ...cleanData, offlineDirty: false };
-    const upsertCreate = { ...sanitizeForPrisma(finalReport), offlineDirty: false };
-    console.log("[Upsert] where:", JSON.stringify(upsertWhere));
-    console.log("[Upsert] create keys:", Object.keys(upsertCreate));
-    const saved = await prisma.technicalReport.upsert({
-      where: { otId_equipoId: upsertWhere },
-      update: upsertUpdate,
-      create: upsertCreate
+    const cleanFullReport = sanitizeForPrisma(finalReport);
+    const { otId: finalOtId, id: reportId, equipoId: targetEquipoId, ...cleanData } = cleanFullReport;
+
+    const targetEqId = targetEquipoId || finalReport.equipoId || null;
+
+    // Search for existing report by otId and equipoId
+    const existingReport = await prisma.technicalReport.findFirst({
+      where: {
+        otId: finalOtId,
+        equipoId: targetEqId
+      }
     });
+
+    let saved: any;
+    if (existingReport) {
+      saved = await prisma.technicalReport.update({
+        where: { id: existingReport.id },
+        data: {
+          ...cleanData,
+          equipoId: targetEqId,
+          offlineDirty: false,
+          modificadoEn: new Date().toISOString()
+        }
+      });
+      console.log(`[Report Sync] Reporte actualizado exitosamente (id: ${saved.id}) para OT ${finalOtId}`);
+    } else {
+      const newId = reportId || finalReport.id || `rep_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      saved = await prisma.technicalReport.create({
+        data: {
+          ...cleanFullReport,
+          id: newId,
+          otId: finalOtId,
+          equipoId: targetEqId,
+          offlineDirty: false,
+          creadoEn: finalReport.creadoEn || new Date().toISOString(),
+          modificadoEn: new Date().toISOString()
+        }
+      });
+      console.log(`[Report Sync] Reporte creado exitosamente (id: ${saved.id}) para OT ${finalOtId}`);
+    }
 
     // Auto-sync linked OrdenTrabajoLinea execution status to EJECUTADO in DB
     const cleanOtNumber = finalOtId.replace('OT-', '');
