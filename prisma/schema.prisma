@@ -107,6 +107,10 @@ model TechnicalReport {
   diagnosticoGabinete    Json?
   revisionNormas         Json?
   recomendaciones        Json?
+  tipoServicio           String?
+  horaFin                String?
+  panoramaFoto           String?
+  pasosLista             Json?
 
   @@unique([otId, equipoId])
   @@index([otId])

@@ -66,17 +66,26 @@ export default function SupervisorView({
     const cleanOtId = otId.trim().toUpperCase();
     const matchesOt = (r: TechnicalReport) => Boolean(r.otId && r.otId.trim().toUpperCase() === cleanOtId);
 
+    const sortedReports = [...reports].sort((a, b) => {
+      const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return dateB - dateA;
+    });
+
     if (equipoId) {
       const cleanEqId = equipoId.trim().toUpperCase();
-      const exact = reports.find(r => matchesOt(r) && r.equipoId && r.equipoId.trim().toUpperCase() === cleanEqId);
+      const exact = sortedReports.find(r => matchesOt(r) && r.equipoId && r.equipoId.trim().toUpperCase() === cleanEqId);
       if (exact) return exact;
 
-      const partial = reports.find(r => matchesOt(r) && r.equipoId && r.equipoId.split(',').map(x => x.trim().toUpperCase()).includes(cleanEqId));
+      const partial = sortedReports.find(r => matchesOt(r) && r.equipoId && r.equipoId.split(',').map(x => x.trim().toUpperCase()).includes(cleanEqId));
       if (partial) return partial;
     }
 
-    // Guaranteed fallback: return any report registered for this OT
-    return reports.find(r => matchesOt(r));
+    // Prioritize report that has data (fotosLabeled) over empty ones, most recent first
+    const candidates = sortedReports.filter(r => matchesOt(r));
+    const withFotos = candidates.filter(r => r.fotosLabeled?.length || r.fotos?.length);
+    if (withFotos.length > 0) return withFotos[0];
+    return candidates[0];
   };
 
   const handleSelectOt = (ot: OT) => {

@@ -777,22 +777,23 @@ export default function App() {
         const newIds = (newReport.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
         const oldIds = (r.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
         if (newIds.length === 0 && oldIds.length === 0) return false;
-        if (newIds.length === 0 || oldIds.length === 0) return true;
+        if (newIds.length === 0 || oldIds.length === 0) return false;
         return !newIds.some(id => oldIds.includes(id));
       });
       return [...filtered, newReport];
     });
-    try {
-      await fetchWithAuth('/api/reports', {
-        method: 'POST',
-        body: JSON.stringify(newReport)
-      });
-    } catch (e) {
-      console.warn("Reporte guardado localmente:", e);
+    const response = await fetchWithAuth('/api/reports', {
+      method: 'POST',
+      body: JSON.stringify(newReport)
+    });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      console.error("Error del servidor al guardar reporte:", response.status, errorText);
+      throw new Error(`El servidor rechazó el reporte (${response.status}): ${errorText.slice(0, 1000)}`);
     }
   };
 
-  const handleSaveReportOffline = (report: TechnicalReport) => {
+  const handleSaveReportOffline = async (report: TechnicalReport) => {
     if (!isOnline) {
       setOfflineQueue([...offlineQueue, report]);
       setReports(prev => {
@@ -801,13 +802,13 @@ export default function App() {
           const newIds = (report.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
           const oldIds = (r.equipoId || '').split(',').map(x => x.trim()).filter(Boolean);
           if (newIds.length === 0 && oldIds.length === 0) return false;
-          if (newIds.length === 0 || oldIds.length === 0) return true;
+          if (newIds.length === 0 || oldIds.length === 0) return false;
           return !newIds.some(id => oldIds.includes(id));
         });
         return [...filtered, report];
       });
     } else {
-      handleAddReport(report);
+      await handleAddReport(report);
     }
   };
 
