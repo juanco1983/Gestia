@@ -1,0 +1,154 @@
+name: "⚡ EC2 Power Control (Ahorro de Costos)"
+
+# ─────────────────────────────────────────────────────────
+#  Disparador: SOLO manual desde GitHub Actions UI.
+#  En "Run workflow" aparecerá un formulario con:
+#    • action  → STOP o START
+#    • env     → dev o prod
+# ─────────────────────────────────────────────────────────
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Acción a ejecutar"
+        required: true
+        default: "STOP"
+        type: choice
+        options:
+          - STOP
+          - START
+      environment:
+        description: "Ambiente"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: "us-east-1"
+  EB_APP_NAME: "gestia-backend"
+
+jobs:
+  power-control:
+    name: "${{ inputs.action }} EC2 · ${{ inputs.environment }}"
+    runs-on: ubuntu-latest
+
+    # Proteger producción con un environment de GitHub que requiera aprobación
+    environment: ${{ inputs.environment == 'prod' && 'production' || '' }}
+
+    steps:
+      # ── 1. Credenciales AWS ────────────────────────────────────────────────
+      - name: "🔑 Configurar credenciales AWS"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── 2. Obtener Instance-ID del EC2 de Elastic Beanstalk ───────────────
+      - name: "🔍 Obtener Instance-ID del EC2 (EB)"
+        id: get_instance
+        run: |
+          EB_ENV="gestia-backend-${{ inputs.environment }}"
+          echo "Buscando instancias en el ambiente EB: $EB_ENV"
+
+          INSTANCE_ID=$(aws elasticbeanstalk describe-environment-resources \
+            --environment-name "$EB_ENV" \
+            --query "EnvironmentResources.Instances[0].Id" \
+            --output text)
+
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "❌ No se encontró instancia EC2 para el ambiente $EB_ENV"
+            exit 1
+          fi
+
+          echo "✅ Instance-ID encontrada: $INSTANCE_ID"
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+          echo "eb_env=$EB_ENV" >> $GITHUB_OUTPUT
+
+      # ── 3. Mostrar estado actual ANTES de la acción ───────────────────────
+      - name: "📊 Estado actual del EC2"
+        run: |
+          INSTANCE_ID="${{ steps.get_instance.outputs.instance_id }}"
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].State.Name" \
+            --output text)
+          echo "Estado actual de $INSTANCE_ID: $STATE"
+
+          # Validar que la acción tenga sentido
+          if [ "${{ inputs.action }}" = "STOP" ] && [ "$STATE" = "stopped" ]; then
+            echo "ℹ️  La instancia ya está detenida. No es necesario hacer nada."
+            exit 0
+          fi
+          if [ "${{ inputs.action }}" = "START" ] && [ "$STATE" = "running" ]; then
+            echo "ℹ️  La instancia ya está corriendo. No es necesario hacer nada."
+            exit 0
+          fi
+
+      # ── 4A. APAGAR EC2 ────────────────────────────────────────────────────
+      - name: "🛑 APAGAR EC2"
+        if: inputs.action == 'STOP'
+        run: |
+          INSTANCE_ID="${{ steps.get_instance.outputs.instance_id }}"
+          echo "Apagando instancia $INSTANCE_ID..."
+          aws ec2 stop-instances --instance-ids "$INSTANCE_ID"
+
+          echo "Esperando confirmación de estado stopped..."
+          aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID"
+          echo "✅ Instancia detenida exitosamente."
+          echo ""
+          echo "💰 AHORRO ACTIVO: El EC2 (t3.micro) no genera cargos de cómputo mientras esté detenido."
+          echo "   EBS (almacenamiento) y RDS siguen activos. Recuerda encender antes de hacer deploy."
+
+      # ── 4B. ENCENDER EC2 ──────────────────────────────────────────────────
+      - name: "🟢 ENCENDER EC2"
+        if: inputs.action == 'START'
+        run: |
+          INSTANCE_ID="${{ steps.get_instance.outputs.instance_id }}"
+          echo "Encendiendo instancia $INSTANCE_ID..."
+          aws ec2 start-instances --instance-ids "$INSTANCE_ID"
+
+          echo "Esperando confirmación de estado running..."
+          aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+          echo "✅ Instancia iniciada exitosamente."
+
+      # ── 5. Mostrar estado FINAL ───────────────────────────────────────────
+      - name: "📊 Estado final del EC2"
+        if: always()
+        run: |
+          INSTANCE_ID="${{ steps.get_instance.outputs.instance_id }}"
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].State.Name" \
+            --output text)
+
+          PUBLIC_IP=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text 2>/dev/null || echo "N/A")
+
+          echo "───────────────────────────────────"
+          echo "  Ambiente  : ${{ inputs.environment }}"
+          echo "  Acción    : ${{ inputs.action }}"
+          echo "  Instance  : $INSTANCE_ID"
+          echo "  Estado    : $STATE"
+          echo "  IP Pública: $PUBLIC_IP"
+          echo "───────────────────────────────────"
+
+      # ── 6. Aviso si se apagó (deploy bloqueado) ───────────────────────────
+      - name: "⚠️  Aviso post-STOP"
+        if: inputs.action == 'STOP'
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  ⚠️  IMPORTANTE: El pipeline de deploy (app-deploy.yml)"
+          echo "  fallará si haces push mientras el EC2 esté DETENIDO."
+          echo "  Ejecuta este workflow con acción START antes de"
+          echo "  hacer merge/deploy a ${{ inputs.environment }}."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
