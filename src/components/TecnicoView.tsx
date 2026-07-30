@@ -883,6 +883,19 @@ export default function TecnicoView({
     };
   }, [selectedOt, clients]);
 
+  const existingReportForWizard = useMemo(() => {
+    if (!selectedOt) return undefined;
+    const cleanOtId = selectedOt.id.trim().toUpperCase();
+    const currentEquipoId = selectedEquipoId || undefined;
+    return reports.find(r => 
+      r.otId && r.otId.trim().toUpperCase() === cleanOtId && (
+        !currentEquipoId || 
+        (r.equipoId && r.equipoId.trim().toUpperCase() === currentEquipoId.trim().toUpperCase()) ||
+        (r.equipoId && r.equipoId.split(',').map(x => x.trim().toUpperCase()).includes(currentEquipoId.trim().toUpperCase()))
+      )
+    ) || reports.find(r => r.otId && r.otId.trim().toUpperCase() === cleanOtId);
+  }, [selectedOt, selectedEquipoId, reports]);
+
   return (
     <ErrorBoundary>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans text-slate-800" id="tecnico-portal-container">
@@ -976,10 +989,11 @@ export default function TecnicoView({
           showWizard && clientForWizard ? (
             <div className="p-5">
               <WizardInforme
+                key={`${selectedOt.id}_${existingReportForWizard?.id || 'new'}_${selectedEquipoId || 'all'}`}
                 ot={selectedOt}
                 client={clientForWizard}
                 equipoId={selectedEquipoId || undefined}
-                initialReport={undefined}
+                initialReport={existingReportForWizard}
                 onComplete={handleWizardComplete}
                 onCancel={() => setIsEditingReport(false)}
                 onDraftChange={() => notifySuccess('Borrador Guardado', 'Puedes continuar después. El progreso se guardó en este navegador.')}
