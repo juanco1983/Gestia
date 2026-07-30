@@ -37,7 +37,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
   const defaults = useMemo(() => {
     if (initialReport) return initialReport;
     return generateDefaultReport(ot, client);
-  }, []);
+  }, [initialReport, ot, client]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -59,7 +59,17 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
   const [medicionesSalida, setMedicionesSalida] = useState(defaults.medicionesSalida || { lnVoltaje: ['220','220','220'] as [string,string,string], lnIntensidad: ['0','0','0'] as [string,string,string], frecuencia: ['60.0','60.0','60.0'] as [string,string,string], llVoltaje: ['380','380','380'] as [string,string,string] });
   const [diagnostico, setDiagnostico] = useState(defaults.observacionesDiagnostico || '');
   const [recomendaciones, setRecomendaciones] = useState<string[]>(defaults.recomendaciones ?? DEFAULT_RECOMENDACIONES);
-  const [fotosLabeled, setFotosLabeled] = useState<{ slotName: string; base64: string; description?: string }[]>(defaults.fotosLabeled ?? []);
+  const [fotosLabeled, setFotosLabeled] = useState<{ slotName: string; base64: string; description?: string }[]>(() => {
+    if (defaults.fotosLabeled && defaults.fotosLabeled.length > 0) return defaults.fotosLabeled;
+    if (defaults.fotos && defaults.fotos.length > 0) {
+      const slots = getPhotoSlotsForKva(ot.potenciaKva);
+      return defaults.fotos.map((base64, i) => ({
+        slotName: slots[i] || `Slot #${i + 1}`,
+        base64: base64 || '',
+      }));
+    }
+    return [];
+  });
   const [panoramaFoto, setPanoramaFoto] = useState(defaults.panoramaFoto || '');
   const [observaciones, setObservaciones] = useState(defaults.comentariosAdicionales || '');
 
@@ -173,7 +183,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
   const buildCompiledReport = useCallback((): TechnicalReport => {
     const template = getTemplate(tipoServicio);
     return {
-      id: `rep_${Date.now()}`,
+      id: initialReport?.id || `rep_${Date.now()}`,
       otId: ot.id,
       tipoServicio,
       horaFin: horaFin || undefined,
@@ -189,7 +199,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
       observacionesDiagnostico: diagnostico,
       comentariosAdicionales: observaciones,
       fotos: fotosLabeled.map(f => f.base64),
-      creadoEn: new Date().toISOString(),
+      creadoEn: initialReport?.creadoEn || new Date().toISOString(),
       modificadoEn: new Date().toISOString(),
       informeN,
       hojaServicioN,
@@ -207,7 +217,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
       panoramaFoto,
       recomendaciones
     };
-  }, [tipoServicio, horaFin, medicionesEntrada, medicionesSalida, diagnostico, observaciones, fotosLabeled, informeN, hojaServicioN, fechaServicio, horaInicio, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, panoramaFoto, recomendaciones]);
+  }, [initialReport, ot.id, equipoId, tipoServicio, horaFin, medicionesEntrada, medicionesSalida, diagnostico, observaciones, fotosLabeled, informeN, hojaServicioN, fechaServicio, horaInicio, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, panoramaFoto, recomendaciones]);
 
   const clearDraft = useCallback(() => {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
