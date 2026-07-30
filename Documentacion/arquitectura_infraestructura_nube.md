@@ -214,12 +214,13 @@ Tres pipelines:
 | Trigger | **`workflow_dispatch` manual** — SOLO desde GitHub Actions UI (botón "Run workflow") |
 | Auth AWS | Access keys (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) |
 | Inputs | `action` (STOP/START) + `environment` (dev/prod) |
-| Permisos | El IAM user necesita: `ec2:StopInstances`, `ec2:StartInstances`, `ec2:DescribeInstances`, `elasticbeanstalk:DescribeEnvironmentResources` |
+| Permisos | IAM user necesita: `elasticbeanstalk:UpdateEnvironment`, `elasticbeanstalk:DescribeEnvironments`, `elasticbeanstalk:DescribeEnvironmentResources` |
+| Mecanismo | Cambia el Auto Scaling Group de EB: `STOP` ajusta `MinSize=0`/`MaxSize=0` (0 instancias, evita Auto-Healing); `START` ajusta `MinSize=1`/`MaxSize=1` |
 | Producción | El ambiente `prod` requiere aprobación manual del environment de GitHub antes de ejecutarse |
-| Propósito | Apagar/encender el EC2 de EB en horarios de no uso para reducir costos de cómputo (t3.micro no cobra cuando está detenido) |
+| Propósito | Apagar/encender el EC2 de EB en horarios de no uso para reducir costos de cómputo (0 instancias = $0 de cómputo) |
 
 > [!WARNING]
-> Si el EC2 está **DETENIDO**, el pipeline `app-deploy.yml` fallará porque EB no puede actualizar el ambiente.
+> Si el ambiente está en **0 instancias (STOP)**, el pipeline `app-deploy.yml` fallará porque EB no puede desplegar en un ambiente sin capacidad.
 > Siempre ejecutar `START` antes de hacer push/merge a `dev` o `main`.
 
 ---
