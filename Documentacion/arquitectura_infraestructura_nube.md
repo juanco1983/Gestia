@@ -251,8 +251,10 @@ commands:
       swapon /swapfile
 ```
 
-### 5.3 `.platform/nginx/`
-Overrides de NGINX en EB. Carpeta presente — ver archivos específicos.
+### 5.3 `.platform/nginx/conf.d/proxy.conf`
+Overrides de NGINX en EB AL2023:
+- `client_max_body_size 50M;` — extiende el límite por defecto (1MB) a 50MB para permitir el envío de informes técnicos con múltiples fotografías codificadas en base64 sin provocar error HTTP 413.
+- `proxy_max_temp_file_size 0;` — desactiva escritura temporal en disco durante streaming de respuestas.
 
 ---
 
