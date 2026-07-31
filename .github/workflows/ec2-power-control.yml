@@ -50,87 +50,132 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ── 2. Determinar ambiente Elastic Beanstalk ───────────────────────────
-      - name: "🔍 Identificar ambiente Elastic Beanstalk"
-        id: eb_env
+      # ── 2. Obtener ASG e Instance-ID de Elastic Beanstalk ──────────────────
+      - name: "🔍 Identificar recursos de Elastic Beanstalk"
+        id: resources
         run: |
           EB_ENV="gestia-backend-${{ inputs.environment }}"
-          echo "eb_env=$EB_ENV" >> $GITHUB_OUTPUT
-          echo "Operando sobre ambiente Beanstalk: $EB_ENV"
+          echo "Identificando recursos del ambiente: $EB_ENV"
 
-      # ── 3A. APAGAR EC2 (Capacidad = 0 en Elastic Beanstalk) ────────────────
-      - name: "🛑 APAGAR EC2 (Reducir capacidad EB a 0)"
+          # Obtener Auto Scaling Group Name
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups \
+            --region "${{ env.AWS_REGION }}" \
+            --query "AutoScalingGroups[?Tags[?Key=='elasticbeanstalk:environment-name' && Value=='$EB_ENV']]|[0].AutoScalingGroupName" \
+            --output text)
+
+          # Obtener Instance ID activo/detenido del ambiente
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:elasticbeanstalk:environment-name,Values=$EB_ENV" "Name=instance-state-name,Values=running,stopping,pending,stopped" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "Reservations[*].Instances[*].InstanceId|[0]" \
+            --output text)
+
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "❌ No se encontró ninguna instancia EC2 para el ambiente $EB_ENV"
+            exit 1
+          fi
+
+          echo "✅ Auto Scaling Group: $ASG_NAME"
+          echo "✅ EC2 Instance ID   : $INSTANCE_ID"
+
+          echo "asg_name=$ASG_NAME" >> $GITHUB_OUTPUT
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+          echo "eb_env=$EB_ENV" >> $GITHUB_OUTPUT
+
+      # ── 3. Consultar Estado Actual ─────────────────────────────────────────
+      - name: "📊 Estado actual del EC2"
+        run: |
+          INSTANCE_ID="${{ steps.resources.outputs.instance_id }}"
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "Reservations[0].Instances[0].State.Name" \
+            --output text)
+          echo "Instancia $INSTANCE_ID está actualmente en estado: $STATE"
+
+          if [ "${{ inputs.action }}" = "STOP" ] && [ "$STATE" = "stopped" ]; then
+            echo "ℹ️  La instancia ya está detenida."
+            exit 0
+          fi
+          if [ "${{ inputs.action }}" = "START" ] && [ "$STATE" = "running" ]; then
+            echo "ℹ️  La instancia ya está corriendo."
+            exit 0
+          fi
+
+      # ── 4A. APAGAR EC2 (Suspender Auto-Healing + Stop) ─────────────────────
+      - name: "🛑 APAGAR EC2 (Suspender Auto-Healing y detener)"
         if: inputs.action == 'STOP'
         run: |
-          EB_ENV="${{ steps.eb_env.outputs.eb_env }}"
-          echo "Ajustando capacidad de $EB_ENV a 0 instancias (Evita Auto-Healing)..."
+          ASG_NAME="${{ steps.resources.outputs.asg_name }}"
+          INSTANCE_ID="${{ steps.resources.outputs.instance_id }}"
 
-          aws elasticbeanstalk update-environment \
-            --environment-name "$EB_ENV" \
-            --option-settings \
-              Namespace=aws:autoscaling:asg,OptionName=MinSize,Value=0 \
-              Namespace=aws:autoscaling:asg,OptionName=MaxSize,Value=0
+          echo "1. Suspendiendo procesos de Auto Scaling ($ASG_NAME) para evitar reemplazo automático..."
+          aws autoscaling suspend-processes \
+            --auto-scaling-group-name "$ASG_NAME" \
+            --region "${{ env.AWS_REGION }}"
 
-          echo "Esperando actualización del ambiente..."
-          aws elasticbeanstalk wait environment-updated --environment-name "$EB_ENV"
-          echo "✅ Ambiente Beanstalk escalado a 0 instancias."
+          echo "2. Apagando la instancia EC2 $INSTANCE_ID..."
+          aws ec2 stop-instances --instance-ids "$INSTANCE_ID" --region "${{ env.AWS_REGION }}"
+
+          echo "3. Esperando confirmación de estado stopped..."
+          aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID" --region "${{ env.AWS_REGION }}"
+          echo "✅ Instancia $INSTANCE_ID detenida exitosamente."
           echo ""
-          echo "💰 AHORRO ACTIVO: 0 instancias EC2 corriendo. No hay cargos de cómputo."
-          echo "   EBS y RDS siguen activos. Recuerda encender (START) antes de hacer deploy."
+          echo "💰 AHORRO ACTIVO: La instancia está en estado stopped. Auto-Healing suspendido."
+          echo "   0 cargos de cómputo EC2. Recuerda ejecutar START antes de realizar deploys."
 
-      # ── 3B. ENCENDER EC2 (Capacidad = 1 en Elastic Beanstalk) ───────────────
-      - name: "🟢 ENCENDER EC2 (Restablecer capacidad EB a 1)"
+      # ── 4B. ENCENDER EC2 (Reanudar Auto Scaling + Start) ────────────────────
+      - name: "🟢 ENCENDER EC2 (Reanudar Auto Scaling e iniciar)"
         if: inputs.action == 'START'
         run: |
-          EB_ENV="${{ steps.eb_env.outputs.eb_env }}"
-          echo "Ajustando capacidad de $EB_ENV a 1 instancia..."
+          ASG_NAME="${{ steps.resources.outputs.asg_name }}"
+          INSTANCE_ID="${{ steps.resources.outputs.instance_id }}"
 
-          aws elasticbeanstalk update-environment \
-            --environment-name "$EB_ENV" \
-            --option-settings \
-              Namespace=aws:autoscaling:asg,OptionName=MinSize,Value=1 \
-              Namespace=aws:autoscaling:asg,OptionName=MaxSize,Value=1
+          echo "1. Reanudando procesos de Auto Scaling ($ASG_NAME)..."
+          aws autoscaling resume-processes \
+            --auto-scaling-group-name "$ASG_NAME" \
+            --region "${{ env.AWS_REGION }}"
 
-          echo "Esperando actualización del ambiente..."
-          aws elasticbeanstalk wait environment-updated --environment-name "$EB_ENV"
-          echo "✅ Instancia iniciada y ambiente en estado Ready."
+          echo "2. Iniciando la instancia EC2 $INSTANCE_ID..."
+          aws ec2 start-instances --instance-ids "$INSTANCE_ID" --region "${{ env.AWS_REGION }}"
 
-      # ── 4. Mostrar estado FINAL del ambiente ───────────────────────────────
-      - name: "📊 Estado final del ambiente"
+          echo "3. Esperando confirmación de estado running..."
+          aws ec2 wait instance-running --instance-ids "$INSTANCE_ID" --region "${{ env.AWS_REGION }}"
+          echo "✅ Instancia $INSTANCE_ID encendida exitosamente."
+
+      # ── 5. Mostrar Estado Final ────────────────────────────────────────────
+      - name: "📊 Estado final del EC2"
         if: always()
         run: |
-          EB_ENV="${{ steps.eb_env.outputs.eb_env }}"
-          
-          ENV_STATUS=$(aws elasticbeanstalk describe-environments \
-            --environment-names "$EB_ENV" \
-            --query "Environments[0].Status" \
+          INSTANCE_ID="${{ steps.resources.outputs.instance_id }}"
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "Reservations[0].Instances[0].State.Name" \
             --output text 2>/dev/null || echo "Desconocido")
 
-          ENV_HEALTH=$(aws elasticbeanstalk describe-environments \
-            --environment-names "$EB_ENV" \
-            --query "Environments[0].Health" \
-            --output text 2>/dev/null || echo "Desconocido")
-
-          INSTANCE_ID=$(aws elasticbeanstalk describe-environment-resources \
-            --environment-name "$EB_ENV" \
-            --query "EnvironmentResources.Instances[0].Id" \
-            --output text 2>/dev/null || echo "Ninguna (0 instancias)")
+          PUBLIC_IP=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text 2>/dev/null || echo "N/A")
 
           echo "───────────────────────────────────"
-          echo "  Ambiente  : $EB_ENV"
+          echo "  Ambiente  : ${{ steps.resources.outputs.eb_env }}"
           echo "  Acción    : ${{ inputs.action }}"
-          echo "  Estado EB : $ENV_STATUS ($ENV_HEALTH)"
-          echo "  EC2 ID    : $INSTANCE_ID"
+          echo "  Instance  : $INSTANCE_ID"
+          echo "  Estado EC2: $STATE"
+          echo "  IP Pública: $PUBLIC_IP"
           echo "───────────────────────────────────"
 
-      # ── 5. Aviso post-STOP ──────────────────────────────────────────────────
+      # ── 6. Aviso post-STOP ──────────────────────────────────────────────────
       - name: "⚠️  Aviso post-STOP"
         if: inputs.action == 'STOP'
         run: |
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  ⚠️  IMPORTANTE: El pipeline de deploy (app-deploy.yml)"
-          echo "  fallará si haces push mientras el EC2 esté en 0 instancias."
+          echo "  fallará si haces push mientras la instancia esté DETENIDA."
           echo "  Ejecuta este workflow con acción START antes de"
           echo "  hacer merge/deploy a ${{ inputs.environment }}."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
