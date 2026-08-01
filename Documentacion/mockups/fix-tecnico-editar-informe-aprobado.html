@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestia · Mockup Fix Edición de Informe del Técnico tras Aprobación</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F2F6F4; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============ ANTES (comportamiento actual / bug) ============ -->
+<div class="text-center py-3 bg-rose-900 text-white">
+  <span class="text-[10px] font-mono uppercase tracking-widest">ANTES · Bug: tras la aprobación, el técnico aún ve el botón de editar</span>
+</div>
+
+<div class="max-w-4xl mx-auto p-6">
+  <div class="bg-[#0F9E82] text-white rounded-xl p-6 border border-[#0B3B34]/20 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="space-y-2 max-w-xl z-10 text-left">
+      <h3 class="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
+        <i data-lucide="file-check" class="text-amber-300" style="width:16px;height:16px"></i>
+        <span>Emisión de Informe Técnico Oficial</span>
+      </h3>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase tracking-wider">
+        <i data-lucide="check-circle-2" style="width:12px;height:12px"></i> Estado: Aprobada
+      </span>
+      <p class="text-[11px] text-white/90 leading-relaxed font-sans">
+        OT-OM-CO-001 · 40 KVA · Este informe ya fue aprobado por el supervisor.
+      </p>
+    </div>
+
+    <div class="shrink-0 z-10 w-full md:w-auto flex flex-col md:flex-row gap-3">
+      <!-- BUG: botón que sigue apareciendo para OT aprobada -->
+      <button class="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer">
+        <i data-lucide="file-check" style="width:18px;height:18px"></i>
+        <span>Crear / Editar Informe Técnico</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-4 bg-rose-50 border border-rose-200 rounded-xl p-4 text-xs text-rose-900 space-y-1">
+    <p class="font-bold uppercase text-[10px] font-mono tracking-wider">Problema</p>
+    <p>El botón "Crear / Editar Informe Técnico" aparece para cualquier estado no cubierto por la cadena de estados de trabajo (Programada / En Camino / En Sitio / En Ejecución).</p>
+    <p>Para estados "En Revisión", "Aprobada", "Firmada", etc., el técnico puede abrir el editor y modificar el informe ya aprobado.</p>
+  </div>
+</div>
+
+<!-- ============ DESPUÉS (fix propuesto, fondo verde del sistema) ============ -->
+<div class="text-center py-3 bg-emerald-900 text-white mt-4">
+  <span class="text-[10px] font-mono uppercase tracking-widest">DESPUÉS · Fix: estados no editables muestran tarjeta de bloqueo · fondo verde Mafort (#0F9E82)</span>
+</div>
+
+<div class="max-w-4xl mx-auto p-6 space-y-6">
+  <!-- Caso 1: En Revisión -->
+  <div class="bg-[#0F9E82] text-white rounded-xl p-6 border border-[#0B3B34]/20 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="space-y-2 max-w-xl z-10 text-left">
+      <h3 class="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
+        <i data-lucide="file-check" class="text-amber-300" style="width:16px;height:16px"></i>
+        <span>Emisión de Informe Técnico Oficial</span>
+      </h3>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase tracking-wider">
+        <i data-lucide="clock" style="width:12px;height:12px"></i> Estado: En Revisión
+      </span>
+      <p class="text-[11px] text-white/90 leading-relaxed font-sans">
+        OT-OM-CO-001 · 40 KVA · Informe enviado al supervisor de calidad.
+      </p>
+    </div>
+
+    <div class="shrink-0 z-10 w-full md:w-auto">
+      <div class="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
+        <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 shrink-0">
+          <i data-lucide="hourglass" style="width:18px;height:18px"></i>
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] font-black uppercase font-mono block text-amber-200">Informe en Revisión</span>
+          <span class="text-xs text-white/90 font-medium">No se puede editar. El supervisor de calidad está evaluando el informe.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caso 2: Aprobada -->
+  <div class="bg-[#0F9E82] text-white rounded-xl p-6 border border-[#0B3B34]/20 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="space-y-2 max-w-xl z-10 text-left">
+      <h3 class="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
+        <i data-lucide="file-check" class="text-amber-300" style="width:16px;height:16px"></i>
+        <span>Emisión de Informe Técnico Oficial</span>
+      </h3>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase tracking-wider">
+        <i data-lucide="check-circle-2" style="width:12px;height:12px"></i> Estado: Aprobada
+      </span>
+      <p class="text-[11px] text-white/90 leading-relaxed font-sans">
+        OT-OM-CO-001 · 40 KVA · Informe aprobado y enviado al cliente para firma de conformidad.
+      </p>
+    </div>
+
+    <div class="shrink-0 z-10 w-full md:w-auto">
+      <div class="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
+        <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
+          <i data-lucide="check-circle-2" style="width:18px;height:18px"></i>
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] font-black uppercase font-mono block text-emerald-100">Informe Aprobado</span>
+          <span class="text-xs text-white/90 font-medium">Este informe ya cuenta con la aprobación del supervisor y no puede ser modificado.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caso 3: OBSERVADA sigue permitiendo corregir (intacto) -->
+  <div class="bg-[#0F9E82] text-white rounded-xl p-6 border border-[#0B3B34]/20 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="space-y-2 max-w-xl z-10 text-left">
+      <h3 class="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
+        <i data-lucide="file-check" class="text-amber-300" style="width:16px;height:16px"></i>
+        <span>Emisión de Informe Técnico Oficial</span>
+      </h3>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase tracking-wider">
+        <i data-lucide="undo-2" style="width:12px;height:12px"></i> Estado: Observada
+      </span>
+      <p class="text-[11px] text-white/90 leading-relaxed font-sans">
+        El supervisor devolvió el informe con observaciones.
+      </p>
+    </div>
+
+    <div class="shrink-0 z-10 w-full md:w-auto">
+      <button class="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer">
+        <i data-lucide="file-check" style="width:18px;height:18px"></i>
+        <span>Corregir Informe Técnico</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Nota de defensa en profundidad -->
+  <div class="bg-sky-50 border border-sky-200 rounded-xl p-4 text-xs text-sky-900 space-y-1">
+    <p class="font-bold uppercase text-[10px] font-mono tracking-wider">Defensa en profundidad (además de ocultar el botón)</p>
+    <p>• Los manejadores de envío (wizard y formulario clásico) validarán el estado actual de la OT: si está en estado no editable (En Revisión, Aprobada, Firmada, Facturada, Cerrada, Corregida), no se permite reenviar el informe ni cambiar el estado.</p>
+    <p>• El estado "Observada" mantiene su flujo actual de corrección.</p>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
