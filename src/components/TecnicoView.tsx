@@ -29,7 +29,8 @@ import {
   Cpu,
   Hourglass,
   CheckCircle2,
-  FileLock2
+  FileLock2,
+  Undo2
 } from 'lucide-react';
 import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
 import { useLocalToast } from './shared/ToastModal';
@@ -80,6 +81,13 @@ export default function TecnicoView({
   const isOtReportEditable = (ot: OT | null) => {
     if (!ot) return false;
     return [OTStatus.TRABAJO_EN_EJECUCION, OTStatus.INFORME_PENDIENTE, OTStatus.OBSERVADA].includes(ot.estado);
+  };
+
+  const getEstadoBadgeIcon = (estado: OTStatus) => {
+    if ([OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION].includes(estado)) return Hourglass;
+    if ([OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.CORREGIDA].includes(estado)) return CheckCircle2;
+    if (estado === OTStatus.OBSERVADA) return Undo2;
+    return FileCheck;
   };
 
   const mockTechName = currentUser?.username || "Carlos Ocsa";
@@ -2288,20 +2296,23 @@ export default function TecnicoView({
               })()}
 
               {/* ACTION CARD */}
-              <div className="bg-teal-brand text-white rounded-xl p-6 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="bg-teal-brand text-white rounded-xl p-4 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="flex items-start gap-3 max-w-xl z-10">
-                  <span className="w-6 h-6 shrink-0 rounded-md bg-white/10 border border-white/20 flex items-center justify-center">
-                    <FileCheck className="text-amber-300" size={14} />
+                <div className="flex items-center gap-3 z-10 min-w-0">
+                  <span className="w-7 h-7 shrink-0 rounded-md bg-white/10 border border-white/20 flex items-center justify-center">
+                    <FileCheck className="text-amber-300" size={16} />
                   </span>
-                  <div className="space-y-2">
-                    <h3 className="text-white text-sm font-bold uppercase font-mono leading-none">
+                  <div className="min-w-0">
+                    <h3 className="text-white text-[13px] font-bold uppercase font-mono leading-tight truncate">
                       <span>Emisión de Informe Técnico Oficial</span>
                     </h3>
-                    <p className="text-[11px] text-white/90 leading-relaxed font-sans">
-                      Al activar el botón inferior, se iniciará el cuestionario estructurado dinámico Mafort de doble marco. 
-                      El número de mediciones, estado de celdas y capturas fotográficas obligatorias se configurarán automáticamente según la potencia de <strong>{selectedOt.potenciaKva} KVA</strong> de la OT seleccionada.
-                    </p>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 mt-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase tracking-wider">
+                      {(() => {
+                        const EstadoIcon = getEstadoBadgeIcon(selectedOt.estado);
+                        return <EstadoIcon size={11} />;
+                      })()}
+                      {selectedOt.estado}
+                    </span>
                   </div>
                 </div>
 
@@ -2311,12 +2322,9 @@ export default function TecnicoView({
                     
                     if (!isTitular) {
                       return (
-                        <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3 flex items-center gap-3 text-white backdrop-blur-sm">
-                          <Users size={20} className="text-white/80" />
-                          <div className="text-left">
-                            <span className="text-[10px] font-black uppercase font-mono block text-white/80">Personal de Apoyo</span>
-                            <span className="text-xs font-medium text-white/90">Solo el titular puede gestionar el informe.</span>
-                          </div>
+                        <div className="bg-white/10 border border-white/25 rounded-lg px-4 py-2 flex items-center gap-2.5 text-white backdrop-blur-sm">
+                          <Users size={16} className="text-white/80 shrink-0" />
+                          <span className="text-[11px] font-bold text-white/90">Solo el titular puede gestionar el informe.</span>
                         </div>
                       );
                     }
@@ -2334,7 +2342,7 @@ export default function TecnicoView({
                                 horaSalida: now
                               });
                             }}
-                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-5 py-2.5 rounded-lg shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                           >
                             <MapPin size={18} />
                             <span>Iniciar Ruta (En Camino)</span>
@@ -2350,7 +2358,7 @@ export default function TecnicoView({
                                 horaLlegadaSitio: now
                               });
                             }}
-                            className="w-full md:w-auto bg-teal-600 hover:bg-teal-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                            className="w-full md:w-auto bg-teal-600 hover:bg-teal-500 text-white font-black px-5 py-2.5 rounded-lg shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                           >
                             <MapPin size={18} />
                             <span>Llegada al Sitio (Registrar Entrada)</span>
@@ -2366,7 +2374,7 @@ export default function TecnicoView({
                                 horaInicioServicio: now
                               });
                             }}
-                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95 animate-pulse"
+                            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-5 py-2.5 rounded-lg shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95 animate-pulse"
                           >
                             <Clock size={18} />
                             <span>Iniciar Trabajo (En Ejecución)</span>
@@ -2376,7 +2384,7 @@ export default function TecnicoView({
                             <button
                               type="button"
                               onClick={() => setIsEditingReport(true)}
-                              className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                              className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-lg shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                             >
                               <FileCheck size={18} />
                               <span>Llenar Informe Técnico</span>
@@ -2399,31 +2407,21 @@ export default function TecnicoView({
                                   });
                                 }
                               }}
-                              className="w-full md:w-auto bg-red-600 hover:bg-red-500 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-red-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                              className="w-full md:w-auto bg-red-600 hover:bg-red-500 text-white font-black px-5 py-2.5 rounded-lg shadow-lg shadow-red-600/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                             >
                               <Clock size={18} />
                               <span>Finalizar Trabajo (Concluir Visita)</span>
                             </button>
                           </div>
                         ) : [OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION].includes(selectedOt.estado) ? (
-                          <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
-                            <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 shrink-0">
-                              <Hourglass size={18} />
-                            </div>
-                            <div className="text-left">
-                              <span className="text-[10px] font-black uppercase font-mono block text-amber-200">Informe en Revisión</span>
-                              <span className="text-xs text-white/90 font-medium">No se puede editar. El supervisor de calidad está evaluando el informe.</span>
-                            </div>
+                          <div className="bg-white/10 border border-white/25 rounded-lg px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
+                            <Hourglass className="text-amber-300 shrink-0" size={18} />
+                            <span className="text-[11px] font-bold text-white">Informe en Revisión · no editable</span>
                           </div>
                         ) : [OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.CORREGIDA].includes(selectedOt.estado) ? (
-                          <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
-                            <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
-                              <CheckCircle2 size={18} />
-                            </div>
-                            <div className="text-left">
-                              <span className="text-[10px] font-black uppercase font-mono block text-emerald-100">Informe Aprobado</span>
-                              <span className="text-xs text-white/90 font-medium">Este informe ya cuenta con la aprobación del supervisor y no puede ser modificado.</span>
-                            </div>
+                          <div className="bg-white/10 border border-white/25 rounded-lg px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
+                            <CheckCircle2 className="text-emerald-100 shrink-0" size={18} />
+                            <span className="text-[11px] font-bold text-white">Informe Aprobado · no editable</span>
                           </div>
                         ) : (
                           // INFORME_PENDIENTE y OBSERVADA permiten crear/corregir el informe
@@ -2436,7 +2434,7 @@ export default function TecnicoView({
                                   onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
                                 }
                               }}
-                              className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                              className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-lg shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                             >
                               <FileCheck size={18} />
                               <span>
@@ -2446,14 +2444,9 @@ export default function TecnicoView({
                               </span>
                             </button>
                           ) : (
-                            <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
-                              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
-                                <FileLock2 size={18} />
-                              </div>
-                              <div className="text-left">
-                                <span className="text-[10px] font-black uppercase font-mono block text-white">Informe no disponible</span>
-                                <span className="text-xs text-white/90 font-medium">El informe se habilitará cuando el trabajo esté en ejecución.</span>
-                              </div>
+                            <div className="bg-white/10 border border-white/25 rounded-lg px-4 py-2 flex items-center gap-2.5 backdrop-blur-sm">
+                              <FileLock2 className="text-white shrink-0" size={18} />
+                              <span className="text-[11px] font-bold text-white">Informe no disponible · se habilitará en ejecución</span>
                             </div>
                           )
                         )}
