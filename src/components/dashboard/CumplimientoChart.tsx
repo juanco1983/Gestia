@@ -8,16 +8,18 @@ interface CumplimientoChartProps {
 }
 
 export const CumplimientoChart: React.FC<CumplimientoChartProps> = ({ ots }) => {
-  // Compute daily completion vs scheduled for the last 7 days dynamically
+  // Compute daily completion vs scheduled for a window centered on today (last 7 + next 7 days)
   const dailyData = useMemo(() => {
     const days: Array<{ dayName: string; Completadas: number; Programadas: number; Cumplimiento: number }> = [];
     const today = new Date();
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const localDateStr = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    for (let i = 6; i >= 0; i--) {
+    for (let i = -7; i <= 7; i++) {
       const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      d.setDate(today.getDate() + i);
+      const dateStr = localDateStr(d);
       const dayName = `${dayNames[d.getDay()]} ${d.getDate()}`;
 
       // Filter OTs for this exact date
@@ -55,7 +57,7 @@ export const CumplimientoChart: React.FC<CumplimientoChartProps> = ({ ots }) => 
             <span>Cumplimiento de OT por Día</span>
           </h3>
           <p className="text-xs text-slate-400 font-medium mt-0.5">
-            Últimos 7 días • Ratios de atención en campo
+            Ventana de 15 días (7 antes · hoy · 7 después) • Ratios de atención en campo
           </p>
         </div>
 
