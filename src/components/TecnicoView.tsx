@@ -2291,8 +2291,10 @@ export default function TecnicoView({
               <div className="bg-teal-brand text-white rounded-xl p-6 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="space-y-2 max-w-xl z-10 text-left">
-                  <h3 className="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
-                    <FileCheck className="text-amber-300 animate-pulse" size={16} />
+                  <h3 className="text-white text-sm font-bold uppercase font-mono flex items-center gap-2.5 leading-none">
+                    <span className="w-6 h-6 shrink-0 rounded-md bg-white/10 border border-white/20 flex items-center justify-center">
+                      <FileCheck className="text-amber-300" size={14} />
+                    </span>
                     <span>Emisión de Informe Técnico Oficial</span>
                   </h3>
                   <p className="text-[11px] text-white/90 leading-relaxed font-sans">
