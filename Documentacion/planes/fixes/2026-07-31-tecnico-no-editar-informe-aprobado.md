@@ -51,6 +51,19 @@ El action card deja de usar `bg-slate-900` (negro) y pasa al verde de marca
 `#0F9E82` (`teal-brand`), el color del sistema, con texto en blanco y
 overlays `bg-white/10` para las tarjetas de bloqueo. Aplicado en el mockup.
 
+### Layout compacto (Opción A aprobada)
+
+El párrafo explicativo largo estiraba la tarjeta verticalmente. Se adopta el
+layout compacto de una sola fila (ver `Documentacion/mockups/action-card-compacto.html`):
+
+- Tarjeta en una fila: título truncado + badge del estado de la OT a la
+  izquierda; acción (botón o tarjeta de bloqueo) a la derecha.
+- La explicación larga del cuestionario se elimina de la tarjeta (el wizard
+  ya describe el flujo internamente).
+- Tarjetas de bloqueo compactas (`rounded-lg px-4 py-2`): icono + texto corto
+  ("Informe en Revisión · no editable", "Informe Aprobado · no editable").
+- Botones de acción compactados (`px-5 py-2.5 rounded-lg`).
+
 ## Criterios de aceptación
 
 1. Con OT en `APROBADA`, el técnico NO ve el botón de editar: ve la tarjeta
@@ -77,6 +90,7 @@ overlays `bg-white/10` para las tarjetas de bloqueo. Aplicado en el mockup.
 | Action card: bloquear edición para estados no editables + tarjetas de estado | completed |
 | Guardas de estado en `handleWizardComplete` y `handleSubmitReport` | completed |
 | Verificación (build + prueba manual del flujo aprobar→técnico) | completed |
+| Layout compacto Opción A en action card | completed |
 | Commit + push | pending |
 
 ## Riesgos
