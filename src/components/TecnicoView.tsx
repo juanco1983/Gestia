@@ -26,7 +26,10 @@ import {
   MapPin,
   Users,
   Clock,
-  Cpu
+  Cpu,
+  Hourglass,
+  CheckCircle2,
+  FileLock2
 } from 'lucide-react';
 import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
 import { useLocalToast } from './shared/ToastModal';
@@ -73,6 +76,11 @@ export default function TecnicoView({
 
   const { notifySuccess, notifyError, notifyOffline, toastView } = useLocalToast();
   const { confirm, confirmView } = useConfirm();
+
+  const isOtReportEditable = (ot: OT | null) => {
+    if (!ot) return false;
+    return [OTStatus.TRABAJO_EN_EJECUCION, OTStatus.INFORME_PENDIENTE, OTStatus.OBSERVADA].includes(ot.estado);
+  };
 
   const mockTechName = currentUser?.username || "Carlos Ocsa";
   
@@ -754,6 +762,11 @@ export default function TecnicoView({
     e.preventDefault();
     if (!selectedOt) return;
 
+    if (!isOtReportEditable(selectedOt)) {
+      notifyError('Informe Bloqueado', 'Este informe ya no puede ser modificado ni reenviado. Solo es editable cuando la OT está en ejecución, con informe pendiente u observada.');
+      return;
+    }
+
     // Check if there are empty photo slots
     const missingPhotos = fotosLabeled.filter(f => !f.base64);
     if (missingPhotos.length > 0) {
@@ -848,6 +861,10 @@ export default function TecnicoView({
   const handleWizardComplete = async (report: TechnicalReport) => {
     try {
       if (!selectedOt) return;
+      if (!isOtReportEditable(selectedOt)) {
+        notifyError('Informe Bloqueado', 'Este informe ya no puede ser modificado ni reenviado. Solo es editable cuando la OT está en ejecución, con informe pendiente u observada.');
+        return;
+      }
       if (!isOnline) {
         report.offlineDirty = true;
         onSaveReportOffline(report);
@@ -2271,14 +2288,14 @@ export default function TecnicoView({
               })()}
 
               {/* ACTION CARD */}
-              <div className="bg-slate-900 text-white rounded-xl p-6 border border-slate-800 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="bg-teal-brand text-white rounded-xl p-6 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="space-y-2 max-w-xl z-10 text-left">
                   <h3 className="text-white text-sm font-bold uppercase font-mono flex items-center gap-2">
-                    <FileCheck className="text-amber-400 animate-pulse" size={16} />
+                    <FileCheck className="text-amber-300 animate-pulse" size={16} />
                     <span>Emisión de Informe Técnico Oficial</span>
                   </h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                  <p className="text-[11px] text-white/90 leading-relaxed font-sans">
                     Al activar el botón inferior, se iniciará el cuestionario estructurado dinámico Mafort de doble marco. 
                     El número de mediciones, estado de celdas y capturas fotográficas obligatorias se configurarán automáticamente según la potencia de <strong>{selectedOt.potenciaKva} KVA</strong> de la OT seleccionada.
                   </p>
@@ -2290,11 +2307,11 @@ export default function TecnicoView({
                     
                     if (!isTitular) {
                       return (
-                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl px-6 py-3 flex items-center gap-3 text-slate-400">
-                          <Users size={20} className="text-blue-400" />
+                        <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3 flex items-center gap-3 text-white backdrop-blur-sm">
+                          <Users size={20} className="text-white/80" />
                           <div className="text-left">
-                            <span className="text-[10px] font-black uppercase font-mono block text-blue-400">Personal de Apoyo</span>
-                            <span className="text-xs font-medium">Solo el titular puede gestionar el informe.</span>
+                            <span className="text-[10px] font-black uppercase font-mono block text-white/80">Personal de Apoyo</span>
+                            <span className="text-xs font-medium text-white/90">Solo el titular puede gestionar el informe.</span>
                           </div>
                         </div>
                       );
@@ -2384,25 +2401,57 @@ export default function TecnicoView({
                               <span>Finalizar Trabajo (Concluir Visita)</span>
                             </button>
                           </div>
+                        ) : [OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION].includes(selectedOt.estado) ? (
+                          <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
+                            <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 shrink-0">
+                              <Hourglass size={18} />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-[10px] font-black uppercase font-mono block text-amber-200">Informe en Revisión</span>
+                              <span className="text-xs text-white/90 font-medium">No se puede editar. El supervisor de calidad está evaluando el informe.</span>
+                            </div>
+                          </div>
+                        ) : [OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.CORREGIDA].includes(selectedOt.estado) ? (
+                          <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
+                            <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
+                              <CheckCircle2 size={18} />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-[10px] font-black uppercase font-mono block text-emerald-100">Informe Aprobado</span>
+                              <span className="text-xs text-white/90 font-medium">Este informe ya cuenta con la aprobación del supervisor y no puede ser modificado.</span>
+                            </div>
+                          </div>
                         ) : (
-                          // For states like INFORME_PENDIENTE, OBSERVADA, etc.
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsEditingReport(true);
-                              if (selectedOt.estado === OTStatus.OBSERVADA) {
-                                onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
-                              }
-                            }}
-                            className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
-                          >
-                            <FileCheck size={18} />
-                            <span>
-                              {selectedOt.estado === OTStatus.OBSERVADA 
-                                ? 'Corregir Informe Técnico' 
-                                : 'Crear / Editar Informe Técnico'}
-                            </span>
-                          </button>
+                          // INFORME_PENDIENTE y OBSERVADA permiten crear/corregir el informe
+                          [OTStatus.INFORME_PENDIENTE, OTStatus.OBSERVADA].includes(selectedOt.estado) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsEditingReport(true);
+                                if (selectedOt.estado === OTStatus.OBSERVADA) {
+                                  onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
+                                }
+                              }}
+                              className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
+                            >
+                              <FileCheck size={18} />
+                              <span>
+                                {selectedOt.estado === OTStatus.OBSERVADA 
+                                  ? 'Corregir Informe Técnico' 
+                                  : 'Crear / Editar Informe Técnico'}
+                              </span>
+                            </button>
+                          ) : (
+                            <div className="bg-white/10 border border-white/25 rounded-xl px-6 py-3.5 flex items-center gap-3 backdrop-blur-sm">
+                              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
+                                <FileLock2 size={18} />
+                              </div>
+                              <div className="text-left">
+                                <span className="text-[10px] font-black uppercase font-mono block text-white">Informe no disponible</span>
+                                <span className="text-xs text-white/90 font-medium">El informe se habilitará cuando el trabajo esté en ejecución.</span>
+                              </div>
+                            </div>
+                          )
                         )}
                       </>
                     );
