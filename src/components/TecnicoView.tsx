@@ -2290,17 +2290,19 @@ export default function TecnicoView({
               {/* ACTION CARD */}
               <div className="bg-teal-brand text-white rounded-xl p-6 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="space-y-2 max-w-xl z-10 text-left">
-                  <h3 className="text-white text-sm font-bold uppercase font-mono flex items-center gap-2.5 leading-none">
-                    <span className="w-6 h-6 shrink-0 rounded-md bg-white/10 border border-white/20 flex items-center justify-center">
-                      <FileCheck className="text-amber-300" size={14} />
-                    </span>
-                    <span>Emisión de Informe Técnico Oficial</span>
-                  </h3>
-                  <p className="text-[11px] text-white/90 leading-relaxed font-sans">
-                    Al activar el botón inferior, se iniciará el cuestionario estructurado dinámico Mafort de doble marco. 
-                    El número de mediciones, estado de celdas y capturas fotográficas obligatorias se configurarán automáticamente según la potencia de <strong>{selectedOt.potenciaKva} KVA</strong> de la OT seleccionada.
-                  </p>
+                <div className="flex items-start gap-3 max-w-xl z-10">
+                  <span className="w-6 h-6 shrink-0 rounded-md bg-white/10 border border-white/20 flex items-center justify-center">
+                    <FileCheck className="text-amber-300" size={14} />
+                  </span>
+                  <div className="space-y-2">
+                    <h3 className="text-white text-sm font-bold uppercase font-mono leading-none">
+                      <span>Emisión de Informe Técnico Oficial</span>
+                    </h3>
+                    <p className="text-[11px] text-white/90 leading-relaxed font-sans">
+                      Al activar el botón inferior, se iniciará el cuestionario estructurado dinámico Mafort de doble marco. 
+                      El número de mediciones, estado de celdas y capturas fotográficas obligatorias se configurarán automáticamente según la potencia de <strong>{selectedOt.potenciaKva} KVA</strong> de la OT seleccionada.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="shrink-0 z-10 w-full md:w-auto flex flex-col md:flex-row gap-3">
