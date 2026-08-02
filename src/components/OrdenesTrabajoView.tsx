@@ -278,16 +278,16 @@ export default function OrdenesTrabajoView({
     <div className="space-y-6 text-left" id="ot-marco-main-panel">
       
       {/* Top Level Module Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-[28px] text-white">
+      <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <span className="text-[9px] font-black tracking-wider uppercase bg-[#00B594] text-white px-2.5 py-1 rounded-md font-mono">
+          <span className="text-[10px] font-black tracking-wider uppercase bg-teal-brand text-white px-2.5 py-1 rounded-md font-mono">
             Módulo Operacional
           </span>
-          <h1 className="text-xl font-black tracking-tight mt-2 flex items-center gap-2">
-            <FileText className="text-[#00B594]" size={22} />
+          <h1 className="text-xl font-black tracking-tight mt-2 flex items-center gap-2 text-slate-900">
+            <FileText className="text-teal-brand" size={22} />
             Gestión Integral de Órdenes de Trabajo (OT)
           </h1>
-          <p className="text-xs text-slate-300 font-semibold mt-1">
+          <p className="text-xs text-slate-400 font-semibold mt-1">
             Planeamiento, control de cuotas, seguimiento de facturación multimoneda y rentabilidad comercial.
           </p>
         </div>
@@ -295,21 +295,21 @@ export default function OrdenesTrabajoView({
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => setShowCreateMarcoModal(true)}
-            className="bg-[#00B594] hover:bg-[#00a385] text-white text-xs font-black px-4 py-2.5 rounded-2xl flex items-center gap-2 cursor-pointer shadow-lg transition-all"
+            className="bg-teal-brand hover:bg-teal-deep text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md transition-all active:scale-95"
           >
             <Plus size={15} />
             Crear OT Marco (Padre)
           </button>
           <button
             onClick={() => setShowAddLineModal(true)}
-            className="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white text-xs font-black px-4 py-2.5 rounded-2xl flex items-center gap-2 cursor-pointer transition-all"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all"
           >
             <Layers size={15} />
             Agregar Cuota/Línea
           </button>
           <button
             onClick={handleExportCSV}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-black px-4 py-2.5 rounded-2xl flex items-center gap-2 cursor-pointer transition-all"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all"
           >
             <Download size={14} />
             Exportar Excel/CSV
@@ -318,13 +318,13 @@ export default function OrdenesTrabajoView({
       </div>
 
       {/* Dynamic Exchange Rate (Tipo Cambio) Configuration Panel */}
-      <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div className="bg-white border border-slate-100 p-4 rounded-[24px] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#E6F7F4] text-[#00B594] flex items-center justify-center border border-[#00B594]/20 shrink-0 font-bold font-mono">
+          <div className="w-8 h-8 rounded-lg bg-teal-mist text-teal-brand flex items-center justify-center border border-teal-brand/20 shrink-0 font-bold font-mono">
             $
           </div>
           <div>
-            <h4 className="text-xs font-black text-slate-800">Tipo de Cambio Soles a Dólares (SUNAT)</h4>
+            <h4 className="text-xs font-extrabold text-slate-900">Tipo de Cambio Soles a Dólares (SUNAT)</h4>
             <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Vigente para el cálculo de importes de soles convertidos a la cartera consolidada en dólares.</p>
           </div>
         </div>
@@ -334,12 +334,12 @@ export default function OrdenesTrabajoView({
           <input
             type="number"
             step="0.001"
-            className="w-16 font-mono font-black text-xs text-slate-800 focus:outline-none focus:border-[#00B594] text-center"
+            className="w-16 font-mono font-black text-xs text-slate-800 focus:outline-none focus:border-teal-brand text-center"
             value={tipoCambio}
             onChange={(e) => onUpdateTipoCambio(parseFloat(e.target.value) || 3.75)}
           />
-          <span className="text-[10px] font-black text-[#00B594] font-mono shrink-0 flex items-center gap-0.5">
-            <RefreshCw size={10} className="animate-spin-slow" />
+          <span className="text-[10px] font-black text-teal-brand font-mono shrink-0 flex items-center gap-0.5">
+            <RefreshCw size={10} className="animate-spin" />
             ACTIVO
           </span>
         </div>
@@ -353,12 +353,12 @@ export default function OrdenesTrabajoView({
       />
 
       {/* Sub tabs navigation */}
-      <div className="flex border-b border-slate-150 gap-4" id="ot-tabs">
+      <div className="flex border-b border-slate-100 gap-4" id="ot-tabs">
         <button
           onClick={() => setSubTab('lista')}
           className={`pb-2.5 text-xs font-black uppercase tracking-wider font-mono border-b-2 transition-all cursor-pointer ${
             subTab === 'lista' 
-              ? 'border-[#00B594] text-[#00B594]' 
+              ? 'border-teal-brand text-teal-brand' 
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -368,7 +368,7 @@ export default function OrdenesTrabajoView({
           onClick={() => setSubTab('analytics')}
           className={`pb-2.5 text-xs font-black uppercase tracking-wider font-mono border-b-2 transition-all cursor-pointer ${
             subTab === 'analytics' 
-              ? 'border-[#00B594] text-[#00B594]' 
+              ? 'border-teal-brand text-teal-brand' 
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -381,7 +381,7 @@ export default function OrdenesTrabajoView({
           onClick={() => setSubTab('targets')}
           className={`pb-2.5 text-xs font-black uppercase tracking-wider font-mono border-b-2 transition-all cursor-pointer ${
             subTab === 'targets' 
-              ? 'border-[#00B594] text-[#00B594]' 
+              ? 'border-teal-brand text-teal-brand' 
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -394,7 +394,7 @@ export default function OrdenesTrabajoView({
           onClick={() => setSubTab('comercial')}
           className={`pb-2.5 text-xs font-black uppercase tracking-wider font-mono border-b-2 transition-all cursor-pointer ${
             subTab === 'comercial' 
-              ? 'border-[#00B594] text-[#00B594]' 
+              ? 'border-teal-brand text-teal-brand' 
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -422,9 +422,9 @@ export default function OrdenesTrabajoView({
       )}
 
       {subTab === 'analytics' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-150">
-            <h3 className="text-base font-black text-slate-800">Alertas de Servicio y Facturación Pendiente</h3>
+        <div className="space-y-6">
+          <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+            <h3 className="text-sm font-extrabold text-slate-900">Alertas de Servicio y Facturación Pendiente</h3>
             <p className="text-xs text-slate-400 font-semibold mt-1">
               Desviaciones temporales de MAFORT. Identifica qué cuotas no se facturaron en el mes programado y qué visitas están atrasadas.
             </p>
@@ -433,9 +433,9 @@ export default function OrdenesTrabajoView({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Facturaciones Vencidas */}
-            <div className="bg-white border border-slate-150 rounded-3xl p-6 space-y-4 shadow-sm">
+            <div className="bg-white rounded-[24px] border border-slate-100 p-6 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-800 flex items-center gap-2">
+                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
                   Facturas Pendientes Atrasadas ({overdueFacturaLines.length})
                 </span>
@@ -444,19 +444,19 @@ export default function OrdenesTrabajoView({
               
               <div className="space-y-3.5 divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
                 {overdueFacturaLines.length === 0 ? (
-                  <p className="text-xs text-slate-450 font-medium py-12 text-center">¡Felicitaciones! No tienes facturación programada atrasada.</p>
+                  <p className="text-xs text-slate-400 font-medium py-12 text-center">¡Felicitaciones! No tienes facturación programada atrasada.</p>
                 ) : (
                   overdueFacturaLines.map(line => (
                     <div key={line.id} className="pt-3.5 first:pt-0 flex justify-between items-center text-xs">
                       <div className="space-y-1">
-                        <div className="font-black text-slate-800">{line.razon_social}</div>
+                        <div className="font-black text-slate-900">{line.razon_social}</div>
                         <div className="text-[10px] text-slate-400 font-semibold">
                           Línea {line.ot} • Programado en: <strong className="font-mono text-rose-600 font-extrabold">{line.mes_prog_facturacion} {line.anio_prog_facturacion}</strong>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-mono font-black text-slate-900">${line.total_usd.toLocaleString()}</div>
-                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded mt-1 inline-block">SLA Atrasado</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded mt-1 inline-block">SLA Atrasado</span>
                       </div>
                     </div>
                   ))
@@ -465,23 +465,23 @@ export default function OrdenesTrabajoView({
             </div>
 
             {/* Servicios Por Ejecutar Próximos o Vencidos */}
-            <div className="bg-white border border-slate-150 rounded-3xl p-6 space-y-4 shadow-sm">
+            <div className="bg-white rounded-[24px] border border-slate-100 p-6 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-800 flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#00B594] shrink-0"></span>
+                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-brand shrink-0"></span>
                   Servicios y Visitas Técnicas Próximas ({soonToExecuteLines.length})
                 </span>
-                <span className="text-[10px] font-black text-[#00B594] font-mono bg-[#E6F7F4] px-2.5 py-1 rounded-md">Ejecución en Campo</span>
+                <span className="text-[10px] font-black text-teal-brand font-mono bg-teal-mist px-2.5 py-1 rounded-md">Ejecución en Campo</span>
               </div>
               
               <div className="space-y-3.5 divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
                 {soonToExecuteLines.length === 0 ? (
-                  <p className="text-xs text-slate-450 font-medium py-12 text-center">No hay visitas técnicas pendientes registradas para este periodo.</p>
+                  <p className="text-xs text-slate-400 font-medium py-12 text-center">No hay visitas técnicas pendientes registradas para este periodo.</p>
                 ) : (
                   soonToExecuteLines.map(line => (
                     <div key={line.id} className="pt-3.5 first:pt-0 flex justify-between items-center text-xs">
                       <div className="space-y-1">
-                        <div className="font-black text-slate-800">{line.razon_social}</div>
+                        <div className="font-black text-slate-900">{line.razon_social}</div>
                         <div className="text-[10px] text-slate-400 font-semibold truncate max-w-xs">
                           {line.descripcion}
                         </div>
@@ -491,7 +491,7 @@ export default function OrdenesTrabajoView({
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-mono font-bold text-slate-500">Línea {line.ot}</div>
-                        <span className="text-[8px] font-extrabold font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded mt-1 inline-block">Por Visitar</span>
+                        <span className="text-[10px] font-extrabold font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded mt-1 inline-block">Por Visitar</span>
                       </div>
                     </div>
                   ))
