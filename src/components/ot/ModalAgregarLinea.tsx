@@ -99,10 +99,10 @@ export default function ModalAgregarLinea({
 
   return (
     <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" id="ot-modal-agregar-linea">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 animate-fade-in">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
-          <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-            <Plus size={16} className="text-[#00B594]" />
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-md overflow-hidden border border-slate-100">
+        <div className="bg-slate-50/60 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+            <Plus size={16} className="text-teal-brand" />
             Agregar Cuota a Acuerdo Existente
           </h3>
           <button 
@@ -205,7 +205,7 @@ export default function ModalAgregarLinea({
             </select>
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-150">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
@@ -215,7 +215,7 @@ export default function ModalAgregarLinea({
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-all"
+              className="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-all"
             >
               Agregar Cuota
             </button>

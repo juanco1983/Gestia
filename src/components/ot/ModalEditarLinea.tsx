@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, CheckCircle2, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
 import { OrdenTrabajoLinea, Client } from '../../types';
 import { MESES_ESPANOL, getFinancialStatusInfo, PENDIENTE_VALUES } from '../../utils/otDefaults';
 
@@ -86,16 +86,16 @@ export default function ModalEditarLinea({
     <>
     <div className="fixed inset-0 z-[80] bg-slate-900/40 backdrop-blur-sm" />
     <div className="fixed inset-0 z-[85] flex items-start justify-center p-4 overflow-y-auto" id="ot-modal-editar-linea">
-      <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+        <div className="bg-slate-50/60 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+            <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
               <span>{isFacturado ? 'Ver Línea de OT' : 'Editar Línea de OT'} {editingLine.ot}</span>
-              <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
+              <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
                 {statusInfo.label}
               </span>
             </h3>
-            <span className="text-[10px] font-bold text-slate-450 font-mono">Cliente: {editingLine.razon_social}</span>
+            <span className="text-[10px] font-bold text-slate-400 font-mono">Cliente: {editingLine.razon_social}</span>
           </div>
           <button 
             onClick={onClose}
@@ -116,7 +116,7 @@ export default function ModalEditarLinea({
           
           {/* SECCIÓN 1: DATOS ESPECÍFICOS DE LA CUOTA / LÍNEA */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-450 font-mono border-b border-slate-100 pb-1">
+            <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-400 font-mono border-b border-slate-100 pb-1">
               Datos de la Línea / Cuota Financiera
             </h4>
 
@@ -137,7 +137,7 @@ export default function ModalEditarLinea({
                       sub_importe_inc_igv: Number((sin * 1.18).toFixed(2))
                     });
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800 font-bold focus:outline-none focus:border-[#00B594] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 font-mono text-slate-800 font-bold focus:outline-none focus:border-teal-brand disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -156,28 +156,28 @@ export default function ModalEditarLinea({
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-wide font-mono flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-[#00B594]" />
+                  <CheckCircle2 size={13} className="text-teal-brand" />
                   Datos Reales de Facturación (Monto y Factura)
                 </h4>
-                <span className="text-[9.5px] font-mono font-bold text-slate-400">
+                <span className="text-[10px] font-mono font-bold text-slate-400">
                   Automático
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[9.5px] font-bold uppercase text-slate-600 block mb-1 font-mono">Nro de Factura</label>
+                  <label className="text-[10px] font-bold uppercase text-slate-600 block mb-1 font-mono">Nro de Factura</label>
                   <input
                     type="text"
                     placeholder="Ej: F001-2294"
                     value={editingLine.n_factura || ''}
                     disabled={isFacturado}
                     onChange={(e) => setEditingLine({ ...editingLine, n_factura: e.target.value.toUpperCase() })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono font-bold text-slate-850 focus:outline-none focus:border-[#00B594] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono font-bold text-slate-700 focus:outline-none focus:border-teal-brand disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="text-[9.5px] font-bold uppercase text-slate-600 block mb-1 font-mono">Fecha Emisión</label>
+                  <label className="text-[10px] font-bold uppercase text-slate-600 block mb-1 font-mono">Fecha Emisión</label>
                   <input
                     type="date"
                     value={editingLine.fecha_factura || ''}
@@ -191,7 +191,7 @@ export default function ModalEditarLinea({
                         fecha_factura: date
                       });
                     }}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono text-slate-800 focus:outline-none focus:border-[#00B594] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 font-mono text-slate-800 focus:outline-none focus:border-teal-brand disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export default function ModalEditarLinea({
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Estado Facturación (Automático)</label>
                 <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-800 font-bold flex items-center justify-between">
                   <span>{statusInfo.label}</span>
-                  <span className="text-[9px] text-slate-400 uppercase font-mono">Auto</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-mono">Auto</span>
                 </div>
               </div>
               <div>
@@ -255,7 +255,7 @@ export default function ModalEditarLinea({
                   value={editingLine.comercial || ''}
                   disabled={isFacturado}
                   onChange={(e) => setEditingLine({ ...editingLine, comercial: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-700 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -283,19 +283,19 @@ export default function ModalEditarLinea({
             <button
               type="button"
               onClick={() => setShowParentFields(!showParentFields)}
-              className="w-full flex items-center justify-between py-2 px-1 text-[#00B594] hover:text-[#009b7e] transition-colors font-extrabold text-xs"
+              className="w-full flex items-center justify-between py-2 px-1 text-teal-brand hover:text-teal-deep transition-colors font-extrabold text-xs"
             >
               <span className="flex items-center gap-1.5 font-black uppercase tracking-wide font-mono text-[10px]">
                 {showParentFields ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 Editar Datos del Acuerdo Padre (OT Marco #{editingLine.ot_marco})
               </span>
-              <span className="text-[9px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full font-mono">
+              <span className="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full font-mono">
                 {showParentFields ? 'Ocultar' : 'Expandir para editar'}
               </span>
             </button>
             
             {showParentFields && (
-              <div className="mt-2.5 space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/60 animate-fade-in text-left">
+              <div className="mt-2.5 space-y-3.5 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/60 text-left">
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -355,7 +355,7 @@ export default function ModalEditarLinea({
                     rows={2}
                     value={editingLine.descripcion || ''}
                     onChange={(e) => setEditingLine({ ...editingLine, descripcion: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-850"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-700"
                   />
                 </div>
 
@@ -398,8 +398,9 @@ export default function ModalEditarLinea({
                   </div>
                 </div>
 
-                <div className="p-2 bg-blue-50 text-blue-800 rounded-xl text-[10px] leading-relaxed">
-                  💡 <strong>Nota del Sistema:</strong> Cualquier cambio realizado en esta sección del Acuerdo Padre se aplicará automáticamente a <strong>todas</strong> las cuotas/líneas que pertenezcan a la OT Marco #{editingLine.ot_marco}.
+                <div className="p-2 bg-blue-50 text-blue-800 rounded-xl text-[10px] leading-relaxed flex items-start gap-1.5">
+                  <Lightbulb size={13} className="shrink-0 mt-0.5" />
+                  <span><strong>Nota del Sistema:</strong> Cualquier cambio realizado en esta sección del Acuerdo Padre se aplicará automáticamente a <strong>todas</strong> las cuotas/líneas que pertenezcan a la OT Marco #{editingLine.ot_marco}.</span>
                 </div>
 
               </div>
@@ -408,7 +409,7 @@ export default function ModalEditarLinea({
           )}
 
           {/* ACCIONES DEL FORMULARIO */}
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-150">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-200">
             {isFacturado ? (
               <button
                 type="button"
@@ -428,7 +429,7 @@ export default function ModalEditarLinea({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
+                  className="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white font-black rounded-xl text-xs cursor-pointer shadow-lg transition-colors"
                 >
                   Guardar Cambios
                 </button>

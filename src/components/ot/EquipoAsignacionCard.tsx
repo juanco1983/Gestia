@@ -51,8 +51,8 @@ export default function EquipoAsignacionCard({
   };
 
   return (
-    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3.5 hover:border-[#00B594]/45 transition-colors">
-      <div className="flex justify-between items-start border-b border-slate-150 pb-2">
+    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3.5 hover:border-teal-brand/45 transition-colors">
+      <div className="flex justify-between items-start border-b border-slate-200 pb-2">
         <div>
           <span className="text-xs font-black text-slate-800">
             {equipo.codigo} - {equipo.tipo}
@@ -61,14 +61,14 @@ export default function EquipoAsignacionCard({
             Marca: {equipo.marca || '-'} | Modelo: {equipo.modelo || '-'} | Ubicac.: {equipo.ubicacion || '-'}
           </p>
         </div>
-        <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-200 text-slate-650 rounded-full font-bold uppercase">
+        <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-200 text-slate-500 rounded-full font-bold uppercase">
           {equipo.potenciaKva || '-'} KVA
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Técnico Titular</label>
+          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Técnico Titular</label>
           <select
             disabled={readOnly}
             value={techId}
@@ -87,7 +87,7 @@ export default function EquipoAsignacionCard({
         </div>
 
         <div className="space-y-1">
-          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Técnico Apoyo</label>
+          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Técnico Apoyo</label>
           <select
             disabled={readOnly}
             value={apoyoId}
@@ -108,7 +108,7 @@ export default function EquipoAsignacionCard({
 
       <div className="grid grid-cols-3 gap-3 pt-0.5">
         <div className="space-y-1">
-          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Fecha</label>
+          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Fecha</label>
           <input
             disabled={readOnly}
             type="date"
@@ -123,7 +123,7 @@ export default function EquipoAsignacionCard({
         </div>
 
         <div className="space-y-1">
-          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
+          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
             <Clock size={10} /> Inicio
           </label>
           <input
@@ -140,7 +140,7 @@ export default function EquipoAsignacionCard({
         </div>
 
         <div className="space-y-1">
-          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
+          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
             <Clock size={10} /> Fin
           </label>
           <input

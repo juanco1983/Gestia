@@ -305,12 +305,12 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in-50 zoom-in-95 duration-200">
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden border border-slate-100">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200/60 flex justify-between items-center">
+        <div className="px-6 py-4 bg-slate-50/60 border-b border-slate-100 flex justify-between items-center">
           <div>
-            <h3 className="font-display font-black text-slate-800 text-lg uppercase tracking-wider">
+            <h3 className="font-display font-black text-slate-900 text-lg uppercase tracking-wider">
               Detalle de Equipos
             </h3>
             <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -400,7 +400,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                   {/* Equipment summary row */}
                   <div className="p-4 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-emerald-50 rounded-xl text-[#00B594] shrink-0 border border-emerald-100">
+                      <div className="p-2 bg-emerald-50 rounded-xl text-teal-brand shrink-0 border border-emerald-100">
                         <Cpu size={18} />
                       </div>
                       <div className="min-w-0">
@@ -433,7 +433,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
                             : latestOt 
                               ? 'bg-slate-100 text-slate-500 border-slate-200' 
-                              : 'bg-slate-50 text-slate-400 border-slate-150'
+                              : 'bg-slate-50 text-slate-400 border-slate-200'
                         }`}>
                           {visitStatus}
                         </span>
@@ -464,7 +464,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
 
                   {/* History expanded list */}
                   {isHistoryExpanded && (
-                    <div className="border-t border-slate-100 p-4 bg-slate-50/20 space-y-3 animate-in slide-in-from-top-2 duration-150">
+                    <div className="border-t border-slate-100 p-4 bg-slate-50/20 space-y-3">
                       <h4 className="text-[10px] font-black font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <History size={11} className="text-slate-400" />
                         <span>Historial de Informes de Servicio ({eqReports.length})</span>
@@ -497,14 +497,14 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                               <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                                 <button
                                   onClick={() => setSelectedReportForView(item.report)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-lg text-[9px] font-bold uppercase font-mono tracking-wider transition-colors w-full sm:w-auto justify-center"
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-bold uppercase font-mono tracking-wider transition-colors w-full sm:w-auto justify-center"
                                 >
                                   <Eye size={11} />
                                   <span>Ver Detalles</span>
                                 </button>
                                 <button
                                   onClick={() => handleDownloadDoc(item.report, item.ot)}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-150 rounded-lg text-[9px] font-bold uppercase font-mono tracking-wider transition-colors w-full sm:w-auto justify-center"
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-bold uppercase font-mono tracking-wider transition-colors w-full sm:w-auto justify-center"
                                 >
                                   <Download size={11} />
                                   <span>Word</span>
@@ -539,12 +539,12 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
         {/* Selected Report details view modal (Inner popup) */}
         {selectedReportForView && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-[10000] flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[75vh] flex flex-col shadow-xl overflow-hidden border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-3xl max-h-[75vh] flex flex-col overflow-hidden border border-slate-100">
               
               {/* Inner Header */}
-              <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200/60 flex justify-between items-center text-left">
+              <div className="px-5 py-3.5 bg-slate-50/60 border-b border-slate-100 flex justify-between items-center text-left">
                 <div>
-                  <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wider">
+                  <h4 className="font-display font-black text-slate-900 text-sm uppercase tracking-wider">
                     Ficha de Informe: {selectedReportForView.informeN || `INF-${selectedReportForView.id.slice(0, 6)}`}
                   </h4>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -578,15 +578,15 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                   <h5 className="font-bold text-slate-700 uppercase tracking-wide text-[10px] border-b border-slate-200 pb-1.5">Estado Banco de Baterías</h5>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                      <span className="text-[9px] text-slate-400 font-mono block">Nivel Carga</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">Nivel Carga</span>
                       <strong className="text-slate-800 font-mono text-xs">{selectedReportForView.indicadoresBateria?.nivelCarga || 0}%</strong>
                     </div>
                     <div>
-                      <span className="text-[9px] text-slate-400 font-mono block">Temp. Promedio</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">Temp. Promedio</span>
                       <strong className="text-slate-800 font-mono text-xs">{selectedReportForView.indicadoresBateria?.temperaturaC || 0}°C</strong>
                     </div>
                     <div>
-                      <span className="text-[9px] text-slate-400 font-mono block">Estado Celdas</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">Estado Celdas</span>
                       <strong className="text-slate-800 font-mono text-xs">{selectedReportForView.indicadoresBateria?.estadoCeldas || 'S/D'}</strong>
                     </div>
                   </div>
@@ -596,7 +596,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                 <div className="space-y-3">
                   <div>
                     <strong className="text-slate-700 block mb-1">Diagnóstico Técnico y Observaciones:</strong>
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-650 italic">
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 italic">
                       {selectedReportForView.observacionesDiagnostico || 'UPS operando dentro de los parámetros normales de flotación estable.'}
                     </div>
                   </div>
@@ -604,7 +604,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                   {selectedReportForView.comentariosAdicionales && (
                     <div>
                       <strong className="text-slate-700 block mb-1">Comentarios Adicionales:</strong>
-                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-650 italic">
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 italic">
                         {selectedReportForView.comentariosAdicionales}
                       </div>
                     </div>
@@ -617,7 +617,7 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                       {selectedReportForView.recomendaciones && selectedReportForView.recomendaciones.length > 0 ? (
                         selectedReportForView.recomendaciones.map((rec, rIdx) => (
                           <div key={rIdx} className="flex gap-1.5 text-[11px] text-slate-600">
-                            <span>❖</span>
+                            <CheckCircle2 size={12} className="shrink-0 mt-0.5 text-teal-brand" />
                             <span>{rec}</span>
                           </div>
                         ))

@@ -18,9 +18,9 @@ export default function PanelAlertas({
   }
 
   return (
-    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 md:p-5 flex flex-col gap-3.5" id="ot-panel-alertas">
+    <div className="bg-white rounded-[24px] border border-slate-100 p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col gap-3.5" id="ot-panel-alertas">
       <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-        <AlertTriangle className="text-[#00B594] shrink-0" size={16} />
+        <AlertTriangle className="text-teal-brand shrink-0" size={16} />
         <span>Panel de Alertas y Auditoría Financiera Operacional</span>
       </div>
       
@@ -36,30 +36,30 @@ export default function PanelAlertas({
                 <span className="font-semibold flex items-center gap-1.5">
                   <AlertTriangle size={13} className="text-rose-500 shrink-0" />
                   <span>
-                    ⚠️ <strong className="font-extrabold font-mono">OT Marco #{w.ot_marco}</strong> excede presupuesto:
+                    <strong className="font-extrabold font-mono">OT Marco #{w.ot_marco}</strong> excede presupuesto:
                   </span>
                 </span>
                 <span className="font-mono text-right leading-normal">
                   Contrato: <strong className="font-bold text-slate-800">{currency}{w.expected.toLocaleString()}</strong> <br />
-                  Suma Cuotas: <strong className="font-bold text-rose-650">{currency}{w.actual.toLocaleString()}</strong> <br />
-                  <span className="text-[9px] font-bold text-rose-500">Exceso: +{currency}{difference.toLocaleString()}</span>
+                  Suma Cuotas: <strong className="font-bold text-rose-600">{currency}{w.actual.toLocaleString()}</strong> <br />
+                  <span className="text-[10px] font-bold text-rose-500">Exceso: +{currency}{difference.toLocaleString()}</span>
                 </span>
               </div>
             );
           } else {
             // Under-budget is a completely normal "in-progress" status, styled with pleasant info colors (blue/slate)
             return (
-              <div key={w.ot_marco} className="bg-blue-50/70 border border-blue-100/80 p-3 rounded-xl flex justify-between items-center shadow-sm text-blue-850">
+              <div key={w.ot_marco} className="bg-blue-50/70 border border-blue-100/80 p-3 rounded-xl flex justify-between items-center shadow-sm text-blue-800">
                 <span className="font-semibold flex items-center gap-1.5">
                   <Info size={13} className="text-blue-500 shrink-0" />
                   <span>
-                    ℹ️ <strong className="font-extrabold font-mono">OT Marco #{w.ot_marco}</strong> (Distribución en progreso):
+                    <strong className="font-extrabold font-mono">OT Marco #{w.ot_marco}</strong> (Distribución en progreso):
                   </span>
                 </span>
                 <span className="font-mono text-right leading-normal text-blue-800">
                   Total Contrato: <strong className="font-bold text-slate-800">{currency}{w.expected.toLocaleString()}</strong> <br />
                   Programado: <strong className="font-bold text-blue-700">{currency}{w.actual.toLocaleString()}</strong> <br />
-                  <span className="text-[9px] font-extrabold text-blue-600">Por programar: {currency}{difference.toLocaleString()}</span>
+                  <span className="text-[10px] font-extrabold text-blue-600">Por programar: {currency}{difference.toLocaleString()}</span>
                 </span>
               </div>
             );
@@ -67,11 +67,11 @@ export default function PanelAlertas({
         })}
         
         {overdueFacturaLines.length > 0 && (
-          <div className="bg-amber-50 border border-amber-150 p-3 rounded-xl flex justify-between items-center md:col-span-2 shadow-sm text-amber-800">
+          <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex justify-between items-center md:col-span-2 shadow-sm text-amber-800">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
               <span>
-                🔴 Se detectaron <strong className="font-mono font-black text-rose-600">{overdueFacturaLines.length}</strong> cuotas programadas para meses pasados que siguen pendientes de facturación.
+                Se detectaron <strong className="font-mono font-black text-rose-600">{overdueFacturaLines.length}</strong> cuotas programadas para meses pasados que siguen pendientes de facturación.
               </span>
             </div>
             <span className="text-[10px] bg-rose-100 text-rose-700 px-2.5 py-1 rounded-lg font-bold font-mono shrink-0">
