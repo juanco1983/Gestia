@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestia · Mockup Rediseño — Gestión de OT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F2F6F4; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+  .modal { display: none; }
+  .modal.active { display: flex; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============================================================
+     BARRA DE NAVEGACIÓN DE SECCIONES (mockup)
+     ============================================================ -->
+<div class="sticky top-0 z-[80] bg-slate-900 text-white px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 shadow-lg">
+  <span class="text-[10px] font-mono uppercase tracking-widest text-teal-200 font-bold">Mockup · Rediseño Gestión de OT</span>
+  <nav class="flex flex-wrap gap-3 text-[10px] font-mono uppercase tracking-wider">
+    <a href="#sec1" class="hover:text-teal-300">1 Header</a>
+    <a href="#sec2" class="hover:text-teal-300">2 TC</a>
+    <a href="#sec3" class="hover:text-teal-300">3 KPIs</a>
+    <a href="#sec4" class="hover:text-teal-300">4 Filtros</a>
+    <a href="#sec5" class="hover:text-teal-300">5 Tabla</a>
+    <a href="#sec6" class="hover:text-teal-300">6 Alertas</a>
+    <a href="#sec7" class="hover:text-teal-300">7 Analytics</a>
+    <a href="#sec8" class="hover:text-teal-300">8 Modales</a>
+    <a href="#sec9" class="hover:text-teal-300">9 Vacíos</a>
+    <a href="#sec10" class="hover:text-teal-300">10 Comparativa</a>
+  </nav>
+</div>
+
+<div class="max-w-[1500px] mx-auto p-4 sm:p-6">
+
+  <!-- ============================================================
+       SECCIÓN 1 — HEADER DE MÓDULO
+       ============================================================ -->
+  <div id="sec1" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="file-text" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 1 — HEADER DE MÓDULO</span>
+  </div>
+
+  <!-- Tabs del módulo -->
+  <div class="bg-white rounded-[24px] border border-slate-100 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-4 inline-flex flex-wrap gap-1">
+    <button class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0F9E82] text-white text-xs font-bold cursor-pointer"><i data-lucide="list" style="width:14px;height:14px"></i>Lista</button>
+    <button class="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 text-xs font-bold cursor-pointer"><i data-lucide="line-chart" style="width:14px;height:14px"></i>Analytics</button>
+    <button class="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 text-xs font-bold cursor-pointer"><i data-lucide="target" style="width:14px;height:14px"></i>Targets</button>
+    <button class="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 text-xs font-bold cursor-pointer"><i data-lucide="briefcase" style="width:14px;height:14px"></i>Comercial</button>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col lg:flex-row justify-between gap-4 mb-6">
+    <div>
+      <!-- Badges SLA -->
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700">
+          <i data-lucide="clock" style="width:12px;height:12px"></i> SLA Emisión: 24h
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700">
+          <i data-lucide="clock" style="width:12px;height:12px"></i> SLA Facturación: 5d
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200/60 rounded-xl text-xs font-bold font-mono text-blue-700">
+          <i data-lucide="calendar-clock" style="width:12px;height:12px"></i> Ciclo: Ago-2026
+        </span>
+      </div>
+      <h1 class="text-2xl font-black text-slate-900 font-display tracking-tight">Gestión Integral de Órdenes de Trabajo</h1>
+      <p class="text-xs text-slate-400 font-bold font-mono uppercase tracking-wider mt-1">OT marcos, cuotas, líneas, facturación, ejecución de visitas y SLA</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"><i data-lucide="download" style="width:14px;height:14px"></i>Exportar Excel/CSV</button>
+      <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"><i data-lucide="list-plus" style="width:14px;height:14px"></i>Agregar Cuota/Línea</button>
+      <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"><i data-lucide="plus" style="width:14px;height:14px"></i>Crear OT Marco</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 2 — PANEL TIPO DE CAMBIO
+       ============================================================ -->
+  <div id="sec2" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="circle-dollar-sign" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 2 — PANEL TIPO DE CAMBIO</span>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Tipo de cambio S/ · USD</span>
+        <input type="text" value="3.72" class="w-24 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+      </div>
+      <span class="text-[10px] text-slate-400 font-mono">Actualizado 31 Jul 2026 · Banco Central</span>
+    </div>
+    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ACTIVO
+    </span>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 3 — FILA DE 4 KPIs
+       ============================================================ -->
+  <div id="sec3" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="bar-chart-3" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 3 — KPI CARD (4)</span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="clipboard-list" class="text-slate-500" style="width:14px;height:14px"></i></div>
+        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">Cuotas Totales</span>
+      </div>
+      <div class="text-3xl font-mono font-black text-slate-900 leading-none">148</div>
+      <div class="text-[10px] font-mono text-slate-400 mt-2">+12 vs mes anterior</div>
+    </div>
+    <div class="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="dollar-sign" class="text-emerald-600" style="width:14px;height:14px"></i></div>
+        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">Facturado (USD)</span>
+      </div>
+      <div class="text-3xl font-mono font-black text-slate-900 leading-none">284,310</div>
+      <div class="text-[10px] font-mono text-emerald-600 mt-2">78.4% del mes prog</div>
+    </div>
+    <div class="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="hourglass" class="text-amber-500" style="width:14px;height:14px"></i></div>
+        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">Por Facturar (USD)</span>
+      </div>
+      <div class="text-3xl font-mono font-black text-slate-900 leading-none">78,290</div>
+      <div class="text-[10px] font-mono text-amber-600 mt-2">21.6% pendiente</div>
+    </div>
+    <div class="bg-white rounded-[24px] border border-slate-100 p-5 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="wrench" class="text-blue-500" style="width:14px;height:14px"></i></div>
+        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">Por Ejecutar (visitas)</span>
+      </div>
+      <div class="text-3xl font-mono font-black text-slate-900 leading-none">37</div>
+      <div class="text-[10px] font-mono text-blue-600 mt-2">23 visitas próximas 7 días</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 4 — BARRA DE FILTROS
+       ============================================================ -->
+  <div id="sec4" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="filter" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 4 — BARRA DE FILTROS</span>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-3 items-center">
+      <div class="relative xl:col-span-1">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" style="width:14px;height:14px"></i>
+        <input type="text" placeholder="Buscar OT, cliente, factura..." class="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 pl-9 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+      </div>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Tipo Venta: Todos</option><option>Marco</option><option>Puntual</option><option>Adenda</option>
+      </select>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Estado Fact: Todos</option><option>Facturado</option><option>Por Facturar</option><option>Atrasado</option>
+      </select>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Ejecución: Todos</option><option>EJECUTADO</option><option>POR EJECUTAR</option>
+      </select>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Cliente: Todos</option><option>Corp Energía SAC</option><option>Telefónica del Perú</option><option>Minera Andina</option>
+      </select>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Comercial: Todos</option><option>J. Quiroz</option><option>M. Paredes</option>
+      </select>
+      <select class="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer">
+        <option>Mes Prog: Ago-2026</option><option>Sep-2026</option><option>Oct-2026</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 5 — TABLA DE LÍNEAS
+       ============================================================ -->
+  <div id="sec5" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="table" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 5 — TABLA DE LÍNEAS (10 columnas)</span>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden mb-4">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <div>
+        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="list" style="width:14px;height:14px"></i>Líneas de OT</h3>
+        <p class="text-xs text-slate-400 font-medium mt-0.5">148 líneas · 5 seleccionadas</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200/60 rounded-xl text-xs font-bold font-mono text-blue-700"><i data-lucide="info" style="width:12px;height:12px"></i> TC 3.72</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 font-mono uppercase tracking-wider text-[10px]">
+          <tr>
+            <th class="text-left p-3">OT Line</th>
+            <th class="text-left p-3">Razón Social / Empresa</th>
+            <th class="text-left p-3">Tipo Venta</th>
+            <th class="text-left p-3">Monto Línea</th>
+            <th class="text-left p-3">Total (USD)</th>
+            <th class="text-left p-3">Mes Prog Fact</th>
+            <th class="text-left p-3">Factura Real</th>
+            <th class="text-left p-3">Estado Fact.</th>
+            <th class="text-left p-3">Ejecución</th>
+            <th class="text-left p-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Fila 1 -->
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-slate-700 font-mono font-bold">OT-2026-0142</td>
+            <td class="p-3 text-slate-700">Corp Energía SAC</td>
+            <td class="p-3"><span class="inline-flex items-center px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold font-mono text-slate-600">MARCO</span></td>
+            <td class="p-3 font-mono">8,500.00</td>
+            <td class="p-3 font-mono text-slate-900 font-bold">8,500.00</td>
+            <td class="p-3 font-mono">Ago-2026</td>
+            <td class="p-3 font-mono">FAC-1024</td>
+            <td class="p-3"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>FACTURADO</span></td>
+            <td class="p-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700">EJECUTADO</span>
+                <span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[10px] font-bold font-mono">APROBADA</span>
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="PDF"><i data-lucide="file-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Asignar"><i data-lucide="user-check" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Bitácora"><i data-lucide="scroll-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-400 flex items-center justify-center cursor-pointer" title="Anular"><i data-lucide="ban" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+          <!-- Fila 2 -->
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-slate-700 font-mono font-bold">OT-2026-0147</td>
+            <td class="p-3 text-slate-700">Telefónica del Perú</td>
+            <td class="p-3"><span class="inline-flex items-center px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold font-mono text-slate-600">MARCO</span></td>
+            <td class="p-3 font-mono">12,750.00</td>
+            <td class="p-3 font-mono text-slate-900 font-bold">13,005.00</td>
+            <td class="p-3 font-mono">Sep-2026</td>
+            <td class="p-3 font-mono text-slate-400">—</td>
+            <td class="p-3"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700"><span class="w-2 h-2 rounded-full bg-amber-500"></span>POR FACTURAR</span></td>
+            <td class="p-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700">POR EJECUTAR</span>
+                <span class="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-bold font-mono">PROGRAMADA</span>
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="PDF"><i data-lucide="file-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Asignar"><i data-lucide="user-check" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Bitácora"><i data-lucide="scroll-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-400 flex items-center justify-center cursor-pointer" title="Anular"><i data-lucide="ban" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+          <!-- Fila 3 (VENCIDA) -->
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-slate-700 font-mono font-bold">OT-2026-0149</td>
+            <td class="p-3 text-slate-700">Minera Andina</td>
+            <td class="p-3"><span class="inline-flex items-center px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold font-mono text-slate-600">PUNTUAL</span></td>
+            <td class="p-3 font-mono">6,300.00</td>
+            <td class="p-3 font-mono text-slate-900 font-bold">6,300.00</td>
+            <td class="p-3">
+              <div class="flex items-center gap-2">
+                <span class="font-mono">Ago-2026</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 border border-rose-200/60 rounded-md text-[10px] font-bold font-mono text-rose-600 uppercase tracking-wider"><i data-lucide="alert-circle" style="width:10px;height:10px"></i>VENCIDA</span>
+              </div>
+            </td>
+            <td class="p-3 font-mono">FAC-1031</td>
+            <td class="p-3"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200/60 rounded-xl text-xs font-bold font-mono text-rose-700"><span class="w-2 h-2 rounded-full bg-rose-500"></span>ATRASADO</span></td>
+            <td class="p-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700">EJECUTADO</span>
+                <span class="inline-flex items-center px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-[10px] font-bold font-mono">OBSERVADA</span>
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="PDF"><i data-lucide="file-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Asignar"><i data-lucide="user-check" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Bitácora"><i data-lucide="scroll-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-400 flex items-center justify-center cursor-pointer" title="Anular"><i data-lucide="ban" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+          <!-- Fila 4 -->
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-slate-700 font-mono font-bold">OT-2026-0153</td>
+            <td class="p-3 text-slate-700">Corp Energía SAC</td>
+            <td class="p-3"><span class="inline-flex items-center px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold font-mono text-slate-600">MARCO</span></td>
+            <td class="p-3 font-mono">9,800.00</td>
+            <td class="p-3 font-mono text-slate-900 font-bold">9,800.00</td>
+            <td class="p-3 font-mono">Sep-2026</td>
+            <td class="p-3 font-mono text-slate-400">—</td>
+            <td class="p-3"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold font-mono text-slate-500"><span class="w-2 h-2 rounded-full bg-slate-400"></span>PENDIENTE</span></td>
+            <td class="p-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700">POR EJECUTAR</span>
+                <span class="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-bold font-mono">EN REVISIÓN</span>
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="PDF"><i data-lucide="file-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Asignar"><i data-lucide="user-check" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Bitácora"><i data-lucide="scroll-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-400 flex items-center justify-center cursor-pointer" title="Anular"><i data-lucide="ban" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+          <!-- Fila 5 -->
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-3 text-slate-700 font-mono font-bold">OT-2026-0155</td>
+            <td class="p-3 text-slate-700">Telefónica del Perú</td>
+            <td class="p-3"><span class="inline-flex items-center px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold font-mono text-slate-600">ADENDA</span></td>
+            <td class="p-3 font-mono">4,250.00</td>
+            <td class="p-3 font-mono text-slate-900 font-bold">4,250.00</td>
+            <td class="p-3 font-mono">Oct-2026</td>
+            <td class="p-3 font-mono text-slate-400">—</td>
+            <td class="p-3"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700"><span class="w-2 h-2 rounded-full bg-amber-500"></span>POR FACTURAR</span></td>
+            <td class="p-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-xl text-xs font-bold font-mono text-amber-700">POR EJECUTAR</span>
+                <span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[10px] font-bold font-mono">APROBADA</span>
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="PDF"><i data-lucide="file-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Asignar"><i data-lucide="user-check" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer" title="Bitácora"><i data-lucide="scroll-text" style="width:13px;height:13px"></i></button>
+                <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-400 flex items-center justify-center cursor-pointer" title="Anular"><i data-lucide="ban" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Paginación -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3 border-t border-slate-100">
+      <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Mostrando 1–5 de 148 líneas</span>
+      <div class="flex items-center gap-1">
+        <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center cursor-pointer"><i data-lucide="chevron-left" style="width:13px;height:13px"></i></button>
+        <button class="w-8 h-8 rounded-lg bg-[#0F9E82] text-white text-xs font-bold font-mono flex items-center justify-center cursor-pointer">1</button>
+        <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 text-xs font-bold font-mono flex items-center justify-center cursor-pointer">2</button>
+        <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 text-xs font-bold font-mono flex items-center justify-center cursor-pointer">3</button>
+        <span class="px-1 text-slate-400 font-mono text-[10px]">…</span>
+        <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 text-xs font-bold font-mono flex items-center justify-center cursor-pointer">30</button>
+        <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center cursor-pointer"><i data-lucide="chevron-right" style="width:13px;height:13px"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 6 — PANEL ALERTAS
+       ============================================================ -->
+  <div id="sec6" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="alert-triangle" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 6 — PANEL ALERTAS</span>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="bell-ring" style="width:14px;height:14px"></i>Alertas Operativas</h3>
+        <p class="text-xs text-slate-400 font-medium mt-0.5">Desviaciones detectadas en el ciclo Ago-2026</p>
+      </div>
+      <span class="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200/60 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-rose-700">3 ACTIVAS</span>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="p-3 rounded-2xl bg-rose-50/60 border border-rose-200/60 flex items-start gap-3">
+        <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0"><i data-lucide="alert-triangle" style="width:16px;height:16px"></i></div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-slate-900">Presupuesto excedido</span>
+            <span class="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200/60 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-rose-700">CRÍTICO</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">Minera Andina · OT-2026-0149 sobrepasó el presupuesto asignado en <span class="font-mono font-bold text-rose-600">USD 720</span> (11.4%).</p>
+          <button class="mt-2 text-[10px] font-bold text-teal-brand hover:text-teal-deep cursor-pointer inline-flex items-center gap-1">Revisar detalle <i data-lucide="arrow-right" style="width:10px;height:10px"></i></button>
+        </div>
+      </div>
+      <div class="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/60 flex items-start gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="receipt" style="width:16px;height:16px"></i></div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-slate-900">Facturación vencida</span>
+            <span class="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200/60 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-amber-700">VENCIDA</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">3 líneas superan el SLA de 5 días. La más antigua: Corp Energía SAC · <span class="font-mono font-bold">FAC-1031</span> con 8 días.</p>
+          <button class="mt-2 text-[10px] font-bold text-teal-brand hover:text-teal-deep cursor-pointer inline-flex items-center gap-1">Ver líneas vencidas <i data-lucide="arrow-right" style="width:10px;height:10px"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 7 — VISTA ANALYTICS
+       ============================================================ -->
+  <div id="sec7" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="line-chart" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 7 — VISTA ANALYTICS (desviación y alertas)</span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <!-- Facturas pendientes atrasadas -->
+    <div class="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="receipt" style="width:14px;height:14px"></i>Facturas Pendientes Atrasadas</h3>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Líneas facturadas fuera del SLA de 5 días</p>
+        </div>
+        <span class="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200/60 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-rose-700">3</span>
+      </div>
+      <div class="space-y-3">
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center"><i data-lucide="file-text" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900 font-mono">FAC-1031</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200/60 rounded-md text-[10px] font-bold font-mono text-rose-600 uppercase tracking-wider"><i data-lucide="clock" style="width:10px;height:10px"></i>SLA ATRASADO</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Minera Andina · OT-2026-0149 · +8 días</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">USD 6,300.00</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center"><i data-lucide="file-text" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900 font-mono">FAC-1018</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200/60 rounded-md text-[10px] font-bold font-mono text-rose-600 uppercase tracking-wider"><i data-lucide="clock" style="width:10px;height:10px"></i>SLA ATRASADO</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Corp Energía SAC · OT-2026-0138 · +6 días</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">USD 11,200.00</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center"><i data-lucide="file-text" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900 font-mono">FAC-0997</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200/60 rounded-md text-[10px] font-bold font-mono text-rose-600 uppercase tracking-wider"><i data-lucide="clock" style="width:10px;height:10px"></i>SLA ATRASADO</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Telefónica del Perú · OT-2026-0131 · +5 días</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">USD 7,850.00</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Servicios y visitas próximas -->
+    <div class="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="calendar-clock" style="width:14px;height:14px"></i>Servicios y Visitas Técnicas Próximas</h3>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Agenda técnica · próximos 7 días</p>
+        </div>
+        <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 border border-blue-200/60 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-blue-700">23</span>
+      </div>
+      <div class="space-y-3">
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="map-pin" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900">Mantenimiento preventivo UPS</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200/60 rounded-md text-[10px] font-bold font-mono text-blue-700 uppercase tracking-wider"><i data-lucide="wrench" style="width:10px;height:10px"></i>POR VISITAR</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Corp Energía SAC · 02 Ago 2026 · 09:00 · J. Rojas</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">OT-2026-0147 · 4h</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="settings" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900">Calibración de analizadores</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200/60 rounded-md text-[10px] font-bold font-mono text-blue-700 uppercase tracking-wider"><i data-lucide="wrench" style="width:10px;height:10px"></i>POR VISITAR</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Telefónica del Perú · 03 Ago 2026 · 14:30 · L. Tananta</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">OT-2026-0153 · 3h</p>
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center gap-3 hover:bg-white hover:border-slate-200 transition-all">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="toolbox" style="width:15px;height:15px"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-900">Inspección correctiva tablero BT</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200/60 rounded-md text-[10px] font-bold font-mono text-blue-700 uppercase tracking-wider"><i data-lucide="wrench" style="width:10px;height:10px"></i>POR VISITAR</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate">Minera Andina · 05 Ago 2026 · 08:30 · C. Ocsa</p>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">OT-2026-0149 · 6h</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 9 — ESTADOS VACÍOS
+       ============================================================ -->
+  <div id="sec9" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="inbox" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 9 — ESTADOS VACÍOS</span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <!-- Vacío de tabla -->
+    <div class="bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100">
+        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="search-x" style="width:14px;height:14px"></i>Sin resultados de filtros</h3>
+      </div>
+      <div class="bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 m-4 p-10 text-center">
+        <div class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto"><i data-lucide="search" style="width:18px;height:18px"></i></div>
+        <h4 class="text-sm font-bold text-slate-700 font-display mt-3">No se encontraron líneas</h4>
+        <p class="text-xs text-slate-500 mt-1">Ninguna OT coincide con los filtros aplicados. Ajusta la búsqueda o restablece los filtros.</p>
+        <button class="mt-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"><i data-lucide="filter-x" style="width:14px;height:14px"></i>Limpiar filtros</button>
+      </div>
+    </div>
+    <!-- Vacío absoluto de módulo -->
+    <div class="bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100">
+        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><i data-lucide="inbox" style="width:14px;height:14px"></i>Módulo sin datos</h3>
+      </div>
+      <div class="bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 m-4 p-10 text-center">
+        <div class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto"><i data-lucide="file-text" style="width:18px;height:18px"></i></div>
+        <h4 class="text-sm font-bold text-slate-700 font-display mt-3">Aún no hay órdenes de trabajo</h4>
+        <p class="text-xs text-slate-500 mt-1">Crea la primera OT Marco para empezar a gestionar cuotas, facturación y ejecución.</p>
+        <button class="mt-4 bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"><i data-lucide="plus" style="width:14px;height:14px"></i>Crear OT Marco</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 8 — MODALES
+       ============================================================ -->
+  <div id="sec8" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="layout" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 8 — MODALES (selector para explorar)</span>
+  </div>
+
+  <div class="bg-white rounded-[24px] border border-slate-100 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6">
+    <p class="text-xs text-slate-500 mb-3">Los 5 modales se renderizan como overlays reales. Usa el selector para alternar cuál está visible. El último (Bitácora) aparece por defecto. Clic en cualquier parte del overlay lo cierra temporalmente.</p>
+    <div id="modal-selector" class="flex flex-wrap gap-2">
+      <button data-modal="m1" class="modal-btn px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider font-bold bg-[#0F9E82] text-white cursor-pointer">a · Crear OT Marco</button>
+      <button data-modal="m2" class="modal-btn px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">b · Asignar Técnico</button>
+      <button data-modal="m3" class="modal-btn px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">c · Programar Visita</button>
+      <button data-modal="m4" class="modal-btn px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">d · Editar Línea</button>
+      <button data-modal="m5" class="modal-btn px-3 py-1.5 rounded-xl text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">e · Bitácora</button>
+    </div>
+  </div>
+
+  <!-- ===== Modal a. Crear OT Marco ===== -->
+  <div id="m1" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m1')">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Crear OT Marco</h3>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">Nueva orden marco con presupuesto global</p>
+        </div>
+        <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer" onclick="toggleModal('m1')"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <div class="p-6 space-y-5 text-sm text-slate-700">
+        <!-- Bloque 1: Datos Generales -->
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center"><i data-lucide="building-2" style="width:14px;height:14px"></i></div>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">1 · Datos Generales</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Cliente</label>
+              <select class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer"><option>Corp Energía SAC</option><option>Telefónica del Perú</option><option>Minera Andina</option></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Razón Social</label>
+              <input type="text" value="Corporación Energética Peruana S.A.C." class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Comercial</label>
+              <select class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer"><option>J. Quiroz</option><option>M. Paredes</option></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Fecha Inicio</label>
+              <input type="date" value="2026-08-01" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+          </div>
+        </div>
+        <!-- Bloque 2: Presupuesto -->
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center"><i data-lucide="wallet" style="width:14px;height:14px"></i></div>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">2 · Presupuesto</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Monto Total (USD)</label>
+              <input type="text" value="45,000.00" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Días de Pago</label>
+              <input type="text" value="30" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Condiciones</label>
+              <input type="text" value="Crédito" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+          </div>
+        </div>
+        <!-- Bloque 3: Primera Cuota + drawer equipos -->
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center"><i data-lucide="credit-card" style="width:14px;height:14px"></i></div>
+              <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">3 · Primera Cuota</span>
+            </div>
+            <button class="inline-flex items-center gap-1.5 bg-[#0F9E82] hover:bg-[#0B3B34] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"><i data-lucide="plus" style="width:11px;height:11px"></i>Agregar Equipos</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Monto Cuota (USD)</label>
+              <input type="text" value="9,000.00" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Mes Programado</label>
+              <select class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer"><option>Ago-2026</option><option>Sep-2026</option><option>Oct-2026</option></select>
+            </div>
+          </div>
+          <!-- Preview drawer equipos -->
+          <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Drawer Equipos · 2 seleccionados</span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-200/60 rounded-md text-[10px] font-bold font-mono text-blue-700">DRAWER (mock)</span>
+            </div>
+            <div class="space-y-2">
+              <label class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+                <input type="checkbox" checked class="accent-[#0F9E82]">
+                <i data-lucide="server" class="text-emerald-600" style="width:15px;height:15px"></i>
+                <div class="flex-1"><div class="text-xs font-semibold text-slate-800">UPS SmartOnline S3 10kVA</div><div class="text-[10px] font-mono text-slate-400">EQ-2026-001 · Serie MA-88112</div></div>
+              </label>
+              <label class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+                <input type="checkbox" checked class="accent-[#0F9E82]">
+                <i data-lucide="thermometer" class="text-emerald-600" style="width:15px;height:15px"></i>
+                <div class="flex-1"><div class="text-xs font-semibold text-slate-800">Analizador de Red Fluke 434</div><div class="text-[10px] font-mono text-slate-400">EQ-2026-008 · Serie FL-44520</div></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer">Cancelar</button>
+        <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"><i data-lucide="check" style="width:13px;height:13px"></i>Crear OT Marco</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal b. Asignar Técnico ===== -->
+  <div id="m2" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m2')">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Asignar Técnico</h3>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">OT-2026-0147 · Telefónica del Perú</p>
+        </div>
+        <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer" onclick="toggleModal('m2')"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-700">
+        <div class="rounded-2xl border border-slate-100 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center"><i data-lucide="server" style="width:15px;height:15px"></i></div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">UPS SmartOnline S3 10kVA</div>
+                <div class="text-[10px] font-mono text-slate-400">Visita: Mant. Preventivo</div>
+              </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 bg-emerald-50 border border-emerald-200/80 rounded-md text-[10px] font-bold font-mono text-emerald-700 uppercase">Asignada</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Titular</div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-[#0F9E82] text-white text-[10px] font-bold font-mono flex items-center justify-center">JR</div>
+                <div>
+                  <div class="font-semibold text-slate-800">Jorge Rojas</div>
+                  <div class="text-[10px] font-mono text-slate-400">TEC-014 · Lima</div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Apoyo</div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold font-mono flex items-center justify-center">LT</div>
+                <div>
+                  <div class="font-semibold text-slate-800">Luis Tananta</div>
+                  <div class="text-[10px] font-mono text-slate-400">TEC-007 · Lima</div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Fecha</div>
+              <div class="font-mono font-bold text-slate-800">02 Ago 2026 · 09:00</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Horas estimadas</div>
+              <div class="font-mono font-bold text-slate-800">4 h</div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-100 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="thermometer" style="width:15px;height:15px"></i></div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">Analizador de Red Fluke 434</div>
+                <div class="text-[10px] font-mono text-slate-400">Visita: Calibración</div>
+              </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200/60 rounded-md text-[10px] font-bold font-mono text-amber-700 uppercase">Pendiente</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Titular</div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-slate-100 border border-dashed border-slate-300 text-slate-400 text-[10px] font-bold font-mono flex items-center justify-center"><i data-lucide="user-plus" style="width:12px;height:12px"></i></div>
+                <div class="text-[10px] font-mono text-slate-400">Sin asignar</div>
+              </div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1.5">Fecha propuesta</div>
+              <div class="font-mono font-bold text-slate-800">03 Ago 2026 · 14:30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer">Cancelar</button>
+        <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"><i data-lucide="user-check" style="width:13px;height:13px"></i>Guardar Asignación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal c. Programar Visita (stepper 5 pasos) ===== -->
+  <div id="m3" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m3')">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Programar Visita</h3>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">OT-2026-0149 · Minera Andina</p>
+        </div>
+        <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer" onclick="toggleModal('m3')"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <!-- Stepper -->
+      <div class="px-6 pt-5">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col items-center gap-1 flex-1"><div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center"><i data-lucide="check" style="width:14px;height:14px"></i></div><span class="text-[10px] font-mono font-bold text-slate-600">TIPO</span></div>
+          <div class="h-px flex-1 bg-emerald-200"></div>
+          <div class="flex flex-col items-center gap-1 flex-1"><div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center"><i data-lucide="check" style="width:14px;height:14px"></i></div><span class="text-[10px] font-mono font-bold text-slate-600">EQUIPOS</span></div>
+          <div class="h-px flex-1 bg-emerald-200"></div>
+          <div class="flex flex-col items-center gap-1 flex-1"><div class="w-8 h-8 rounded-full bg-[#0F9E82] text-white flex items-center justify-center"><i data-lucide="calendar" style="width:14px;height:14px"></i></div><span class="text-[10px] font-mono font-bold text-slate-900">PROGRAMACIÓN</span></div>
+          <div class="h-px flex-1 bg-slate-200"></div>
+          <div class="flex flex-col items-center gap-1 flex-1"><div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">4</div><span class="text-[10px] font-mono font-bold text-slate-400">TÉCNICOS</span></div>
+          <div class="h-px flex-1 bg-slate-200"></div>
+          <div class="flex flex-col items-center gap-1 flex-1"><div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">5</div><span class="text-[10px] font-mono font-bold text-slate-400">RESUMEN</span></div>
+        </div>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-700">
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+          <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Paso 3 · Programación</span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Fecha</label>
+              <input type="date" value="2026-08-05" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Hora inicio</label>
+              <input type="time" value="08:30" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Duración (h)</label>
+              <input type="text" value="6" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+            </div>
+          </div>
+          <label class="flex items-center gap-2 pt-1 cursor-pointer">
+            <input type="checkbox" class="accent-[#0F9E82]">
+            <span class="text-xs text-slate-600">Visita recurrente semanal (4 semanas)</span>
+          </label>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-between gap-2">
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"><i data-lucide="chevron-left" style="width:13px;height:13px"></i>Equipos</button>
+        <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2">Continuar · Técnicos <i data-lucide="chevron-right" style="width:13px;height:13px"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal d. Editar Línea (con acordeón Acuerdo Padre) ===== -->
+  <div id="m4" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m4')">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Editar Línea</h3>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">OT-2026-0153 · Corp Energía SAC</p>
+        </div>
+        <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer" onclick="toggleModal('m4')"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-700">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">OT Line</label>
+            <input type="text" value="OT-2026-0153" readonly class="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Cliente</label>
+            <input type="text" value="Corp Energía SAC" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Monto Línea (USD)</label>
+            <input type="text" value="9,800.00" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-teal-brand/40 focus:border-teal-brand transition-all">
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold mb-1">Mes Prog Fact</label>
+            <select class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-brand/40 cursor-pointer"><option>Sep-2026</option><option>Ago-2026</option><option>Oct-2026</option></select>
+          </div>
+        </div>
+        <!-- Acordeón Acuerdo Padre -->
+        <div class="rounded-2xl border border-slate-100 overflow-hidden">
+          <button class="w-full flex items-center justify-between gap-2 px-4 py-3 bg-slate-50/60 hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors cursor-pointer">
+            <span class="flex items-center gap-2"><i data-lucide="folder-tree" style="width:14px;height:14px"></i>Acuerdo Padre</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px"></i>
+          </button>
+          <div class="px-4 pb-4 pt-1 space-y-2">
+            <div class="flex justify-between text-xs border-b border-slate-100 pb-2"><span class="text-slate-400 font-mono">Código acuerdo</span><span class="font-mono font-bold text-slate-800">AC-MAF-2026-012</span></div>
+            <div class="flex justify-between text-xs border-b border-slate-100 pb-2"><span class="text-slate-400 font-mono">Monto global (USD)</span><span class="font-mono font-bold text-slate-800">45,000.00</span></div>
+            <div class="flex justify-between text-xs border-b border-slate-100 pb-2"><span class="text-slate-400 font-mono">Consumido (USD)</span><span class="font-mono font-bold text-slate-800">36,400.00</span></div>
+            <div class="flex justify-between text-xs"><span class="text-slate-400 font-mono">Disponible (USD)</span><span class="font-mono font-bold text-emerald-600">8,600.00</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer">Cancelar</button>
+        <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"><i data-lucide="check" style="width:13px;height:13px"></i>Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal e. Bitácora (historial de comentarios) ===== -->
+  <div id="m5" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m5')">
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 font-display">Bitácora de la OT</h3>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">OT-2026-0149 · Minera Andina · 6 eventos</p>
+        </div>
+        <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer" onclick="toggleModal('m5')"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-700">
+        <div class="relative border-l-2 border-slate-100 pl-4 ml-2 space-y-4">
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-[#0F9E82] text-white text-[10px] font-bold font-mono flex items-center justify-center">M</div>
+                <span class="text-xs font-bold text-slate-800">María Paredes</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">31 Jul · 18:42</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">Se registró observación del cliente sobre el informe técnico: medidor de red con lecturas intermitentes.</p>
+            <span class="inline-flex items-center px-2 py-0.5 bg-rose-50 border border-rose-200/60 rounded-md text-[10px] font-bold font-mono text-rose-700 mt-1.5 uppercase">Estado → Observada</span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-slate-300 text-white text-[10px] font-bold font-mono flex items-center justify-center">J</div>
+                <span class="text-xs font-bold text-slate-800">Jorge Rojas</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">30 Jul · 09:15</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">Visita de inspección ejecutada en sitio. Tablero BT con sobrecalentamiento en carga 2. Se programó correctivo.</p>
+            <span class="inline-flex items-center px-2 py-0.5 bg-emerald-50 border border-emerald-200/80 rounded-md text-[10px] font-bold font-mono text-emerald-700 mt-1.5 uppercase">Ejecutado</span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-slate-300 text-white text-[10px] font-bold font-mono flex items-center justify-center">L</div>
+                <span class="text-xs font-bold text-slate-800">Luis Tananta</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">29 Jul · 16:20</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">Factura FAC-1031 emitida y enviada al cliente.</p>
+            <span class="inline-flex items-center px-2 py-0.5 bg-emerald-50 border border-emerald-200/80 rounded-md text-[10px] font-bold font-mono text-emerald-700 mt-1.5 uppercase">Facturado</span>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-100 p-3 flex items-center gap-2 bg-slate-50/60">
+          <input type="text" placeholder="Agregar comentario..." class="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-slate-400">
+          <button class="w-8 h-8 rounded-lg bg-[#0F9E82] hover:bg-[#0B3B34] text-white flex items-center justify-center cursor-pointer transition-all"><i data-lucide="send" style="width:13px;height:13px"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN 10 — COMPARATIVA ANTES / DESPUÉS
+       ============================================================ -->
+  <div id="sec10" class="py-2 px-4 bg-slate-200 text-slate-700 mb-4 rounded-xl flex items-center gap-2">
+    <i data-lucide="git-compare" style="width:12px;height:12px"></i>
+    <span class="text-[10px] font-mono uppercase tracking-widest font-bold">SECCIÓN 10 — COMPARATIVA ANTES / DESPUÉS</span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+    <!-- ANTES 1: Header con gradiente oscuro + emojis + hex crudo -->
+    <div class="rounded-[24px] border border-slate-200 overflow-hidden bg-white">
+      <div class="px-4 py-2 bg-slate-100 flex items-center justify-between">
+        <span class="text-[10px] font-mono uppercase tracking-widest font-bold text-rose-600">ANTES · Header con gradiente oscuro</span>
+        <span class="text-[10px] font-mono text-slate-400">Defectos: gradiente, emojis, #00B594</span>
+      </div>
+      <div class="p-6 bg-gradient-to-r from-slate-900 to-slate-700 text-white">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[8px] font-mono uppercase tracking-wider text-slate-300">Módulo · OT</span>
+          <span class="text-[8px] font-mono uppercase tracking-wider text-slate-300">Ago-2026 ✅</span>
+        </div>
+        <h3 class="text-sm font-bold">Gestión de OTs 🔧📋</h3>
+        <p class="text-[8px] text-slate-300 mt-1">Seguimiento de órdenes de trabajo, cuotas y facturación del ciclo</p>
+        <div class="flex gap-2 mt-4">
+          <button class="bg-[#00B594] text-white text-[10px] font-bold px-3 py-2 rounded-lg">Crear OT</button>
+          <button class="bg-slate-500/40 text-white text-[10px] font-bold px-3 py-2 rounded-lg">Exportar 📤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESPUÉS 1 -->
+    <div class="rounded-[24px] border border-slate-100 overflow-hidden bg-white shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="px-4 py-2 bg-emerald-50 flex items-center justify-between">
+        <span class="text-[10px] font-mono uppercase tracking-widest font-bold text-emerald-700">DESPUÉS · Header card canónico</span>
+        <span class="text-[10px] font-mono text-slate-400">bg-white, tokens, badges SLA</span>
+      </div>
+      <div class="p-6">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>SLA Emisión: 24h</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight font-display">Gestión Integral de OTs</h3>
+        <p class="text-xs text-slate-400 font-bold font-mono uppercase tracking-wider mt-1">OT marcos, cuotas, líneas, facturación y ejecución</p>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button class="bg-[#0F9E82] hover:bg-[#0B3B34] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer">Crear OT Marco</button>
+          <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2"><i data-lucide="download" style="width:13px;height:13px"></i>Exportar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANTES 2: KPI con borde inválido + label ilegible -->
+    <div class="rounded-[24px] border border-slate-200 overflow-hidden bg-white">
+      <div class="px-4 py-2 bg-slate-100 flex items-center justify-between">
+        <span class="text-[10px] font-mono uppercase tracking-widest font-bold text-rose-600">ANTES · Card KPI</span>
+        <span class="text-[10px] font-mono text-slate-400">Defectos: border-slate-150, gap-4.5</span>
+      </div>
+      <div class="p-5" style="gap:1.125rem">
+        <div class="flex items-center" style="gap:1.125rem">
+          <div class="w-8 h-8 rounded-xl bg-emerald-100 text-slate-500 flex items-center justify-center">💵</div>
+          <span class="text-[8px] font-extrabold uppercase text-slate-400">Facturado USD</span>
+        </div>
+        <div class="text-2xl font-mono font-black text-slate-900 mt-3">S/ 1,057,633</div>
+      </div>
+    </div>
+
+    <!-- DESPUÉS 2 -->
+    <div class="rounded-[24px] border border-slate-100 overflow-hidden bg-white shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+      <div class="px-4 py-2 bg-emerald-50 flex items-center justify-between">
+        <span class="text-[10px] font-mono uppercase tracking-widest font-bold text-emerald-700">DESPUÉS · Card KPI canónica</span>
+        <span class="text-[10px] font-mono text-slate-400">token teal, scale Tailwind, icono lucide</span>
+      </div>
+      <div class="p-5 flex flex-col justify-between">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center"><i data-lucide="dollar-sign" class="text-emerald-600" style="width:14px;height:14px"></i></div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-mono truncate">Facturado (USD)</span>
+        </div>
+        <div class="text-3xl font-mono font-black text-slate-900 leading-none">284,310</div>
+        <div class="text-[10px] font-mono text-emerald-600 mt-2">78.4% del mes prog</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       RESUMEN DE CAMBIOS VISUALES
+       ============================================================ -->
+  <div class="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] mb-6">
+    <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2 mb-3"><i data-lucide="check-circle" style="width:14px;height:14px"></i>Cambios visuales incluidos</h3>
+    <ul class="text-xs text-slate-600 space-y-2 list-none">
+      <li>· Header de módulo como card canónica blanca (sin gradiente oscuro): badges SLA, subtítulo font-mono uppercase y acciones primaria/secundaria con tokens teal.</li>
+      <li>· Panel Tipo de Cambio como banda simple con input w-24 y badge ACTIVO con dot animado.</li>
+      <li>· 4 KPI cards canónicas con icono en contenedor w-8 h-8 slate, valor font-mono text-3xl y deltas semánticos (teal/amber/blue).</li>
+      <li>· Barra de filtros con 7 controles homogéneos (búsqueda + 6 selects) en grid responsive, estilo input de la guía.</li>
+      <li>· Tabla de 10 columnas con thead font-mono uppercase, tags VENCIDA en rose, badges de Estado Fact. y Ejecución con estado técnico OT inline (Aprobada/En Revisión/Observada/Programada), acciones con iconos ghost y paginación.</li>
+      <li>· Panel Alertas con item-list rose/amber y badges CRÍTICO/VENCIDA.</li>
+      <li>· Vista Analytics: 2 cards con listas (SLA ATRASADO / POR VISITAR) siguiendo el patrón de item de lista.</li>
+      <li>· 5 modales reales como overlay (Crear OT Marco con 3 bloques + drawer equipos, Asignar Técnico, Programar Visita con stepper de 5 pasos, Editar Línea con acordeón Acuerdo Padre, Bitácora con timeline). Selector superior para alternar; Bitácora visible por defecto.</li>
+      <li>· Estados vacíos de tabla y de módulo con patrón dashed + icono + CTA.</li>
+      <li>· Comparativa ANTES (gradiente, #00B594, emojis, border-slate-150, text-[8px]) vs DESPUÉS con el patrón canónico.</li>
+      <li>· Sin emojis, sin hex crudos fuera del verde marca (#0F9E82 / #0B3B34), sin utilidades Tailwind v4 inválidas, tipografía solo en escala (text-[10px]/text-[11px] máx arbit.).</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+  lucide.createIcons();
+
+  var visible = null;
+  function toggleModal(id) {
+    var el = document.getElementById(id);
+    if (el.classList.contains('active')) { el.classList.remove('active'); visible = null; }
+    else { document.querySelectorAll('.modal').forEach(function(m){ m.classList.remove('active'); }); el.classList.add('active'); visible = id; }
+    syncButtons();
+  }
+  function syncButtons() {
+    document.querySelectorAll('.modal-btn').forEach(function(b){
+      if (b.dataset.modal === visible) { b.className = b.className.replace(/bg-slate-100 text-slate-600 hover:bg-slate-200/g,'bg-[#0F9E82] text-white'); }
+      else { b.className = b.className.replace(/bg-\[#0F9E82\] text-white/g,'bg-slate-100 text-slate-600 hover:bg-slate-200'); }
+    });
+  }
+  document.querySelectorAll('.modal-btn').forEach(function(b){
+    b.addEventListener('click', function(){ toggleModal(b.dataset.modal); });
+  });
+  toggleModal('m5');
+</script>
+</body>
+</html>
