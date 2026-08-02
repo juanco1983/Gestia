@@ -65,8 +65,8 @@ El usuario aprobó el mockup con alcance **Homologación + mejoras UX** para
 | Mockup `ot-modulo-rediseno.html` aprobado por el usuario | completed |
 | Plan en `Documentacion/planes/UX-UI/` | completed |
 | Slice 1: homologar `OrdenesTrabajoView` (header, tipo de cambio, tabs, analytics) | completed |
-| Slice 2: homologar `TablaOrdenesTrabajo` (KPIs, filtros, tabla, paginación) | inProgress |
-| Slice 3: homologar modales `ot/` | pending |
+| Slice 2: homologar `TablaOrdenesTrabajo` (KPIs, filtros, tabla, paginación) | completed |
+| Slice 3: homologar modales `ot/` | inProgress |
 | Verificación final (typecheck + build) | pending |
 | Commit + push + PR | pending |
 
