@@ -1,19 +1,23 @@
 import React from 'react';
-import { OrdenTrabajoLinea, TargetVentas } from '../../types';
+import { TargetVentas } from '../../types';
 
 interface TargetReportItem extends TargetVentas {
   actual: number;
   cumplimiento: number;
+  metaAnual: number;
+  programado: number;
 }
 
 interface ReporteTargetProps {
-  lineas: OrdenTrabajoLinea[];
   targetVentas: TargetVentas[];
   targetReport: TargetReportItem[];
 }
 
-export default function ReporteTarget({ lineas, targetVentas, targetReport }: ReporteTargetProps) {
-  const totalFacturado = lineas.filter(l => l.estado === 'FACTURADO').reduce((acc, curr) => acc + curr.total_usd, 0);
+export default function ReporteTarget({ targetVentas, targetReport }: ReporteTargetProps) {
+  const totalComprometido = targetVentas.reduce((acc, curr) => {
+    const row = targetReport.find(r => r.id === curr.id);
+    return acc + (row ? row.actual : 0);
+  }, 0);
   const totalTarget = targetVentas.reduce((acc, curr) => acc + curr.target_ventas_usd, 0);
 
   return (
@@ -22,17 +26,17 @@ export default function ReporteTarget({ lineas, targetVentas, targetReport }: Re
         <div>
           <h3 className="text-base font-black text-slate-800">Control de Metas de Ventas Anual</h3>
           <p className="text-xs text-slate-400 font-semibold mt-1">
-            Comparación mes a mes de facturación real realizada (FACTURADO en USD) vs. la meta comercial programada.
+            Avance comprometido (sub_importe) mes a mes vs. la meta comercial programada, aunque la cuota aún no esté facturada.
           </p>
         </div>
         <div className="bg-slate-900 text-white rounded-2xl p-3.5 flex gap-4 font-mono text-[11px] font-bold border border-slate-800 shadow-sm shrink-0">
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-black">Total Facturado</span>
-            <span className="text-sm font-black text-teal-brand">${totalFacturado.toLocaleString()} USD</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-black">Meta Anual</span>
+            <span className="text-sm font-black text-teal-brand">${totalTarget.toLocaleString()} USD</span>
           </div>
           <div className="border-l border-slate-800 pl-4">
-            <span className="text-slate-400 block text-[10px] uppercase font-black">Meta Consolidada</span>
-            <span className="text-sm font-black text-slate-100">${totalTarget.toLocaleString()} USD</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-black">Comprometido</span>
+            <span className="text-sm font-black text-slate-100">${totalComprometido.toLocaleString()} USD</span>
           </div>
         </div>
       </div>
@@ -43,8 +47,8 @@ export default function ReporteTarget({ lineas, targetVentas, targetReport }: Re
             <tr className="bg-slate-50/60 border-b border-slate-100 font-mono text-[10px] font-black uppercase text-slate-400 tracking-wider">
               <th className="px-5 py-3">Mes Operativo</th>
               <th className="px-5 py-3">Meta Programada (USD)</th>
-              <th className="px-5 py-3">Billed Real (USD)</th>
-              <th className="px-5 py-3">Diferencia Comercial</th>
+              <th className="px-5 py-3">Comprometido (USD)</th>
+              <th className="px-5 py-3">Dif. Comercial</th>
               <th className="px-5 py-3">% de Cumplimiento</th>
               <th className="px-5 py-3 text-center">Estatus</th>
             </tr>
@@ -80,7 +84,7 @@ export default function ReporteTarget({ lineas, targetVentas, targetReport }: Re
                         ? 'bg-amber-50 text-amber-700 border border-amber-200/20' 
                         : 'bg-rose-50 text-rose-700 border border-rose-200/20'
                     }`}>
-                      {percent >= 100 ? 'META LOGRADA' : percent >= 70 ? 'CUBIERTO PARCIAL' : 'BAJO LA META'}
+                      {percent >= 100 ? 'META LOGRADA' : percent >= 70 ? 'CUBIERTO PARCIAL' : 'POR CAPTAR'}
                     </span>
                   </td>
                 </tr>

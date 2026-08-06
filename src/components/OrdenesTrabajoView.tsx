@@ -9,7 +9,9 @@ import {
   UserCheck, 
   DollarSign, 
   SlidersHorizontal,
-  RefreshCw
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { OrdenTrabajoLinea, Client, TargetVentas, ComentarioEstatus, OT, TechnicalReport, User, Contrato } from '../types';
 import { MESES_ESPANOL } from '../utils/otDefaults';
@@ -141,34 +143,74 @@ export default function OrdenesTrabajoView({
     const comercials = Array.from(new Set(lineas.map(l => l.comercial).filter(Boolean)));
     return comercials.map(c => {
       const cLines = lineas.filter(l => l.comercial === c && l.estado !== 'ANULADO');
+      const cartera = cLines.reduce((acc, curr) => acc + curr.sub_importe_sin_igv, 0);
       const billedUsd = cLines.filter(l => l.estado === 'FACTURADO').reduce((acc, curr) => acc + curr.total_usd, 0);
       const pendingUsd = cLines.filter(l => l.estado === 'POR FACTURAR').reduce((acc, curr) => acc + curr.total_usd, 0);
+      const cuotas = cLines.length;
+      const ots = new Set(cLines.map(l => l.ot_marco)).size;
+      const ejecutadas = cLines.filter(l => l.pendiente === 'EJECUTADO' || l.estado === 'FACTURADO').length;
+      const pctEjecucion = cuotas > 0 ? Math.round((ejecutadas / cuotas) * 100) : 0;
       return {
         comercial: c,
         facturado: billedUsd,
         pendiente: pendingUsd,
-        total: billedUsd + pendingUsd
+        total: billedUsd + pendingUsd,
+        cartera,
+        cuotas,
+        ots,
+        pctEjecucion
       };
-    }).sort((a, b) => b.total - a.total);
+    }).sort((a, b) => b.cartera - a.cartera);
   }, [lineas]);
 
-  // 5. Memoized Metas Mensuales compliance report
+  // 5. Memoized Metas Mensuales compliance report (avance comprometido)
+  // Usa sub_importe_sin_igv de líneas no anuladas del mes programado como
+  // avance REAL, aunque la cuota aún no esté FACTURADA. Así la pestaña Metas
+  // muestra valor con los datos de la BD demo.
   const targetReport = useMemo(() => {
     return targetVentas.map(t => {
       const tLines = lineas.filter(l => 
-        l.estado === 'FACTURADO' && 
+        l.estado !== 'ANULADO' && 
         l.anio_prog_facturacion === t.anio && 
         l.mes_prog_facturacion === t.mes
       );
-      const actualBilled = tLines.reduce((acc, curr) => acc + curr.total_usd, 0);
-      const percent = t.target_ventas_usd > 0 ? (actualBilled / t.target_ventas_usd) * 100 : 0;
+      const avanceComprometido = tLines.reduce((acc, curr) => acc + curr.sub_importe_sin_igv, 0);
+      const metaAnual = targetVentas.reduce((acc, curr) => acc + curr.target_ventas_usd, 0);
+      const percent = t.target_ventas_usd > 0 ? (avanceComprometido / t.target_ventas_usd) * 100 : 0;
       return {
         ...t,
-        actual: actualBilled,
-        cumplimiento: percent
+        actual: avanceComprometido,
+        cumplimiento: percent,
+        metaAnual,
+        programado: t.target_ventas_usd
       };
     });
   }, [lineas, targetVentas]);
+
+  // 6. Memoized Pipeline / SLA metrics for Analíticas
+  const pipelineMetrics = useMemo(() => {
+    const noAnuladas = lineas.filter(l => l.estado !== 'ANULADO');
+    const backlogFacturacion = noAnuladas.filter(l => l.estado === 'POR FACTURAR' && l.pendiente === 'EJECUTADO');
+    const carteraComprometida = noAnuladas.reduce((acc, curr) => acc + curr.sub_importe_sin_igv, 0);
+    const carteraFacturada = noAnuladas.filter(l => l.estado === 'FACTURADO').reduce((acc, curr) => acc + curr.total_usd, 0);
+    const cuotasMesActivo = noAnuladas.filter(l =>
+      l.anio_prog_facturacion === currentYear && l.mes_prog_facturacion === currentMonthName
+    );
+    const porEstado = [
+      { label: 'EJECUTADO (pend. facturar)', estado: 'POR FACTURAR', count: backlogFacturacion.length },
+      { label: 'POR EJECUTAR', estado: 'PENDIENTE', count: noAnuladas.filter(l => l.pendiente === 'POR EJECUTAR').length },
+      { label: 'FACTURADO', estado: 'FACTURADO', count: noAnuladas.filter(l => l.estado === 'FACTURADO').length }
+    ];
+    return {
+      backlogFacturacion: backlogFacturacion.length,
+      atrasadas: overdueFacturaLines.length,
+      carteraComprometida,
+      carteraFacturada,
+      cuotasMesActivo: cuotasMesActivo.length,
+      otMarcos: new Set(lineas.map(l => l.ot_marco)).size,
+      porEstado
+    };
+  }, [lineas, overdueFacturaLines, currentYear, currentMonthName]);
 
   // Handle Logical Cancellation
   const handleCancelLine = async (line: OrdenTrabajoLinea) => {
@@ -424,77 +466,103 @@ export default function OrdenesTrabajoView({
       {subTab === 'analytics' && (
         <div className="space-y-6">
           <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-            <h3 className="text-sm font-extrabold text-slate-900">Alertas de Servicio y Facturación Pendiente</h3>
+            <h3 className="text-base font-black text-slate-900">Panorama Operativo y Alertas</h3>
             <p className="text-xs text-slate-400 font-semibold mt-1">
-              Desviaciones temporales de MAFORT. Identifica qué cuotas no se facturaron en el mes programado y qué visitas están atrasadas.
+              KPIs de pipeline, SLA y backlog que no dependen de la facturación en USD.
             </p>
+
+            {/* Fila de KPIs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+                <span className="text-slate-400 text-xs font-semibold">Backlog de facturación</span>
+                <div className="text-2xl font-black font-mono text-slate-900 mt-1">
+                  {pipelineMetrics.backlogFacturacion} <span className="text-xs font-bold text-slate-400 align-middle">líneas</span>
+                </div>
+                <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/20 mt-2 inline-block">EJECUTADO sin facturar</span>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+                <span className="text-slate-400 text-xs font-semibold">Líneas atrasadas</span>
+                <div className={`text-2xl font-black font-mono mt-1 ${pipelineMetrics.atrasadas > 0 ? 'text-rose-600' : 'text-teal-brand'}`}>
+                  {pipelineMetrics.atrasadas}
+                </div>
+                <span className="text-[10px] font-mono font-black text-slate-400">SLA de facturación</span>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+                <span className="text-slate-400 text-xs font-semibold">Cartera comprometida</span>
+                <div className="text-2xl font-black font-mono text-slate-900 mt-1">
+                  ${pipelineMetrics.carteraComprometida.toLocaleString()}
+                </div>
+                <span className="text-[10px] font-black text-slate-400">
+                  ${pipelineMetrics.carteraFacturada.toLocaleString()} facturado
+                </span>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+                <span className="text-slate-400 text-xs font-semibold">Cuotas {currentMonthName} {currentYear}</span>
+                <div className="text-2xl font-black font-mono text-slate-900 mt-1">{pipelineMetrics.cuotasMesActivo}</div>
+                <span className="text-[10px] font-black text-slate-400">
+                  {pipelineMetrics.otMarcos} {pipelineMetrics.otMarcos === 1 ? 'OT marco' : 'OTs marco'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Facturaciones Vencidas */}
-            <div className="bg-white rounded-[24px] border border-slate-100 p-6 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-                  Facturas Pendientes Atrasadas ({overdueFacturaLines.length})
-                </span>
-                <span className="text-[10px] font-black text-rose-600 font-mono bg-rose-50 px-2.5 py-1 rounded-md">Pérdida de Liquidez</span>
+            {/* Distribución por estado */}
+            <div className="lg:col-span-2 bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h5 className="text-sm font-black text-slate-800">Distribución por estado</h5>
+                <span className="text-[10px] font-mono font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{currentYear}</span>
               </div>
-              
-              <div className="space-y-3.5 divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
-                {overdueFacturaLines.length === 0 ? (
-                  <p className="text-xs text-slate-400 font-medium py-12 text-center">¡Felicitaciones! No tienes facturación programada atrasada.</p>
-                ) : (
-                  overdueFacturaLines.map(line => (
-                    <div key={line.id} className="pt-3.5 first:pt-0 flex justify-between items-center text-xs">
-                      <div className="space-y-1">
-                        <div className="font-black text-slate-900">{line.razon_social}</div>
-                        <div className="text-[10px] text-slate-400 font-semibold">
-                          Línea {line.ot} • Programado en: <strong className="font-mono text-rose-600 font-extrabold">{line.mes_prog_facturacion} {line.anio_prog_facturacion}</strong>
-                        </div>
+              <div className="p-5 space-y-4">
+                {pipelineMetrics.porEstado.map((row) => {
+                  const total = lineas.length || 1;
+                  const pct = (row.count / total) * 100;
+                  const barColor = row.label.startsWith('EJECUTADO') ? 'bg-teal-brand'
+                    : row.label.startsWith('FACTURADO') ? 'bg-emerald-400'
+                    : 'bg-slate-200';
+                  return (
+                    <div key={row.estado}>
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-600">{row.label}</span>
+                        <span className="font-mono font-black text-slate-900">{row.count} <span className="text-slate-400 font-semibold">/ {pct.toFixed(0)}%</span></span>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-mono font-black text-slate-900">${line.total_usd.toLocaleString()}</div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded mt-1 inline-block">SLA Atrasado</span>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }}></div>
                       </div>
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
             </div>
 
-            {/* Servicios Por Ejecutar Próximos o Vencidos */}
-            <div className="bg-white rounded-[24px] border border-slate-100 p-6 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-teal-brand shrink-0"></span>
-                  Servicios y Visitas Técnicas Próximas ({soonToExecuteLines.length})
-                </span>
-                <span className="text-[10px] font-black text-teal-brand font-mono bg-teal-mist px-2.5 py-1 rounded-md">Ejecución en Campo</span>
-              </div>
-              
-              <div className="space-y-3.5 divide-y divide-slate-100 max-h-[380px] overflow-y-auto pr-1">
-                {soonToExecuteLines.length === 0 ? (
-                  <p className="text-xs text-slate-400 font-medium py-12 text-center">No hay visitas técnicas pendientes registradas para este periodo.</p>
+            {/* Panel de alertas operativas */}
+            <div className="lg:col-span-1 bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] p-5">
+              <h5 className="text-sm font-black text-slate-800 mb-4">Alertas operativas</h5>
+              <div className="space-y-3">
+                {pipelineMetrics.atrasadas === 0 ? (
+                  <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-100 rounded-xl px-3.5 py-3">
+                    <span className="text-emerald-600 shrink-0"><CheckCircle2 size={16} /></span>
+                    <span className="text-xs text-slate-600 font-medium">Felicitaciones, no tienes atrasos de facturación.</span>
+                  </div>
                 ) : (
-                  soonToExecuteLines.map(line => (
-                    <div key={line.id} className="pt-3.5 first:pt-0 flex justify-between items-center text-xs">
-                      <div className="space-y-1">
-                        <div className="font-black text-slate-900">{line.razon_social}</div>
-                        <div className="text-[10px] text-slate-400 font-semibold truncate max-w-xs">
-                          {line.descripcion}
-                        </div>
-                        <div className="text-[9px] text-slate-400">
-                          Servicio Prog: <strong className="font-mono text-slate-700 font-extrabold">{line.mes_prog_servicio}</strong>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="font-mono font-bold text-slate-500">Línea {line.ot}</div>
-                        <span className="text-[10px] font-extrabold font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded mt-1 inline-block">Por Visitar</span>
-                      </div>
-                    </div>
-                  ))
+                  <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-100 rounded-xl px-3.5 py-3">
+                    <span className="text-rose-600 shrink-0"><AlertTriangle size={16} /></span>
+                    <span className="text-xs text-slate-600 font-medium">
+                      <strong className="font-black text-rose-700 font-mono">{pipelineMetrics.atrasadas}</strong> cuota(s) programada(s) atrasada(s) por facturar.
+                    </span>
+                  </div>
+                )}
+                {pipelineMetrics.backlogFacturacion > 0 && (
+                  <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-3">
+                    <span className="text-amber-600 shrink-0"><AlertTriangle size={16} /></span>
+                    <span className="text-xs text-slate-600 font-medium">
+                      <strong className="font-black text-amber-700 font-mono">{pipelineMetrics.backlogFacturacion}</strong> línea(s) EJECUTADA(s) esperando facturación (backlog).
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -505,7 +573,6 @@ export default function OrdenesTrabajoView({
 
       {subTab === 'targets' && (
         <ReporteTarget 
-          lineas={lineas} 
           targetVentas={targetVentas} 
           targetReport={targetReport} 
         />
