@@ -427,6 +427,12 @@ async function generateOtCode(): Promise<string> {
   return `OT-2026-${(count + 1).toString().padStart(3, '0')}`;
 }
 
+async function generateVisitaCode(): Promise<string> {
+  const count = await prisma.visita.count();
+  const year = new Date().getFullYear();
+  return `VIS-${year}-${(count + 1).toString().padStart(4, '0')}`;
+}
+
 async function generateStandaloneEquipoCode(tipo?: string): Promise<string> {
   const count = await prisma.equipo.count();
   const typePrefix = (tipo || '').toUpperCase().includes('UPS') ? 'UPS' : 'TAB';
@@ -485,6 +491,85 @@ app.post("/api/contracts", async (req, res) => {
     res.status(201).json(created);
   } catch (err) {
     res.status(500).json({ error: "Error" });
+  }
+});
+
+// ================= Visitas Endpoints =================
+app.get("/api/visitas", async (req, res) => {
+  try {
+    const { tecnicoTitularId, fechaProgramada, estado, clientId } = req.query;
+    const where: any = {};
+    if (tecnicoTitularId) where.tecnicoTitularId = String(tecnicoTitularId);
+    if (fechaProgramada) where.fechaProgramada = String(fechaProgramada);
+    if (estado) where.estado = String(estado);
+    if (clientId) where.clientId = String(clientId);
+
+    const visitas = await prisma.visita.findMany({ where, orderBy: { creadoEn: 'desc' } });
+    res.json(visitas);
+  } catch (err) {
+    console.error("Error listando visitas:", err);
+    res.status(500).json({ error: "Error listando visitas" });
+  }
+});
+
+app.get("/api/visitas/:id", async (req, res) => {
+  try {
+    const visita = await prisma.visita.findUnique({ where: { id: req.params.id } });
+    if (!visita) return res.status(404).json({ error: "Visita no encontrada" });
+    res.json(visita);
+  } catch (err) {
+    res.status(500).json({ error: "Error obteniendo visita" });
+  }
+});
+
+app.get("/api/visitas/:id/ots", async (req, res) => {
+  try {
+    const ots = await prisma.oT.findMany({ where: { visitaId: req.params.id } });
+    res.json(ots);
+  } catch (err) {
+    res.status(500).json({ error: "Error obteniendo OTs de la visita" });
+  }
+});
+
+app.post("/api/visitas", async (req, res) => {
+  try {
+    const visitaData = { ...req.body };
+    if (!visitaData.codigo) {
+      visitaData.codigo = await generateVisitaCode();
+    }
+    const created = await prisma.visita.create({ data: visitaData });
+    res.status(201).json(created);
+  } catch (err) {
+    console.error("Error creando visita:", err);
+    res.status(500).json({ error: "Error creando visita" });
+  }
+});
+
+app.put("/api/visitas/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData.creadoEn;
+    delete updateData.actualizadoEn;
+
+    const updatedVisita = await prisma.visita.update({
+      where: { id },
+      data: updateData
+    });
+
+    // Cascade status updates to child OTs when logistics state changes
+    if (updateData.estado === 'En Camino' || updateData.estado === 'En Sitio' || updateData.estado === 'Completada') {
+      await prisma.oT.updateMany({
+        where: { visitaId: id },
+        data: { estado: updateData.estado }
+      });
+    }
+
+    res.json(updatedVisita);
+  } catch (err) {
+    console.error("Error actualizando visita:", err);
+    res.status(500).json({ error: "Error actualizando visita" });
   }
 });
 
@@ -642,7 +727,7 @@ app.post("/api/ots", async (req, res) => {
         prisma.ordenTrabajoLinea.create({
           data: financialLineData
         })
-      ]);
+      ], { timeout: 15000 });
 
       return res.status(201).json(createdOt);
     } else {
@@ -659,7 +744,7 @@ app.post("/api/ots", async (req, res) => {
         prisma.ordenTrabajoLinea.create({
           data: financialLineData
         })
-      ]);
+      ], { timeout: 15000 });
       return res.status(201).json(created);
     }
   } catch (err: any) {
@@ -1048,7 +1133,23 @@ app.get("/api/photos/*", async (req: any, res) => {
 app.post("/api/sync", async (req, res) => {
   console.log(">>> SYNC REQUEST RECEIVED");
   try {
-    const { reports, ots, clients, contracts, ordenesTrabajo, contratosNuevos, users, logs } = req.body;
+    const { reports, ots, visitas, clients, contracts, ordenesTrabajo, contratosNuevos, users, logs } = req.body;
+
+    if (Array.isArray(visitas)) {
+      for (const sv of visitas) {
+        const svDataClean = { ...sv };
+        delete svDataClean.creadoEn;
+        delete svDataClean.actualizadoEn;
+
+        const existing = sv.id ? await prisma.visita.findUnique({ where: { id: sv.id } }) : null;
+        if (existing) {
+          delete svDataClean.id;
+          await prisma.visita.update({ where: { id: sv.id }, data: svDataClean });
+        } else {
+          await prisma.visita.create({ data: svDataClean });
+        }
+      }
+    }
 
     if (Array.isArray(reports)) {
       const cleanReports = reports.filter(r => r.otId !== 'OT-003' && r.id !== 'rpt_003');

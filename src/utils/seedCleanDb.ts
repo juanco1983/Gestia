@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
 import 'dotenv/config';
+import { INITIAL_USERS } from '../mockData';
 
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -37,15 +36,14 @@ async function main() {
     await prisma.targetVenta.deleteMany();
 
     // Preserve existing users or re-create default admin users if DB has none
-    const dbPath = path.join(process.cwd(), 'db.json');
-    if (fs.existsSync(dbPath)) {
-        const rawData = fs.readFileSync(dbPath, 'utf8');
-        const db = JSON.parse(rawData);
-        const userCount = await prisma.user.count();
-        if (userCount === 0 && db.users && db.users.length > 0) {
-            await prisma.user.createMany({ data: db.users });
-            console.log(`👤 Seeded ${db.users.length} default admin users.`);
-        }
+    const userCount = await prisma.user.count();
+    if (userCount === 0 && INITIAL_USERS.length > 0) {
+        const bcrypt = await import('bcryptjs');
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync('mafort', salt);
+        const usersWithPassword = INITIAL_USERS.map((u: any) => ({ ...u, password: hash }));
+        await prisma.user.createMany({ data: usersWithPassword as any });
+        console.log(`👤 Seeded ${INITIAL_USERS.length} default admin users.`);
     }
 
     console.log('✨ Clean reset completed successfully! Operational tables are at 0 records.');

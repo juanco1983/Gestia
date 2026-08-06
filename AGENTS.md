@@ -14,6 +14,7 @@ verdad** alojada en `Documentacion/`:
 | [`Documentacion/data_dictionary.md`](Documentacion/data_dictionary.md) | Modelo de datos. Toda modificación a `prisma/schema.prisma` o `src/types.ts` DEBE actualizar este doc en la misma PR. |
 | [`Documentacion/guia_ui_ux.md`](Documentacion/guia_ui_ux.md) | **Sistema de diseño vigente**. El Dashboard es el patrón de referencia. Toda vista, componente, modal, botón, tabla o notificación nueva DEBE seguir esta guía. **Prohibido `window.alert()`** — usar el patrón canónico `<ToastModal>` descrito en la sección 5. |
 | [`Documentacion/inventario_inconsistencias_ui.md`](Documentacion/inconsistencias_ui.md) | Auditoría UI/UX con plan de migración. Antes de homologar un módulo, consultar su sección. |
+| [`Documentacion/pruebas_e2e/`](Documentacion/pruebas_e2e/) | **Flujos de Pruebas E2E Automatizadas**. Guiones y resultados de pruebas E2E para mantener `dev` estable. |
 
 ### Reglas UI/UX no negociables
 
@@ -129,6 +130,28 @@ Para cada request:
 3. Seguir el workflow del skill estrictamente
 4. Solo proceder a implementación después de completar los pasos requeridos (spec, plan, etc.)
 
+### QA Engineer (gate de calidad)
+
+> **Antes de cualquier commit/push/PR, se DEBE invocar al skill `qa-engineer`**
+> (`skills/qa-engineer/SKILL.md`). Se invoca siempre que cambie código fuente,
+> se agregue/elimine funcionalidad, cambie una API, cambie el esquema Prisma,
+> cambie la UI, se corrija un bug o se refactorice.
+
+El skill `qa-engineer`:
+- Escala el nivel de test según el tipo de cambio (unit / integration / e2e /
+  regression / smoke).
+- Obliga a **E2E desde el navegador (Playwright)** para cambios de UI/flujo, e
+  **integración (API/BD/Prisma)** para cambios de modelo o endpoints.
+- Bloquea commit/push/PR si alguna prueba falla o hay errores de lint.
+- Exige generar un **QA Report** (status APPROVED/REJECTED).
+- Emite la evidencira en `Documentacion/evidencias/` (y la definitiva en
+  `Documentacion/evidencias/definitivas/` antes del merge a `dev`).
+
+Puntos no negociables (heredados de AGENTS.md):
+
+- Postgres es la **única fuente de verdad**; nunca validar contra `db.json`/mock.
+- Ningún merge a `dev` sin E2E + integración locales pasados.
+
 ### Git workflow (regla estricta)
 
 - **Toda nueva feature/fix/refactor DEBE iniciarse en una rama NUEVA**
@@ -142,6 +165,18 @@ Para cada request:
 - Antes de commitear: verificar `git status`, `git diff` y `git log` recientes para mantener contexto limpio.
 - Commits atómicos por cambio conceptual. Mensajes siguiendo el estilo del repo (ver `git log` recientes): `tipo(scope): descripcion` en español.
 - Antes de mergear a `dev`/`main` se hace PR, no push directo.
+
+### Pruebas E2E y de Integración Obligatorias (antes de PR / Merge)
+
+> **Toda implementación DEBE validar su flujo con pruebas de integración (API/BD) y pruebas E2E automatizadas desde el NAVEGADOR (simulando interacción real de usuario) antes de autorizar el merge a la rama `dev`, garantizando una rama permanente y estable.**
+
+1. **Guardar Flujo de Pruebas**: El flujo, guion E2E y especificación de integración de cada funcionalidad DEBE guardarse en `Documentacion/pruebas_e2e/<slug>.md`.
+2. **Ejecución Navegador Real y Pruebas de Integración**: Se debe validar la integridad del sistema mediante:
+   - **Pruebas de Integración**: Verificación de endpoints API, modelo de datos Prisma, sincronización offline y cascada de estados sin alterar flujos preexistentes.
+   - **Pruebas E2E desde Navegador**: Interacción directa desde la interfaz visual con **Playwright** (`npx playwright test`), simulando clics, formularios y experiencia de usuario final. Prohibido validar solo con unit tests aislados.
+3. **Ejecución Local Obligatoria**: Antes de subir la rama `feature/` o crear un PR hacia `dev`, las pruebas de integración y E2E deben ejecutarse en el entorno local y verificar que el 100% de los escenarios pasen exitosamente.
+4. **Rama `dev` Estable**: Queda estrictamente prohibido realizar merge a `dev` de cualquier cambio que no haya completado y superado sus pruebas de integración y E2E locales.
+5. **Video de Evidencia Obligatorio**: Toda ejecución de pruebas de integración y E2E DEBE generar y guardar automáticamente grabaciones de video en formato `.webm` (configuración `video: 'on'` en `playwright.config.ts`) alojadas en `test-results/` como evidencia visual obligatoria de funcionamiento antes de autorizar un PR o merge.
 
 ### Anti-racionalización
 

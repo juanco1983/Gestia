@@ -47,9 +47,40 @@ model Contract {
   fechaFin       String
 }
 
+model Visita {
+  id                         String   @id @default(cuid())
+  codigo                     String   @unique
+  clientId                   String
+  ubicacion                  String?
+  fechaProgramada            String
+  horaProgramada             String?
+  horaFinProgramada          String?
+  tecnicoTitularId           String
+  tecnicoTitular             String
+  tecnicoApoyoId             String?
+  tecnicoApoyo               String?
+  tecnicosAdicionalesIds     Json?
+  tecnicosAdicionalesNombres Json?
+  estado                     String   @default("Programada")
+  horaSalida                 String?
+  horaLlegada                String?
+  horaInicioServicio         String?
+  horaFinServicio            String?
+  notas                      String?
+  contratoId                 String?
+  adendaId                   String?
+  creadoEn                   DateTime @default(now())
+  actualizadoEn              DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([tecnicoTitularId])
+  @@index([fechaProgramada])
+}
+
 model OT {
   id                        String  @id
   clientId                  String
+  visitaId                  String?
   tipoMantenimiento         String
   tipoEquipo                String
   potenciaKva               Float
@@ -71,6 +102,8 @@ model OT {
   costo_estimado_usd        Float?
   contratoId                String?
   adendaId                  String?
+
+  @@index([visitaId])
 }
 
 model TechnicalReport {

@@ -223,6 +223,29 @@ Tres pipelines:
 > Si la instancia EC2 está **DETENIDA (STOP)**, el pipeline `app-deploy.yml` fallará porque el ambiente no puede desplegar en una instancia apagada.
 > Siempre ejecutar `START` antes de hacer push/merge a `dev` o `main`.
 
+### 4.5 Pruebas automáticas en `dev` (brecha y plan)
+
+> [!IMPORTANT]
+> **El pipeline `app-deploy.yml` no ejecuta pruebas**: solo compila y despliega.
+> La validación de calidad (E2E Playwright + integración) ocurre **localmente antes
+> del push**. Esto implica un riesgo: un cambio que rompa login, `/api/health` o
+> una migración Prisma puede llegar a `dev` sin ser detectado por CI.
+
+Estrategia planificada (en `Documentacion/planes/infra/2026-08-05-pruebas-ci-rama-dev.md`,
+pendiente de implementar):
+
+| Job | Cuándo | Qué valida | BD usada |
+|---|---|---|---|
+| **A. Test en CI** | Previo al deploy a `dev` (push) | `lint` + E2E Playwright + integración (`scratch/e2e-test-runner.ts`) | **BD de CI separada**, sembrada, NO la BD de `dev` real |
+| **B. Smoke post-deploy** | Tras el deploy a `dev` | `/api/health`, login, endpoint representativo (solo lectura) | No escribe en la BD de trabajo |
+
+Reglas de la estrategia:
+- Postgres es la única fuente de verdad; el seed de CI se deriva de los mismos
+  `INITIAL_USERS`/Prisma que producción.
+- No correr E2E que escriban contra la BD real de `dev`.
+- La evidencia de CI se deposita en `Documentacion/evidencias/` (definitivas antes
+  del merge a `dev`).
+
 ---
 
 ## 5. Elastic Beanstalk Customizations

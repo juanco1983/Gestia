@@ -8,12 +8,14 @@ Ha sido diseñado específicamente para operar de manera robusta, con soporte of
 
 ## 💾 ¿Cómo se guardan los datos y las fotos actualmente?
 
-**Sí, se están guardando en una base de datos local persistente.**
+**Se guardan en una base de datos PostgreSQL (fuente única de verdad).**
 
-El servidor de Node.js incluye un motor de persistencia ligero basado en un archivo físico llamado `db.json` ubicado en la raíz del proyecto.
-- **Persistencia Real**: Cada vez que creas un cliente, un contrato, una orden de trabajo (OT) o guardas un reporte con fotos (tanto de manera directa como mediante sincronización offline), los datos se escriben inmediatamente en el archivo `db.json` en tu disco duro.
-- **Fotos e Imágenes**: Las fotos tomadas o cargadas se procesan como cadenas de texto en formato **Base64** de alta fidelidad y las autocompletadas utilizan **gráficos vectoriales técnicos autogenerados (SVG)**. Todas se guardan de forma segura y completa dentro del mismo archivo `db.json`.
-- **Sin Pérdidas**: A diferencia del almacenamiento en el navegador (`localStorage`), estos datos **no se borran** si limpias la caché, si cierras el navegador o si reinicias la computadora. Estarán allí listos para ser revisados o editados en cualquier momento.
+El backend (Node.js + Express) persiste toda la información mediante **Prisma ORM sobre PostgreSQL** (`postgresql://.../mafort_db`), definido por `DATABASE_URL` en `.env`. El esquema canónico vive en `prisma/schema.prisma` y las migraciones en `prisma/migrations/`.
+- **Persistencia Real**: cada cliente, contrato, orden de trabajo (OT), reporte técnico o sincronización offline se escribe directamente en la base PostgreSQL vía el cliente Prisma.
+- **Fotos e Imágenes**: las fotos se procesan como Base64 y se suben a **AWS S3** (o fallback local en `uploads/`); en la base solo se guarda la URL.
+- **Sin Pérdidas**: a diferencia del almacenamiento en el navegador (`localStorage`), los datos viven en la base de datos centralizada y no dependen de la caché o del equipo del operador.
+
+> **Nota de arquitectura:** Postgres es la **única fuente de verdad**. El archivo legacy `db.json` fue eliminado; no forma parte del sistema actual. Ver `Documentacion/architecture_c4.md`.
 
 ---
 
@@ -77,11 +79,8 @@ Este comando empaqueta el frontend estático y compila el backend de Node.js en 
 npm start
 ```
 
-### 2. Escalamiento a Base de Datos de Producción (PostgreSQL, SQL Server, etc.)
-Para pasar del archivo local `db.json` a una base de datos robusta en la nube cuando el volumen de usuarios crezca, solo debes realizar un cambio en el archivo `server.ts`:
-
-1. Reemplazar las funciones `getDb()` y `saveDb()` (líneas 258 a 278 de `server.ts`) para que realicen consultas `SELECT` e `INSERT` directas a tu base de datos centralizada (por ejemplo, PostgreSQL en AWS RDS o Azure Database for PostgreSQL).
-2. Como el backend expone una API REST limpia (`/api/users`, `/api/ots`, `/api/reports`), **el frontend de React no requerirá ningún cambio**. Todo el cambio de base de datos se realiza de forma aislada en el backend.
+### 2. Base de Datos (PostgreSQL)
+La aplicación usa **PostgreSQL como única fuente de verdad**, accedida vía **Prisma ORM**. Configura la conexión en la variable `DATABASE_URL` (ver `.env`). El esquema canónico está en `prisma/schema.prisma`; aplica las migraciones con `npx prisma migrate deploy`.
 
 ### 3. Almacenamiento de Imágenes a Gran Escala (S3 / Azure Blob Storage)
 Cuando manejes miles de reportes con fotos pesadas, en lugar de guardar las fotos en Base64 en la base de datos SQL:

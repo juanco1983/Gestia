@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft, AlertTriangle, Target } from 'lucide-react';
-import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo, Client } from '../../types';
+import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo, Client, Visita, VisitaStatus } from '../../types';
 import { checkTechnicianConflicts } from '../../utils/conflictChecker';
 import { useLocalToast } from '../shared/ToastModal';
 
@@ -12,8 +12,10 @@ interface ModalProgramarVisitaProps {
   ots: OT[];
   users: User[];
   clients: Client[];
+  visitas?: Visita[];
   otEquipoAsignaciones?: any[];
   onSave: (newOT: OT) => Promise<void>;
+  onSaveVisita?: (newVisita: Visita) => Promise<Visita>;
 }
 
 export default function ModalProgramarVisita({
@@ -24,8 +26,10 @@ export default function ModalProgramarVisita({
   ots,
   users,
   clients,
+  visitas = [],
   otEquipoAsignaciones = [],
-  onSave
+  onSave,
+  onSaveVisita
 }: ModalProgramarVisitaProps) {
   const technicians = useMemo(() => users.filter(u => u.role === 'Tecnico' && u.estado === 'Activo'), [users]);
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -152,6 +156,19 @@ export default function ModalProgramarVisita({
     return list;
   }, [primaryTechId, supportTechId, additionalTechIds, fecha, horaInicio, horaFin, ots, clients, contract?.clientId, technicians]);
 
+  // Find matching existing Visita for auto-grouping suggestion (US-2)
+  const matchingVisita = useMemo(() => {
+    if (!contract?.clientId || !fecha || !primaryTechId || visitas.length === 0) return null;
+    return visitas.find(v =>
+      v.clientId === contract.clientId &&
+      v.fechaProgramada === fecha &&
+      v.tecnicoTitularId === primaryTechId &&
+      (v.estado === 'Programada' || v.estado === VisitaStatus.PROGRAMADA)
+    ) || null;
+  }, [contract, fecha, primaryTechId, visitas]);
+
+  const [useExistingVisita, setUseExistingVisita] = useState<boolean>(true);
+
   // Initialize service type based on contract details
   useEffect(() => {
     if (contract?.tipo_contrato?.toLowerCase().includes('correctivo')) {
@@ -215,6 +232,11 @@ export default function ModalProgramarVisita({
   if (!isOpen) return null;
 
   const handleToggleEquip = (id: string) => {
+    const eq = equipments.find(e => e.id === id);
+    if (eq && (!eq.ubicacion || !eq.ubicacion.trim())) {
+      notifyError('Ubicación Requerida', `El equipo ${eq.codigo} no tiene ubicación definida en el inventario. Actualícela antes de programar.`);
+      return;
+    }
     setSelectedEquips(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -287,6 +309,40 @@ export default function ModalProgramarVisita({
       ).length;
       const nextSeq = count + 1;
 
+      // Create Visita or reuse existing matching Visita (US-1 & US-2)
+      let targetVisitaId: string | undefined = undefined;
+
+      if (matchingVisita && useExistingVisita) {
+        targetVisitaId = matchingVisita.id;
+      } else {
+        const targetUbicacion = activeSelectedEquips[0]?.ubicacion || contract?.direccionSede || '';
+        const newVisita: Visita = {
+          id: `vis_${Date.now()}`,
+          codigo: '',
+          clientId: contract.clientId || '',
+          ubicacion: targetUbicacion,
+          fechaProgramada: fecha,
+          horaProgramada: horaInicio,
+          horaFinProgramada: horaFin,
+          tecnicoTitularId: primaryTechId,
+          tecnicoTitular: primaryTech?.username || '',
+          tecnicoApoyoId: supportTechId || undefined,
+          tecnicoApoyo: supportTech?.username || undefined,
+          tecnicosAdicionalesIds: additionalTechIds.length > 0 ? additionalTechIds : undefined,
+          tecnicosAdicionalesNombres: additionalTechs.length > 0 ? additionalTechs.map(t => t.username) : undefined,
+          estado: VisitaStatus.PROGRAMADA,
+          contratoId: contract.id,
+          adendaId: adenda?.id || undefined
+        };
+
+        if (onSaveVisita) {
+          const saved = await onSaveVisita(newVisita);
+          targetVisitaId = saved.id;
+        } else {
+          targetVisitaId = newVisita.id;
+        }
+      }
+
       // 1. Create N OTs (one per selected equipment)
       for (let i = 0; i < activeSelectedEquips.length; i++) {
         const eq = activeSelectedEquips[i];
@@ -302,6 +358,7 @@ export default function ModalProgramarVisita({
 
         const newOT: OT = {
           id: eqOtCode,
+          visitaId: targetVisitaId,
           clientId: contract.clientId || '',
           tipoMantenimiento: serviceType,
           tipoEquipo: eq.tipo as EquipmentType || EquipmentType.UPS,
@@ -777,6 +834,43 @@ export default function ModalProgramarVisita({
                         <span className="font-bold font-mono">[{c.techName}]:</span> {c.message}
                       </p>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Auto-grouping suggestion banner (US-2) */}
+              {matchingVisita && (
+                <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-2 mt-4 text-left">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                    <span className="font-bold text-xs text-amber-950 font-mono">
+                      Sugerencia de Auto-Agrupación de Visita
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Se detectó la Visita programada <strong className="font-mono text-amber-950">{matchingVisita.codigo || matchingVisita.id}</strong> para este cliente el día {fecha} con el técnico titular.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-1 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-amber-950">
+                      <input
+                        type="radio"
+                        name="visita-grouping"
+                        checked={useExistingVisita}
+                        onChange={() => setUseExistingVisita(true)}
+                        className="accent-teal-brand"
+                      />
+                      <span>Agregar equipos a la Visita {matchingVisita.codigo || matchingVisita.id} existente</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-slate-700">
+                      <input
+                        type="radio"
+                        name="visita-grouping"
+                        checked={!useExistingVisita}
+                        onChange={() => setUseExistingVisita(false)}
+                        className="accent-teal-brand"
+                      />
+                      <span>Crear una Visita separada</span>
+                    </label>
                   </div>
                 </div>
               )}
