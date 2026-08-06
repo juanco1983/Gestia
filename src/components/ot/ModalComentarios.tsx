@@ -18,14 +18,14 @@ export default function ModalComentarios({
   onClose
 }: ModalComentariosProps) {
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in" id="ot-modal-comentarios">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" id="ot-modal-comentarios">
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
+        <div className="bg-slate-50/60 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-              <MessageSquare className="text-[#00B594]" size={16} />
+            <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+              <MessageSquare className="text-teal-brand" size={16} />
               Bitácora de Estatus & Seguimiento
             </h3>
             <span className="text-[10px] font-bold text-slate-400 font-mono block mt-0.5">
@@ -45,15 +45,15 @@ export default function ModalComentarios({
           {(!linea.estatus || linea.estatus.length === 0) ? (
             <div className="text-center py-12 space-y-2">
               <MessageSquare className="mx-auto text-slate-300" size={32} />
-              <p className="text-xs text-slate-450 font-bold">No hay comentarios ni avances registrados para esta línea de OT.</p>
+              <p className="text-xs text-slate-400 font-bold">No hay comentarios ni avances registrados para esta línea de OT.</p>
               <p className="text-[10px] text-slate-400 font-medium">Usa el formulario de abajo para registrar un nuevo hito.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {(linea.estatus || []).map((est, index) => (
-                <div key={index} className="bg-white border border-slate-150/80 p-4 rounded-2xl text-xs space-y-2 text-left shadow-sm hover:shadow-md transition-shadow">
+                <div key={index} className="bg-white border border-slate-200/80 p-4 rounded-2xl text-xs space-y-2 text-left shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className="font-black text-[#00B594] bg-[#E6F7F4] px-2 py-0.5 rounded-md font-mono">{est.autor}</span>
+                    <span className="font-black text-teal-brand bg-teal-mist px-2 py-0.5 rounded-md font-mono">{est.autor}</span>
                     <span className="text-slate-400 font-mono font-bold">{est.fecha}</span>
                   </div>
                   <p className="text-slate-600 font-semibold leading-relaxed whitespace-pre-wrap">{est.texto}</p>
@@ -64,7 +64,7 @@ export default function ModalComentarios({
         </div>
 
         {/* Footer (Form) */}
-        <div className="border-t border-slate-150 p-5 bg-white">
+        <div className="border-t border-slate-200 p-5 bg-white">
           <form onSubmit={onAddComment} className="flex gap-2">
             <input
               type="text"
@@ -72,11 +72,11 @@ export default function ModalComentarios({
               placeholder="Agregar avance o nota informal del servicio (ej. '15.06: entregado')..."
               value={newCommentText}
               onChange={(e) => setNewCommentText(e.target.value)}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs text-slate-800 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594] transition-all"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-xs text-slate-800 focus:outline-none focus:border-teal-brand focus:ring-1 focus:ring-teal-brand transition-all"
             />
             <button
               type="submit"
-              className="bg-[#00B594] hover:bg-[#00a385] text-white p-2.5 rounded-xl cursor-pointer flex items-center justify-center shrink-0 transition-all shadow-md"
+              className="bg-teal-brand hover:bg-teal-deep text-white p-2.5 rounded-xl cursor-pointer flex items-center justify-center shrink-0 transition-all shadow-md"
               title="Enviar comentario"
             >
               <Send size={15} />

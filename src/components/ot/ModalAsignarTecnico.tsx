@@ -287,10 +287,10 @@ export default function ModalAsignarTecnico({
 
   return (
     <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between shrink-0">
-          <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-            <UserPlus size={16} className="text-[#00B594]" />
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
+        <div className="bg-slate-50/60 px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+            <UserPlus size={16} className="text-teal-brand" />
             Programar OT {linea.ot}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-all cursor-pointer">
@@ -316,7 +316,7 @@ export default function ModalAsignarTecnico({
           {matchingOt && otEquipoIds.length > 0 ? (
             <div className="space-y-4">
               <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-500 font-mono flex items-center gap-1.5 border-b pb-1.5">
-                <Cpu size={12} className="text-[#00B594]" />
+                <Cpu size={12} className="text-teal-brand" />
                 Asignación y Programación por Equipo ({otEquipoIds.length})
               </h4>
 
@@ -332,8 +332,8 @@ export default function ModalAsignarTecnico({
                   };
 
                   return (
-                    <div key={eqId} className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-4 space-y-3.5 hover:border-[#00B594]/45 transition-colors">
-                      <div className="flex justify-between items-start border-b border-slate-150 pb-2">
+                    <div key={eqId} className="bg-slate-50/50 border border-slate-200 rounded-2xl p-4 space-y-3.5 hover:border-teal-brand/45 transition-colors">
+                      <div className="flex justify-between items-start border-b border-slate-200 pb-2">
                         <div>
                           <span className="text-xs font-black text-slate-800">
                             {equipo ? `${equipo.codigo} - ${equipo.tipo}` : `Equipo ID: ${eqId}`}
@@ -342,14 +342,14 @@ export default function ModalAsignarTecnico({
                             {equipo ? `Marca: ${equipo.marca || '-'} | Modelo: ${equipo.modelo || '-'} | Ubicac.: ${equipo.ubicacion || '-'}` : ''}
                           </p>
                         </div>
-                        <span className="text-[9px] font-mono px-2 py-0.5 bg-slate-200 text-slate-650 rounded-full font-bold uppercase">
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-200 text-slate-500 rounded-full font-bold uppercase">
                           {equipo?.especificaciones?.potenciaKva || equipo?.potenciaKva || '-'} KVA
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Técnico Titular (Líder)</label>
+                          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Técnico Titular (Líder)</label>
                           <select
                             value={state.tecnicoId}
                             onChange={(e) => setAssignmentsState({
@@ -366,7 +366,7 @@ export default function ModalAsignarTecnico({
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Técnico de Apoyo</label>
+                          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Técnico de Apoyo</label>
                           <select
                             value={state.tecnicoApoyoId}
                             onChange={(e) => setAssignmentsState({
@@ -387,7 +387,7 @@ export default function ModalAsignarTecnico({
 
                       <div className="grid grid-cols-2 gap-4 pt-0.5">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono">Fecha</label>
+                          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono">Fecha</label>
                           <input
                             type="date"
                             value={state.fechaProgramada}
@@ -400,7 +400,7 @@ export default function ModalAsignarTecnico({
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
                             <Clock size={10} /> Hora Inicio
                           </label>
                           <input
@@ -417,7 +417,7 @@ export default function ModalAsignarTecnico({
 
                       <div className="grid grid-cols-2 gap-4 pt-0.5">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
+                          <label className="text-[10px] font-black uppercase text-slate-400 block font-mono flex items-center gap-1">
                             <Clock size={10} /> Hora Fin
                           </label>
                           <input
@@ -453,9 +453,9 @@ export default function ModalAsignarTecnico({
                 </select>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                 <h4 className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1.5 font-mono">
-                  <Calendar size={12} className="text-[#00B594]" />
+                  <Calendar size={12} className="text-teal-brand" />
                   Programación del Servicio
                 </h4>
                 
@@ -526,11 +526,11 @@ export default function ModalAsignarTecnico({
                 additionalTechIds.map(id => {
                   const tech = technicians.find(t => t.id === id);
                   return (
-                    <div key={id} className="flex items-center justify-between bg-slate-50 border border-slate-100 p-2 rounded-xl">
+                    <div key={id} className="flex items-center justify-between bg-slate-50 border border-slate-200 p-2 rounded-xl">
                       <span className="text-[11px] font-bold text-slate-700">{tech?.username}</span>
                       <button 
                         onClick={() => removeAdditionalTech(id)}
-                        className="text-slate-450 hover:text-rose-500 p-1 cursor-pointer transition-colors"
+                        className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer transition-colors"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -543,7 +543,7 @@ export default function ModalAsignarTecnico({
 
           {/* Conflict Warnings Box */}
           {conflicts.length > 0 && (
-            <div className="mx-6 mb-4 bg-amber-50 border border-amber-250/80 rounded-xl p-3.5 space-y-2 select-none text-left">
+            <div className="mx-6 mb-4 bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 space-y-2 select-none text-left">
               <div className="flex items-center gap-2 text-amber-800 font-bold text-[11px] uppercase tracking-wide">
                 <AlertTriangle size={14} className="shrink-0 text-amber-600 animate-bounce" />
                 <span>Advertencias de Asignación (Recomendador S.L.A)</span>
@@ -559,7 +559,7 @@ export default function ModalAsignarTecnico({
           )}
         </div>
 
-        <div className="flex justify-end gap-2.5 p-6 border-t border-slate-150 shrink-0 bg-slate-50">
+        <div className="flex justify-end gap-2.5 p-6 border-t border-slate-200 shrink-0 bg-slate-50">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
@@ -568,7 +568,7 @@ export default function ModalAsignarTecnico({
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2.5 bg-[#00B594] hover:bg-[#009b7e] text-white font-black rounded-xl text-xs cursor-pointer shadow-md hover:shadow-lg transition-all"
+            className="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white font-black rounded-xl text-xs cursor-pointer shadow-md hover:shadow-lg transition-all"
           >
             Guardar Programación
           </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { X, Calendar, Clock, Wrench, Plus, Trash2, Cpu, Check, ArrowRight, ArrowLeft, AlertTriangle, Target } from 'lucide-react';
 import { User, OT, OTStatus, ServiceType, EquipmentType, Equipo, Client } from '../../types';
 import { checkTechnicianConflicts } from '../../utils/conflictChecker';
 import { useLocalToast } from '../shared/ToastModal';
@@ -375,14 +375,14 @@ export default function ModalProgramarVisita({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
+      <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.015)] w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
         
         {/* Stepper Wizard Progress Header */}
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-150 shrink-0">
+        <div className="bg-slate-50/60 px-6 py-4 border-b border-slate-100 shrink-0">
           <div className="flex justify-between items-center mb-3">
             <div>
-              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2 uppercase tracking-wide">
-                <Wrench size={16} className="text-[#00B594]" />
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2 uppercase tracking-wide">
+                <Wrench size={16} className="text-teal-brand" />
                 Programación de Servicio Técnico
               </h3>
               <p className="text-[10px] text-slate-500 font-mono mt-0.5">
@@ -429,7 +429,7 @@ export default function ModalProgramarVisita({
           
           {/* STEP 1: TIPO DE SERVICIO */}
           {step === 1 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150">
+            <div className="space-y-4">
               <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 1: Tipo de Servicio</h4>
               <p className="text-xs text-slate-500">Define el tipo de intervención que realizarás sobre los equipos del cliente.</p>
               
@@ -479,7 +479,7 @@ export default function ModalProgramarVisita({
 
           {/* STEP 2: SELECCIÓN DE EQUIPOS */}
           {step === 2 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150 text-left">
+            <div className="space-y-4 text-left">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                   <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 2: Selección de Equipos</h4>
@@ -526,9 +526,10 @@ export default function ModalProgramarVisita({
                   <button
                     type="button"
                     onClick={selectOnlyPendingEquips}
-                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-md border border-amber-200 transition-colors cursor-pointer"
+                    className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-md border border-amber-200 transition-colors cursor-pointer flex items-center gap-1"
                   >
-                    🎯 Solo Pendientes
+                    <Target size={11} />
+                    Solo Pendientes
                   </button>
                   <button
                     type="button"
@@ -578,12 +579,12 @@ export default function ModalProgramarVisita({
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-xs font-bold text-slate-800">{eq.codigo}</span>
                             {otInfo ? (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                ✓ Programado ({otInfo.otCode} · {otInfo.fecha})
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <Check size={9} /> Programado ({otInfo.otCode} · {otInfo.fecha})
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                ⚠️ Pendiente de Visita
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                <AlertTriangle size={9} /> Pendiente de Visita
                               </span>
                             )}
                           </div>
@@ -620,7 +621,7 @@ export default function ModalProgramarVisita({
 
           {/* STEP 3: PROGRAMACIÓN */}
           {step === 3 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150">
+            <div className="space-y-4">
               <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 3: Fecha y Horario</h4>
               <p className="text-xs text-slate-500">Determina el día y el rango de horas para el inicio del servicio.</p>
 
@@ -637,7 +638,7 @@ export default function ModalProgramarVisita({
                       value={fecha}
                       min={todayStr}
                       onChange={e => setFecha(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-teal-brand focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -653,7 +654,7 @@ export default function ModalProgramarVisita({
                       required
                       value={horaInicio}
                       onChange={e => setHoraInicio(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-teal-brand focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -669,7 +670,7 @@ export default function ModalProgramarVisita({
                       required
                       value={horaFin}
                       onChange={e => setHoraFin(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                      className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-slate-900 font-mono text-sm focus:border-teal-brand focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -679,7 +680,7 @@ export default function ModalProgramarVisita({
 
           {/* STEP 4: ASIGNACIÓN DE PERSONAL */}
           {step === 4 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150">
+            <div className="space-y-4">
               <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 4: Asignación de Personal</h4>
               <p className="text-xs text-slate-500">Asigna los técnicos encargados de asistir y elaborar el informe.</p>
 
@@ -696,7 +697,7 @@ export default function ModalProgramarVisita({
                       if (e.target.value === supportTechId) setSupportTechId('');
                       setAdditionalTechIds(prev => prev.filter(x => x !== e.target.value));
                     }}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-teal-brand focus:outline-none transition-colors"
                   >
                     <option value="">-- Seleccionar Técnico Titular --</option>
                     {technicians.map(t => (
@@ -715,7 +716,7 @@ export default function ModalProgramarVisita({
                       setSupportTechId(e.target.value);
                       setAdditionalTechIds(prev => prev.filter(x => x !== e.target.value));
                     }}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono text-sm focus:border-teal-brand focus:outline-none transition-colors"
                   >
                     <option value="">-- Sin Técnico de Apoyo --</option>
                     {technicians.filter(t => t.id !== primaryTechId).map(t => (
@@ -734,7 +735,7 @@ export default function ModalProgramarVisita({
                   <select
                     onChange={handleAddAdditionalTech}
                     value=""
-                    className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 font-mono text-xs focus:border-emerald-500 focus:outline-none transition-colors"
+                    className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 font-mono text-xs focus:border-teal-brand focus:outline-none transition-colors"
                   >
                     <option value="">+ Añadir Técnico Adicional</option>
                     {technicians
@@ -765,7 +766,7 @@ export default function ModalProgramarVisita({
 
               {/* Conflict Warnings Box */}
               {conflicts.length > 0 && (
-                <div className="bg-amber-50 border border-amber-250/80 rounded-xl p-3.5 space-y-2 mt-4 select-none text-left">
+                <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 space-y-2 mt-4 select-none text-left">
                   <div className="flex items-center gap-2 text-amber-800 font-bold text-[11px] uppercase tracking-wide">
                     <AlertTriangle size={14} className="shrink-0 text-amber-600 animate-bounce" />
                     <span>Advertencias de Asignación (Recomendador S.L.A)</span>
@@ -784,21 +785,21 @@ export default function ModalProgramarVisita({
 
           {/* STEP 5: RESUMEN Y GENERACIÓN */}
           {step === 5 && (
-            <div className="space-y-4 animate-in fade-in-50 duration-150">
+            <div className="space-y-4">
               <h4 className="font-display font-black text-slate-800 text-sm uppercase tracking-wide">Paso 5: Resumen y Generación</h4>
               <p className="text-xs text-slate-500">Confirma los detalles del servicio. Al guardar se generará una OT por cada equipo.</p>
 
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2.5">
                 <div>
-                  <span className="text-slate-400 uppercase font-mono text-[9px] font-bold">Tipo de Servicio:</span>
+                  <span className="text-slate-400 uppercase font-mono text-[10px] font-bold">Tipo de Servicio:</span>
                   <span className="text-slate-800 font-bold block">{serviceType}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 uppercase font-mono text-[9px] font-bold">Programación:</span>
+                  <span className="text-slate-400 uppercase font-mono text-[10px] font-bold">Programación:</span>
                   <span className="text-slate-800 font-bold block">{fecha} de {horaInicio} a {horaFin}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 uppercase font-mono text-[9px] font-bold">Personal Asignado:</span>
+                  <span className="text-slate-400 uppercase font-mono text-[10px] font-bold">Personal Asignado:</span>
                   <span className="text-slate-800 block">
                     Titular: <strong>{technicians.find(t => t.id === primaryTechId)?.username || 'No especificado'}</strong>
                     {supportTechId && <span className="text-slate-500"> · Apoyo: <strong>{technicians.find(t => t.id === supportTechId)?.username}</strong></span>}
@@ -832,7 +833,7 @@ export default function ModalProgramarVisita({
         </div>
 
         {/* Modal Footer Controls */}
-        <div className="p-4 border-t border-slate-150 bg-slate-50 flex justify-between shrink-0">
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between shrink-0">
           <div>
             {step > 1 && (
               <button
@@ -857,7 +858,7 @@ export default function ModalProgramarVisita({
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.98] shadow-sm"
+                className="px-5 py-2 bg-teal-brand hover:bg-teal-deep text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-1.5 transition-all active:scale-[0.98] shadow-sm"
               >
                 <span>Siguiente</span>
                 <ArrowRight size={14} />
@@ -867,7 +868,7 @@ export default function ModalProgramarVisita({
                 type="button"
                 onClick={handleFormSubmit}
                 disabled={isSaving}
-                className="px-5 py-2 bg-[#00B594] hover:bg-[#009b7e] text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
+                className="px-5 py-2 bg-teal-brand hover:bg-teal-deep text-white rounded-lg text-xs font-black uppercase font-mono tracking-wider flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
               >
                 {isSaving ? 'Guardando...' : 'Confirmar y Generar'}
               </button>

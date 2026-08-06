@@ -275,55 +275,55 @@ export default function TablaOrdenesTrabajo({
       
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-150 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
             <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Cuotas Totales</span>
-            <div className="text-xl font-black text-slate-800 mt-1">{stats.totalLines.toLocaleString()}</div>
+            <div className="text-2xl font-mono font-black text-slate-900 mt-1 leading-none">{stats.totalLines.toLocaleString()}</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
             <Layers size={18} />
           </div>
         </div>
         
-        <div className="bg-white border border-slate-150 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
             <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Billed (Facturado)</span>
-            <div className="text-xl font-black text-[#00B594] mt-1">
+            <div className="text-2xl font-mono font-black text-teal-brand mt-1 leading-none">
               ${stats.billedUsd.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">USD</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50/50 flex items-center justify-center text-[#00B594] border border-emerald-100/50">
+          <div className="w-10 h-10 rounded-xl bg-teal-mist border border-teal-brand/20 flex items-center justify-center text-teal-brand shrink-0">
             <CheckCircle2 size={18} />
           </div>
         </div>
         
-        <div className="bg-white border border-slate-150 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
             <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Por Facturar</span>
-            <div className="text-xl font-black text-amber-500 mt-1">
+            <div className="text-2xl font-mono font-black text-amber-500 mt-1 leading-none">
               ${stats.pendingUsd.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">USD</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50/50 flex items-center justify-center text-amber-500 border border-amber-100/50">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
             <AlertCircle size={18} />
           </div>
         </div>
         
-        <div className="bg-white border border-slate-150 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
             <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Por Ejecutar</span>
-            <div className="text-xl font-black text-slate-800 mt-1">
+            <div className="text-2xl font-mono font-black text-slate-900 mt-1 leading-none">
               {stats.pendingExecutionCount.toLocaleString()} <span className="text-xs text-slate-400 font-normal">visitas</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 shrink-0">
             <Clock size={18} />
           </div>
         </div>
       </div>
 
       {/* Filter and Search Panel */}
-      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-150/80 shadow-sm space-y-3">
+      <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <div className="col-span-1 md:col-span-3 relative">
             <Search className="absolute left-3.5 top-2.5 text-slate-400" size={14} />
@@ -332,7 +332,7 @@ export default function TablaOrdenesTrabajo({
               placeholder="Buscar por cliente, OT marco, comercial..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-10 pr-3.5 text-xs text-slate-800 focus:outline-none focus:border-[#00B594] focus:ring-1 focus:ring-[#00B594]"
+              className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-10 pr-3.5 text-xs text-slate-800 focus:outline-none focus:border-teal-brand focus:ring-1 focus:ring-teal-brand"
             />
           </div>
           
@@ -340,7 +340,7 @@ export default function TablaOrdenesTrabajo({
             <select
               value={filterTipoVenta}
               onChange={(e) => setFilterTipoVenta(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#00B594]"
+              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-teal-brand"
             >
               <option value="">Tipo de Venta...</option>
               {TIPO_VENTA_VALUES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -351,7 +351,7 @@ export default function TablaOrdenesTrabajo({
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#00B594]"
+              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-teal-brand"
             >
               <option value="">Estado Fact...</option>
               <option value="PENDIENTE_VISITA">Pendiente de Visita</option>
@@ -366,7 +366,7 @@ export default function TablaOrdenesTrabajo({
             <select
               value={filterPendiente}
               onChange={(e) => setFilterPendiente(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#00B594]"
+              className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-teal-brand"
             >
               <option value="">Ejecución...</option>
               {PENDIENTE_VALUES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -434,9 +434,9 @@ export default function TablaOrdenesTrabajo({
       </div>
 
       {/* Quick Client History Filter Drawer */}
-      <div className="bg-white border border-slate-150 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-white rounded-[24px] border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black font-mono bg-[#E6F7F4] text-[#00B594] px-2.5 py-1 rounded-md shrink-0">Vista de Historial</span>
+          <span className="text-[10px] font-black font-mono bg-teal-mist text-teal-brand px-2.5 py-1 rounded-md shrink-0">Vista de Historial</span>
           <p className="text-xs text-slate-500 font-semibold">Selecciona un cliente para aislar y auditar todas sus líneas de pago de forma secuencial:</p>
         </div>
         <select
@@ -445,7 +445,7 @@ export default function TablaOrdenesTrabajo({
             setSelectedClientHistory(e.target.value);
             setFilterCliente(e.target.value);
           }}
-          className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none"
+          className="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-teal-brand"
         >
           <option value="">Todos los clientes...</option>
           {uniqueRazonesSociales.map(c => (
@@ -455,11 +455,11 @@ export default function TablaOrdenesTrabajo({
       </div>
 
       {/* Table Container */}
-      <div className="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-150">
+              <tr className="bg-slate-50/60 border-b border-slate-100">
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">OT Line</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Razón Social / Empresa</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Tipo Venta</th>
@@ -475,7 +475,7 @@ export default function TablaOrdenesTrabajo({
             <tbody className="divide-y divide-slate-100">
               {paginatedLines.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-450 font-bold text-xs">
+                  <td colSpan={10} className="py-16 text-center text-slate-400 font-bold text-xs">
                     No hay cuotas de OT registradas que coincidan con los filtros de búsqueda.
                   </td>
                 </tr>
@@ -536,9 +536,9 @@ export default function TablaOrdenesTrabajo({
                       <td className="px-4 py-3.5">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
-                          <span className="text-[9px] text-slate-400 font-bold font-mono">Marco: #{line.ot_marco}</span>
+                          <span className="text-[10px] text-slate-400 font-bold font-mono">Marco: #{line.ot_marco}</span>
                           {otTecnicaStateLabel && (
-                            <span className="text-[8.5px] font-bold font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-max mt-0.5">
+                            <span className="text-[10px] font-bold font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-max mt-0.5">
                               {otTecnicaStateLabel}
                             </span>
                           )}
@@ -576,14 +576,14 @@ export default function TablaOrdenesTrabajo({
                           <span className={`text-[10px] font-black font-mono px-2 py-0.5 rounded ${isOverdue ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
                             {line.mes_prog_facturacion} {line.anio_prog_facturacion}
                           </span>
-                          {isOverdue && <span className="text-[9px] font-black text-rose-600 font-mono tracking-tighter shrink-0 animate-pulse">VENCIDA</span>}
+                          {isOverdue && <span className="text-[10px] font-black text-rose-600 font-mono tracking-tighter shrink-0 animate-pulse">VENCIDA</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
                         {line.n_factura ? (
                           <div className="flex flex-col">
                             <span className="text-xs font-bold text-slate-700 font-mono">{line.n_factura}</span>
-                            <span className="text-[9px] text-slate-400 font-mono">{line.fecha_factura}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{line.fecha_factura}</span>
                           </div>
                         ) : (
                           <span className="text-[10px] text-slate-400 font-medium italic">— No emitida</span>
@@ -593,14 +593,14 @@ export default function TablaOrdenesTrabajo({
                         {(() => {
                           const statusInfo = getFinancialStatusInfo(line, matchingOt);
                           return (
-                            <span className={`text-[9.5px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center justify-center w-max ${statusInfo.badgeClass}`}>
+                            <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center justify-center w-max ${statusInfo.badgeClass}`}>
                               <span>{statusInfo.label}</span>
                             </span>
                           );
                         })()}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
+                        <span className={`text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full uppercase ${
                           executionText === 'EJECUTADO'
                             ? 'bg-blue-100 text-blue-800 border border-blue-200'
                             : executionText === 'POR EJECUTAR'
@@ -620,14 +620,15 @@ export default function TablaOrdenesTrabajo({
                               title="Visualizar e imprimir informe técnico aprobado por supervisor"
                             >
                               <FileText size={13} />
-                              <span className="text-[9px] font-extrabold font-mono uppercase">Informe PDF</span>
+                              <span className="text-[10px] font-extrabold font-mono uppercase">Informe PDF</span>
                             </button>
                           ) : report ? (
                             <span 
-                              className="px-2 py-1 rounded-md text-[9px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200 shrink-0 cursor-help"
+                              className="px-2 py-1 rounded-md text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200 shrink-0 cursor-help"
                               title="El informe técnico aún no ha sido aprobado por el supervisor. El PDF estará disponible tras la aprobación."
                             >
-                              ⏳ En Revisión
+                              <Clock size={11} className="inline-block mr-1 -mt-px" />
+                              En Revisión
                             </span>
                           ) : null}
 
@@ -637,7 +638,7 @@ export default function TablaOrdenesTrabajo({
                             className={`p-1 border rounded-md cursor-pointer text-[10px] font-extrabold font-mono uppercase px-2 py-1 transition-colors flex items-center gap-1 ${
                               isCompletada
                                 ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
-                                : 'bg-slate-50 border-slate-150 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                             }`}
                             title={isCompletada ? "Ver detalles de cuota completada (Solo Lectura)" : "Editar cuota"}
                           >
@@ -650,7 +651,7 @@ export default function TablaOrdenesTrabajo({
                             return onAssignTechClick && !isCompletada && !isOtLockedState ? (
                               <button
                                 onClick={() => onAssignTechClick(line)}
-                                className="p-1 bg-[#E6F7F4] border border-emerald-100 rounded-md hover:bg-emerald-100 text-[#00B594] cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
+                                className="p-1 bg-teal-mist border border-teal-brand/20 rounded-md hover:bg-emerald-100 text-teal-brand cursor-pointer text-[10px] font-extrabold font-mono uppercase px-1.5 py-1 transition-colors"
                                 title="Asignar Técnicos"
                               >
                                 Asignar
@@ -659,12 +660,12 @@ export default function TablaOrdenesTrabajo({
                           })()}
                           <button
                             onClick={() => onCommentsClick(line)}
-                            className="p-1 bg-slate-50 border border-slate-150 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 cursor-pointer relative transition-colors"
+                            className="p-1 bg-slate-50 border border-slate-200 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 cursor-pointer relative transition-colors"
                             title="Ver bitácora de estatus"
                           >
                             <MessageSquare size={13} />
                             {(line.estatus?.length ?? 0) > 0 && (
-                              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#00B594] text-white text-[7px] font-black rounded-full flex items-center justify-center">
+                              <span className="absolute -top-1 -right-1 min-w-3.5 h-3.5 px-0.5 bg-teal-brand text-white text-[10px] font-black rounded-full flex items-center justify-center">
                                 {line.estatus?.length ?? 0}
                               </span>
                             )}
@@ -689,8 +690,8 @@ export default function TablaOrdenesTrabajo({
         </div>
 
         {/* Paginación Controls */}
-        <div className="bg-slate-50 px-4 py-3.5 border-t border-slate-150 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 font-semibold">
-          <div className="flex items-center gap-1.5 font-mono text-[11px]">
+        <div className="bg-slate-50/60 px-4 py-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 font-semibold">
+          <div className="flex items-center gap-1.5 font-mono text-xs">
             <span>Mostrando</span>
             <strong className="text-slate-800">
               {filteredLines.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
@@ -719,7 +720,7 @@ export default function TablaOrdenesTrabajo({
               <select
                 value={currentPage}
                 onChange={(e) => setCurrentPage(Number(e.target.value))}
-                className="bg-white border border-slate-250 rounded-lg px-2 py-1 font-bold text-slate-800 text-xs focus:outline-none"
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1 font-bold text-slate-800 text-xs focus:outline-none"
               >
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <option key={p} value={p}>{p}</option>
