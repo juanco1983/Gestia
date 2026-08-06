@@ -20,6 +20,14 @@ export enum EquipmentType {
   RECTIFICADOR = 'Rectificador Industrial'
 }
 
+export enum VisitaStatus {
+  PROGRAMADA = 'Programada',
+  EN_CAMINO = 'En Camino',
+  EN_SITIO = 'En Sitio',
+  EN_EJECUCION = 'En Ejecución',
+  COMPLETADA = 'Completada'
+}
+
 export enum OTStatus {
   CREADA = 'Creada',
   PENDIENTE_PROGRAMACION = 'Pendiente de Programación',
@@ -28,6 +36,7 @@ export enum OTStatus {
   EN_CAMINO = 'En Camino',
   EN_SITIO = 'En Sitio',
   TRABAJO_EN_EJECUCION = 'Trabajo en Ejecución',
+  NO_EJECUTADA = 'No Ejecutada',
   INFORME_PENDIENTE = 'Informe Pendiente',
   INFORME_ENVIADO = 'Informe Enviado',
   EN_REVISION = 'En Revisión',
@@ -40,6 +49,32 @@ export enum OTStatus {
 }
 
 export type OTOrigin = 'Venta' | 'Contrato' | 'Emergencia' | 'Correctiva' | 'Interna';
+
+export interface Visita {
+  id: string;
+  codigo: string;
+  clientId: string;
+  ubicacion?: string;
+  fechaProgramada: string;
+  horaProgramada?: string;
+  horaFinProgramada?: string;
+  tecnicoTitularId: string;
+  tecnicoTitular: string;
+  tecnicoApoyoId?: string;
+  tecnicoApoyo?: string;
+  tecnicosAdicionalesIds?: string[];
+  tecnicosAdicionalesNombres?: string[];
+  estado: VisitaStatus | string;
+  horaSalida?: string;
+  horaLlegada?: string;
+  horaInicioServicio?: string;
+  horaFinServicio?: string;
+  notas?: string;
+  contratoId?: string;
+  adendaId?: string;
+  creadoEn?: string;
+  actualizadoEn?: string;
+}
 
 export interface Client {
   id: string;
@@ -67,6 +102,7 @@ export interface Contract {
 export interface OT {
   id: string;
   clientId: string;
+  visitaId?: string;
   contratoId?: string;
   adendaId?: string;
   costo_estimado_usd?: number;

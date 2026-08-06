@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestia · Mockup Visualizador de Fotos · Supervisor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #F2F6F4; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============ PANTALLA 1: GRID DE FOTOS AUDITABLE (nuevo) ============ -->
+<div class="text-center py-3 bg-slate-900 text-white sticky top-0 z-50">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 1 · Resumen Técnico — Registro Fotográfico (ahora clicable)</span>
+</div>
+
+<div class="max-w-6xl mx-auto p-6">
+  <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+    <!-- Header del panel de auditoría (contexto) -->
+    <div class="px-5 py-4 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800">
+      <div>
+        <span class="text-xs text-amber-500 font-mono font-bold">REPOSITORIO DE CONTROL DE PROYECTO</span>
+        <h2 class="text-sm font-bold font-sans mt-0.5">OT-OM-CO-001 — Panel de Revisión de Calidad</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold font-mono cursor-pointer"><i data-lucide="download-cloud" style="width:14px;height:14px"></i>Exportar Word (.docx)</button>
+        <button class="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold font-mono cursor-pointer"><i data-lucide="printer" style="width:14px;height:14px"></i>Imprimir SLA</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-slate-200 flex bg-slate-50/50 px-4">
+      <button class="px-4 py-2 text-xs font-bold uppercase border-b-2 border-indigo-500 text-indigo-600 bg-white cursor-pointer">Resumen Técnico</button>
+      <button class="px-4 py-2 text-xs font-bold uppercase border-transparent text-slate-500 cursor-pointer">Previsualización Impresa (Doble Marco)</button>
+    </div>
+
+    <!-- Sección de fotos -->
+    <div class="p-6 space-y-3">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-extrabold text-slate-800 uppercase">Registro Fotográfico de Conformidad</h4>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500">
+          <i data-lucide="mouse-pointer-click" style="width:12px;height:12px"></i>
+          Clic en una foto para ampliar
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <!-- Foto 1: hover activo mostrando el affordance -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups1/400/300" alt="Foto 1" class="w-full h-20 object-cover rounded-md" />
+          <!-- Overlay hover: icono ampliar + label -->
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 1">1. FRONTAL DEL UPS</span>
+        </div>
+
+        <!-- Foto 2 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups2/400/300" alt="Foto 2" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 2">2. TABLERO DE ALARMAS</span>
+        </div>
+
+        <!-- Foto 3 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups3/400/300" alt="Foto 3" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 3">3. BANCO DE BATERÍAS</span>
+        </div>
+
+        <!-- Foto 4 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups4/400/300" alt="Foto 4" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 4">4. MEDICIÓN L1-L2</span>
+        </div>
+
+        <!-- Foto 5 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups5/400/300" alt="Foto 5" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 5">5. DISPLAY LCD</span>
+        </div>
+
+        <!-- Foto 6 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups6/400/300" alt="Foto 6" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 6">6. INSTALACIÓN ELÉCTRICA</span>
+        </div>
+
+        <!-- Foto 7 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups7/400/300" alt="Foto 7" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 7">7. ESTRUCTURA GABINETE</span>
+        </div>
+
+        <!-- Foto 8 -->
+        <div class="group relative border border-slate-200 bg-white p-1 rounded-lg cursor-pointer hover:border-indigo-400 hover:ring-2 hover:ring-indigo-100 hover:shadow-md transition-all">
+          <img src="https://picsum.photos/seed/ups8/400/300" alt="Foto 8" class="w-full h-20 object-cover rounded-md" />
+          <div class="absolute inset-1 rounded-md bg-slate-900/0 group-hover:bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+            <span class="bg-white/95 text-slate-800 rounded-lg px-2 py-1 text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-sm">
+              <i data-lucide="zoom-in" style="width:12px;height:12px"></i>Ampliar
+            </span>
+          </div>
+          <span class="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5" title="Foto 8">8. VISTA GENERAL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nota de comportamiento -->
+  <div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-1">
+    <p class="font-bold uppercase text-[10px] font-mono tracking-wider">Comportamiento propuesto</p>
+    <p>• Cada miniatura del grid se vuelve clicable (cursor pointer + overlay "Ampliar" al hover).</p>
+    <p>• Al hacer clic se abre el visualizador a pantalla completa (Pantalla 2) sobre la foto seleccionada.</p>
+    <p>• La navegación anterior/siguiente dentro del modal recorre las 8 fotos del informe.</p>
+    <p>• En el modal, el supervisor puede marcar la nitidez de cada foto antes de decidir aprobar o rechazar el informe.</p>
+  </div>
+</div>
+
+<!-- ============ PANTALLA 2: MODAL VISUALIZADOR DE FOTO ============ -->
+<div class="text-center py-3 bg-slate-900 text-white mt-4">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 2 · Visualizador de Foto Ampliada (modal)</span>
+</div>
+
+<!-- Modal overlay (mock estático abierto) -->
+<div class="fixed inset-0 z-[10000] bg-slate-950/90 backdrop-blur-sm flex flex-col animate-fade-in" id="photo-lightbox-mock">
+  <!-- Header del modal -->
+  <div class="bg-slate-900 px-5 py-3.5 text-white flex items-center justify-between gap-3 border-b border-slate-800 shrink-0">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+        <i data-lucide="camera" style="width:16px;height:16px"></i>
+      </div>
+      <div class="min-w-0">
+        <h3 class="font-extrabold text-sm font-sans truncate">3. BANCO DE BATERÍAS</h3>
+        <p class="text-[10px] text-slate-400 font-mono tracking-wide">OT-OM-CO-001 · Foto 3 de 8 · 1200×900 px</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <!-- Nitidez -->
+      <div class="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700/50 mr-1">
+        <button class="flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-md text-[10px] font-mono font-bold cursor-pointer border border-emerald-500/30">
+          <i data-lucide="check" style="width:12px;height:12px"></i>Nítida
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-mono font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-all cursor-pointer">
+          <i data-lucide="refresh-cw" style="width:12px;height:12px"></i>Requiere retoma
+        </button>
+      </div>
+
+      <!-- Zoom -->
+      <div class="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700/50">
+        <button class="p-1 px-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-all cursor-pointer" title="Alejar Zoom"><i data-lucide="zoom-out" style="width:14px;height:14px"></i></button>
+        <span class="text-[10px] font-bold font-mono px-2 text-amber-400 min-w-[40px] text-center">100%</span>
+        <button class="p-1 px-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-all cursor-pointer" title="Acercar Zoom"><i data-lucide="zoom-in" style="width:14px;height:14px"></i></button>
+      </div>
+
+      <button class="bg-slate-800 hover:bg-slate-700 text-white p-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border border-slate-700/50 flex items-center gap-1.5 px-3" title="Cerrar visualizador">
+        <i data-lucide="x" style="width:14px;height:14px"></i>Cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Cuerpo: imagen centrada + flechas -->
+  <div class="flex-1 overflow-auto bg-slate-950 flex items-center justify-center p-6 relative">
+    <!-- Flecha anterior -->
+    <button class="absolute left-4 top-1/2 -translate-y-1/2 bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700/60 shadow-xl cursor-pointer transition-all z-10" title="Foto anterior">
+      <i data-lucide="chevron-left" style="width:20px;height:20px"></i>
+    </button>
+
+    <div class="shadow-2xl rounded-xl overflow-hidden border border-slate-700/40 bg-white" style="transform:scale(1);transform-origin:center;">
+      <img src="https://picsum.photos/seed/ups3/1200/900" alt="Foto 3 ampliada" class="max-w-full max-h-[70vh] object-contain" />
+    </div>
+
+    <!-- Flecha siguiente -->
+    <button class="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-900/80 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700/60 shadow-xl cursor-pointer transition-all z-10" title="Foto siguiente">
+      <i data-lucide="chevron-right" style="width:20px;height:20px"></i>
+    </button>
+  </div>
+
+  <!-- Footer: miniaturas de navegación + estado de nitidez -->
+  <div class="bg-slate-900 border-t border-slate-800 px-5 py-3 shrink-0">
+    <div class="flex items-center gap-2 overflow-x-auto">
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups1/100/80" alt="Foto 1" class="w-full h-full object-cover" />
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups2/100/80" alt="Foto 2" class="w-full h-full object-cover" />
+      </div>
+      <!-- Foto activa -->
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-amber-400 ring-2 ring-amber-400/30 cursor-pointer">
+        <img src="https://picsum.photos/seed/ups3/100/80" alt="Foto 3" class="w-full h-full object-cover" />
+        <span class="absolute bottom-0 inset-x-0 bg-emerald-500/90 text-white text-[7px] font-mono font-bold text-center py-0.5">NÍTIDA</span>
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups4/100/80" alt="Foto 4" class="w-full h-full object-cover" />
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-rose-500/70 cursor-pointer">
+        <img src="https://picsum.photos/seed/ups5/100/80" alt="Foto 5" class="w-full h-full object-cover" />
+        <span class="absolute bottom-0 inset-x-0 bg-rose-500/90 text-white text-[7px] font-mono font-bold text-center py-0.5">RETOMA</span>
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups6/100/80" alt="Foto 6" class="w-full h-full object-cover" />
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups7/100/80" alt="Foto 7" class="w-full h-full object-cover" />
+      </div>
+      <div class="relative flex-shrink-0 w-14 h-11 rounded-md overflow-hidden border-2 border-transparent opacity-60 cursor-pointer hover:opacity-100 transition-all">
+        <img src="https://picsum.photos/seed/ups8/100/80" alt="Foto 8" class="w-full h-full object-cover" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Espaciador inferior para que se vea la pantalla 1 detrás -->
+<div class="h-[70vh]"></div>
+
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { INITIAL_CLIENTS, INITIAL_CONTRACTS, INITIAL_OTS, INITIAL_USERS, INITIAL_LOGS } from './mockData';
-import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType, OtEquipoAsignacion } from './types';
+import { Client, Contract, OT, OTStatus, TechnicalReport, User, UserActivityLog, OrdenTrabajoLinea, Contrato, TargetVentas, ServiceType, EquipmentType, OtEquipoAsignacion, Visita, VisitaStatus } from './types';
 import { INITIAL_ORDENES_TRABAJO, INITIAL_CONTRATOS_NUEVOS, INITIAL_TARGET_VENTAS } from './utils/otDefaults';
 import OrdenesTrabajoView from './components/OrdenesTrabajoView';
 import ClientesContratosView from './components/ClientesContratosView';
@@ -319,9 +319,18 @@ export default function App() {
     return local ? JSON.parse(local) : [];
   });
 
+  const [visitas, setVisitas] = useState<Visita[]>(() => {
+    const local = localStorage.getItem('gestia_visitas');
+    return local ? JSON.parse(local) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('gestia_ot_equipo_asignaciones', JSON.stringify(otEquipoAsignaciones));
   }, [otEquipoAsignaciones]);
+
+  useEffect(() => {
+    localStorage.setItem('gestia_visitas', JSON.stringify(visitas));
+  }, [visitas]);
 
   const [tipoCambio, setTipoCambio] = useState<number>(() => {
     const local = localStorage.getItem('gestia_tipo_cambio');
@@ -536,7 +545,7 @@ export default function App() {
         const [
           usersRes, logsRes, clientsRes, contractsRes, otsRes, reportsRes,
           otLineasRes, contratosComercialesRes, targetVentasRes, configRes,
-          asignacionesRes
+          asignacionesRes, visitasRes
         ] = await Promise.all([
           fetchWithAuth('/api/users').then(res => res.json()),
           fetchWithAuth('/api/logs').then(res => res.json()),
@@ -548,7 +557,8 @@ export default function App() {
           fetchWithAuth('/api/contratos-comerciales').then(res => res.json()),
           fetchWithAuth('/api/target-ventas').then(res => res.json()),
           fetchWithAuth('/api/config').then(res => res.json()),
-          fetchWithAuth('/api/ot-equipo-asignaciones').then(res => res.json())
+          fetchWithAuth('/api/ot-equipo-asignaciones').then(res => res.json()),
+          fetchWithAuth('/api/visitas').then(res => res.json()).catch(() => [])
         ]);
 
         if (Array.isArray(usersRes)) setUsers(usersRes);
@@ -564,6 +574,7 @@ export default function App() {
         if (Array.isArray(contratosComercialesRes)) setContratosNuevos(contratosComercialesRes);
         if (Array.isArray(targetVentasRes)) setTargetVentas(targetVentasRes);
         if (Array.isArray(asignacionesRes)) setOtEquipoAsignaciones(asignacionesRes);
+        if (Array.isArray(visitasRes)) setVisitas(visitasRes);
         if (configRes && typeof configRes.tipoCambio === 'number') setTipoCambio(configRes.tipoCambio);
       } catch (error) {
         console.error("Conexión local (utilizando caché local offline):", error);
@@ -812,6 +823,54 @@ export default function App() {
     }
   };
 
+  const handleCreateVisita = async (newVisita: Visita): Promise<Visita> => {
+    setVisitas(prev => [newVisita, ...prev]);
+    try {
+      const res = await fetchWithAuth('/api/visitas', {
+        method: 'POST',
+        body: JSON.stringify(newVisita)
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setVisitas(prev => prev.map(v => v.id === newVisita.id ? created : v));
+        return created;
+      }
+    } catch (e) {
+      console.warn("Visita creada localmente:", e);
+    }
+    return newVisita;
+  };
+
+  const handleUpdateVisita = async (updatedVisita: Visita) => {
+    setVisitas(prev => prev.map(v => v.id === updatedVisita.id ? updatedVisita : v));
+
+    // Cascade status updates locally to child OTs if state is En Camino or En Sitio
+    if (updatedVisita.estado === VisitaStatus.EN_CAMINO || updatedVisita.estado === VisitaStatus.EN_SITIO) {
+      setOts(prevOts => prevOts.map(o => {
+        if (o.visitaId === updatedVisita.id) {
+          const otUpdate: any = { estado: updatedVisita.estado as OTStatus };
+          if (updatedVisita.estado === VisitaStatus.EN_CAMINO && updatedVisita.horaSalida) {
+            otUpdate.horaSalida = updatedVisita.horaSalida;
+          }
+          if (updatedVisita.estado === VisitaStatus.EN_SITIO && updatedVisita.horaLlegada) {
+            otUpdate.horaLlegadaSitio = updatedVisita.horaLlegada;
+          }
+          return { ...o, ...otUpdate };
+        }
+        return o;
+      }));
+    }
+
+    try {
+      await fetchWithAuth(`/api/visitas/${updatedVisita.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedVisita)
+      });
+    } catch (e) {
+      console.warn("Visita actualizada localmente:", e);
+    }
+  };
+
   const handleSyncOffline = async () => {
     // Sincronización offline desactivada por solicitud del usuario
     console.log(">>> Sincronización offline desactivada.");
@@ -1003,7 +1062,7 @@ export default function App() {
     const currentMonthStr = String(currentMonth).padStart(2, '0');
     const todayStr = `${currentYear}-${currentMonthStr}-${String(today.getDate()).padStart(2, '0')}`;
     
-    // Mes actual en español para coincidir con db.json si se requiere (ENE, FEB, etc)
+    // Mes actual en español (ENE, FEB, etc)
     const monthNames = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SET', 'OCT', 'NOV', 'DIC'];
     const currentMonthEs = monthNames[currentMonth - 1];
 
@@ -1620,6 +1679,8 @@ export default function App() {
                 <TecnicoView 
                   ots={ots}
                   clients={clients}
+                  visitas={visitas}
+                  onUpdateVisita={handleUpdateVisita}
                   reports={[...reports, ...offlineQueue]}
                   isOnline={isOnline}
                   onSaveReportOffline={handleSaveReportOffline}

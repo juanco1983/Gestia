@@ -562,7 +562,7 @@
   </div>
 
   <!-- ===== Modal a. Crear OT Marco ===== -->
-  <div id="m1" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m1')">
+  <div id="m1" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="toggleModal('m1')">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
@@ -666,7 +666,7 @@
   </div>
 
   <!-- ===== Modal b. Asignar Técnico ===== -->
-  <div id="m2" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m2')">
+  <div id="m2" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="toggleModal('m2')">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
@@ -752,7 +752,7 @@
   </div>
 
   <!-- ===== Modal c. Programar Visita (stepper 5 pasos) ===== -->
-  <div id="m3" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m3')">
+  <div id="m3" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="toggleModal('m3')">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
@@ -806,7 +806,7 @@
   </div>
 
   <!-- ===== Modal d. Editar Línea (con acordeón Acuerdo Padre) ===== -->
-  <div id="m4" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m4')">
+  <div id="m4" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="toggleModal('m4')">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
@@ -856,7 +856,7 @@
   </div>
 
   <!-- ===== Modal e. Bitácora (historial de comentarios) ===== -->
-  <div id="m5" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onclick="toggleModal('m5')">
+  <div id="m5" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="toggleModal('m5')">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
@@ -1032,7 +1032,6 @@
   document.querySelectorAll('.modal-btn').forEach(function(b){
     b.addEventListener('click', function(){ toggleModal(b.dataset.modal); });
   });
-  toggleModal('m5');
 </script>
 </body>
 </html>

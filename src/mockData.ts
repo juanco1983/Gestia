@@ -8,53 +8,53 @@ export const INITIAL_USERS: User[] = [
     role: 'Administrador',
     estado: 'Activo',
     area: 'Administración General',
-    ultimoIngreso: '2026-06-29 08:00',
+    ultimoIngreso: '2026-06-30 00:19:55',
     creadoEn: '2026-01-01',
     allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios']
   },
   {
     id: 'user_1',
-    username: 'María López',
+    username: 'Coord. Ventas',
     email: 'ventas@mafort.pe',
     role: 'Ventas',
     estado: 'Activo',
     area: 'Planeamiento Comercial',
-    ultimoIngreso: '2026-06-29 08:15',
+    ultimoIngreso: '2026-06-22 07:15',
     creadoEn: '2026-01-10',
     allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas']
   },
   {
     id: 'user_2',
     username: 'Carlos Ocsa',
-    email: 'carlos.ocsa@mafort.pe',
+    email: 'tecnico@mafort.pe',
     role: 'Tecnico',
     estado: 'Activo',
     area: 'Mantenimiento de Campo',
-    ultimoIngreso: '2026-06-29 07:30',
+    ultimoIngreso: '2026-06-22 07:22',
     creadoEn: '2026-01-12',
     allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico']
   },
   {
     id: 'user_3',
-    username: 'Ing. Roberto Salas',
+    username: 'Ing. Supervisor',
     email: 'supervisor@mafort.pe',
     role: 'Supervisor',
     estado: 'Activo',
     area: 'Control de Calidad (SLA)',
-    ultimoIngreso: '2026-06-29 08:05',
+    ultimoIngreso: '2026-06-27 03:06:49',
     creadoEn: '2026-01-15',
-    allowedModules: ['Dashboard', 'Monitoreo', 'Supervisor']
+    allowedModules: ['Supervisor', 'Monitoreo', 'GestionOTs']
   },
   {
     id: 'user_4',
-    username: 'Ana Gutiérrez',
-    email: 'ana.gutierrez@prosegur.pe',
+    username: 'Rep. Prosegur',
+    email: 'cliente@mafort.pe',
     role: 'Cliente',
     estado: 'Activo',
-    area: 'Infraestructura TI - Prosegur',
-    ultimoIngreso: '2026-06-28 16:30',
+    area: 'Seguridad y Operaciones',
+    ultimoIngreso: '2026-06-22 06:45',
     creadoEn: '2026-02-01',
-    clientId: 'client_1',
+    clientId: 'client_3',
     allowedModules: ['Dashboard', 'Monitoreo', 'Cliente']
   },
   {
@@ -64,20 +64,9 @@ export const INITIAL_USERS: User[] = [
     role: 'Tecnico',
     estado: 'Activo',
     area: 'Seguridad Eléctrica & Supervisor',
-    ultimoIngreso: '2026-06-29 07:45',
+    ultimoIngreso: '2026-06-30 00:19:49',
     creadoEn: '2026-01-20',
-    allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico']
-  },
-  {
-    id: 'user_6',
-    username: 'Gino Murillo',
-    email: 'gino.murillo@mafort.pe',
-    role: 'Tecnico',
-    estado: 'Activo',
-    area: 'Climatización & Control',
-    ultimoIngreso: '2026-06-29 08:30',
-    creadoEn: '2026-01-20',
-    allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico']
+    allowedModules: ['Tecnico']
   }
 ];
 

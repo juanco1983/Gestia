@@ -67,7 +67,6 @@ jobs:
           cp prisma.config.js eb-deploy-temp/ || true
           if [ -d ".ebextensions" ]; then cp -r .ebextensions eb-deploy-temp/; fi
           if [ -d ".platform" ]; then cp -r .platform eb-deploy-temp/; fi
-          cp db.json eb-deploy-temp/
 
           # Generar package.json de producción
           cat <<EOF > eb-deploy-temp/package.json

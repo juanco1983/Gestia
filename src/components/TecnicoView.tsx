@@ -30,9 +30,12 @@ import {
   Hourglass,
   CheckCircle2,
   FileLock2,
-  Undo2
+  Undo2,
+  Truck,
+  Navigation,
+  XCircle
 } from 'lucide-react';
-import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion } from '../types';
+import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion, Visita, VisitaStatus } from '../types';
 import { useLocalToast } from './shared/ToastModal';
 import { useConfirm } from './shared/ConfirmModal';
 import { 
@@ -49,11 +52,13 @@ import ErrorBoundary from './shared/ErrorBoundary';
 interface TecnicoViewProps {
   ots: OT[];
   clients: Client[];
+  visitas?: Visita[];
   reports?: TechnicalReport[];
   isOnline: boolean;
   onSaveReportOffline: (report: TechnicalReport) => void;
   onUpdateOtStatus: (otId: string, status: OTStatus) => void;
   onUpdateOt: (ot: OT) => void;
+  onUpdateVisita?: (visita: Visita) => void;
   onAddOT: (ot: OT) => void;
   currentUser?: User;
   equipos: Equipo[];
@@ -63,11 +68,13 @@ interface TecnicoViewProps {
 export default function TecnicoView({
   ots,
   clients,
+  visitas = [],
   reports = [],
   isOnline,
   onSaveReportOffline,
   onUpdateOtStatus,
   onUpdateOt,
+  onUpdateVisita,
   onAddOT,
   currentUser,
   equipos,
@@ -117,6 +124,55 @@ export default function TecnicoView({
     // Para roles administrativos, mostrar todas las OTs programadas o en proceso para pruebas
     return o.estado !== OTStatus.CREADA && o.estado !== OTStatus.PENDIENTE_PROGRAMACION;
   });
+
+  // Group OTs by Visita for the technician sidebar
+  const groupedVisitas = useMemo(() => {
+    const map = new Map<string, { visita: Visita | null; ots: OT[] }>();
+
+    myOts.forEach(ot => {
+      const vId = ot.visitaId || 'standalone';
+      if (!map.has(vId)) {
+        const foundVisita = vId !== 'standalone' ? (visitas.find(v => v.id === vId) || null) : null;
+        map.set(vId, { visita: foundVisita, ots: [] });
+      }
+      map.get(vId)!.ots.push(ot);
+    });
+
+    return Array.from(map.entries()).map(([id, item]) => ({
+      id,
+      visita: item.visita,
+      ots: item.ots
+    }));
+  }, [myOts, visitas]);
+
+  const handleIniciarRutaVisita = (visita: Visita) => {
+    const nowStr = new Date().toTimeString().split(' ')[0].substring(0, 5);
+    const updated: Visita = {
+      ...visita,
+      estado: VisitaStatus.EN_CAMINO,
+      horaSalida: nowStr
+    };
+    if (onUpdateVisita) onUpdateVisita(updated);
+    notifySuccess('Ruta Iniciada', `Traslado a ${visita.ubicacion || 'sitio'} registrado a las ${nowStr}.`);
+  };
+
+  const handleLlegadaSitioVisita = (visita: Visita) => {
+    const nowStr = new Date().toTimeString().split(' ')[0].substring(0, 5);
+    const updated: Visita = {
+      ...visita,
+      estado: VisitaStatus.EN_SITIO,
+      horaLlegada: nowStr
+    };
+    if (onUpdateVisita) onUpdateVisita(updated);
+    notifySuccess('Llegada Registrada', `Llegada al sitio registrada a las ${nowStr}. OTs listas para trabajo.`);
+  };
+
+  const handleMarcarNoEjecutada = (ot: OT) => {
+    const motivo = window.prompt("Ingrese el motivo por el cual la OT no pudo ser ejecutada (ej: Equipo inaccesible):");
+    if (!motivo) return;
+    onUpdateOtStatus(ot.id, OTStatus.NO_EJECUTADA);
+    notifySuccess('OT No Ejecutada', `OT ${ot.id} marcada como No Ejecutada. Motivo: ${motivo}`);
+  };
 
   const [selectedOt, setSelectedOt] = useState<OT | null>(null);
   const [isEditingReport, setIsEditingReport] = useState<boolean>(false);
@@ -953,46 +1009,86 @@ export default function TecnicoView({
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-          {myOts.map(ot => {
-            const isSelected = selectedOt?.id === ot.id;
-            const isEmergency = ot.tipoMantenimiento === 'Emergencia';
-            const client = clients.find(c => c.id === ot.clientId);
+        <div className="p-3 max-h-[600px] overflow-y-auto space-y-3">
+          {groupedVisitas.map(group => {
+            const v = group.visita;
+            const client = clients.find(c => c.id === (v?.clientId || group.ots[0]?.clientId));
+            const completedCount = group.ots.filter(o => [OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION, OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.NO_EJECUTADA].includes(o.estado)).length;
+            const totalCount = group.ots.length;
+            const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
             return (
-              <div 
-                key={ot.id}
-                onClick={() => handleSelectOt(ot)}
-                className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer relative ${
-                  isSelected ? 'bg-amber-50/50 border-l-4 border-amber-500' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-900 font-mono">{ot.id}</span>
-                  <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded font-mono ${
-                    isEmergency ? 'bg-red-500/10 text-red-650' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {ot.tipoMantenimiento}
+              <div key={group.id} className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 space-y-2 text-left">
+                {/* Visita Header */}
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <Truck size={14} className="text-teal-600" />
+                    <span>{v ? (v.codigo || v.id) : 'Servicios Individuales'}</span>
                   </span>
-                </div>
-                
-                <h3 className="text-xs font-extrabold text-slate-800 uppercase block font-sans truncate">
-                  {client?.razonSocial || 'Cliente General S.A.'}
-                </h3>
-                
-                <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-550 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Sliders size={12} className="text-slate-400" />
-                    <span>{ot.potenciaKva} kVA ({ot.tipoEquipo})</span>
-                  </span>
-                  <span className="text-blue-620 bg-blue-50/70 border border-blue-100 px-1.5 py-0.2 rounded font-mono">
-                    {ot.estado}
-                  </span>
-                  {ot.equipoId && (
-                    <span className="text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded font-mono flex items-center gap-1" title={ot.equipoId}>
-                      <Cpu size={10} />
-                      <span>{ot.equipoId.split(',').length} eq.</span>
+                  {v && (
+                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                      v.estado === 'En Sitio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                      v.estado === 'En Camino' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                      v.estado === 'Completada' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                      'bg-slate-100 border-slate-200 text-slate-600'
+                    }`}>
+                      {v.estado}
                     </span>
                   )}
+                </div>
+
+                <div className="text-[11px] font-bold text-slate-800 uppercase block truncate">
+                  {client?.razonSocial || 'Cliente General'}
+                </div>
+
+                {v?.ubicacion && (
+                  <div className="text-[10px] text-slate-500 flex items-center gap-1 font-mono truncate">
+                    <MapPin size={10} className="text-slate-400 shrink-0" />
+                    <span>{v.ubicacion}</span>
+                  </div>
+                )}
+
+                {/* Progress Bar */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                    <span>Avance Equipos:</span>
+                    <span className="font-bold text-slate-700">{completedCount} de {totalCount} ({progressPct}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-teal-brand h-full transition-all duration-300" style={{ width: `${progressPct}%` }}></div>
+                  </div>
+                </div>
+
+                {/* Nested Child OTs */}
+                <div className="pt-2 space-y-1.5">
+                  {group.ots.map(ot => {
+                    const isSelected = selectedOt?.id === ot.id;
+                    return (
+                      <div
+                        key={ot.id}
+                        onClick={() => handleSelectOt(ot)}
+                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                          isSelected ? 'bg-amber-50 border-amber-400 shadow-xs' : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-slate-900 text-[11px]">{ot.id}</span>
+                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                            ot.estado === OTStatus.NO_EJECUTADA ? 'bg-rose-100 text-rose-800' :
+                            ot.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-amber-100 text-amber-800' :
+                            ot.estado === OTStatus.INFORME_ENVIADO || ot.estado === OTStatus.EN_REVISION ? 'bg-blue-100 text-blue-800' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {ot.estado}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1 flex items-center justify-between font-mono">
+                          <span>{ot.tipoEquipo} ({ot.potenciaKva} kVA)</span>
+                          <span className="text-slate-400">{ot.fechaProgramada}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -1027,6 +1123,71 @@ export default function TecnicoView({
           ) : (
           <form onSubmit={handleSubmitReport} className="flex flex-col h-full">
             
+            {/* Logistics Action Card Banner (US-3) */}
+            {selectedOt?.visitaId && (() => {
+              const currentVisita = visitas.find(v => v.id === selectedOt.visitaId);
+              if (!currentVisita) return null;
+              return (
+                <div className="bg-slate-900 border-b border-slate-800 p-4 text-white space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="space-y-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-teal-500/20 text-teal-400 font-mono text-[10px] font-bold rounded uppercase">
+                          Logística del Viaje
+                        </span>
+                        <span className="font-mono text-sm font-black text-amber-400">
+                          {currentVisita.codigo || currentVisita.id}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-300 font-bold">
+                        {currentVisita.ubicacion || 'Sede del Cliente'}
+                      </div>
+                    </div>
+
+                    {/* Logistics Buttons for Primary Tech */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {currentVisita.tecnicoTitularId && currentVisita.tecnicoTitularId !== currentUser?.id && currentUser?.role === 'Tecnico' ? (
+                        <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded-lg font-mono">
+                          Apoyo — Logística gestionada por {currentVisita.tecnicoTitular}
+                        </span>
+                      ) : (
+                        <>
+                          {currentVisita.estado === 'Programada' && (
+                            <button
+                              type="button"
+                              onClick={() => handleIniciarRutaVisita(currentVisita)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                            >
+                              <Truck size={14} />
+                              <span>Iniciar Ruta (En Camino)</span>
+                            </button>
+                          )}
+
+                          {currentVisita.estado === 'En Camino' && (
+                            <button
+                              type="button"
+                              onClick={() => handleLlegadaSitioVisita(currentVisita)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                            >
+                              <Navigation size={14} />
+                              <span>Llegada al Sitio (Registrar Entrada)</span>
+                            </button>
+                          )}
+
+                          {(currentVisita.estado === 'En Sitio' || currentVisita.estado === 'En Ejecucion') && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold rounded-xl font-mono">
+                              <CheckCircle2 size={14} />
+                              Llegada Registrada ({currentVisita.horaLlegada || 'En sitio'})
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Context bar with prefill help */}
             <div className="bg-slate-900 px-5 py-4 border-b border-slate-850 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
@@ -1075,6 +1236,17 @@ export default function TecnicoView({
               </div>
               {/* AUTOMATION TRIGGERS */}
               <div className="flex items-center gap-2">
+                {selectedOt.estado !== OTStatus.CERRADA && selectedOt.estado !== OTStatus.NO_EJECUTADA && (
+                  <button
+                    type="button"
+                    onClick={() => handleMarcarNoEjecutada(selectedOt)}
+                    className="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-[9px] font-bold font-mono transition-all cursor-pointer flex items-center gap-1"
+                    title="Marcar equipo como No Ejecutado en sitio (ej: sin acceso)"
+                  >
+                    <XCircle size={12} />
+                    <span>No Ejecutada</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowWizard(prev => !prev)}
