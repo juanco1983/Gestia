@@ -54,6 +54,19 @@ const STEPS: WizardStep[] = [
   { num: 10, label: 'Revisión Final y Vista Previa PDF' },
 ];
 
+interface WizardSection {
+  id: number;
+  title: string;
+  steps: number[];
+}
+
+const SECTIONS: WizardSection[] = [
+  { id: 1, title: 'Datos del Servicio', steps: [1, 2, 3] },
+  { id: 2, title: 'Trabajo Realizado', steps: [4, 5] },
+  { id: 3, title: 'Inspección Técnica', steps: [6, 7, 8] },
+  { id: 4, title: 'Diagnóstico y Envío', steps: [9, 10] },
+];
+
 export default function WizardInforme({ ot, client, equipoId, equipo, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
   const defaults = useMemo(() => {
     if (initialReport) return initialReport;
@@ -104,6 +117,9 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
   const [capturedPhotos, setCapturedPhotos] = useState<{ dataUrl: string; assigned: boolean }[]>([]);
   const [pdfPreviewPage, setPdfPreviewPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const panoramaCameraRef = useRef<HTMLInputElement>(null);
+  const panoramaGalleryRef = useRef<HTMLInputElement>(null);
   const [draftMsg, setDraftMsg] = useState('');
 
   const DRAFT_KEY = `mafort_wizard_draft_${ot.id}`;
@@ -202,11 +218,6 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     if (currentStep > 1) setCurrentStep(s => s - 1);
   }, [currentStep]);
 
-  const handleSkip = useCallback(() => {
-    setSkippedSteps(prev => new Set(prev).add(currentStep));
-    if (currentStep < 10) setCurrentStep(s => s + 1);
-  }, [currentStep]);
-
   const buildCompiledReport = useCallback((): TechnicalReport => {
     const template = getTemplate(tipoServicio);
     return {
@@ -270,16 +281,21 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     return 'pending';
   };
 
-  const renderStepIndicator = (num: number) => {
-    const s = stepStatus(num);
-    if (s === 'completed') return <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-bold shrink-0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></span>;
-    if (s === 'skipped') return <span className="w-6 h-6 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-[9px] font-bold shrink-0 font-mono">--</span>;
-    return <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 font-mono ${s === 'current' ? 'bg-teal-400 text-slate-900' : 'bg-slate-700 text-slate-400'}`}>{num}</span>;
+  const sectionStatus = (section: WizardSection): 'completed' | 'current' | 'pending' => {
+    if (section.steps.every(n => stepStatus(n) === 'completed')) return 'completed';
+    if (section.steps.some(n => stepStatus(n) === 'current')) return 'current';
+    const done = section.steps.filter(n => stepStatus(n) === 'completed' || stepStatus(n) === 'skipped').length;
+    if (done > 0) return 'completed';
+    return 'pending';
   };
 
-  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all';
-  const labelCls = 'text-[10px] text-slate-400 font-mono uppercase mb-1 block tracking-wider';
-  const selectCls = 'w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-mono';
+  const currentSection = (num: number) => SECTIONS.find(s => s.steps.includes(num))?.id ?? 1;
+  const sectionOfCurrent = SECTIONS.find(s => s.id === currentSection(currentStep))!;
+  const activeStepIndexInSection = sectionOfCurrent.steps.indexOf(currentStep) + 1;
+
+  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand focus:border-teal-brand transition-all';
+  const labelCls = 'text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider';
+  const selectCls = 'w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-brand focus:border-transparent font-mono';
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -469,9 +485,17 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     );
   };
 
+  const handlePanoramaFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setPanoramaFoto(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const renderPaso6 = () => {
     const entries = Object.entries(caracteristicas);
-    const carrKeys = Object.keys(caracteristicas);
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
@@ -481,12 +505,12 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[350px] overflow-y-auto">
           {entries.slice(0, 24).map(([key, val]) => (
             <div key={key}>
-              <label className="text-[8px] text-slate-400 font-mono uppercase block truncate">{key}</label>
+              <label className="text-[10px] text-ink-mute font-mono uppercase block truncate">{key}</label>
               <input
                 type="text"
                 value={val}
                 onChange={e => setCaracteristicas(prev => ({ ...prev, [key]: e.target.value }))}
-                className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-brand"
               />
             </div>
           ))}
@@ -496,35 +520,34 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
         </div>
         <div>
           <label className={labelCls}>Vista Panorámica del Equipo</label>
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col items-center gap-2">
-            {panoramaFoto ? (
-              <img src={panoramaFoto} alt="Panorámica" className="max-h-[120px] object-contain rounded" />
-            ) : (
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 bg-canvas/40 flex flex-col items-center gap-3">
+            {panoramaFoto && <img src={panoramaFoto} alt="Panorámica del equipo" className="max-h-[160px] object-contain rounded" />}
+            {!panoramaFoto && (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             )}
-            <span className="text-[9px] text-slate-400">Foto panorámica del equipo</span>
-            <button
-              type="button"
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => setPanoramaFoto(reader.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                };
-                input.click();
-              }}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-[9px] font-bold rounded-lg cursor-pointer transition-all"
-            >
-              Subir foto panorámica
-            </button>
+            <span className="text-xs text-ink-mute">{panoramaFoto ? 'Foto panorámica lista' : 'Elige el origen de la foto'}</span>
+            <div className="flex gap-2">
+              <input ref={panoramaCameraRef} type="file" accept="image/*" capture="environment" onChange={handlePanoramaFile} className="hidden" aria-label="Tomar foto panorámica con cámara" />
+              <input ref={panoramaGalleryRef} type="file" accept="image/*" onChange={handlePanoramaFile} className="hidden" aria-label="Elegir foto panorámica de la fototeca" />
+              <button
+                type="button"
+                onClick={() => panoramaCameraRef.current?.click()}
+                className="px-4 py-2 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Tomar con cámara
+              </button>
+              <button
+                type="button"
+                onClick={() => panoramaGalleryRef.current?.click()}
+                className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl border border-slate-200 transition-all flex items-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                Elegir de fototeca
+              </button>
+            </div>
             {panoramaFoto && (
-              <button type="button" onClick={() => setPanoramaFoto('')} className="text-[8px] text-rose-500 font-bold cursor-pointer">Eliminar</button>
+              <button type="button" onClick={() => setPanoramaFoto('')} className="text-xs text-rose-500 font-bold cursor-pointer hover:underline">Eliminar foto</button>
             )}
           </div>
         </div>
@@ -594,7 +617,7 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
               </div>
             ))}
           </div>
-          <div className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+          <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-canvas/40">
             <input
               ref={fileInputRef}
               type="file"
@@ -603,17 +626,38 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
               capture="environment"
               onChange={handleFileCapture}
               className="hidden"
+              aria-label="Tomar fotos con la cámara"
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full max-w-xs py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              Tomar foto
-              <span className="text-teal-200 text-xs font-mono">({capturedPhotos.filter(p => !p.assigned).length} sin asignar)</span>
-            </button>
-            <p className="text-[9px] text-slate-400">Toca para abrir la cámara y toma todas las fotos. Luego asígnalas a los slots.</p>
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileCapture}
+              className="hidden"
+              aria-label="Elegir fotos de la fototeca"
+            />
+            <div className="grid w-full max-w-md grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="py-3 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-lg shadow-teal-brand/20 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Tomar con cámara
+                <span className="text-teal-100 text-[10px] font-mono font-medium">({capturedPhotos.filter(p => !p.assigned).length} sin asignar)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="py-3 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                Elegir de fototeca
+                <span className="text-ink-mute text-[10px] font-mono font-medium">desde el dispositivo</span>
+              </button>
+            </div>
+            <p className="text-xs text-ink-mute text-center">Toma o selecciona varias fotos. Se comprimen al subirlas y luego las asignas a los slots.</p>
           </div>
           {capturedPhotos.length > 0 && (
             <button
@@ -946,98 +990,126 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
   };
 
   return (
-    <div className="flex flex-col sm:flex-row min-h-[750px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="w-full sm:w-56 bg-slate-900 text-white p-4 flex flex-col gap-0.5 shrink-0">
-        <div className="pb-3 mb-3 border-b border-slate-700 space-y-1">
-          <span className="text-[8px] text-slate-500 font-mono uppercase tracking-wider">{ot.id}</span>
-          <h3 className="font-bold text-xs font-display leading-tight">{client.razonSocial}</h3>
-          <p className="text-[9px] text-slate-400 font-mono leading-tight">{ot.tipoEquipo} · {ot.potenciaKva} KVA</p>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-500/20 text-teal-300 text-[7px] font-bold font-mono rounded-full">{template.display}</span>
+    <div className="flex flex-col lg:flex-row min-h-[750px] w-full bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden">
+
+      {/* Sidebar de secciones (patrón Dashboard, tema claro) */}
+      <aside className="w-full lg:w-72 shrink-0 bg-canvas/60 border-b lg:border-b-0 lg:border-r border-hairline p-4 flex flex-col">
+        <div className="pb-3 mb-3 border-b border-hairline space-y-1.5">
+          <span className="text-[10px] text-ink-mute font-mono uppercase tracking-wider">{ot.id}</span>
+          <h3 className="font-bold text-sm font-display text-slate-900 leading-tight">{client.razonSocial}</h3>
+          <p className="text-xs text-ink-soft font-mono leading-tight">{ot.tipoEquipo} · {ot.potenciaKva} KVA</p>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-mist text-teal-deep text-[10px] font-bold font-mono rounded-full">{template.display}</span>
         </div>
-        <div className="space-y-0.5 flex-1 overflow-y-auto">
-          {STEPS.map(step => {
-            const s = stepStatus(step.num);
+
+        {/* Barra de progreso global */}
+        <div className="mb-3">
+          <div className="flex justify-between text-[10px] font-mono text-ink-soft mb-1">
+            <span className="font-bold">Progreso</span>
+            <span>{Math.round((completedSteps.size / 10) * 100)}%</span>
+          </div>
+          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-full bg-teal-brand rounded-full transition-all duration-300" style={{ width: `${(completedSteps.size / 10) * 100}%` }}></div>
+          </div>
+        </div>
+
+        <nav className="space-y-1 flex-1 overflow-y-auto">
+          {SECTIONS.map(section => {
+            const ss = sectionStatus(section);
+            const isOpenSection = section.id === currentSection(currentStep);
             return (
-              <button
-                key={step.num}
-                type="button"
-                onClick={() => goToStep(step.num)}
-                className={`w-full flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-left transition-colors cursor-pointer ${
-                  s === 'current' ? 'bg-teal-500/20 text-teal-200' : s === 'completed' ? 'text-emerald-300 hover:bg-slate-800' : s === 'skipped' ? 'text-amber-300/60 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-800'
-                }`}
-              >
-                {renderStepIndicator(step.num)}
-                <div className="leading-tight min-w-0">
-                  <span className={`block text-[9px] truncate ${s === 'current' ? 'font-bold' : ''}`}>{step.label}</span>
-                  <span className="text-[7px] text-slate-600 block">{s === 'completed' ? 'Completado' : s === 'skipped' ? 'Saltado' : s === 'current' ? 'En curso' : 'Pendiente'}</span>
+              <div key={section.id} className={`rounded-xl border ${isOpenSection ? 'border-teal-brand/40 bg-white shadow-sm' : 'border-hairline bg-white'}`}>
+                <div className={`flex items-center gap-2.5 p-2.5 ${isOpenSection ? '' : ''}`}>
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono shrink-0">
+                    {ss === 'completed'
+                      ? <span className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-xs"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                      : <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono ${isOpenSection ? 'bg-teal-brand text-white' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>{section.id}</span>}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-xs font-bold tex-slate-900">{section.title}</span>
+                    <span className="text-[10px] text-ink-mute font-mono">{ss === 'completed' ? 'Completado' : isOpenSection ? 'En curso' : 'Pendiente'}</span>
+                  </div>
                 </div>
-              </button>
+                {isOpenSection && (
+                  <div className="border-t border-hairline px-1.5 pb-1.5 pt-1.5 space-y-0.5">
+                    {section.steps.map((stepNum, idx) => {
+                      const s = stepStatus(stepNum);
+                      return (
+                        <button
+                          key={stepNum}
+                          type="button"
+                          onClick={() => goToStep(stepNum)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                            s === 'current' ? 'bg-teal-mist' : s === 'completed' ? 'hover:bg-slate-50' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0 ${s === 'completed' ? 'bg-emerald-500 text-white' : s === 'current' ? 'bg-teal-brand text-white' : 'border border-slate-300 text-transparent'}`}>
+                            {s === 'completed' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+                          </span>
+                          <span className={`text-xs truncate ${s === 'current' ? 'font-bold text-slate-900' : s === 'completed' ? 'text-ink-soft' : 'text-ink-soft'}`}>{section.id}.{idx + 1} {STEPS[stepNum - 1].label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
-        </div>
-      </div>
+        </nav>
+      </aside>
 
-      <div className="flex-1 p-5 sm:p-6 flex flex-col min-h-0">
-        <div className="flex items-center gap-3 mb-4 shrink-0">
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header del paso */}
+        <div className="flex items-center gap-3 p-5 border-b border-hairline shrink-0">
           <button
             type="button"
             onClick={onCancel}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-slate-200"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-600 w-9 h-9 rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-hairline"
             title="Volver a la Orden de Trabajo"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <span className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-sm font-bold font-mono">{currentStep}</span>
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-slate-900 text-base font-display">{STEPS[currentStep - 1]?.label}</h2>
-            <p className="text-[11px] text-slate-400">Paso {currentStep} de 10</p>
-            {draftMsg && <p className="text-[9px] text-emerald-600 font-medium mt-0.5">{draftMsg}</p>}
+            <p className="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Sección {currentSection(currentStep)} · Subpaso {activeStepIndexInSection} de {sectionOfCurrent.steps.length}</p>
+            <h2 className="font-bold text-slate-900 text-base font-display truncate">{STEPS[currentStep - 1]?.label}</h2>
           </div>
+          {completedSteps.has(currentStep) && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-[10px] font-bold font-mono text-emerald-700">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+              Completo
+            </span>
+          )}
+          {draftMsg && <p className="text-[10px] text-emerald-600 font-medium ml-auto">{draftMsg}</p>}
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0 p-5">
           {renderStepContent()}
         </div>
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 shrink-0">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={currentStep > 1 ? handlePrev : onCancel}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
-              title={currentStep > 1 ? 'Paso anterior' : 'Salir del editor'}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-              {currentStep > 1 ? 'Anterior' : 'Atrás'}
+        {/* Footer táctil de 3 botones */}
+        <div className="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50 shrink-0">
+          <button
+            type="button"
+            onClick={currentStep > 1 ? handlePrev : onCancel}
+            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 border border-slate-200 cursor-pointer flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            {currentStep > 1 ? 'Anterior' : 'Atrás'}
+          </button>
+          <button type="button" onClick={handleSaveDraft} className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-500 text-sm font-medium rounded-xl transition-all border border-slate-200 cursor-pointer flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Guardar borrador
+          </button>
+          {currentStep < 10 ? (
+            <button type="button" onClick={handleNext} className="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
+              Siguiente
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
-            {currentStep < 10 && currentStep !== 7 && (
-              <button type="button" onClick={handleSkip} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-400 text-[11px] font-bold rounded-lg transition-all cursor-pointer">
-                Saltar paso
-              </button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={handleSaveDraft} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Guardar Borrador
+          ) : (
+            <button type="button" onClick={handleSubmit} className="px-5 py-3 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-lg shadow-teal-brand/30 transition-all active:scale-95 cursor-pointer flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+              Enviar Informe
             </button>
-            <button type="button" onClick={onCancel} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-[11px] font-bold rounded-lg transition-all cursor-pointer">
-              Cancelar
-            </button>
-            {currentStep < 10 ? (
-              <button type="button" onClick={handleNext} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
-                Siguiente
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button type="button" onClick={handleSubmit} className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-teal-600/20 transition-all active:scale-95 cursor-pointer flex items-center gap-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
-                  Enviar Informe
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
