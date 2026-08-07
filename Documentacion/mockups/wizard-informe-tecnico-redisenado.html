@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Rediseño Wizard Informe Técnico (Gestia)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          canvas: '#F2F6F4',
+          surface: '#FFFFFF',
+          ink: '#16241F',
+          'ink-soft': '#5B6B63',
+          'ink-mute': '#8CA097',
+          hairline: '#E1E9E4',
+          'teal-brand': '#0F9E82',
+          'teal-deep': '#0B3B34',
+          'teal-mist': '#E4F4EF',
+          'ai-brand': '#6C6FE0',
+          'ai-mist': '#EEEEFB',
+        },
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          display: ['Sora', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .scenario { border-top: 2px dashed #CBD5E1; }
+  .scenario:first-child { border-top: none; }
+  .step-content { display: none; }
+  .step-content.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .section-item { cursor: pointer; }
+  input[type="text"], input[type="date"], input[type="time"], textarea, select {
+    transition: all .15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #0F9E82;
+    box-shadow: 0 0 0 3px rgba(15, 158, 130, .15);
+  }
+  .slot-photo { aspect-ratio: 4/3; }
+  @media (max-width: 640px) {
+    .wizard-shell { flex-direction: column; }
+    .section-nav { width: 100%; max-height: 220px; overflow-y: auto; border-right: none; border-bottom: 1px solid #E1E9E4; }
+  }
+</style>
+</head>
+<body class="bg-canvas text-ink">
+
+<div class="max-w-[1400px] mx-auto p-4 sm:p-6 space-y-6">
+
+  <!-- ========================================================== -->
+  <!-- INTRODUCCIÓN -->
+  <!-- ========================================================== -->
+  <header class="bg-white rounded-2xl border border-hairline p-6 shadow-sm">
+    <div class="flex flex-col lg:flex-row justify-between gap-4">
+      <div>
+        <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Mockup de validación · Rediseño UX/UI</p>
+        <h1 class="text-2xl font-black font-display text-slate-900 mt-1">Wizard del Informe Técnico</h1>
+        <p class="text-sm text-ink-soft mt-1 max-w-xl">Reestructura de los 10 pasos en <strong>4 secciones</strong> lógicas, homologación al patrón Dashboard (<code class="font-mono text-xs">guia_ui_ux.md</code>), optimizado para uso táctil en campo (tablet/móvil). Muestra el flujo completo para validación antes de implementar.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 items-start">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-mist border border-teal-brand/30 rounded-xl text-xs font-bold font-mono text-teal-deep">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i>4 secciones
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-600">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>Tablet-first
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ai-mist border border-ai-brand/30 rounded-xl text-xs font-bold font-mono text-ai-brand">
+          <i data-lucide="palette" class="w-4 h-4"></i>Tokens Dashboard
+        </span>
+      </div>
+    </div>
+
+    <!-- Comparativa antes/después -->
+    <div class="grid md:grid-cols-2 gap-3 mt-5">
+      <div class="rounded-xl border border-rose-200 bg-rose-50/50 p-4">
+        <p class="text-[10px] font-bold font-mono uppercase tracking-wider text-rose-600 mb-2">Antes (actual)</p>
+        <ul class="text-xs text-slate-600 space-y-1">
+          <li class="flex gap-2"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0"></i>Sidebar <code class="font-mono">bg-slate-900</code> oscuro (rompe con Dashboard)</li>
+          <li class="flex gap-2"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0"></i>Tipografía <code class="font-mono">text-[7px]/[8px]/[9px]</code> (prohibida en §2)</li>
+          <li class="flex gap-2"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0"></i>SVG inline en vez de <code class="font-mono">lucide-react</code></li>
+          <li class="flex gap-2"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0"></i>10 items en sidebar → scroll denso en tablet</li>
+          <li class="flex gap-2"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0"></i>Footer con 5 botones, jerarquía confusa</li>
+        </ul>
+      </div>
+      <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+        <p class="text-[10px] font-bold font-mono uppercase tracking-wider text-emerald-700 mb-2">Después (propuesto)</p>
+        <ul class="text-xs text-slate-700 space-y-1">
+          <li class="flex gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i>Shell <code class="font-mono">bg-white rounded-2xl border border-slate-100</code></li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i>Escala Tailwind <code class="font-mono">text-xs/sm/base</code>, sin arbitrarios</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i>Íconos <code class="font-mono">lucide-react</code> (única librería §6)</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i>4 secciones + subpasos expandibles</li>
+          <li class="flex gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i>Footer táctil: Prev / Guardar / Siguiente</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Navegación entre escenarios del mockup -->
+    <div class="flex flex-wrap gap-2 mt-5 pt-4 border-t border-hairline">
+      <span class="text-[10px] font-bold font-mono uppercase tracking-wider text-ink-mute self-center mr-1">Ver escenario:</span>
+      <a href="#vista" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold font-mono rounded-lg hover:bg-slate-900 transition-all">Vista completa</a>
+      <a href="#s1" class="px-3 py-1.5 bg-teal-mist border border-teal-brand/30 text-teal-deep text-xs font-bold font-mono rounded-lg hover:bg-teal-brand hover:text-white transition-all">1 · Datos del Servicio</a>
+      <a href="#s2" class="px-3 py-1.5 bg-teal-mist border border-teal-brand/30 text-teal-deep text-xs font-bold font-mono rounded-lg hover:bg-teal-brand hover:text-white transition-all">2 · Trabajo Realizado</a>
+      <a href="#s3" class="px-3 py-1.5 bg-teal-mist border border-teal-brand/30 text-teal-deep text-xs font-bold font-mono rounded-lg hover:bg-teal-brand hover:text-white transition-all">3 · Inspección Técnica</a>
+      <a href="#s4" class="px-3 py-1.5 bg-teal-mist border border-teal-brand/30 text-teal-deep text-xs font-bold font-mono rounded-lg hover:bg-teal-brand hover:text-white transition-all">4 · Diagnóstico y Envío</a>
+      <a href="#estados" class="px-3 py-1.5 bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold font-mono rounded-lg hover:bg-amber-500 hover:text-white transition-all">Estados (vacío/loading/offline)</a>
+    </div>
+  </header>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO 0: VENTANA COMPLETA DEL MÓDULO TÉCNICO -->
+  <!-- ========================================================== -->
+  <section id="vista" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-slate-800 text-white flex items-center justify-center font-mono font-bold text-sm">0</span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Vista completa del módulo Técnico</h2>
+        <p class="text-xs text-ink-mute font-mono">Contenedor del módulo (rail lateral + bandeja "Mis OTs" + editor). El wizard ocupa todo el ancho al editar una OT.</p>
+      </div>
+    </div>
+
+    <!-- Contenedor del módulo tal como se renderiza en App.tsx -->
+    <div class="rounded-3xl border border-slate-200/60 bg-white p-5 md:p-7 shadow-[0_10px_40px_rgba(0,0,0,0.02)]">
+      <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-4 flex items-center gap-2">
+        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> App.tsx → TecnicoView: <code class="bg-slate-100 px-1.5 py-0.5 rounded">bg-white rounded-3xl border border-slate-200/60 p-6 md:p-8</code>
+      </p>
+
+      <!-- Vista A: bandeja + editor (OT seleccionada, informe aún NO abierto) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        <!-- Columna izquierda: "Mis Órdenes de Trabajo" (bandeja por Visita) -->
+        <div class="lg:col-span-1 bg-white border border-hairline shadow-sm rounded-2xl overflow-hidden self-start">
+          <!-- Cabecera de la bandeja (homologada: clara, no slate-900) -->
+          <div class="px-5 py-4 border-b border-hairline flex items-center justify-between bg-canvas/40">
+            <h2 class="text-ink text-sm font-bold uppercase font-display tracking-tight flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4"></i></span>
+              Mis Órdenes de Trabajo
+            </h2>
+            <span class="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">4 asignadas</span>
+          </div>
+
+          <!-- Estado del técnico + nota -->
+          <div class="p-3 bg-canvas/50 border-b border-hairline space-y-2">
+            <div class="flex items-center justify-between text-xs text-ink-soft">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <span>Técnico Activo: <strong class="text-slate-900">Juan Córdova</strong></span>
+              </div>
+              <span class="inline-flex items-center gap-1 text-[10px] font-mono text-ink-mute"><i data-lucide="wifi" class="w-3 h-3 text-emerald-500"></i>Online</span>
+            </div>
+            <div class="bg-white border border-hairline rounded-lg p-3 text-[11px] text-ink-soft leading-relaxed">
+              <p class="font-semibold text-teal-deep flex items-center gap-1.5 mb-1"><i data-lucide="layers" class="w-3.5 h-3.5"></i>Bandeja de Órdenes Programadas</p>
+              Las OTs son emitidas por Ventas. Seleccioná una para activar la ficha de informe técnico.
+            </div>
+          </div>
+
+          <!-- Visitas + OTs -->
+          <div class="p-3 space-y-3">
+            <!-- Visita: hoy -->
+            <div class="bg-canvas/40 border border-hairline rounded-xl p-3 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <span class="w-6 h-6 rounded-md bg-teal-mist text-teal-deep flex items-center justify-center"><i data-lucide="truck" class="w-3.5 h-3.5"></i></span>
+                  VIS-2026-0350
+                </span>
+                <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border bg-indigo-50 border-indigo-200 text-indigo-700">En Sitio</span>
+              </div>
+              <div class="text-[11px] font-bold text-slate-800 uppercase truncate">Banco Nacional S.A.</div>
+              <div class="text-[10px] text-ink-mute flex items-center gap-1 font-mono truncate"><i data-lucide="map-pin" class="w-3 h-3"></i>Av. Javier Prado 1234 · San Isidro</div>
+              <div class="space-y-1 pt-1">
+                <div class="flex justify-between text-[10px] font-mono text-ink-soft"><span>Avance Equipos:</span><span class="font-bold text-slate-700">2 de 3 (66%)</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-teal-brand h-full" style="width:66%"></div></div>
+              </div>
+              <div class="pt-2 space-y-1.5">
+                <!-- OT seleccionada -->
+                <div class="p-2.5 rounded-lg border border-teal-brand/50 bg-teal-mist/40 cursor-pointer">
+                  <div class="flex items-center justify-between"><span class="font-mono font-bold text-slate-900 text-[11px]">OT-2026-0142</span><span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">TRABAJO EN EJECUCIón</span></div>
+                  <div class="text-[10px] text-ink-soft mt-1 flex items-center justify-between font-mono"><span>UPS · 40 KVA</span><span>12/08</span></div>
+                </div>
+                <div class="p-2.5 rounded-lg border border-hairline bg-white">
+                  <div class="flex items-center justify-between"><span class="font-mono font-bold text-slate-900 text-[11px]">OT-2026-0143</span><span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">Programada</span></div>
+                  <div class="text-[10px] text-ink-soft mt-1 flex items-center justify-between font-mono"><span>Stabilizer · 30 KVA</span><span>12/08</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Visita: mañana -->
+            <div class="bg-slate-50/70 border border-hairline rounded-xl p-3 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-black text-slate-900 flex items-center gap-1.5"><span class="w-6 h-6 rounded-md bg-slate-100 text-ink-soft flex items-center justify-center"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></span>VIS-2026-0370</span>
+                <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border bg-slate-100 border-slate-200 text-slate-600">Programada</span>
+              </div>
+              <div class="text-[11px] font-bold text-slate-800 uppercase truncate">Agencia Miraflores</div>
+              <div class="text-[10px] text-ink-mute flex items-center gap-1 font-mono truncate"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i>Av. Larco 550</div>
+              <div class="space-y-1 pt-1">
+                <div class="flex justify-between text-[10px] font-mono text-ink-soft"><span>Avance Equipos:</span><span class="font-bold text-slate-700">0 de 2</span></div>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-teal-brand h-full" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna derecha: detalle de OT seleccionada (antes de abrir wizard) -->
+        <div class="lg:col-span-2 bg-white border border-hairline shadow-sm rounded-2xl overflow-hidden self-start">
+          <div class="bg-slate-50/70 border-b border-hairline px-5 py-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold font-display text-slate-900">OT-2026-0142 · Banco Nacional S.A.</h3>
+              <p class="text-xs text-ink-mute font-mono mt-0.5">UPS 40 KVA · Preventivo · Av. Javier Prado 1234</p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-bold font-mono rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>En Ejecución
+            </span>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <!-- Logística del viaje (US-3) -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border border-hairline bg-white rounded-xl p-4">
+              <div class="space-y-1 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 bg-teal-mist text-teal-deep font-mono text-[10px] font-bold rounded uppercase">Logística del Viaje</span>
+                  <span class="font-mono text-sm font-black text-teal-brand">VIS-2026-0350</span>
+                </div>
+                <div class="text-xs text-ink-soft font-bold">Av. Javier Prado 1234 · San Isidro</div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl font-mono">
+                  <i data-lucide="check-circle-2" class="w-4 h-4"></i>Llegada Registrada (09:05)
+                </span>
+              </div>
+            </div>
+
+            <!-- Action card: emisión de informe -->
+            <div class="bg-teal-brand text-white rounded-xl p-4 border border-teal-deep/30 shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="absolute right-0 top-0 translate-x-12 -translate-y-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="flex items-center gap-3 z-10 min-w-0">
+                <span class="w-9 h-9 shrink-0 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center"><i data-lucide="file-check" class="text-amber-300" size="18"></i></span>
+                <div class="min-w-0">
+                  <h4 class="text-white text-[13px] font-bold uppercase font-display truncate">Emisión de Informe Técnico Oficial</h4>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 mt-1 bg-white/15 border border-white/30 rounded-full text-[10px] font-mono font-bold text-white uppercase">Trabajo en Ejecución</span>
+                </div>
+              </div>
+              <div class="shrink-0 z-10 w-full md:w-auto flex flex-col md:flex-row gap-3">
+                <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider font-mono rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-95">
+                  <i data-lucide="file-check" class="w-4 h-4"></i> Llenar Informe Técnico
+                </button>
+                <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs uppercase font-mono font-black rounded-xl shadow-lg shadow-rose-600/20 transition-all">
+                  <i data-lucide="clock" class="w-4 h-4"></i> Finalizar Servicio
+                </button>
+              </div>
+            </div>
+
+            <!-- Datos rápidos de la OT -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              <div class="border border-hairline rounded-xl p-3"><p class="text-[10px] text-ink-mute font-mono uppercase mb-1">Cliente</p><p class="font-bold text-slate-900 text-xs truncate">Banco Nacional S.A. · 20100200300</p></div>
+              <div class="border border-hairline rounded-xl p-3"><p class="text-[10px] text-ink-mute font-mono uppercase mb-1">Equipo asignado</p><p class="font-bold text-slate-900 text-xs truncate">EQ-UPS-014 · APC SRT6KRXI</p></div>
+              <div class="border border-hairline rounded-xl p-3"><p class="text-[10px] text-ink-mute font-mono uppercase mb-1">Técnicos</p><p class="font-bold text-slate-900 text-xs truncate.place">Juan Córdova / Gino Murillo</p></div>
+            </div>
+
+            <!-- Hint hacia el wizard -->
+            <div class="rounded-xl border border-ai-brand/30 bg-ai-mist/50 p-4 text-xs text-ink-soft leading-relaxed">
+              <p class="font-semibold text-ai-brand flex items-center gap-1.5 mb-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>Al tocar "Llenar Informe Técnico" se abre el wizard en ancho completo (ver escenarios 1–4 abajo).</p>
+              Los datos del equipo EQ-UPS-014 llegan precargados desde el contrato (fix) y solo se muestran al editar.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista B: wizard abierto en ancho completo (bandeja oculta) -->
+      <div class="mt-5">
+        <p class="flex items-center gap-2 text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-3">
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-teal-brand"></i> Al editar una OT el editor pasa a <div class="bg-slate-100 px-1.5 py-0.5 rounded">lg:col-span-3</div> y la bandeja se oculta, dándote todo el ancho (tablet/móvil)
+        </p>
+        <div class="flex bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden min-h-[520px]">
+          <aside class="section-nav w-64 shrink-0 bg-canvas border-r border-hairline p-4 hidden lg:flex flex-col">
+            <div class="text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-1">vista previa</div>
+            <div class="rounded-xl bg-white border border-teal-brand/40 shadow-sm p-2.5"><div class="text-xs font-bold text-slate-900">1 · Datos del Servicio</div><div class="text-[10px] text-teal-deep font-mono">En curso</div></div>
+            <div class="rounded-xl bg-white border border-hairline p-2.5 mt-1"><div class="text-xs font-medium text-ink-soft">2 · Trabajo Realizado</div><div class="text-[10px] text-ink-mute font-mono">Pendiente</div></div>
+            <div class="rounded-xl bg-white border border-hairline p-2.5 mt-1"><div class="text-xs font-medium text-ink-soft">3 · Inspección Técnica</div></div>
+            <div class="rounded-xl bg-white border border-hairline p-2.5 mt-1"><div class="text-xs font-medium text-ink-soft">4 · Diagnóstico y Envío</div></div>
+          </aside>
+          <div class="flex-1 flex flex-col min-w-0">
+            <div class="flex items-center gap-3 p-5 border-b border-hairline">
+              <i data-lucide="file-check" class="w-5 h-5 text-teal-brand"></i>
+              <div class="flex-1"><p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">OT-2026-0142 · Banco Nacional S.A.</p><h3 class="text-base font-bold font-display text-slate-900">Editor de Campo Oficial — Informe Técnico</h3></div>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-mist border border-teal-brand/30 rounded-lg text-[10px] font-bold font-mono text-teal-deep"><i data-lucide="check" class="w-3 h-3"></i>1.1 completo</span>
+            </div>
+            <div class="flex-1 p-5 text-center text-ink-mute text-xs font-mono">
+              <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3"><i data-lucide="monitor" class="w-7 h-7 text-slate-400"></i></div>
+              El cuerpo del wizard (secciones 1–4) se detalla en los escenarios siguientes.<br>La bandeja deja de mostrarse en <code class="bg-slate-100 px-1">lg:col-span-3</code>.
+            </div>
+            <div class="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50">
+              <button class="px-4 py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl flex items-center gap-1.5"><i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior</button>
+              <button class="px-4 py-2.5 bg-white border border-slate-200 text-slate-500 text-sm font-bold rounded-xl flex items-center gap-1.5"><i data-lucide="save" class="w-4 h-4"></i> Guardar borrador</button>
+              <button class="px-5 py-2.5 bg-teal-brand text-white text-sm font-bold rounded-xl flex items-center gap-1.5">Siguiente <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO 1: SECCIÓN "DATOS DEL SERVICIO" -->
+  <!-- ========================================================== -->
+  <section id="s1" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-teal-brand text-white flex items-center justify-center font-mono font-bold text-sm">1</span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Sección 1 · Datos del Servicio</h2>
+        <p class="text-xs text-ink-mute font-mono">Agrupa: Tipo de Servicio + Cabecera + Antecedentes</p>
+      </div>
+    </div>
+
+    <!-- Wizard shell homologado -->
+    <div class="wizard-shell flex bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden min-h-[640px]">
+
+      <!-- Sidebar de secciones (patrón Dashboard, no slate-900) -->
+      <aside class="section-nav w-64 shrink-0 bg-canvas border-r border-hairline p-4 flex flex-col">
+        <div class="pb-3 mb-3 border-b border-hairline space-y-1.5">
+          <span class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">OT-2026-0142</span>
+          <h3 class="font-bold text-sm font-display text-slate-900 leading-tight">Banco Nacional S.A.</h3>
+          <p class="text-xs text-ink-soft font-mono">UPS · 40 KVA</p>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-mist text-teal-deep text-[10px] font-bold font-mono rounded-full">Preventivo</span>
+        </div>
+
+        <!-- Barra de progreso global -->
+        <div class="mb-3">
+          <div class="flex justify-between text-[10px] font-mono text-ink-soft mb-1">
+            <span class="font-bold">Progreso</span>
+            <span>62%</span>
+          </div>
+          <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div class="h-full bg-teal-brand rounded-full" style="width:62%"></div>
+          </div>
+        </div>
+
+        <!-- Lista de secciones (4, no 10) -->
+        <nav class="space-y-1 flex-1">
+          <!-- Sección 1 (current, expanded) -->
+          <div class="rounded-xl bg-white border border-teal-brand/40 shadow-sm">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center text-xs font-bold font-mono shrink-0">1</span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-bold text-slate-900">Datos del Servicio</span>
+                <span class="text-[10px] text-teal-deep font-mono">En curso</span>
+              </div>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+            <!-- Subpasos -->
+            <div class="border-t border-hairline px-1.5 pb-1.5 pt-1.5 space-y-0.5">
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-teal-mist">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                <span class="text-xs text-slate-700 font-medium">1.1 Tipo de Servicio</span>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-teal-brand/30">
+                <i data-lucide="circle-dot" class="w-4 h-4 text-teal-brand shrink-0"></i>
+                <span class="text-xs text-slate-900 font-bold">1.2 Datos de Cabecera</span>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300 shrink-0"></i>
+                <span class="text-xs text-ink-soft">1.3 Antecedentes</span>
+              </div>
+            </div>
+          </div>
+          <!-- Sección 2 -->
+          <div class="rounded-xl bg-white border border-hairline hover:border-slate-300 transition-colors">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">2</span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-medium text-ink-soft">Trabajo Realizado</span>
+                <span class="text-[10px] text-ink-mute font-mono">Pendiente</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <!-- Sección 3 -->
+          <div class="rounded-xl bg-white border border-hairline hover:border-slate-300 transition-colors">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">3</span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-medium text-ink-soft">Inspección Técnica</span>
+                <span class="text-[10px] text-ink-mute font-mono">Pendiente</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <!-- Sección 4 -->
+          <div class="rounded-xl bg-white border border-hairline hover:border-slate-300 transition-colors">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">4</span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-medium text-ink-soft">Diagnóstico y Envío</span>
+                <span class="text-[10px] text-ink-mute font-mono">Pendiente</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Pie del sidebar: estado guardado -->
+        <div class="mt-3 pt-3 border-t border-hairline">
+          <div class="flex items-center gap-1.5 text-[10px] text-ink-mute font-mono">
+            <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Borrador guardado · 12:34</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Contenido principal -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Header del paso -->
+        <div class="flex items-center gap-3 p-5 border-b border-hairline">
+          <button class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center border border-hairline transition-colors" title="Volver a la OT">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Sección 1 · Subpaso 2 de 3</p>
+            <h2 class="text-lg font-bold font-display text-slate-900 truncate">Datos de Cabecera</h2>
+          </div>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-[10px] font-bold font-mono text-emerald-700">
+            <i data-lucide="check" class="w-3 h-3"></i>1.1 completo
+          </span>
+        </div>
+
+        <!-- Body del subpaso -->
+        <div class="flex-1 overflow-y-auto p-5">
+          <!-- Banner autocompletado -->
+          <div class="flex items-center gap-2 px-3 py-2 bg-teal-mist border border-teal-brand/30 rounded-xl mb-4">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-brand"></i>
+            <span class="text-xs font-medium text-teal-deep">Datos cargados desde la OT + Cliente. Todos editables.</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Informe N°</label>
+              <input type="text" value="INF-2026-0142" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Hoja Servicio N°</label>
+              <input type="text" value="HS-2026-0142" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Fecha del Servicio</label>
+              <input type="date" value="2026-08-20" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Hora Inicio / Fin</label>
+              <div class="flex gap-2">
+                <input type="time" value="09:00" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+                <input type="time" value="11:30" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Técnico Responsable</label>
+              <input type="text" value="Juan Córdova" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase mb-1 block tracking-wider">Técnico 2 (Apoyo)</label>
+              <input type="text" value="Gino Murillo" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" />
+            </div>
+          </div>
+
+          <!-- Preview del subpaso siguiente (1.3 Antecedentes) collapsed -->
+          <div class="mt-6 rounded-xl border border-hairline bg-canvas p-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300"></i>
+                <span class="text-xs font-bold text-ink-soft">1.3 Antecedentes</span>
+                <span class="text-[10px] text-ink-mute font-mono">— pendiente</span>
+              </div>
+              <button class="text-xs text-teal-brand font-bold hover:underline">Completar ahora →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer táctil (3 botones, jerarquía clara) -->
+        <div class="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50">
+          <button class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior
+          </button>
+          <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i> Guardar borrador
+          </button>
+          <button class="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+            Siguiente <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO 2: SECCIÓN "TRABAJO REALIZADO" -->
+  <!-- ========================================================== -->
+  <section id="s2" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-teal-brand text-white flex items-center justify-center font-mono font-bold text-sm">2</span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Sección 2 · Trabajo Realizado</h2>
+        <p class="text-xs text-ink-mute font-mono">Agrupa: Acciones Realizadas + Pasos del Procedimiento</p>
+      </div>
+    </div>
+
+    <div class="wizard-shell flex bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden min-h-[640px]">
+      <aside class="section-nav w-64 shrink-0 bg-canvas border-r border-hairline p-4 flex flex-col">
+        <div class="pb-3 mb-3 border-b border-hairline space-y-1.5">
+          <span class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">OT-2026-0142</span>
+          <h3 class="font-bold text-sm font-display text-slate-900 leading-tight">Banco Nacional S.A.</h3>
+          <p class="text-xs text-ink-soft font-mono">UPS · 40 KVA</p>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-[10px] font-mono text-ink-soft mb-1">
+            <span class="font-bold">Progreso</span><span>62%</span>
+          </div>
+          <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div class="h-full bg-teal-brand rounded-full" style="width:62%"></div>
+          </div>
+        </div>
+        <nav class="space-y-1 flex-1">
+          <!-- Sección 1 completada -->
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-medium text-ink-soft">Datos del Servicio</span>
+                <span class="text-[10px] text-emerald-600 font-mono">Completado</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <!-- Sección 2 (current) -->
+          <div class="rounded-xl bg-white border border-teal-brand/40 shadow-sm">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center text-xs font-bold font-mono shrink-0">2</span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-xs font-bold text-slate-900">Trabajo Realizado</span>
+                <span class="text-[10px] text-teal-deep font-mono">En curso</span>
+              </div>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+            <div class="border-t border-hairline px-1.5 pb-1.5 pt-1.5 space-y-0.5">
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-teal-mist">
+                <i data-lucide="circle-dot" class="w-4 h-4 text-teal-brand shrink-0"></i>
+                <span class="text-xs text-slate-900 font-bold">2.1 Acciones Realizadas</span>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300 shrink-0"></i>
+                <span class="text-xs text-ink-soft">2.2 Pasos del Procedimiento</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">3</span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Inspección Técnica</span><span class="text-[10px] text-ink-mute font-mono">Pendiente</span></div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">4</span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Diagnóstico y Envío</span><span class="text-[10px] text-ink-mute font-mono">Pendiente</span></div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex items-center gap-3 p-5 border-b border-hairline">
+          <button class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center border border-hairline transition-colors" title="Volver a la OT">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Sección 2 · Subpaso 1 de 2</p>
+            <h2 class="text-lg font-bold font-display text-slate-900 truncate">Acciones Realizadas</h2>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-ink-soft"><strong class="text-slate-900">12</strong> de 24 seleccionadas</p>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 bg-teal-mist border border-teal-brand/30 text-teal-deep text-xs font-bold rounded-lg hover:bg-teal-brand hover:text-white transition-all">Marcar todas</button>
+              <button class="px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-500 hover:text-white transition-all">Limpiar</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[420px] overflow-y-auto pr-1">
+            <!-- Acciones checked -->
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4">
+              <span class="font-medium">Revisión general del equipo</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4"> <span class="font-medium">Limpieza general</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4"> <span class="font-medium">Ajuste mecánico</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4"> <span class="font-medium">Baterías</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4"> <span class="font-medium">Tarjeta de fuentes</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" checked class="accent-teal-600 w-4 h-4"> <span class="font-medium">Tarjeta de protección</span>
+            </label>
+            <!-- Acciones unchecked -->
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Relés</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Filtros</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Condensadores</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Prueba en vacío</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Pruebas con carga</span>
+            </label>
+            <label class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer text-sm text-slate-700">
+              <input type="checkbox" class="accent-teal-600 w-4 h-4"> <span>Instalación eléctrica</span>
+            </label>
+          </div>
+
+          <!-- Preview 2.2 Pasos -->
+          <div class="mt-2 rounded-xl border border-hairline bg-canvas p-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300"></i>
+                <span class="text-xs font-bold text-ink-soft">2.2 Pasos del Procedimiento</span>
+                <span class="text-[10px] text-ink-mute font-mono">— 6 pasos autogenerados (Preventivo)</span>
+              </div>
+              <button class="text-xs text-teal-brand font-bold hover:underline">Editar pasos →</button>
+            </div>
+            <div class="mt-2 space-y-1.5">
+              <div class="flex items-start gap-2 px-3 py-2 bg-white rounded-lg border border-hairline">
+                <span class="font-mono font-bold text-teal-deep text-[10px] bg-teal-mist px-2 py-0.5 rounded shrink-0">PASO 1</span>
+                <span class="text-xs text-slate-600 leading-relaxed">Visualizar estado actual del UPS, encontrando equipo operativo en modo inversor…</span>
+              </div>
+              <div class="flex items-start gap-2 px-3 py-2 bg-white rounded-lg border border-hairline">
+                <span class="font-mono font-bold text-teal-deep text-[10px] bg-teal-mist px-2 py-0.5 rounded shrink-0">PASO 2</span>
+                <span class="text-xs text-slate-600 leading-relaxed">Abrir carcasa tomando medidas de seguridad con tensión residual…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer táctil -->
+        <div class="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50">
+          <button class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior
+          </button>
+          <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5">
+            <i data-lucide="save" class="w-4 h-4"></i> Guardar borrador
+          </button>
+          <button class="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+            Siguiente <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO 3: SECCIÓN "INSPECCIÓN TÉCNICA" -->
+  <!-- ========================================================== -->
+  <section id="s3" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-teal-brand text-white flex items-center justify-center font-mono font-bold text-sm">3</span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Sección 3 · Inspección Técnica</h2>
+        <p class="text-xs text-ink-mute font-mono">Agrupa: Características del Equipo + Fotografías + Mediciones Eléctricas</p>
+      </div>
+    </div>
+
+    <div class="wizard-shell flex bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden min-h-[720px]">
+      <aside class="section-nav w-64 shrink-0 bg-canvas border-r border-hairline p-4 flex flex-col">
+        <div class="pb-3 mb-3 border-b border-hairline space-y-1.5">
+          <span class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">OT-2026-0142</span>
+          <h3 class="font-bold text-sm font-display text-slate-900 leading-tight">Banco Nacional S.A.</h3>
+          <p class="text-xs text-ink-soft font-mono">UPS · 40 KVA</p>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-[10px] font-mono text-ink-soft mb-1"><span class="font-bold">Progreso</span><span>75%</span></div>
+          <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-teal-brand rounded-full" style="width:75%"></div></div>
+        </div>
+        <nav class="space-y-1 flex-1">
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Datos del Servicio</span><span class="text-[10px] text-emerald-600 font-mono">Completado</span></div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Trabajo Realizado</span><span class="text-[10px] text-emerald-600 font-mono">Completado</span></div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-teal-brand/40 shadow-sm">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center text-xs font-bold font-mono shrink-0">3</span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-bold text-slate-900">Inspección Técnica</span><span class="text-[10px] text-teal-deep font-mono">En curso</span></div>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+            <div class="border-t border-hairline px-1.5 pb-1.5 pt-1.5 space-y-0.5">
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-teal-mist">
+                <i data-lucide="circle-dot" class="w-4 h-4 text-teal-brand shrink-0"></i>
+                <span class="text-xs text-slate-900 font-bold">3.1 Características del Equipo</span>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300 shrink-0"></i>
+                <span class="text-xs text-ink-soft">3.2 Fotografías</span>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50">
+                <i data-lucide="circle" class="w-4 h-4 text-slate-300 shrink-0"></i>
+                <span class="text-xs text-ink-soft">3.3 Mediciones Eléctricas</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-hairline">
+            <div class="section-item flex items-center gap-2.5 p-2.5">
+              <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold font-mono shrink-0">4</span>
+              <div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Diagnóstico y Envío</span><span class="text-[10px] text-ink-mute font-mono">Pendiente</span></div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i>
+            </div>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex items-center gap-3 p-5 border-b border-hairline">
+          <button class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center border border-hairline transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Sección 3 · Subpaso 1 de 3</p>
+            <h2 class="text-lg font-bold font-display text-slate-900 truncate">Características del Equipo</h2>
+          </div>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-mist border border-teal-brand/30 rounded-lg text-[10px] font-bold font-mono text-teal-deep">
+            <i data-lucide="check-circle-2" class="w-3 h-3"></i>Precargado del contrato
+          </span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-4">
+          <!-- Banner: datos precargados del equipo registrado (fix reciente) -->
+          <div class="flex items-center gap-2 px-3 py-2 bg-teal-mist border border-teal-brand/30 rounded-xl">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-brand"></i>
+            <span class="text-xs font-medium text-teal-deep">Datos precargados desde el equipo registrado en el contrato (EQ-UPS-014). Edita si cambiaron en campo.</span>
+          </div>
+
+          <!-- Grid de características (con datos REALES del equipo) -->
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">MARCA</label>
+              <input type="text" value="APC Smart-UPS" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">MODELO</label>
+              <input type="text" value="SRT6KRXI" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">SERIE</label>
+              <input type="text" value="SN-2026-0142-ABC" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">POTENCIA</label>
+              <input type="text" value="40 KVA" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">UBICACIÓN</label>
+              <input type="text" value="Sala de Servidores Piso 2" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">ESTADO</label>
+              <input type="text" value="Operativo" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">TENSIÓN ENTRADA</label>
+              <input type="text" value="220VAC 1PH + G" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate">TENSIÓN SALIDA</label>
+              <input type="text" value="220VAC 1PH + G" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+            <div>
+              <label class="text-[10px] text-ink-mute font-mono uppercase block truncate"># BATERÍAS BANCO INTERNO</label>
+              <input type="text" value="16 UNIDADES" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-lg bg-white mt-1">
+            </div>
+          </div>
+
+          <!-- Foto panorámica -->
+          <div class="rounded-xl border border-hairline bg-canvas p-4">
+            <label class="text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-2 block">Vista Panorámica del Equipo</label>
+            <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 bg-white flex flex-col items-center gap-3">
+              <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <i data-lucide="image" class="w-8 h-8 text-slate-400"></i>
+              </div>
+              <span class="text-xs text-ink-mute">Arrastra una foto o elige el origen</span>
+              <div class="flex gap-2">
+                <button class="px-4 py-2 bg-teal-brand hover:bg-teal-deep text-white text-xs font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5">
+                  <i data-lucide="camera" class="w-4 h-4"></i> Tomar con cámara
+                </button>
+                <button class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition-all flex items-center gap-1.5">
+                  <i data-lucide="images" class="w-4 h-4"></i> Foto
+          </div>
+
+          <!-- Preview 3.2 Fotos y 3.3 Mediciones -->
+          <div class="grid md:grid-cols-2 gap-3 mt-2">
+            <div class="rounded-xl border border-hairline bg-canvas p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2"><i data-lucide="camera" class="w-4 h-4 text-slate-400"></i><span class="text-xs font-bold text-ink-soft">3.2 Fotografías</span></div>
+                <span class="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200/60 rounded-full text-[10px] font-bold font-mono uppercase text-amber-700">8/16</span>
+              </div>
+              <p class="text-xs text-ink-mute">16 slots según 40 KVA (Preventivo). Toma fotos y asígnalas a cada slot técnico.</p>
+            </div>
+            <div class="rounded-xl border border-hairline bg-canvas p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4 text-slate-400"></i><span class="text-xs font-bold text-ink-soft">3.3 Mediciones Eléctricas</span></div>
+                <span class="text-[10px] text-ink-mute font-mono">Trifásico R/S/T</span>
+              </div>
+              <p class="text-xs text-ink-mute">Tablas Entrada/Salida (L-N V, L-N A, Frec Hz, L-L V).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50">
+          <button class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5"><i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior</button>
+          <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5"><i data-lucide="save" class="w-4 h-4"></i> Guardar borrador</button>
+          <button class="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-1.5">3.2 Fotografías <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpaso 3.2 Fotografías (vista detallada) -->
+    <div class="mt-4 rounded-xl border border-hairline bg-white p-4 shadow-sm">
+      <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-3">Detalle del subpaso · 3.2 Fotografías (capture → label, táctil)</p>
+      <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
+        <div class="slot-photo rounded-lg border-2 border-emerald-300 bg-emerald-50 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-slate-300 to-slate-400"></div>
+          <span class="absolute bottom-1 left-1 text-[10px] bg-black/50 text-white px-1 rounded font-mono">1</span>
+          <span class="absolute bottom-1 right-1 text-[10px] text-white font-mono">PLACA</span>
+        </div>
+        <div class="slot-photo rounded-lg border-2 border-emerald-300 bg-emerald-50 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-slate-400 to-slate-500"></div>
+          <span class="absolute bottom-1 left-1 text-[10px] bg-black/50 text-white px-1 rounded font-mono">2</span>
+        </div>
+        <div class="slot-photo rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"><i data-lucide="image" class="w-5 h-5 text-slate-400"></i></div>
+        <div class="slot-photo rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"><i data-lucide="image" class="w-5 h-5 text-slate-400"></i></div>
+        <div class="slot-photo rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"><i data-lucide="image" class="w-5 h-5 text-slate-400"></i></div>
+        <div class="slot-photo rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"><i data-lucide="image" class="w-5 h-5 text-slate-400"></i></div>
+      </div>
+      <div class="flex flex-col items-center gap-4 p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-canvas">
+        <div class="grid grid-cols-2 gap-3 w-full max-w-md">
+          <button class="py-3 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-lg shadow-teal-brand/20 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95">
+            <i data-lucide="camera" class="w-5 h-5"></i> Tomar con cámara
+            <span class="text-teal-100 text-[10px] font-mono font-medium">abre la cámara</span>
+          </button>
+          <button class="py-3 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm">
+            <i data-lucide="images" class="w-5 h-5"></i> Elegir de fototeca
+            <span class="text-ink-mute text-[10px] font-mono font-medium">desde el dispositivo</span>
+          </button>
+        </div>
+        <p class="text-xs text-ink-mute text-center">Toma o selecciona las <strong class="text-slate-700">3 fotos pendientes</strong> y asígnalas a los slots. Las fotos se capturan en alta calidad y se comprimen al sincronizar (PWA).</p>
+      </div>
+    </div>
+
+    <!-- Subpaso 3.3 Mediciones -->
+    <div class="mt-4 rounded-xl border border-hairline bg-white p-4 shadow-sm">
+      <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider mb-3">Detalle del subpaso · 3.3 Mediciones Eléctricas (Entrada/Salida, trifásico)</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="border border-hairline rounded-xl p-4">
+          <h4 class="text-xs font-bold text-slate-900 font-mono uppercase mb-2">Entrada del UPS</h4>
+          <table class="w-full text-xs font-mono">
+            <thead><tr class="text-ink-mute text-[10px] uppercase"><th class="text-left py-1">Parámetro</th><th class="text-center">R</th><th class="text-center">S</th><th class="text-center">T</th></tr></thead>
+            <tbody class="text-slate-700">
+              <tr><td class="py-1">L-N V</td><td><input type="text" value="219" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="220" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="219" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">L-N A</td><td><input type="text" value="45" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="44" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="46" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">Frec Hz</td><td colspan="3"><input type="text" value="60.0" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">L-L V</td><td><input type="text" value="380" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="381" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="380" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="border border-hairline rounded-xl p-4">
+          <h4 class="text-xs font-bold text-slate-900 font-mono uppercase mb-2">Salida del UPS</h4>
+          <table class="w-full text-xs font-mono">
+            <thead><tr class="text-ink-mute text-[10px] uppercase"><th class="text-left py-1">Parámetro</th><th class="text-center">R</th><th class="text-center">S</th><th class="text-center">T</th></tr></thead>
+            <tbody class="text-slate-700">
+              <tr><td class="py-1">L-N V</td><td><input type="text" value="220" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="220" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="221" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">L-N A</td><td><input type="text" value="44" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="43" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="45" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">Frec Hz</td><td colspan="3"><input type="text" value="60.0" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+              <tr><td class="py-1">L-L V</td><td><input type="text" value="380" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="380" class="w-full border border-slate-200 rounded text-center py-1"></td><td><input type="text" value="381" class="w-full border border-slate-200 rounded text-center py-1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO 4: SECCIÓN "DIAGNÓSTICO Y ENVÍO" -->
+  <!-- ========================================================== -->
+  <section id="s4" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-teal-brand text-white flex items-center justify-center font-mono font-bold text-sm">4</span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Sección 4 · Diagnóstico y Envío</h2>
+        <p class="text-xs text-ink-mute font-mono">Agrupa: Diagnóstico + Recomendaciones + Revisión Final + Vista Previa PDF + Enviar</p>
+      </div>
+    </div>
+
+    <div class="wizard-shell flex bg-white rounded-2xl border border-hairline shadow-sm overflow-hidden min-h-[720px]">
+      <aside class="section-nav w-64 shrink-0 bg-canvas border-r border-hairline p-4 flex flex-col">
+        <div class="pb-3 mb-3 border-b border-hairline space-y-1.5">
+          <span class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">OT-2026-0142</span>
+          <h3 class="font-bold text-sm font-display text-slate-900 leading-tight">Banco Nacional S.A.</h3>
+          <p class="text-xs text-ink-soft font-mono">UPS · 40 KVA</p>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-[10px] font-mono text-ink-soft mb-1"><span class="font-bold">Progreso</span><span>92%</span></div>
+          <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-teal-brand rounded-full" style="width:92%"></div></div>
+        </div>
+        <nav class="space-y-1 flex-1">
+          <div class="rounded-xl bg-white border border-hairline"><div class="section-item flex items-center gap-2.5 p-2.5"><span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span><div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Datos del Servicio</span><span class="text-[10px] text-emerald-600 font-mono">Completado</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i></div></div>
+          <div class="rounded-xl bg-white border border-hairline"><div class="section-item flex items-center gap-2.5 p-2.5"><span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span><div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Trabajo Realizado</span><span class="text-[10px] text-emerald-600 font-mono">Completado</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i></div></div>
+          <div class="rounded-xl bg-white border border-hairline"><div class="section-item flex items-center gap-2.5 p-2.5"><span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><i data-lucide="check" class="w-4 h-4"></i></span><div class="flex-1 min-w-0"><span class="block text-xs font-medium text-ink-soft">Inspección Técnica</span><span class="text-[10px] text-emerald-600 font-mono">Completado</span></div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-mute"></i></div></div>
+          <div class="rounded-xl bg-white border border-teal-brand/40 shadow-sm">
+            <div class="section-item flex items-center gap-2.5 p-2.5"><span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center text-xs font-bold font-mono shrink-0">4</span><div class="flex-1 min-w-0"><span class="block text-xs font-bold text-slate-900">Diagnóstico y Envío</span><span class="text-[10px] text-teal-deep font-mono">En curso</span></div><i data-lucide="chevron-down" class="w-4 h-4 text-ink-mute"></i></div>
+            <div class="border-t border-hairline px-1.5 pb-1.5 pt-1.5 space-y-0.5">
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-teal-mist"><i data-lucide="circle-dot" class="w-4 h-4 text-teal-brand shrink-0"></i><span class="text-xs text-slate-900 font-bold">4.1 Diagnóstico + Recomendaciones</span></div>
+              <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50"><i data-lucide="circle" class="w-4 h-4 text-slate-300 shrink-0"></i><span class="text-xs text-ink-soft">4.2 Revisión + Vista Previa PDF</span></div>
+            </div>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex items-center gap-3 p-5 border-b border-hairline">
+          <button class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center border border-hairline transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+          <div class="flex-1 min-w-0">
+            <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Sección 4 · Subpaso 1 de 2</p>
+            <h2 class="text-lg font-bold font-display text-slate-900 truncate">Diagnóstico y Recomendaciones</h2>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-5">
+          <div>
+            <label class="text-xs text-slate-700 font-bold mb-1.5 block">Diagnóstico del Equipo UPS</label>
+            <textarea rows="4" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-brand/40 resize-y" placeholder="Describe el diagnóstico...">El equipo UPS se encontró en óptimo estado de operación. Se realizó limpieza con brocha y sopleteo del transformador sin corte en la sala de servidores.</textarea>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs text-slate-700 font-bold">Recomendaciones</label>
+              <button class="px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg cursor-pointer hover:bg-slate-200">Restaurar defaults</button>
+            </div>
+            <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div class="flex items-start gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-hairline">
+                <span class="text-xs font-bold text-ink-mute font-mono shrink-0 mt-1">1.</span>
+                <textarea rows="2" class="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-brand/40 bg-white resize-none">Se recomienda instalar sistema de Tablero de Transferencia Micro P.O.D…</textarea>
+                <button class="text-rose-400 hover:text-rose-600 shrink-0 mt-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+              <div class="flex items-start gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-hairline">
+                <span class="text-xs font-bold text-ink-mute font-mono shrink-0 mt-1">2.</span>
+                <textarea rows="2" class="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-brand/40 bg-white resize-none">El equipo está diseñado para 220 VAC conectado a tierra…</textarea>
+                <button class="text-rose-400 hover:text-rose-600 shrink-0 mt-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+              <button class="w-full py-2.5 border-2 border-dashed border-slate-200 rounded-lg text-xs text-ink-mute font-bold hover:border-teal-brand hover:text-teal-brand transition-all">+ Agregar recomendación</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 p-4 border-t border-hairline bg-canvas/50">
+          <button class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5"><i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior</button>
+          <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5"><i data-lucide="save" class="w-4 h-4"></i> Guardar borrador</button>
+          <button class="px-5 py-2.5 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex items-center gap-1.5">4.2 Revisión + PDF <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpaso 4.2 Revisión Final + Vista Previa PDF + Enviar -->
+    <div class="mt-4 rounded-2xl border border-hairline bg-white shadow-sm overflow-hidden">
+      <div class="flex items-center gap-3 p-5 border-b border-hairline">
+        <span class="w-9 h-9 rounded-xl bg-teal-mist text-teal-deep flex items-center justify-center font-mono font-bold">4.2</span>
+        <div class="flex-1"><p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Subpaso 2 de 2</p><h2 class="text-lg font-bold font-display text-slate-900">Revisión Final y Vista Previa PDF</h2></div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold font-mono text-emerald-700"><i data-lucide="check-circle-2" class="w-4 h-4"></i>Listo para enviar</span>
+      </div>
+      <div class="p-5 grid lg:grid-cols-3 gap-5">
+        <!-- Checklist estado -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold text-ink-mute font-mono uppercase tracking-wider">Estado del Informe</h4>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Tipo: Preventivo</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Cabecera completa</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Antecedentes (842 chars)</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Acciones: 12/24</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Pasos: 6</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Características (9)</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-amber-50 border-amber-200 text-amber-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-amber-400 text-slate-900 shrink-0 font-bold">!</span><span class="font-bold flex-1">Fotos: 8/16</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Mediciones</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs"><span class="w-5 h-5 rounded flex items-center justify-center bg-emerald-500 text-white shrink-0"><i data-lucide="check" class="w-3 h-3"></i></span><span class="font-bold flex-1">Diagnóstico + Reco.</span></div>
+          <div class="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">Faltan 8 fotos. Puedes enviar igual o regresar al paso 3.2.</div>
+        </div>
+
+        <!-- Vista previa PDF -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl border border-hairline shadow-sm overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-canvas border-b border-hairline overflow-x-auto">
+              <i data-lucide="file-text" class="w-4 h-4 text-ink-soft"></i>
+              <span class="text-xs font-bold text-ink-soft font-mono uppercase">Vista Previa PDF</span>
+              <div class="ml-auto flex gap-1">
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-mist border border-teal-brand/30 text-teal-deep">Portada</button>
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-hairline text-slate-500 hover:bg-slate-50">Informe</button>
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-hairline text-slate-500 hover:bg-slate-50">Caract.</button>
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-hairline text-slate-500 hover:bg-slate-50">Med.</button>
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-hairline text-slate-500 hover:bg-slate-50">Fotos</button>
+                <button class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-hairline text-slate-500 hover:bg-slate-50">Diag.</button>
+              </div>
+            </div>
+            <div class="bg-canvas p-6 flex justify-center">
+              <div class="bg-white shadow-lg w-[480px] aspect-[1/1.414] p-8 text-xs text-slate-700">
+                <div class="text-center border-b-2 border-teal-brand pb-3 mb-4">
+                  <h3 class="font-display font-bold text-lg text-slate-900">INFORME TÉCNICO MAFORT</h3>
+                  <p class="text-[10px] font-mono text-ink-mute uppercase">INF-2026-0142 · Hoja de Servicio HS-2026-0142</p>
+                </div>
+                <p><strong>Cliente:</strong> Banco Nacional S.A.</p>
+                <p><strong>RUC:</strong> 20100200300</p>
+                <p><strong>Sede:</strong> Av. Javier Prado 1234, San Isidro</p>
+                <p><strong>Equipo:</strong> UPS 40 KVA · APC Smart-UPS SRT6KRXI</p>
+                <p><strong>Serie:</strong> SN-2026-0142-ABC</p>
+                <p><strong>Fecha:</strong> 20/08/2026 · 09:00 — 11:30</p>
+                <p><strong>Técnicos:</strong> Juan Córdova / Gino Murillo</p>
+                <p class="mt-3 text-[10px] font-mono text-ink-mute">— Vista previa truncada (mockup) —</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CTA Enviar (footer táctil del paso final) -->
+          <div class="flex items-center justify-between gap-3 mt-4 p-4 bg-canvas rounded-xl border border-hairline">
+            <button class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center gap-1.5"><i data-lucide="chevron-left" class="w-4 h-4"></i> Anterior</button>
+            <button class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-bold rounded-xl transition-all flex items-center gap-1.5"><i data-lucide="save" class="w-4 h-4"></i> Guardar borrador</button>
+            <button class="px-6 py-3 bg-teal-brand hover:bg-teal-deep text-white text-base font-bold rounded-xl shadow-lg shadow-teal-brand/30 transition-all active:scale-95 flex items-center gap-2">
+              <i data-lucide="send" class="w-5 h-5"></i> Enviar Informe
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- ESCENARIO EXTRA: ESTADOS (vacío, loading, offline) -->
+  <!-- ========================================================== -->
+  <section id="estados" class="scenario pt-6">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
+      <div>
+        <h2 class="text-lg font-bold font-display text-slate-900">Estados especiales</h2>
+        <p class="text-xs text-ink-mute font-mono">Vacío · Cargando · Offline · Envío paso a paso (sin window.alert, patrón ToastModal §5)</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Estado vacío (sin OT seleccionada) -->
+      <div class="rounded-2xl border border-hairline bg-white p-8 shadow-sm text-center">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3"><i data-lucide="file-check" class="w-8 h-8 text-slate-400"></i></div>
+        <h3 class="font-bold text-slate-900 text-base">Sin informe en curso</h3>
+        <p class="text-sm text-ink-soft mt-1">Selecciona una OT del listado para iniciar el informe técnico.</p>
+        <button class="mt-4 px-4 py-2 bg-teal-brand hover:bg-teal-deep text-white text-sm font-bold rounded-xl transition-all active:scale-95">Ver mis OTs</button>
+      </div>
+
+      <!-- Cargando (skeleton) -->
+      <div class="rounded-2xl border border-hairline bg-white p-6 shadow-sm" aria-busy="true" aria-label="Cargando informe">
+        <div class="flex items-center gap-2 mb-4"><div class="w-9 h-9 rounded-xl bg-slate-200 animate-pulse"></div><div class="flex-1"><div class="h-4 bg-slate-200 rounded w-2/3 animate-pulse mb-2"></div><div class="h-3 bg-slate-200 rounded w-1/3 animate-pulse"></div></div></div>
+        <div class="grid grid-cols-2 gap-3">{``}<div class="h-10 bg-slate-200 rounded-lg animate-pulse"></div><div class="h-10 bg-slate-200 rounded-lg animate-pulse"></div><div class="h-10 bg-slate-200 rounded-lg animate-pulse"></div><div class="h-10 bg-slate-200 rounded-lg animate-pulse"></div></div>
+      </div>
+
+      <!-- Offline: chips de cola de sincronización (enlace con plan PWA) -->
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200/80 rounded-xl text-xs font-bold font-mono text-rose-700"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Offline</span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 border border-amber-200/80 rounded-xl text-xs font-bold font-mono text-amber-700">3 reportes en cola · último sync hace 12 min</span>
+        </div>
+        <h3 class="font-bold text-slate-900 text-base">Trabajando sin conexión</h3>
+        <p class="text-sm text-ink-soft mt-1">El informe se guarda en este dispositivo y se envía automáticamente al reconectar (ver plan PWA <code class="font-mono text-xs">2026-08-07-pwa-tecnico-offline.md</code>).</p>
+      </div>
+
+      <!-- ToastModal éxito (patrón §5) -->
+      <div class="rounded-2xl border border-hairline bg-white p-6 shadow-sm">
+        <p class="text-[10px] font-bold font-mono uppercase tracking-wider text-ink-mute mb-3">Notificación canónica (ToastModal) tras enviar</p>
+        <div class="bg-white border border-hairline w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3">
+          <div class="flex items-center gap-3 pb-2 border-b border-hairline">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-emerald-50 border border-emerald-100 text-emerald-500"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+            <div>
+              <h4 class="font-bold text-slate-900 text-sm">Informe Enviado</h4>
+              <p class="text-[10px] text-ink-mute uppercase font-mono tracking-wide">GESTIA HUB & CONTROL DE CALIDAD</p>
+            </div>
+          </div>
+          <p class="text-xs text-ink-soft leading-relaxed">El informe OT-2026-0142 se envió a revisión. La OT pasó a "Sometido a Revisión".</p>
+          <div class="flex items-center justify-end pt-2">
+            <button class="px-5 py-2 rounded-xl text-xs font-bold bg-teal-brand hover:bg-teal-deep text-white shadow-sm transition-all active:scale-95">Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== -->
+  <!-- RESUMEN DE DECISIONES PARA VALIDAR -->
+  <!-- ========================================================== -->
+  <section class="scenario pt-6">
+    <div class="rounded-2xl border border-teal-brand/30 bg-teal-mist/40 p-6">
+      <h2 class="text-lg font-bold font-display text-slate-900 mb-3">Puntos a validar antes de implementar</h2>
+      <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-700">
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Agrupación en 4 secciones:</strong> ¿OK como está, o prefieres 3 / 5?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Subpasos expandibles</strong> (acordeón) vs siempre visibles: ¿táctil?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Barra de progreso global</strong> en sidebar: ¿la quieres?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Botón "Saltar paso"</strong> actual: ¿lo conservas o lo quitas?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Vista previa del subpaso siguiente</strong> (peek): ¿útil o ruidoso?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Indicador "Precargado del contrato"</strong> en paso 6: ¿lo mantenemos destacado?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Bandeja "Mis OTs"</strong>: ¿la homologamos también a tema claro (hoy es <code class="font-mono">bg-slate-900</code>) o la dejamos oscura?</span></div>
+        <div class="flex gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-teal-brand mt-0.5 shrink-0"></i><span><strong>Ficha de OT</strong> (detalle + "Llenar Informe Técnico"): ¿la incluimos en este rediseño o solo el wizard?</span></div>
+      </div>
+      <p class="text-xs text-ink-mute mt-4 font-mono">Una vez aprobado el mockup genero el plan en <code>Documentacion/planes/UX-UI/</code> y se implementa incrementalmente (skill incremental-implementation + TDD).</p>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs text-ink-mute font-mono py-4">
+    Mockup de validación · Gestia · Wizard Informe Técnico · <span class="text-teal-brand">z-ai/glm-5.2</span>
+  </footer>
+
+</div>
+
+<script>
+  lucide.createIcons();
+  // Acordeón: mostrar/ocultar subpasos al click (demo)
+  document.querySelectorAll('.section-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const nav = el.closest('nav');
+      // demo: togglea el chevron visual, no altera layout del mockup
+      el.style.opacity = '0.85';
+      setTimeout(() => el.style.opacity = '1', 150);
+    });
+  });
+</script>
+</body>
+</html>

@@ -78,9 +78,13 @@ test.describe('Regresión: Precarga de características del equipo en el Wizard 
     await btnInforme.click();
 
     // 5. Navegar al paso 6 (Características los del Equipo) en el wizard
-    const paso6 = page.getByRole('button', { name: /Caracter.sticas del Equipo/i }).first();
-    await expect(paso6).toBeVisible({ timeout: 15_000 });
-    await paso6.click();
+    // En el rediseño, la sección 3 (Inspección Técnica) está colapsada; avanzamos
+    // con "Siguiente" desde el paso 1 hasta el 6.
+    for (let i = 0; i < 5; i++) {
+      await page.getByRole('button', { name: /Siguiente/i }).click();
+      await page.waitForTimeout(120);
+    }
+    await expect(page.getByText(/Sección 3 · Subpaso 1 de 3/i)).toBeVisible({ timeout: 10_000 });
 
     // 6. Verificar que los valores precargados provienen del equipo registrado
     const inputs = page.locator('input');
