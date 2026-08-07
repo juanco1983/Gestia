@@ -94,8 +94,8 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ cards, onNavigateToT
                 : ''
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-2 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                   {getCardIcon(card.id, iconColor)}
                 </div>
@@ -105,7 +105,7 @@ export const KpiCardsGrid: React.FC<KpiCardsGridProps> = ({ cards, onNavigateToT
               </div>
 
               {card.badge && (
-                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border whitespace-nowrap shrink-0 ${getBadgeClass(card.badge.color)}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border whitespace-nowrap shrink-0 ml-2 ${getBadgeClass(card.badge.color)}`}>
                   {card.badge.text}
                 </span>
               )}
