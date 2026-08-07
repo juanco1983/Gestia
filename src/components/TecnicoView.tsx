@@ -182,12 +182,31 @@ export default function TecnicoView({
 
   const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
   const [clientEquipos, setClientEquipos] = useState<Equipo[]>([]);
+  const [wizardEquipo, setWizardEquipo] = useState<Equipo | undefined>(undefined);
 
   const otEquipoIds = useMemo(() => {
     return selectedOt?.equipoId
       ? selectedOt.equipoId.split(',').map(x => x.trim()).filter(Boolean)
       : [];
   }, [selectedOt?.equipoId]);
+
+  // Resuelve el equipo real (marca/modelo/serie/especificaciones) para precargarlo
+  // en el informe. No depende del prop `equipos` (que excluye los anidados) ni del
+  // endpoint inexistente /api/clients/:id/equipos.
+  useEffect(() => {
+    const id = (selectedEquipoId || otEquipoIds[0] || '').trim();
+    setWizardEquipo(undefined);
+    if (!id) return;
+    const fromProp = equipos.find(e => e.id === id) || clientEquipos.find(e => e.id === id);
+    if (fromProp) {
+      setWizardEquipo(fromProp);
+      return;
+    }
+    fetch(`/api/equipos/${encodeURIComponent(id)}`)
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: Equipo) => setWizardEquipo(data))
+      .catch(err => console.warn('Error resolviendo equipo para el informe:', err));
+  }, [selectedEquipoId, otEquipoIds, equipos, clientEquipos]);
 
   // Fetch client equipments for display and auto-select first
   useEffect(() => {
@@ -1114,6 +1133,7 @@ export default function TecnicoView({
                 ot={selectedOt}
                 client={clientForWizard}
                 equipoId={selectedEquipoId || undefined}
+                equipo={wizardEquipo}
                 initialReport={existingReportForWizard}
                 onComplete={handleWizardComplete}
                 onCancel={() => setIsEditingReport(false)}
