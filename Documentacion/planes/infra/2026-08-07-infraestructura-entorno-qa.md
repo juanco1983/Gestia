@@ -74,3 +74,15 @@ flowchart TD
 2. **Terraform**: La infraestructura de QA se despliega sin errores vía `terraform apply`.
 3. **App Deploy**: Al realizar un push a `qa`, GitHub Actions compila el paquete y actualiza `gestia-backend-qa` en AWS.
 4. **Health Check**: El endpoint `/health` en `gestia-backend-qa` responde HTTP 200 OK con conexión activa a Postgres QA.
+
+---
+
+## 🏛️ 6. Mejores Prácticas AWS: Estrategia Multi-Cuenta (AWS Organizations)
+
+> **Recomendación de Arquitectura de Seguridad**: En AWS Well-Architected Framework, separar entornos por **Cuentas AWS Independientes** (`Dev Account`, `QA Account`, `Prod Account`) es la mejor práctica recomendada frente a usar una única cuenta con nombres/etiquetas.
+
+### Beneficios del Aislamiento por Cuentas:
+1. **Radio de Impacto Cero (Blast Radius)**: Un error en un despliegue o comando de destrucción (`terraform destroy` o `db:wipe`) en `dev` o `qa` **jamás** afectará la infraestructura ni los datos de Producción.
+2. **Límites de Servicio Aislados (Service Quotas)**: Evita que el consumo intensivo de APIs, BD o vCPUs en QA bloquee las cuotas de Producción.
+3. **Facturación Transparente**: Facturación unificada vía **AWS Organizations (Consolidated Billing)** manteniendo la visibilidad exacta de costos por cada cuenta/entorno.
+4. **Seguridad IAM estricta**: Los roles OIDC de GitHub Actions solo pueden asumir la cuenta correspondiente al branch (`dev` ➔ Cuenta Dev, `qa` ➔ Cuenta QA, `main` ➔ Cuenta Prod).
