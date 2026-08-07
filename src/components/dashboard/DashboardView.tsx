@@ -259,7 +259,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         value: otsActivas.length,
         percentageChange: otsActivas.length > 0 ? `+${otsActivas.length}` : '0',
         subtext: `De ${totalOts} totales`,
-        badge: { text: 'Programadas', color: 'blue' },
         targetTab: 'Monitoreo',
         sparklineData: [0, 0, 0, 0, 0, 0, otsActivas.length],
         color: '#3B82F6'
@@ -270,7 +269,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         value: enEjecucionCount,
         percentageChange: enEjecucionCount > 0 ? `+${enEjecucionCount}` : '0',
         subtext: 'Técnicos en campo',
-        badge: { text: 'En Campo', color: 'emerald' },
         targetTab: 'Monitoreo',
         sparklineData: [0, 0, 0, 0, 0, 0, enEjecucionCount],
         color: '#00B594'
@@ -280,8 +278,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         title: 'Informes Pendientes',
         value: informesPendientes.length,
         percentageChange: informesPendientes.length > 0 ? `+${informesPendientes.length}` : '0',
-        subtext: 'En revisión',
-        badge: informesPendientes.length > 5 ? { text: 'Urgente', color: 'rose' } : { text: 'En revisión', color: 'amber' },
+        subtext: 'En revisión supervisor',
         targetTab: 'Supervisor',
         sparklineData: [0, 0, 0, 0, 0, 0, informesPendientes.length],
         color: '#F59E0B'
@@ -292,7 +289,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         value: ejecutadasDelMes.length,
         percentageChange: ejecutadasDelMes.length > 0 ? `+${ejecutadasDelMes.length}` : '0',
         subtext: 'Este mes',
-        badge: { text: 'Cerradas', color: 'blue' },
         targetTab: 'GestionOTs',
         sparklineData: [0, 0, 0, 0, 0, 0, ejecutadasDelMes.length],
         color: '#8B5CF6'
