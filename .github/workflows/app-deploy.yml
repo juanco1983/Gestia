@@ -2,7 +2,7 @@ name: "🚀 App Deploy (EB)"
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev, qa, main]
     paths-ignore:
       - 'infra/**'
 
@@ -36,6 +36,8 @@ jobs:
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
             echo "eb_env=gestia-backend-prod" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "qa" ]]; then
+            echo "eb_env=gestia-backend-qa" >> $GITHUB_OUTPUT
           else
             echo "eb_env=gestia-backend-dev" >> $GITHUB_OUTPUT
           fi
