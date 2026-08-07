@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { OT, Client, ServiceType, TechnicalReport, EquipmentType } from '../types';
+import { OT, Client, ServiceType, TechnicalReport, EquipmentType, Equipo } from '../types';
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
 import { ALL_ACCIONES, generateDefaultReport, getTechnicalSvg, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
@@ -9,10 +9,31 @@ interface WizardInformeProps {
   ot: OT;
   client: Client;
   equipoId?: string;
+  equipo?: Equipo;
   initialReport?: TechnicalReport;
   onComplete: (report: TechnicalReport) => void;
   onDraftChange?: (report: Partial<TechnicalReport>) => void;
   onCancel: () => void;
+}
+
+function buildCaracteristicasFromEquipo(equipo: Equipo | undefined, base: Record<string, string>): Record<string, string> {
+  if (!equipo) return base;
+  const merged: Record<string, string> = { ...base };
+  if (equipo.codigo) merged['CÓDIGO'] = equipo.codigo;
+  if (equipo.tipo) merged['TIPO'] = equipo.tipo;
+  if (equipo.marca) merged['MARCA'] = equipo.marca;
+  if (equipo.modelo) merged['MODELO'] = equipo.modelo;
+  if (equipo.serie) merged['SERIE'] = equipo.serie;
+  if (equipo.potenciaKva != null) merged['POTENCIA'] = `${equipo.potenciaKva} KVA`;
+  if (equipo.ubicacion) merged['UBICACIÓN'] = equipo.ubicacion;
+  if (equipo.estado) merged['ESTADO'] = equipo.estado;
+  if (equipo.especificaciones && typeof equipo.especificaciones === 'object') {
+    for (const [key, val] of Object.entries(equipo.especificaciones)) {
+      if (val === null || val === undefined || val === '') continue;
+      merged[key.toUpperCase()] = String(val);
+    }
+  }
+  return merged;
 }
 
 interface WizardStep {
@@ -33,11 +54,17 @@ const STEPS: WizardStep[] = [
   { num: 10, label: 'Revisión Final y Vista Previa PDF' },
 ];
 
-export default function WizardInforme({ ot, client, equipoId, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
+export default function WizardInforme({ ot, client, equipoId, equipo, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
   const defaults = useMemo(() => {
     if (initialReport) return initialReport;
     return generateDefaultReport(ot, client);
   }, [initialReport, ot, client]);
+
+  const initialCaracteristicas = useMemo(() => {
+    if (initialReport) return initialReport.caracteristicas ?? {};
+    const base = defaults.caracteristicas ?? {};
+    return buildCaracteristicasFromEquipo(equipo, base);
+  }, [initialReport, defaults.caracteristicas, equipo]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -54,7 +81,7 @@ export default function WizardInforme({ ot, client, equipoId, initialReport, onC
   const [antecedentes, setAntecedentes] = useState(defaults.antecedentes || '');
   const [accionesRealizadas, setAccionesRealizadas] = useState<string[]>(defaults.accionesRealizadas ?? ALL_ACCIONES);
   const [pasosLista, setPasosLista] = useState<{ numero: number; descripcion: string }[]>(defaults.pasosLista ?? []);
-  const [caracteristicas, setCaracteristicas] = useState<Record<string, string>>(defaults.caracteristicas ?? {});
+  const [caracteristicas, setCaracteristicas] = useState<Record<string, string>>(initialCaracteristicas);
   const [medicionesEntrada, setMedicionesEntrada] = useState(defaults.medicionesEntrada || { lnVoltaje: ['220','220','220'] as [string,string,string], lnIntensidad: ['0','0','0'] as [string,string,string], frecuencia: ['60.0','60.0','60.0'] as [string,string,string], llVoltaje: ['380','380','380'] as [string,string,string] });
   const [medicionesSalida, setMedicionesSalida] = useState(defaults.medicionesSalida || { lnVoltaje: ['220','220','220'] as [string,string,string], lnIntensidad: ['0','0','0'] as [string,string,string], frecuencia: ['60.0','60.0','60.0'] as [string,string,string], llVoltaje: ['380','380','380'] as [string,string,string] });
   const [diagnostico, setDiagnostico] = useState(defaults.observacionesDiagnostico || '');
