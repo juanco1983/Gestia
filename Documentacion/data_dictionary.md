@@ -123,12 +123,12 @@ persista como `Json?`.
 | `indicadoresBateria` | Json | shape | Sí | `{nivelCarga,temperaturaC,estadoCeldas,bypassActivo}` |
 | `observacionesDiagnostico` | String | string | Sí | Texto técnico |
 | `comentariosAdicionales` | String | string | Sí | Texto libre |
-| `firmaCliente` | String? | string? | No | Base64 firma |
+| `firmaCliente` | String? | string? | No | Ruta proxy S3 (`/api/photos/reports/OT-*/...-firma.jpg`) |
 | `correccionesSupervisor` | String? | string? | No | Feedback supervisor |
 | `creadoEn` | String | string | Sí | Auditoría |
 | `modificadoEn` | String | string | Sí | Auditoría |
 | `offlineDirty` | Boolean? | boolean? | No | Flag sincronización |
-| `fotos` | Json (array) | string[] | Sí | Array Base64 |
+| `fotos` | Json (array) | string[] | Sí | Rutas proxy S3 (`/api/photos/reports/OT-*/...`) |
 | `informeN` | String? | string? | No | N° informe (PDF) |
 | `hojaServicioN` | String? | string? | No | N° hoja servicio (PDF) |
 | `asunto` | String? | string? | No | Asunto (PDF) |
