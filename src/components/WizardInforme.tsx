@@ -928,61 +928,39 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
 
     return (
       <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="lg:w-72 shrink-0 space-y-2">
-            <h4 className="text-[10px] font-bold text-slate-500 font-mono uppercase tracking-wider">Estado del Informe</h4>
-            {[
-              { label: 'Tipo de Servicio', ok: true, detail: template.display },
-              { label: 'Cabecera completa', ok: !!informeN && !!hojaServicioN },
-              { label: 'Antecedentes', ok: antecedentes.length > 10 },
-              { label: `Acciones: ${accionesRealizadas.length}/24`, ok: accionesRealizadas.length > 0 },
-              { label: `Pasos: ${pasosLista.length}`, ok: pasosLista.length > 0 },
-              { label: 'Características', ok: Object.keys(caracteristicas).length > 5 },
-              { label: `Fotos: ${filledPhotos}/${totalPhotoSlots}`, ok: filledPhotos >= totalPhotoSlots },
-              { label: 'Mediciones', ok: true },
-              { label: 'Diagnóstico + Reco.', ok: diagnostico.length > 5 || recomendaciones.length > 0 },
-            ].map((item, idx) => (
-              <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] ${
-                item.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
-              }`}>
-                <span className={`w-4 h-4 rounded flex items-center justify-center text-[7px] font-bold shrink-0 ${
-                  item.ok ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-slate-900'
-                }`}>
-                  {item.ok ? <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg> : '!'}
-                </span>
-                <span className="font-bold flex-1">{item.label}</span>
-              </div>
-            ))}
-            {totalMissingPhotos > 0 && (
-              <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-[9px] text-amber-800">
-                Faltan {totalMissingPhotos} fotos. Puedes enviar igual o regresar al paso 7.
-              </div>
-            )}
+        {totalMissingPhotos > 0 && (
+          <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+            <span><strong>Aviso de Fotografías:</strong> Faltan {totalMissingPhotos} fotos por adjuntar. Puedes enviar el informe de todas formas o regresar a completarlas.</span>
+            <button
+              type="button"
+              onClick={() => setCurrentStep(7)}
+              className="text-xs font-bold text-amber-900 underline hover:text-amber-700 ml-4 cursor-pointer shrink-0"
+            >
+              Completar Fotos
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center gap-1 px-3 py-2 bg-slate-50 border-b border-slate-200 overflow-x-auto text-nowrap">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 18 8"/></svg>
-                <span className="text-[8px] font-bold text-slate-500 font-mono uppercase">Vista Previa</span>
-                <div className="ml-auto flex gap-1">
-                  {pdfPages.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setPdfPreviewPage(p.id)}
-                      className={`px-2 py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
-                        pdfPreviewPage === p.id ? 'bg-teal-50 border border-teal-200 text-teal-700' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-slate-100 p-3 flex justify-center overflow-auto max-h-[600px]">
-                <DocumentFormat report={compiledReport} ot={ot} client={client} />
-              </div>
+        )}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 overflow-x-auto text-nowrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 18 8"/></svg>
+            <span className="text-xs font-black text-slate-700 font-mono uppercase tracking-wider">Vista Previa del Documento</span>
+            <div className="ml-auto flex gap-1">
+              {pdfPages.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPdfPreviewPage(p.id)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    pdfPreviewPage === p.id ? 'bg-teal-50 border border-teal-200 text-teal-700' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
+          </div>
+          <div className="bg-slate-100 p-4 flex justify-center overflow-auto max-h-[750px]">
+            <DocumentFormat report={compiledReport} ot={ot} client={client} />
           </div>
         </div>
       </div>
