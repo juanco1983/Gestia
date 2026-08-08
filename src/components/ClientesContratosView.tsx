@@ -34,26 +34,111 @@ const DEFAULT_PROVINCIAS = [
   { id: '1501', nombre: 'Lima', paisId: 'PER' },
   { id: '0701', nombre: 'Callao', paisId: 'PER' },
   { id: '0401', nombre: 'Arequipa', paisId: 'PER' },
-  { id: '1301', nombre: 'Trujillo', paisId: 'PER' }
+  { id: '1301', nombre: 'Trujillo', paisId: 'PER' },
+  { id: '1401', nombre: 'Chiclayo', paisId: 'PER' },
+  { id: '2001', nombre: 'Piura', paisId: 'PER' },
+  { id: '0801', nombre: 'Cusco', paisId: 'PER' },
+  { id: '1201', nombre: 'Huancayo', paisId: 'PER' },
+  { id: '1101', nombre: 'Ica', paisId: 'PER' },
+  { id: '2301', nombre: 'Tacna', paisId: 'PER' },
+  { id: '0601', nombre: 'Cajamarca', paisId: 'PER' },
+  { id: '1601', nombre: 'Maynas (Iquitos)', paisId: 'PER' },
+  { id: '2501', nombre: 'Coronel Portillo (Pucallpa)', paisId: 'PER' },
+  { id: '0218', nombre: 'Santa (Chimbote)', paisId: 'PER' },
+  { id: '2101', nombre: 'Puno', paisId: 'PER' },
+  { id: '1001', nombre: 'Huánuco', paisId: 'PER' },
+  { id: '0501', nombre: 'Huamanga (Ayacucho)', paisId: 'PER' },
+  { id: '2209', nombre: 'San Martín (Tarapoto)', paisId: 'PER' },
+  { id: '0201', nombre: 'Huaraz', paisId: 'PER' },
+  { id: '2401', nombre: 'Tumbes', paisId: 'PER' },
+  { id: '1801', nombre: 'Mariscal Nieto (Moquegua)', paisId: 'PER' },
+  { id: '1102', nombre: 'Chincha', paisId: 'PER' },
+  { id: '1505', nombre: 'Cañete', paisId: 'PER' },
+  { id: '1506', nombre: 'Huaral', paisId: 'PER' },
+  { id: '1502', nombre: 'Barranca', paisId: 'PER' }
 ];
 
 const DEFAULT_DISTRITOS = [
-  { id: '150101', nombre: 'Lima Cercado', provinciaId: '1501' },
-  { id: '150103', nombre: 'Ate', provinciaId: '1501' },
-  { id: '150140', nombre: 'Santiago de Surco', provinciaId: '1501' },
-  { id: '150115', nombre: 'La Victoria', provinciaId: '1501' },
-  { id: '150131', nombre: 'San Isidro', provinciaId: '1501' },
+  // Lima
+  { id: '150101', nombre: 'Lima (Cercado)', provinciaId: '1501' },
   { id: '150122', nombre: 'Miraflores', provinciaId: '1501' },
+  { id: '150131', nombre: 'San Isidro', provinciaId: '1501' },
+  { id: '150140', nombre: 'Santiago de Surco', provinciaId: '1501' },
   { id: '150130', nombre: 'San Borja', provinciaId: '1501' },
-  { id: '150116', nombre: 'Lince', provinciaId: '1501' },
+  { id: '150114', nombre: 'La Molina', provinciaId: '1501' },
   { id: '150121', nombre: 'Magdalena del Mar', provinciaId: '1501' },
   { id: '150136', nombre: 'San Miguel', provinciaId: '1501' },
-  { id: '150117', nombre: 'Los Olivos', provinciaId: '1501' },
+  { id: '150113', nombre: 'Jesús María', provinciaId: '1501' },
+  { id: '150116', nombre: 'Lince', provinciaId: '1501' },
+  { id: '150104', nombre: 'Barranco', provinciaId: '1501' },
   { id: '150108', nombre: 'Chorrillos', provinciaId: '1501' },
   { id: '150128', nombre: 'Pueblo Libre', provinciaId: '1501' },
-  { id: '070101', nombre: 'Callao', provinciaId: '0701' },
+  { id: '150141', nombre: 'Surquillo', provinciaId: '1501' },
+  { id: '150115', nombre: 'La Victoria', provinciaId: '1501' },
+  { id: '150105', nombre: 'Breña', provinciaId: '1501' },
+  { id: '150129', nombre: 'Rímac', provinciaId: '1501' },
+  { id: '150132', nombre: 'San Juan de Lurigancho', provinciaId: '1501' },
+  { id: '150133', nombre: 'San Juan de Miraflores', provinciaId: '1501' },
+  { id: '150138', nombre: 'Santa Anita', provinciaId: '1501' },
+  { id: '150103', nombre: 'Ate', provinciaId: '1501' },
+  { id: '150110', nombre: 'Comas', provinciaId: '1501' },
+  { id: '150117', nombre: 'Los Olivos', provinciaId: '1501' },
+  { id: '150112', nombre: 'Independencia', provinciaId: '1501' },
+  { id: '150135', nombre: 'San Martín de Porres', provinciaId: '1501' },
+  { id: '150142', nombre: 'Villa El Salvador', provinciaId: '1501' },
+  { id: '150143', nombre: 'Villa María del Triunfo', provinciaId: '1501' },
+  { id: '150107', nombre: 'Chaclacayo', provinciaId: '1501' },
+  { id: '150109', nombre: 'Cieneguilla', provinciaId: '1501' },
+  { id: '150111', nombre: 'El Agustino', provinciaId: '1501' },
+  { id: '150119', nombre: 'Lurín', provinciaId: '1501' },
+  { id: '150123', nombre: 'Pachacámac', provinciaId: '1501' },
+  { id: '150124', nombre: 'Pucusana', provinciaId: '1501' },
+  { id: '150125', nombre: 'Puente Piedra', provinciaId: '1501' },
+  { id: '150126', nombre: 'Punta Hermosa', provinciaId: '1501' },
+  { id: '150127', nombre: 'Punta Negra', provinciaId: '1501' },
+  { id: '150134', nombre: 'San Bartolo', provinciaId: '1501' },
+  { id: '150137', nombre: 'Santa Anita', provinciaId: '1501' },
+  { id: '150139', nombre: 'Santa María del Mar', provinciaId: '1501' },
+  { id: '150144', nombre: 'Santa Rosa', provinciaId: '1501' },
+  { id: '150102', nombre: 'Ancón', provinciaId: '1501' },
+  { id: '150106', nombre: 'Carabayllo', provinciaId: '1501' },
+  // Callao
+  { id: '070101', nombre: 'Callao (Cercado)', provinciaId: '0701' },
   { id: '070102', nombre: 'Bellavista', provinciaId: '0701' },
-  { id: '070104', nombre: 'La Perla', provinciaId: '0701' }
+  { id: '070103', nombre: 'Carmen de la Legua Reynoso', provinciaId: '0701' },
+  { id: '070104', nombre: 'La Perla', provinciaId: '0701' },
+  { id: '070105', nombre: 'La Punta', provinciaId: '0701' },
+  { id: '070106', nombre: 'Ventanilla', provinciaId: '0701' },
+  { id: '070107', nombre: 'Mi Perú', provinciaId: '0701' },
+  // Arequipa
+  { id: '040101', nombre: 'Arequipa', provinciaId: '0401' },
+  { id: '040102', nombre: 'Alto Selva Alegre', provinciaId: '0401' },
+  { id: '040103', nombre: 'Cayma', provinciaId: '0401' },
+  { id: '040104', nombre: 'Cerro Colorado', provinciaId: '0401' },
+  { id: '040105', nombre: 'Characato', provinciaId: '0401' },
+  { id: '040107', nombre: 'Jacobo Hunter', provinciaId: '0401' },
+  { id: '040108', nombre: 'José Luis Bustamante y Rivero', provinciaId: '0401' },
+  { id: '040109', nombre: 'Mariano Melgar', provinciaId: '0401' },
+  { id: '040110', nombre: 'Miraflores (Arequipa)', provinciaId: '0401' },
+  { id: '040112', nombre: 'Paucarpata', provinciaId: '0401' },
+  { id: '040113', nombre: 'Pocsi', provinciaId: '0401' },
+  { id: '040114', nombre: 'Polobaya', provinciaId: '0401' },
+  { id: '040115', nombre: 'Quequeña', provinciaId: '0401' },
+  { id: '040116', nombre: 'Sabandia', provinciaId: '0401' },
+  { id: '040117', nombre: 'Sachaca', provinciaId: '0401' },
+  { id: '040119', nombre: 'Socabaya', provinciaId: '0401' },
+  { id: '040120', nombre: 'Tiabaya', provinciaId: '0401' },
+  { id: '040126', nombre: 'Yanahuara', provinciaId: '0401' },
+  // Trujillo
+  { id: '130101', nombre: 'Trujillo', provinciaId: '1301' },
+  { id: '130102', nombre: 'El Porvenir', provinciaId: '1301' },
+  { id: '130103', nombre: 'Florencia de Mora', provinciaId: '1301' },
+  { id: '130104', nombre: 'Huanchaco', provinciaId: '1301' },
+  { id: '130105', nombre: 'La Esperanza', provinciaId: '1301' },
+  { id: '130106', nombre: 'Laredo', provinciaId: '1301' },
+  { id: '130107', nombre: 'Moche', provinciaId: '1301' },
+  { id: '130109', nombre: 'Salaverry', provinciaId: '1301' },
+  { id: '130111', nombre: 'Víctor Larco Herrera', provinciaId: '1301' }
 ];
 
 interface ClientesContratosViewProps {
@@ -208,8 +293,14 @@ export default function ClientesContratosView({
     if (activePais) {
       fetch(`/api/ubigeo/provincias?paisId=${encodeURIComponent(activePais)}`)
         .then(r => r.json())
-        .then(data => setProvincias(Array.isArray(data) ? data : []))
-        .catch(console.error);
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setProvincias(data);
+          } else {
+            setProvincias(DEFAULT_PROVINCIAS);
+          }
+        })
+        .catch(() => setProvincias(DEFAULT_PROVINCIAS));
     } else {
       setProvincias([]);
     }
@@ -217,10 +308,32 @@ export default function ClientesContratosView({
 
   useEffect(() => {
     if (activeProv) {
-      fetch(`/api/ubigeo/distritos?provinciaId=${encodeURIComponent(activeProv)}`)
+      const provQuery = activeProv.trim();
+      fetch(`/api/ubigeo/distritos?provinciaId=${encodeURIComponent(provQuery)}`)
         .then(r => r.json())
-        .then(data => setDistritos(Array.isArray(data) ? data : []))
-        .catch(console.error);
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDistritos(data);
+          } else {
+            // Instant local fallback
+            const matched = DEFAULT_DISTRITOS.filter(d => 
+              d.provinciaId === provQuery || 
+              d.provinciaId.startsWith(provQuery) ||
+              provQuery.toLowerCase().includes('lima') ||
+              provQuery === '1501'
+            );
+            setDistritos(matched.length > 0 ? matched : DEFAULT_DISTRITOS.filter(d => d.provinciaId === '1501'));
+          }
+        })
+        .catch(() => {
+          const matched = DEFAULT_DISTRITOS.filter(d => 
+            d.provinciaId === provQuery || 
+            d.provinciaId.startsWith(provQuery) ||
+            provQuery.toLowerCase().includes('lima') ||
+            provQuery === '1501'
+          );
+          setDistritos(matched.length > 0 ? matched : DEFAULT_DISTRITOS.filter(d => d.provinciaId === '1501'));
+        });
     } else {
       setDistritos([]);
     }
