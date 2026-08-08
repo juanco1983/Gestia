@@ -2436,6 +2436,39 @@ async function seedTipoContratos() {
 
 async function runDataFixes() {
   try {
+    // 0. Auto-seed master users and clients if database is freshly provisioned
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync('mafort', salt);
+      const initialUsers = [
+        { id: 'user_0', username: 'Administrador General', email: 'admin@mafort.pe', password: hash, role: 'Administrador', estado: 'Activo', area: 'Administración General', ultimoIngreso: '2026-06-30 00:19:55', creadoEn: '2026-01-01', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios'] },
+        { id: 'user_1', username: 'Coord. Ventas', email: 'ventas@mafort.pe', password: hash, role: 'Ventas', estado: 'Activo', area: 'Planeamiento Comercial', ultimoIngreso: '2026-06-22 07:15', creadoEn: '2026-01-10', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas'] },
+        { id: 'user_2', username: 'Carlos Ocsa', email: 'carlos.ocsa@mafort.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Mantenimiento de Campo', ultimoIngreso: '2026-06-22 07:22', creadoEn: '2026-01-12', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] },
+        { id: 'user_3', username: 'Ing. Roberto Salas', email: 'supervisor@mafort.pe', password: hash, role: 'Supervisor', estado: 'Activo', area: 'Control de Calidad (SLA)', ultimoIngreso: '2026-06-27 03:06:49', creadoEn: '2026-01-15', allowedModules: ['Dashboard', 'Monitoreo', 'Supervisor'] },
+        { id: 'user_4', username: 'Ana Gutiérrez', email: 'ana.gutierrez@prosegur.pe', password: hash, role: 'Cliente', estado: 'Activo', area: 'Infraestructura TI - Prosegur', ultimoIngreso: '2026-06-28 16:30', creadoEn: '2026-02-01', clientId: 'client_1', allowedModules: ['Dashboard', 'Monitoreo', 'Cliente'] },
+        { id: 'user_5', username: 'Juan Córdova', email: 'juan.cordova@materiagris.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Seguridad Eléctrica & Supervisor', ultimoIngreso: '2026-06-29 07:45', creadoEn: '2026-01-20', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] },
+        { id: 'user_6', username: 'Gino Murillo', email: 'gino.murillo@mafort.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Climatización & Control', ultimoIngreso: '2026-06-29 08:30', creadoEn: '2026-01-20', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] }
+      ];
+      for (const u of initialUsers) {
+        await prisma.user.create({ data: u as any });
+      }
+      console.log(`[Master Seed] Se crearon ${initialUsers.length} usuarios maestros en la BD.`);
+    }
+
+    const clientCount = await prisma.client.count();
+    if (clientCount === 0) {
+      const initialClients = [
+        { id: 'client_1', razonSocial: 'Prosegur Tecnología S.A.', ruc: '20506830209', direccionSede: 'Av. Separadora Industrial 349, Ate', distrito: 'Ate', contactoNombre: 'Ana Gutiérrez', contactoEmail: 'ana.gutierrez@prosegur.pe', contactoTelefono: '946782301' },
+        { id: 'client_2', razonSocial: 'Clínica San Pablo S.A.C.', ruc: '20503689023', direccionSede: 'Av. El Polo 789, Surco', distrito: 'Santiago de Surco', contactoNombre: 'Ing. Pedro Vásquez', contactoEmail: 'pedro.vasquez@sanpablo.pe', contactoTelefono: '987654321' },
+        { id: 'client_3', razonSocial: 'Banco Interbank S.A.', ruc: '20100053455', direccionSede: 'Av. Carlos Villarán 140, La Victoria', distrito: 'La Victoria', contactoNombre: 'Luis Fernández', contactoEmail: 'luis.fernandez@interbank.pe', contactoTelefono: '912345678' }
+      ];
+      for (const c of initialClients) {
+        await prisma.client.create({ data: c });
+      }
+      console.log(`[Master Seed] Se crearon ${initialClients.length} clientes maestros en la BD.`);
+    }
+
     // 1. Check and fix BCP client mapping
     const clientBcp = await prisma.client.findUnique({ where: { id: 'client_bcp' } });
     if (!clientBcp) {

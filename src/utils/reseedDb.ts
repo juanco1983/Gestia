@@ -88,9 +88,9 @@ async function main() {
 
   // ─── CONTRATOS NUEVOS (financieros) ─────────────────────────────────────
   const contratosNuevos = [
-    { id: 'cont_001', cliente: 'Prosegur Tecnología S.A.', ot_marco: 100, tipo_contrato: 'Mantenimiento Preventivo UPS 60KVA + 100KVA', fecha_inicio: '2026-01-01', fecha_fin: '2026-12-31', estado: 'VIGENTE', comercial: 'María López', comentarios: '4 visitas anuales programadas', clientId: 'client_1', comercialId: 'user_1' },
-    { id: 'cont_002', cliente: 'Clínica San Pablo S.A.C.', ot_marco: 200, tipo_contrato: 'Mantenimiento Preventivo UPS 40KVA', fecha_inicio: '2026-01-15', fecha_fin: '2027-01-14', estado: 'VIGENTE', comercial: 'María López', comentarios: '6 visitas anuales', clientId: 'client_2', comercialId: 'user_1' },
-    { id: 'cont_003', cliente: 'Banco Interbank S.A.', ot_marco: 300, tipo_contrato: 'Climatización 80HP + Rectificador 120KVA', fecha_inicio: '2026-03-01', fecha_fin: '2027-02-28', estado: 'VIGENTE', comercial: 'María López', comentarios: 'Mantenimiento mensual', clientId: 'client_3', comercialId: 'user_1' },
+    { id: 'cont_001', cliente: 'Prosegur Tecnología S.A.', tipo_contrato: 'Mantenimiento Preventivo UPS 60KVA + 100KVA', fecha_inicio: '2026-01-01', fecha_fin: '2026-12-31', estado: 'VIGENTE', comercial: 'María López', comentarios: '4 visitas anuales programadas', clientId: 'client_1', comercialId: 'user_1' },
+    { id: 'cont_002', cliente: 'Clínica San Pablo S.A.C.', tipo_contrato: 'Mantenimiento Preventivo UPS 40KVA', fecha_inicio: '2026-01-15', fecha_fin: '2027-01-14', estado: 'VIGENTE', comercial: 'María López', comentarios: '6 visitas anuales', clientId: 'client_2', comercialId: 'user_1' },
+    { id: 'cont_003', cliente: 'Banco Interbank S.A.', tipo_contrato: 'Climatización 80HP + Rectificador 120KVA', fecha_inicio: '2026-03-01', fecha_fin: '2027-02-28', estado: 'VIGENTE', comercial: 'María López', comentarios: 'Mantenimiento mensual', clientId: 'client_3', comercialId: 'user_1' },
   ];
   for (const cn of contratosNuevos) {
     await prisma.contratoNuevo.create({ data: cn as any });
