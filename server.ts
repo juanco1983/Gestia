@@ -1200,11 +1200,8 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
     return res.status(401).json({ error: "No autorizado" });
   }
 
-  const key = req.params[0];
-  const pathRegex = /^contracts\/[\w-]+\/[\w.-]+$/;
-  if (!pathRegex.test(key)) {
-    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
-  }
+  let rawKey = decodeURIComponent(req.params[0] || '').replace(/^\/+/, '');
+  const key = rawKey.startsWith('contracts/') ? rawKey : `contracts/${rawKey}`;
 
   const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
   if (!isAllowed) {
@@ -1230,9 +1227,7 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
 
     res.setHeader("Content-Type", s3Response.ContentType || "application/pdf");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    if (s3Response.ContentType === "application/pdf") {
-      res.setHeader("Content-Disposition", `inline; filename="${key.split('/').pop()}"`);
-    }
+    res.setHeader("Content-Disposition", `inline; filename="${key.split('/').pop()}"`);
     res.setHeader("Cache-Control", "private, max-age=3600");
 
     if (s3Response.Body) {
@@ -1241,7 +1236,17 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
       res.status(500).json({ error: "Archivo sin contenido" });
     }
   } catch (error: any) {
-    console.error("Error retrieving contract document:", error);
+    // Check local fallback
+    try {
+      const fs = await import('fs');
+      const cleanContractDir = key.replace('contracts/', 'contracts-');
+      const localPath = path.join(process.cwd(), 'uploads', cleanContractDir);
+      if (fs.existsSync(localPath)) {
+        res.setHeader("Content-Type", "application/pdf");
+        return fs.createReadStream(localPath).pipe(res);
+      }
+    } catch (localErr) {}
+    console.warn("Contract file not found in S3 or local uploads:", key);
     res.status(404).json({ error: "Archivo no encontrado" });
   }
 });
@@ -1701,47 +1706,7 @@ async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index:
   }
 }
 
-app.get("/api/contracts/files/*", async (req: any, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "No autorizado" });
-  }
 
-  const key = req.params[0];
-  const pathRegex = /^contracts\/[\w-]+\/[\w.-]+$/;
-  if (!pathRegex.test(key)) {
-    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
-  }
-
-  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
-  if (!isAllowed) {
-    return res.status(403).json({ error: "Acceso denegado a este recurso" });
-  }
-
-  try {
-    const s3Response = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      })
-    );
-
-    res.setHeader("Content-Type", s3Response.ContentType || "application/pdf");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    if (s3Response.ContentType === "application/pdf") {
-      res.setHeader("Content-Disposition", `inline; filename="${key.split('/').pop()}"`);
-    }
-    res.setHeader("Cache-Control", "private, max-age=3600");
-
-    if (s3Response.Body) {
-      (s3Response.Body as any).pipe(res);
-    } else {
-      res.status(500).json({ error: "Archivo sin contenido" });
-    }
-  } catch (error: any) {
-    console.error("Error retrieving contract document:", error);
-    res.status(404).json({ error: "Archivo no encontrado" });
-  }
-});
 
 // ----- Secure file serving for equipment photos -----
 app.get("/api/equipos/files/*", async (req: any, res) => {

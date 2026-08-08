@@ -14,6 +14,7 @@ interface TablaOrdenesTrabajoProps {
   pastMonths: string[];
   currentAbsoluteMonth: number;
   getAbsoluteMonth: (year: number, mesName: string) => number;
+  tipoCambio?: number;
   ots?: OT[];
   reports?: TechnicalReport[];
   clients?: Client[];
@@ -28,6 +29,7 @@ export default function TablaOrdenesTrabajo({
   pastMonths,
   currentAbsoluteMonth,
   getAbsoluteMonth,
+  tipoCambio = 3.75,
   ots = [],
   reports = [],
   clients = []
@@ -243,16 +245,22 @@ export default function TablaOrdenesTrabajo({
     const totalLines = filteredLines.length;
     const billedUsd = filteredLines
       .filter(l => l.estado === 'FACTURADO')
-      .reduce((acc, curr) => acc + curr.total_usd, 0);
+      .reduce((acc, curr) => {
+        const inc = curr.sub_importe_inc_igv || curr.sub_importe_sin_igv * 1.18;
+        return acc + (curr.simbolo_moneda === 'S/' ? inc / tipoCambio : inc);
+      }, 0);
     const pendingUsd = filteredLines
       .filter(l => l.estado === 'POR FACTURAR')
-      .reduce((acc, curr) => acc + curr.total_usd, 0);
+      .reduce((acc, curr) => {
+        const inc = curr.sub_importe_inc_igv || curr.sub_importe_sin_igv * 1.18;
+        return acc + (curr.simbolo_moneda === 'S/' ? inc / tipoCambio : inc);
+      }, 0);
     const pendingExecutionCount = filteredLines
       .filter(l => l.pendiente === 'POR EJECUTAR')
       .length;
 
     return { totalLines, billedUsd, pendingUsd, pendingExecutionCount };
-  }, [filteredLines]);
+  }, [filteredLines, tipoCambio]);
 
   // Unique clients and commercials list for filter dropdowns (Memoized!)
   const uniqueRazonesSociales = useMemo(() => {
@@ -287,9 +295,9 @@ export default function TablaOrdenesTrabajo({
         
         <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Billed (Facturado)</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Billed (Facturado Inc. IGV)</span>
             <div className="text-2xl font-mono font-black text-teal-brand mt-1 leading-none">
-              ${stats.billedUsd.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">USD</span>
+              ${stats.billedUsd.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-400 font-normal">USD</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-teal-mist border border-teal-brand/20 flex items-center justify-center text-teal-brand shrink-0">
@@ -299,9 +307,9 @@ export default function TablaOrdenesTrabajo({
         
         <div className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
           <div>
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Por Facturar</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 font-mono">Por Facturar (Inc. IGV)</span>
             <div className="text-2xl font-mono font-black text-amber-500 mt-1 leading-none">
-              ${stats.pendingUsd.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">USD</span>
+              ${stats.pendingUsd.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-400 font-normal">USD</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0">
@@ -463,8 +471,8 @@ export default function TablaOrdenesTrabajo({
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">OT Line</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Razón Social / Empresa</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Tipo Venta</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Monto Línea</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Total (USD)</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Monto Cuota<br/><span className="font-semibold text-slate-400 font-mono text-[9px]">(Sin IGV)</span></th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Total<br/><span className="font-semibold text-slate-400 font-mono text-[9px]">(Con IGV)</span></th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Mes Prog Fact</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Factura Real</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Estado Fact.</th>
@@ -522,39 +530,29 @@ export default function TablaOrdenesTrabajo({
                   );
                   const executionText = line.pendiente === 'ANULADO' ? 'ANULADO' : isEjecutado ? 'EJECUTADO' : 'POR EJECUTAR';
 
-                  const otTecnicaStateLabel = matchingOt ? (
-                    otStateUpper === 'INFORME_PENDIENTE' ? 'Técnica: Pendiente de Informe' :
-                    otStateUpper === 'EN_REVISION' ? 'Técnica: Informe en Revisión' :
-                    otStateUpper === 'APROBADA' || otStateUpper === 'FIRMADA' ? 'Técnica: Informe Aprobado' :
-                    otStateUpper === 'PROGRAMADA' || otStateUpper === 'ASIGNADA' ? 'Técnica: Visita Programada' :
-                    otStateUpper === 'EN_CAMINO' || otStateUpper === 'EN_SITIO' || otStateUpper === 'TRABAJO_EN_EJECUCION' ? 'Técnica: En Ejecución' :
-                    `Técnica: ${matchingOt.estado}`
-                  ) : null;
-
                   return (
                     <tr key={line.id} className={`hover:bg-slate-50/50 transition-colors ${isOverdue ? 'bg-rose-50/25' : ''}`}>
                       <td className="px-4 py-3.5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
-                          <span className="text-[10px] text-slate-400 font-bold font-mono">Marco: #{line.ot_marco}</span>
-                          {otTecnicaStateLabel && (
-                            <span className="text-[10px] font-bold font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-max mt-0.5">
-                              {otTecnicaStateLabel}
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
                       </td>
                       <td className="px-4 py-3.5 max-w-xs">
                         {(() => {
                           const resolvedRazonSocial = (line.razon_social && line.razon_social !== 'Cliente General')
                             ? line.razon_social
                             : (clients?.find(c => c.id === line.clientId)?.razonSocial || 'Cliente General');
+                          
+                          const showEmpresaBadge = line.empresa && 
+                            line.empresa !== 'Cliente General' && 
+                            line.empresa.trim().toUpperCase() !== resolvedRazonSocial.trim().toUpperCase();
+
                           return (
                             <>
                               <div className="truncate text-xs font-black text-slate-800" title={resolvedRazonSocial}>{resolvedRazonSocial}</div>
                               <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <span className="font-mono bg-slate-100 text-slate-600 px-1 rounded font-bold">{line.empresa && line.empresa !== 'Cliente General' ? line.empresa : resolvedRazonSocial.split(' ')[0]}</span>
-                                <span>• {line.comercial || 'Sin comercial'}</span>
+                                {showEmpresaBadge && (
+                                  <span className="font-mono bg-slate-100 text-slate-600 px-1 rounded font-bold">{line.empresa}</span>
+                                )}
+                                <span>{line.comercial ? `• ${line.comercial}` : '• Sin comercial'}</span>
                               </div>
                             </>
                           );
@@ -565,11 +563,27 @@ export default function TablaOrdenesTrabajo({
                           {line.tipo_venta}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700">
-                        {line.simbolo_moneda} {line.sub_importe_sin_igv.toLocaleString()}
+                      <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-800">
+                        {line.simbolo_moneda}{line.sub_importe_sin_igv.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-xs font-black text-slate-900">
-                        ${line.total_usd.toLocaleString()}
+                      <td className="px-4 py-3.5">
+                        {(() => {
+                          const incIgv = line.sub_importe_inc_igv || Number((line.sub_importe_sin_igv * 1.18).toFixed(2));
+                          return (
+                            <div className="flex flex-col">
+                              <span className="font-mono text-xs font-black text-slate-900">
+                                {line.simbolo_moneda}{incIgv.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                              {line.simbolo_moneda === 'S/' ? (
+                                <span className="font-mono text-[10px] text-slate-400">
+                                  ${(incIgv / tipoCambio).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                </span>
+                              ) : (
+                                <span className="font-mono text-[10px] text-slate-400">USD</span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1.5">

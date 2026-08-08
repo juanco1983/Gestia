@@ -120,23 +120,46 @@ export default function OrdenesTrabajoView({
     });
   }, [lineas, currentAbsoluteMonth]);
 
-  // 3. Memoized Macro Budget alignment warning
-  const macroWarnings = useMemo(() => {
-    const warnings: Array<{ ot_marco: number; expected: number; actual: number; simbolo_moneda: string }> = [];
-    const uniqueMarcos = Array.from(new Set(lineas.map(l => l.ot_marco)));
-    uniqueMarcos.forEach(m => {
-      const mLines = lineas.filter(l => l.ot_marco === m && l.estado !== 'ANULADO');
-      if (mLines.length > 0) {
-        const expected = mLines[0].monto_marco_sin_igv;
-        const actual = mLines.reduce((acc, curr) => acc + curr.sub_importe_sin_igv, 0);
-        const simbolo_moneda = mLines[0].simbolo_moneda || '$';
-        if (Math.abs(expected - actual) > 0.1) {
-          warnings.push({ ot_marco: m, expected, actual, simbolo_moneda });
-        }
-      }
-    });
-    return warnings;
-  }, [lineas]);
+  // 3. Memoized Contract Budget & Adendas alignment audit
+  const contractWarnings = useMemo(() => {
+    return contratosComerciales.map(c => {
+      const base = Number(c.monto_sin_igv) || Number(c.presupuesto_total_usd) || Number(c.monto_original) || 0;
+      const adendasSum = (c.ampliaciones || []).reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+      const totalContrato = base + adendasSum;
+      const lines = lineas.filter(l => 
+        (l.contratoId === c.id || l.clientId === c.clientId || (l.razon_social && c.cliente && l.razon_social.trim().toUpperCase() === c.cliente.trim().toUpperCase())) && 
+        l.estado !== 'ANULADO'
+      );
+      const consumido = lines.reduce((acc, l) => acc + (Number(l.sub_importe_sin_igv) || 0), 0);
+      const saldo = Math.max(0, totalContrato - consumido);
+      const exceso = consumido > totalContrato ? Number((consumido - totalContrato).toFixed(2)) : 0;
+      const isExceeded = exceso > 0.01;
+      const moneda = c.moneda === 'USD' ? '$' : (lines[0]?.simbolo_moneda || '$');
+
+      const pctConsumo = totalContrato > 0 ? (consumido / totalContrato) * 100 : 0;
+      const isHighRisk = pctConsumo >= 85;
+
+      return {
+        contratoId: c.id,
+        n_contrato: c.n_contrato || c.id,
+        cliente: c.cliente || lines[0]?.razon_social || 'Cliente General',
+        montoBase: base,
+        sumaAdendas: adendasSum,
+        adendasCount: c.ampliaciones?.length || 0,
+        totalContrato,
+        totalContratoConIgv: Number((totalContrato * 1.18).toFixed(2)),
+        consumido,
+        consumidoConIgv: Number((consumido * 1.18).toFixed(2)),
+        saldo,
+        exceso,
+        isExceeded,
+        isHighRisk,
+        pctConsumo,
+        cuotasCount: lines.length,
+        simbolo_moneda: moneda
+      };
+    }).filter(c => c.isExceeded || (c.isHighRisk && c.saldo < 0.15 * c.totalContrato));
+  }, [contratosComerciales, lineas]);
 
   // 4. Memoized Executive Portfolio Performance Selector
   const reportComercial = useMemo(() => {
@@ -389,7 +412,7 @@ export default function OrdenesTrabajoView({
 
       {/* Audit Warnings panel */}
       <PanelAlertas 
-        macroWarnings={macroWarnings} 
+        contractWarnings={contractWarnings} 
         overdueFacturaLines={overdueFacturaLines}
         soonToExecuteLines={soonToExecuteLines}
       />
@@ -458,8 +481,10 @@ export default function OrdenesTrabajoView({
           pastMonths={pastMonths}
           currentAbsoluteMonth={currentAbsoluteMonth}
           getAbsoluteMonth={getAbsoluteMonth}
+          tipoCambio={tipoCambio}
           ots={ots}
           reports={reports}
+          clients={clients}
         />
       )}
 
@@ -622,6 +647,8 @@ export default function OrdenesTrabajoView({
           tipoCambio={tipoCambio}
           currentUser={currentUser}
           clients={clients}
+          contratosComerciales={contratosComerciales}
+          todasLasLineas={lineas}
           onUpdateLinea={onUpdateLinea}
           onClose={() => { setShowEditLineModal(false); setEditingLine(null); }}
         />
