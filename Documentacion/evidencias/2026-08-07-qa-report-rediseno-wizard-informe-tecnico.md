@@ -14,10 +14,16 @@
   secciones + barra de progreso, header con breadcrumb de sección/subpaso,
   footer táctil de 3 botones) y fuentes de foto **cámara / fototeca** en
   pasos 6 (panorámica) y 7 (slots) vía `<input capture>` y `<input>` normal.
+- `src/components/WizardInforme.tsx` — paso 10 (Revisión Final): el checklist
+  "Estado del Informe" de 9 temas sueltos se agrupa en las **4 secciones** del
+  wizard (`1 · Datos del Servicio`, `2 · Trabajo Realizado`,
+  `3 · Inspección Técnica`, `4 · Diagnóstico y Envío`) con estados ok/pendiente
+  por sección y por ítem, eliminando la doble muestra de progreso.
 - `src/components/TecnicoView.tsx` — homologación a tema claro de la bandeja
   "Mis OTs", banner de logística y barra de contexto (eliminación de
   `bg-slate-900`).
-- `tests/wizard-rediseno-secciones.spec.ts` — NUEVO E2E de las 4 secciones.
+- `tests/wizard-rediseno-secciones.spec.ts` — NUEVO E2E de las 4 secciones +
+  verificación del checklist agrupado en el paso 10.
 - `tests/wizard-precarga-caracteristicas.spec.ts` — ajustado para navegar por
   "Siguiente" (la sección 3 colapsa en el rediseño).
 
@@ -52,6 +58,9 @@ entorno local). Se documenta, no bloquea esta feature.
 - Shell wizard con 4 secciones + progreso + footer táctil.
 - Navegación por "Siguiente" hasta el paso 7 (se atendó el layout de fondo).
 - Cámara/fototeca visibles en pasos 6 y 7 (dos inputs por paso).
+- Checklist "Estado del Informe" del paso 10 agrupado en las 4 secciones:
+  cabeceras por sección con estado y sub-ítems ok/pendiente (regresión del
+  layout previo de 9 temas sueltos).
 - Bandeja "Mis OTs", banner de logística y context bar sin `bg-slate-900`.
 - Sin `window.alert()` nuevo (se conserva el flujo existente).
 

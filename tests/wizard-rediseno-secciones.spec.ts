@@ -81,6 +81,20 @@ test.describe('Rediseño Wizard Informe Técnico: 4 secciones + fotos cámara/fo
     await expect(page.getByRole('button', { name: /Elegir de fototeca/i })).toBeVisible();
     log('Paso 7: photos slots con cámara/fototeca OK');
 
+    // 9. Avanzar hasta el paso 10 (Revisión Final) y verificar el checklist agrupado en 4 secciones
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole('button', { name: /Siguiente/i }).click();
+      await page.waitForTimeout(120);
+    }
+    await expect(page.getByRole('heading', { name: 'Revisión Final y Vista Previa PDF' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Estado del Informe · 4 secciones')).toBeVisible();
+    await expect(page.getByText('1 · Datos del Servicio')).toBeVisible();
+    await expect(page.getByText('2 · Trabajo Realizado')).toBeVisible();
+    await expect(page.getByText('3 · Inspección Técnica')).toBeVisible();
+    await expect(page.getByText('4 · Diagnóstico y Envío')).toBeVisible();
+    await expect(page.getByText(/Diagnóstico \+ Reco\./i)).toBeVisible();
+    log('Paso 10: checklist Estado del Informe agrupado en 4 secciones OK');
+
     // Consola: solo errores preexistentes ajenos al cambio
     const unexpected = consoleErrors.filter(e =>
       !e.includes('favicon') && !e.includes('Error fetching client equipments')
