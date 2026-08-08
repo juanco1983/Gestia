@@ -58,17 +58,29 @@ flowchart TD
 
 ---
 
-## 2. Cuentas AWS
+## 2. Cuentas AWS y Entornos
 
-| Recurso | Identificador |
-|---|---|
-| Cuenta AWS | `325580897755` (implícito en S3 bucket name) |
-| Región | `us-east-1` |
-| Proyecto | `gestia` (prefijo de todos los recursos) |
-| Entornos | `dev`, `prod` (este último todavía sin desplegar a full) |
-| Bucket S3 fuente EB | `elasticbeanstalk-us-east-1-325580897755` |
-| Bucket S3 fotos/PDFs | `gestia-dev-photos` (env var `AWS_S3_BUCKET` override en prod) |
-| Repo GitHub | `juanco1983/Gestia` |
+| Recurso | DEV | QA | PROD |
+|---|---|---|---|
+| **Rama Git** | `dev` | `qa` | `main` |
+| **Cuenta AWS / ID** | `325580897755` (Dev Account) | Cuenta QA Dedicada | Cuenta Prod Dedicada |
+| **Región** | `us-east-1` | `us-east-1` | `us-east-1` |
+| **Proyecto** | `gestia` | `gestia` | `gestia` |
+| **Backend Elastic Beanstalk** | `gestia-backend-dev` | `gestia-backend-qa` | `gestia-backend-prod` |
+| **Base de Datos RDS** | `gestia-dev-db` (`gestia_dev`) | `gestia-qa-db` (`gestia_qa`) | `gestia-prod-db` (`gestia_prod`) |
+| **Bucket S3 Fotos / PDFs** | `gestia-dev-photos` | `gestia-qa-photos` | `gestia-prod-photos` |
+| **Bucket Fuente EB** | `elasticbeanstalk-us-east-1-325580897755` | `elasticbeanstalk-us-east-1-qa` | `elasticbeanstalk-us-east-1-prod` |
+| **Repo GitHub** | `juanco1983/Gestia` | `juanco1983/Gestia` | `juanco1983/Gestia` |
+
+### 2.1 Estrategia Multi-Cuenta AWS (AWS Organizations)
+Para garantizar el principio de menor privilegio y evitar interferencias operativas entre entornos, se adopta la recomendación del **AWS Well-Architected Framework**:
+
+1. **AWS Organizations**: Una cuenta raíz de administración (*Management Account*) con facturación consolidada (*Consolidated Billing*) y Service Control Policies (SCPs).
+2. **Aislamiento de Cuentas**:
+   - **Dev Account**: Sandbox para desarrolladores con despliegues directos desde la rama `dev`.
+   - **QA Account**: Entorno idéntico a producción para pruebas automatizadas Playwright, pruebas de carga y validación comercial/técnica en la rama `qa`.
+   - **Prod Account**: Entorno productivo de alta disponibilidad restringido con despliegues aprobados en la rama `main`.
+3. **Seguridad y Blast Radius**: Cualquier error en scripts de migración o borrado en QA queda estrictamente contenido sin poner en riesgo la base de datos ni los buckets de producción.
 
 ---
 
@@ -85,9 +97,27 @@ infra/
 │   │   ├── main.tf           ← invoca módulos (project=gestia, env=dev)
 │   │   ├── variables.tf      ← define db_password, jwt_secret, github_token (sensitive)
 │   │   └── outputs.tf
-│   └── prod/                  ← pendiente de revisar si existe
+│   ├── qa/
+│   │   ├── main.tf           ← invoca módulos (project=gestia, env=qa, db_name=gestia_qa)
+│   │   ├── variables.tf      ← define credenciales y variables para QA
+│   │   └── outputs.tf
+│   └── prod/                  ← configuración para entorno productivo
 └── modules/
-    ├── networking/            ← VPC 10.0.0.0/16, 2 AZ, public + private subnets, IGW
+    ├── networking/            ← VPC 10.0.0.0/16 (dev) / 10.1.0.0/16 (qa), 2 AZ, public + private subnets, IGW
+    ├── security/              ← SG backend (80/443/3001), SG RDS (5432 from backend only),
+    │                            IAM roles (beanstalk_ec2, beanstalk_service),
+    │                            Secrets Manager entries
+    ├── database/              ← RDS Postgres 15, db.t3.micro, 20GB gp2, encrypted,
+    │                            no Multi-AZ, no backups (DEV/QA Free Tier)
+    ├── backend/              ← Elastic Beanstalk app + SingleInstance env (Node 20 AL2023 v6.11.3),
+    │                            t3.micro, env vars, CloudFront distribution (HTTPS)
+    ├── storage/              ← S3 bucket {project}-{env}-photos, versionado,
+    │                            lifecycle Glacier@90d + noncurrent@30d, SSE-AES256, CORS *
+    └── frontend/             ← AWS Amplify app (repo juanco1983/Gestia),
+                                 buildspec (npm ci → npm run build, baseDir dist),
+                                 /api/<*> proxy → backend endpoint,
+                                 SPA rewrite, branch QA/DEV auto-build, env var VITE_API_URL
+```
     ├── security/              ← SG backend (80/443/3001), SG RDS (5432 from backend only),
     │                            IAM roles (beanstalk_ec2, beanstalk_service),
     │                            Secrets Manager entries
