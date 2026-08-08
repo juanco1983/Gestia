@@ -145,17 +145,28 @@ infra/
   - `AWS_REGION=us-east-1`
 - Health check path: `/health`.
 
-### 3.5 Módulo `storage`
-- Bucket S3: `{project}-{env}-photos` (`gestia-dev-photos`).
-- **Block Public Access** habilitado (no público).
-- Versionado habilitado.
-- **Lifecycle**: transición a Glacierafter 90 días, noncurrent versions después de 30 días.
-- **SSE-AES256** encryption at rest.
-- CORS policy: `*` (solo para PUTs desde el backend).
-- Uso:
-  - `reports/OT-{otId}/{timestamp}-{i}.{ext}` — fotos de informes.
-  - `contracts/{contratoId}/{timestamp}-{filename}` — PDFs de contratos y adendas.
-  - `equipo/{equipoId}/{timestamp}-{i}.{ext}` — fotos de equipos.
+### 3.5 Módulo `storage` (AWS S3)
+- **Buckets Aislados por Ambiente**: `{project}-{env}-photos` (`gestia-dev-photos`, `gestia-qa-photos`, `gestia-prod-photos`).
+- **Seguridad y Acceso**:
+  - **Block Public Access** habilitado (100% privado). Cero acceso público sin autenticación.
+  - **Control de Acceso (RBAC)**: El backend Express autentica el JWT y valida el rol del usuario antes de emitir o transmitir el archivo.
+  - **Pre-Signed URLs**: Soporte de URLs firmadas temporales con expiración de 15 minutos (900s) mediante `?presign=true` o streaming directo.
+- **Encriptación en Reposo**: SSE-AES256 activa.
+- **Versionado y Ciclo de Vida**:
+  - Versionado habilitado.
+  - **Lifecycle**: Transición a Glacier a los 90 días para optimización de costos; expiración de versiones no actuales a los 30 días.
+- **Validaciones de Seguridad y Tamaño en Carga**:
+  - **Informes Técnicos** (`reports/OT-{otId}/{timestamp}-{i}.{ext}`): Máximo **10 MB** por imagen. Formatos permitidos: `image/jpeg`, `image/png`, `image/webp`, `image/svg+xml`.
+  - **Contratos y Adendas** (`contracts/{contratoId}/{timestamp}-{filename}.pdf`): Máximo **15 MB** por archivo. Formato exclusivo: `application/pdf`. Sanitización de nombres contra path traversal.
+  - **Fotos de Equipos** (`equipo/{equipoId}/{timestamp}-{i}.{ext}`): Máximo **8 MB** por imagen. Formatos permitidos: `image/png`, `image/jpeg`, `image/webp`.
+- **Rutas de API Seguras**:
+  - `GET /api/photos/reports/OT-*`: Visualización segura de fotos de informes técnicos (Admin, Ventas, Supervisor, Técnico asignado y Cliente).
+  - `GET /api/contracts/files/contracts/*`: Descarga y visualización de PDFs de contratos/adendas (Admin, Ventas, Supervisor).
+  - `GET /api/equipos/files/equipo/*`: Visualización segura de fotos de activos/equipos (Admin, Ventas, Supervisor).
+- **Rutinas de Limpieza y Rollback (Cero Objetos Huérfanos)**:
+  - **Rollback Transaccional**: Si la transacción en PostgreSQL falla, `deleteFromS3` elimina automáticamente los objetos recién subidos a S3.
+  - **Borrado en Cascada de Equipos**: Al ejecutar `DELETE /api/equipos/:id`, se eliminan todas sus fotos en S3.
+  - **Limpieza en Reset Operacional**: `POST /api/admin/wipe-operational-db` purga de S3 los informes, fotos de equipos y PDFs de contratos asociados.
 
 ### 3.6 Módulo `frontend`
 - **AWS Amplify app** conectada a `github.com/juanco1983/Gestia`.

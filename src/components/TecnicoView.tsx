@@ -182,12 +182,31 @@ export default function TecnicoView({
 
   const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
   const [clientEquipos, setClientEquipos] = useState<Equipo[]>([]);
+  const [wizardEquipo, setWizardEquipo] = useState<Equipo | undefined>(undefined);
 
   const otEquipoIds = useMemo(() => {
     return selectedOt?.equipoId
       ? selectedOt.equipoId.split(',').map(x => x.trim()).filter(Boolean)
       : [];
   }, [selectedOt?.equipoId]);
+
+  // Resuelve el equipo real (marca/modelo/serie/especificaciones) para precargarlo
+  // en el informe. No depende del prop `equipos` (que excluye los anidados) ni del
+  // endpoint inexistente /api/clients/:id/equipos.
+  useEffect(() => {
+    const id = (selectedEquipoId || otEquipoIds[0] || '').trim();
+    setWizardEquipo(undefined);
+    if (!id) return;
+    const fromProp = equipos.find(e => e.id === id) || clientEquipos.find(e => e.id === id);
+    if (fromProp) {
+      setWizardEquipo(fromProp);
+      return;
+    }
+    fetch(`/api/equipos/${encodeURIComponent(id)}`)
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: Equipo) => setWizardEquipo(data))
+      .catch(err => console.warn('Error resolviendo equipo para el informe:', err));
+  }, [selectedEquipoId, otEquipoIds, equipos, clientEquipos]);
 
   // Fetch client equipments for display and auto-select first
   useEffect(() => {
@@ -984,12 +1003,12 @@ export default function TecnicoView({
       {/* List of Scheduled Tasks/OTs */}
       {!isEditingReport && (
         <div className="lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden self-start animate-fade-in">
-        <div className="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-white text-sm font-bold uppercase font-mono tracking-tight flex items-center gap-2">
-            <Zap size={15} className="text-amber-400" />
+        <div className="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <h2 className="text-ink text-sm font-bold uppercase font-mono tracking-tight flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><Zap size={15} /></span>
             <span>Mis Órdenes de Trabajo</span>
           </h2>
-          <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-mono font-bold">{myOts.length} asignadas</span>
+          <span className="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">{myOts.length} asignadas</span>
         </div>
 
         <div className="p-3 bg-slate-50 border-b border-slate-200 space-y-2.5">
@@ -1114,6 +1133,7 @@ export default function TecnicoView({
                 ot={selectedOt}
                 client={clientForWizard}
                 equipoId={selectedEquipoId || undefined}
+                equipo={wizardEquipo}
                 initialReport={existingReportForWizard}
                 onComplete={handleWizardComplete}
                 onCancel={() => setIsEditingReport(false)}
@@ -1128,18 +1148,18 @@ export default function TecnicoView({
               const currentVisita = visitas.find(v => v.id === selectedOt.visitaId);
               if (!currentVisita) return null;
               return (
-                <div className="bg-slate-900 border-b border-slate-800 p-4 text-white space-y-3">
+                <div className="bg-canvas/60 border-b border-hairline p-4 space-y-3">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div className="space-y-1 text-left">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-teal-500/20 text-teal-400 font-mono text-[10px] font-bold rounded uppercase">
+                        <span className="px-2 py-0.5 bg-teal-mist text-teal-deep font-mono text-[10px] font-bold rounded uppercase">
                           Logística del Viaje
                         </span>
-                        <span className="font-mono text-sm font-black text-amber-400">
+                        <span className="font-mono text-sm font-black text-teal-brand">
                           {currentVisita.codigo || currentVisita.id}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-300 font-bold">
+                      <div className="text-xs text-ink-soft font-bold">
                         {currentVisita.ubicacion || 'Sede del Cliente'}
                       </div>
                     </div>
@@ -1147,7 +1167,7 @@ export default function TecnicoView({
                     {/* Logistics Buttons for Primary Tech */}
                     <div className="flex items-center gap-2 shrink-0">
                       {currentVisita.tecnicoTitularId && currentVisita.tecnicoTitularId !== currentUser?.id && currentUser?.role === 'Tecnico' ? (
-                        <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded-lg font-mono">
+                        <span className="text-[10px] bg-white text-ink-soft border border-hairline px-3 py-1.5 rounded-lg font-mono">
                           Apoyo — Logística gestionada por {currentVisita.tecnicoTitular}
                         </span>
                       ) : (
@@ -1175,7 +1195,7 @@ export default function TecnicoView({
                           )}
 
                           {(currentVisita.estado === 'En Sitio' || currentVisita.estado === 'En Ejecucion') && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold rounded-xl font-mono">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl font-mono">
                               <CheckCircle2 size={14} />
                               Llegada Registrada ({currentVisita.horaLlegada || 'En sitio'})
                             </span>
@@ -1189,22 +1209,22 @@ export default function TecnicoView({
             })()}
 
             {/* Context bar with prefill help */}
-            <div className="bg-slate-900 px-5 py-4 border-b border-slate-850 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+            <div className="bg-white px-5 py-4 border-b border-hairline flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsEditingReport(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center border border-slate-700/50 shadow-xs"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center border border-hairline"
                   title="Volver a la lista de órdenes"
                 >
                   <ArrowLeft size={16} />
                 </button>
                 <div>
-                  <h2 className="text-white text-sm font-bold uppercase font-mono flex items-center gap-1.5">
-                    <FileCheck size={16} className="text-amber-400 animate-pulse" />
+                  <h2 className="text-ink text-sm font-bold uppercase font-mono flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-md bg-teal-mist text-teal-brand flex items-center justify-center"><FileCheck size={14} /></span>
                     <span>Editor de Campo Oficial S.L.A — {selectedOt.id}</span>
                   </h2>
-                  <p className="text-[10px] text-slate-400 font-sans mt-0.5">Estructurando un informe paralelo compatible con PDF Mafort</p>
+                  <p className="text-[10px] text-ink-mute font-sans mt-0.5">Estructurando un informe paralelo compatible con PDF Mafort</p>
                 </div>
 
                 {otEquipoIds.length > 1 && (
@@ -1220,10 +1240,10 @@ export default function TecnicoView({
                             setSelectedEquipoId(eqId);
                             setDraftLoadedMessage(`📂 Borrador guardado. Ahora editando: ${eq?.codigo || `Equipo ${eqId.slice(0, 6)}`}`);
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[9px] font-mono font-black uppercase tracking-wide transition-all cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-black uppercase tracking-wide transition-all cursor-pointer ${
                             selectedEquipoId === eqId
-                              ? 'bg-amber-400 text-slate-950 shadow-sm'
-                              : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/70'
+                              ? 'bg-teal-brand text-white shadow-sm'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                           }`}
                         >
                           {eq?.codigo || eqId.slice(0, 6)}
@@ -1240,7 +1260,7 @@ export default function TecnicoView({
                   <button
                     type="button"
                     onClick={() => handleMarcarNoEjecutada(selectedOt)}
-                    className="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-lg text-[9px] font-bold font-mono transition-all cursor-pointer flex items-center gap-1"
+                    className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer flex items-center gap-1"
                     title="Marcar equipo como No Ejecutado en sitio (ej: sin acceso)"
                   >
                     <XCircle size={12} />
@@ -1250,8 +1270,8 @@ export default function TecnicoView({
                 <button
                   type="button"
                   onClick={() => setShowWizard(prev => !prev)}
-                  className={`px-3 py-2 rounded-lg text-[9px] font-bold font-mono transition-all cursor-pointer border ${
-                    showWizard ? 'bg-teal-500/20 text-teal-300 border-teal-500/30' : 'bg-slate-700/50 text-slate-300 border-slate-600/50 hover:bg-slate-600/70'
+                  className={`px-3 py-2 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer border ${
+                    showWizard ? 'bg-teal-mist text-teal-deep border-teal-brand/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   {showWizard ? 'Wizard Activo' : 'Formulario Clásico'}

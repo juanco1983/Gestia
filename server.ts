@@ -10,6 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import ubigeos from 'ubigeo-peru';
 
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
@@ -31,8 +32,18 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
   }
 
   const mimeType = matches[1];
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    throw new Error(`Tipo de imagen no permitido: ${mimeType}. Solo se admiten JPEG, PNG, WEBP y SVG.`);
+  }
+
   const base64Data = matches[2];
   const buffer = Buffer.from(base64Data, "base64");
+
+  // Validación de tamaño: máximo 10MB por fotografía de informe
+  if (buffer.length > 10485760) {
+    throw new Error("La imagen excede el límite de tamaño de 10MB");
+  }
 
   let extension = "jpg";
   if (mimeType === "image/png") extension = "png";
@@ -73,19 +84,27 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
   }
 }
 
-// Helper to delete objects from S3 on transaction rollback
+// Helper to delete objects from S3 on transaction rollback or entity deletion
 async function deleteFromS3(relativeUrl: string): Promise<void> {
+  if (!relativeUrl || typeof relativeUrl !== "string") return;
   try {
-    const key = relativeUrl.replace("/api/photos/", "");
-    await s3.send(
-      new DeleteObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      })
-    );
-    console.log(`[Rollback S3] Objeto eliminado: ${key}`);
+    const key = relativeUrl
+      .replace(/^\/api\/photos\//, "")
+      .replace(/^\/api\/contracts\/files\//, "")
+      .replace(/^\/api\/equipos\/files\//, "")
+      .replace(/^\/uploads\//, "");
+
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key
+        })
+      );
+      console.log(`[Rollback/Cleanup S3] Objeto eliminado: ${key}`);
+    }
   } catch (err) {
-    console.error(`[Rollback S3 ERROR] No se pudo eliminar ${relativeUrl}:`, err);
+    console.error(`[Rollback/Cleanup S3 ERROR] No se pudo eliminar ${relativeUrl}:`, err);
   }
 }
 let connectionString = `${process.env.DATABASE_URL}`;
@@ -101,7 +120,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-const PORT: number = parseInt(process.env.PORT || "3000", 10);
+const PORT: number = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "3000"), 10);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -209,6 +228,43 @@ app.post("/api/admin/wipe-operational-db", async (req: any, res) => {
     return res.status(403).json({ error: "Acceso denegado: Se requiere rol de Administrador" });
   }
   try {
+    // 1. Cleanup de S3 para evitar acumulación de objetos huérfanos
+    try {
+      const allReports = await prisma.technicalReport.findMany();
+      for (const r of allReports) {
+        if (Array.isArray(r.fotos)) {
+          for (const f of r.fotos) if (typeof f === 'string') await deleteFromS3(f);
+        }
+        if (Array.isArray(r.fotosLabeled)) {
+          for (const f of (r.fotosLabeled as any[])) {
+            if (f?.base64 && typeof f.base64 === 'string') await deleteFromS3(f.base64);
+          }
+        }
+        if (r.firmaCliente) await deleteFromS3(r.firmaCliente);
+        if (r.panoramaFoto) await deleteFromS3(r.panoramaFoto);
+      }
+
+      const allContracts = await prisma.contratoNuevo.findMany();
+      for (const c of allContracts) {
+        if (c.pdf_url) await deleteFromS3(c.pdf_url);
+      }
+
+      const allAdendas = await prisma.contratoAmpliacion.findMany();
+      for (const a of allAdendas) {
+        if (a.adenda_pdf_url) await deleteFromS3(a.adenda_pdf_url);
+      }
+
+      const allEquipos = await prisma.equipo.findMany();
+      for (const eq of allEquipos) {
+        if (Array.isArray(eq.fotos)) {
+          for (const f of eq.fotos) if (typeof f === 'string') await deleteFromS3(f);
+        }
+      }
+    } catch (s3CleanupErr) {
+      console.warn("[S3 Wipe Warning] Error parcial durante la limpieza de objetos S3:", s3CleanupErr);
+    }
+
+    // 2. Eliminación en cascada en la base de datos PostgreSQL
     const deletedReports = await prisma.technicalReport.deleteMany();
     const deletedAsignaciones = await prisma.otEquipoAsignacion.deleteMany();
     const deletedServicios = await prisma.servicioEquipo.deleteMany();
@@ -1104,6 +1160,15 @@ app.get("/api/photos/*", async (req: any, res) => {
       return res.status(403).json({ error: "Acceso denegado a este recurso" });
     }
 
+    // Pre-signed URL generation if requested
+    if (req.query.presign === 'true' && process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      const presignedUrl = await getSignedUrl(s3, new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      }), { expiresIn: 900 });
+      return res.json({ url: presignedUrl, expiresIn: 900 });
+    }
+
     const s3Response = await s3.send(
       new GetObjectCommand({
         Bucket: BUCKET_NAME,
@@ -1126,6 +1191,101 @@ app.get("/api/photos/*", async (req: any, res) => {
     }
     console.error("Error al obtener imagen de S3:", err);
     res.status(500).json({ error: "Error al recuperar recurso" });
+  }
+});
+
+app.get("/api/contracts/files/*", async (req: any, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const key = req.params[0];
+  const pathRegex = /^contracts\/[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  if (!isAllowed) {
+    return res.status(403).json({ error: "Acceso denegado a este recurso" });
+  }
+
+  try {
+    // Pre-signed URL generation if requested
+    if (req.query.presign === 'true' && process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      const presignedUrl = await getSignedUrl(s3, new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      }), { expiresIn: 900 });
+      return res.json({ url: presignedUrl, expiresIn: 900 });
+    }
+
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+
+    res.setHeader("Content-Type", s3Response.ContentType || "application/pdf");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    if (s3Response.ContentType === "application/pdf") {
+      res.setHeader("Content-Disposition", `inline; filename="${key.split('/').pop()}"`);
+    }
+    res.setHeader("Cache-Control", "private, max-age=3600");
+
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (error: any) {
+    console.error("Error retrieving contract document:", error);
+    res.status(404).json({ error: "Archivo no encontrado" });
+  }
+});
+
+// ----- Secure file serving for equipment photos -----
+app.get("/api/equipos/files/*", async (req: any, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+  const key = req.params[0];
+  const pathRegex = /^equipo\/[\w-]+\/[\w.-]+$/;
+  if (!pathRegex.test(key)) {
+    return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
+  }
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  if (!isAllowed) {
+    return res.status(403).json({ error: "Acceso denegado a este recurso" });
+  }
+  try {
+    // Pre-signed URL generation if requested
+    if (req.query.presign === 'true' && process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      const presignedUrl = await getSignedUrl(s3, new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      }), { expiresIn: 900 });
+      return res.json({ url: presignedUrl, expiresIn: 900 });
+    }
+
+    const s3Response = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key
+      })
+    );
+    res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    if (s3Response.Body) {
+      (s3Response.Body as any).pipe(res);
+    } else {
+      res.status(500).json({ error: "Archivo sin contenido" });
+    }
+  } catch (error: any) {
+    console.error("Error retrieving equipment photo:", error);
+    res.status(404).json({ error: "Archivo no encontrado" });
   }
 });
 
@@ -1459,16 +1619,33 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
   const cleanFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
   const key = `contracts/${cleanContractId}/${timestamp}-${cleanFilename}`;
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
+  try {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
+      return `/api/contracts/files/${key}`;
+    }
+  } catch (s3Err) {
+    console.warn("[S3 Upload Fallback] No se pudo subir contrato a S3:", (s3Err as any)?.message);
+  }
 
-  return `/api/contracts/files/${key}`;
+  // Fallback local
+  try {
+    const fs = await import('fs/promises');
+    const uploadsDir = path.join(process.cwd(), 'uploads', `contracts-${cleanContractId}`);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${timestamp}-${cleanFilename}`);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/contracts-${cleanContractId}/${timestamp}-${cleanFilename}`;
+  } catch (err) {
+    return `/api/contracts/files/${key}`;
+  }
 }
 
 // Helper to upload equipment photos (images) to S3 under equipo/ prefix
@@ -1493,15 +1670,34 @@ async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index:
   const cleanEquipoId = equipoId.replace(/[^a-zA-Z0-9_-]/g, "");
   const timestamp = Date.now();
   const key = `equipo/${cleanEquipoId}/${timestamp}-${index}.${extension}`;
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
-  return `/api/equipos/files/${key}`;
+
+  try {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
+      return `/api/equipos/files/${key}`;
+    }
+  } catch (s3Err) {
+    console.warn("[S3 Upload Fallback] No se pudo subir foto de equipo a S3:", (s3Err as any)?.message);
+  }
+
+  // Fallback local
+  try {
+    const fs = await import('fs/promises');
+    const uploadsDir = path.join(process.cwd(), 'uploads', `equipo-${cleanEquipoId}`);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/equipo-${cleanEquipoId}/${timestamp}-${index}.${extension}`;
+  } catch (err) {
+    return `/api/equipos/files/${key}`;
+  }
 }
 
 app.get("/api/contracts/files/*", async (req: any, res) => {
@@ -1771,6 +1967,21 @@ app.post("/api/equipos", async (req: any, res) => {
         ? await generateEquipoCodigo(body.contratoId)
         : await generateStandaloneEquipoCode(body.tipo);
     }
+
+    let processedFotos = body.fotos;
+    if (Array.isArray(body.fotos)) {
+      processedFotos = [];
+      for (let i = 0; i < body.fotos.length; i++) {
+        const item = body.fotos[i];
+        if (typeof item === 'string' && item.startsWith('data:image/')) {
+          const s3Url = await uploadEquipoPhotoToS3(item, codigo || 'EQ', i);
+          processedFotos.push(s3Url);
+        } else {
+          processedFotos.push(item);
+        }
+      }
+    }
+
     const created = await prisma.equipo.create({
       data: {
         codigo,
@@ -1783,7 +1994,7 @@ app.post("/api/equipos", async (req: any, res) => {
         estado: body.estado || 'Operativo',
         clienteId: body.clienteId,
         contratoId: body.contratoId,
-        fotos: body.fotos,
+        fotos: processedFotos,
         especificaciones: body.especificaciones
       }
     });
@@ -1796,9 +2007,26 @@ app.post("/api/equipos", async (req: any, res) => {
 app.put("/api/equipos/:id", async (req: any, res) => {
   try {
     const { fotos, ...data } = req.body;
+    let processedFotos = fotos;
+    if (Array.isArray(fotos)) {
+      processedFotos = [];
+      for (let i = 0; i < fotos.length; i++) {
+        const item = fotos[i];
+        if (typeof item === 'string' && item.startsWith('data:image/')) {
+          const s3Url = await uploadEquipoPhotoToS3(item, req.params.id, i);
+          processedFotos.push(s3Url);
+        } else {
+          processedFotos.push(item);
+        }
+      }
+    }
+
     const updated = await prisma.equipo.update({
       where: { id: req.params.id },
-      data
+      data: {
+        ...data,
+        ...(fotos !== undefined ? { fotos: processedFotos } : {})
+      }
     });
     res.json(updated);
   } catch (err: any) {
@@ -1808,6 +2036,14 @@ app.put("/api/equipos/:id", async (req: any, res) => {
 
 app.delete("/api/equipos/:id", async (req: any, res) => {
   try {
+    const existing = await prisma.equipo.findUnique({ where: { id: req.params.id } });
+    if (existing && Array.isArray(existing.fotos)) {
+      for (const fotoUrl of (existing.fotos as any[])) {
+        if (typeof fotoUrl === 'string') {
+          await deleteFromS3(fotoUrl);
+        }
+      }
+    }
     await prisma.equipo.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (err: any) {
