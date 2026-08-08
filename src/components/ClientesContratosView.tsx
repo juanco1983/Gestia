@@ -138,8 +138,212 @@ const DEFAULT_DISTRITOS = [
   { id: '130106', nombre: 'Laredo', provinciaId: '1301' },
   { id: '130107', nombre: 'Moche', provinciaId: '1301' },
   { id: '130109', nombre: 'Salaverry', provinciaId: '1301' },
-  { id: '130111', nombre: 'Víctor Larco Herrera', provinciaId: '1301' }
+  { id: '130111', nombre: 'Víctor Larco Herrera', provinciaId: '1301' },
+  // Chiclayo
+  { id: '140101', nombre: 'Chiclayo', provinciaId: '1401' },
+  { id: '140102', nombre: 'Chongoyape', provinciaId: '1401' },
+  { id: '140103', nombre: 'Eten', provinciaId: '1401' },
+  { id: '140106', nombre: 'José Leonardo Ortiz', provinciaId: '1401' },
+  { id: '140107', nombre: 'La Victoria', provinciaId: '1401' },
+  { id: '140108', nombre: 'Lagunas', provinciaId: '1401' },
+  { id: '140109', nombre: 'Monsefú', provinciaId: '1401' },
+  { id: '140112', nombre: 'Pimentel', provinciaId: '1401' },
+  { id: '140113', nombre: 'Reque', provinciaId: '1401' },
+  { id: '140114', nombre: 'Santa Rosa', provinciaId: '1401' },
+  { id: '140116', nombre: 'Pomalca', provinciaId: '1401' },
+  { id: '140117', nombre: 'Pucalá', provinciaId: '1401' },
+  { id: '140118', nombre: 'Patapo', provinciaId: '1401' },
+  { id: '140119', nombre: 'Tumán', provinciaId: '1401' },
+  // Piura
+  { id: '200101', nombre: 'Piura', provinciaId: '2001' },
+  { id: '200104', nombre: 'Castilla', provinciaId: '2001' },
+  { id: '200105', nombre: 'Catacaos', provinciaId: '2001' },
+  { id: '200107', nombre: 'Cura Mori', provinciaId: '2001' },
+  { id: '200108', nombre: 'El Tallán', provinciaId: '2001' },
+  { id: '200109', nombre: 'La Arena', provinciaId: '2001' },
+  { id: '200110', nombre: 'La Unión', provinciaId: '2001' },
+  { id: '200111', nombre: 'Las Lomas', provinciaId: '2001' },
+  { id: '200114', nombre: 'Tambo Grande', provinciaId: '2001' },
+  { id: '200115', nombre: 'Veintiséis de Octubre', provinciaId: '2001' },
+  // Cusco
+  { id: '080101', nombre: 'Cusco', provinciaId: '0801' },
+  { id: '080102', nombre: 'Ccorca', provinciaId: '0801' },
+  { id: '080103', nombre: 'Poroy', provinciaId: '0801' },
+  { id: '080104', nombre: 'San Jerónimo', provinciaId: '0801' },
+  { id: '080105', nombre: 'San Sebastián', provinciaId: '0801' },
+  { id: '080106', nombre: 'Santiago', provinciaId: '0801' },
+  { id: '080107', nombre: 'Saylla', provinciaId: '0801' },
+  { id: '080108', nombre: 'Wanchaq', provinciaId: '0801' },
+  // Huancayo
+  { id: '120101', nombre: 'Huancayo', provinciaId: '1201' },
+  { id: '120107', nombre: 'Chilca', provinciaId: '1201' },
+  { id: '120114', nombre: 'El Tambo', provinciaId: '1201' },
+  { id: '120119', nombre: 'Huancán', provinciaId: '1201' },
+  { id: '120127', nombre: 'Pilcomayo', provinciaId: '1201' },
+  { id: '120129', nombre: 'San Agustín', provinciaId: '1201' },
+  { id: '120130', nombre: 'San Jerónimo de Tunán', provinciaId: '1201' },
+  { id: '120132', nombre: 'Sapallanga', provinciaId: '1201' },
+  { id: '120133', nombre: 'Sicaya', provinciaId: '1201' },
+  // Ica
+  { id: '110101', nombre: 'Ica', provinciaId: '1101' },
+  { id: '110102', nombre: 'La Tinguiña', provinciaId: '1101' },
+  { id: '110103', nombre: 'Los Aquijes', provinciaId: '1101' },
+  { id: '110105', nombre: 'Parcona', provinciaId: '1101' },
+  { id: '110106', nombre: 'Pueblo Nuevo', provinciaId: '1101' },
+  { id: '110107', nombre: 'Salas', provinciaId: '1101' },
+  { id: '110108', nombre: 'San José de Los Molinos', provinciaId: '1101' },
+  { id: '110109', nombre: 'San Juan Bautista', provinciaId: '1101' },
+  { id: '110110', nombre: 'Santiago', provinciaId: '1101' },
+  { id: '110111', nombre: 'Subtanjalla', provinciaId: '1101' },
+  // Tacna
+  { id: '230101', nombre: 'Tacna', provinciaId: '2301' },
+  { id: '230102', nombre: 'Alto de la Alianza', provinciaId: '2301' },
+  { id: '230103', nombre: 'Calana', provinciaId: '2301' },
+  { id: '230104', nombre: 'Ciudad Nueva', provinciaId: '2301' },
+  { id: '230106', nombre: 'Pachía', provinciaId: '2301' },
+  { id: '230108', nombre: 'Pocollay', provinciaId: '2301' },
+  { id: '230110', nombre: 'Coronel Gregorio Albarracín', provinciaId: '2301' },
+  // Cajamarca
+  { id: '060101', nombre: 'Cajamarca', provinciaId: '0601' },
+  { id: '060103', nombre: 'Baños del Inca', provinciaId: '0601' },
+  { id: '060106', nombre: 'Jesús', provinciaId: '0601' },
+  { id: '060107', nombre: 'Llacanora', provinciaId: '0601' },
+  { id: '060108', nombre: 'Los Baños del Inca', provinciaId: '0601' },
+  // Maynas (Iquitos)
+  { id: '160101', nombre: 'Iquitos', provinciaId: '1601' },
+  { id: '160102', nombre: 'Alto Nanay', provinciaId: '1601' },
+  { id: '160108', nombre: 'Punchana', provinciaId: '1601' },
+  { id: '160112', nombre: 'Belén', provinciaId: '1601' },
+  { id: '160113', nombre: 'San Juan Bautista (Maynas)', provinciaId: '1601' },
+  // Coronel Portillo (Pucallpa)
+  { id: '250101', nombre: 'Callería (Pucallpa)', provinciaId: '2501' },
+  { id: '250102', nombre: 'Campoverde', provinciaId: '2501' },
+  { id: '250104', nombre: 'Yarinacocha', provinciaId: '2501' },
+  { id: '250105', nombre: 'Manantay', provinciaId: '2501' },
+  // Santa (Chimbote)
+  { id: '021801', nombre: 'Chimbote', provinciaId: '0218' },
+  { id: '021804', nombre: 'Coishco', provinciaId: '0218' },
+  { id: '021806', nombre: 'Nepeña', provinciaId: '0218' },
+  { id: '021808', nombre: 'Santa', provinciaId: '0218' },
+  { id: '021809', nombre: 'Nuevo Chimbote', provinciaId: '0218' },
+  // Puno
+  { id: '210101', nombre: 'Puno', provinciaId: '2101' },
+  { id: '210102', nombre: 'Acora', provinciaId: '2101' },
+  { id: '210104', nombre: 'Capachica', provinciaId: '2101' },
+  { id: '210105', nombre: 'Chucuito', provinciaId: '2101' },
+  { id: '210111', nombre: 'Paucarcolla', provinciaId: '2101' },
+  { id: '210112', nombre: 'Platería', provinciaId: '2101' },
+  { id: '210114', nombre: 'San Antonio (Puno)', provinciaId: '2101' },
+  { id: '211101', nombre: 'Juliaca', provinciaId: '2101' },
+  // Huánuco
+  { id: '100101', nombre: 'Huánuco', provinciaId: '1001' },
+  { id: '100102', nombre: 'Amarilis', provinciaId: '1001' },
+  { id: '100111', nombre: 'Pillco Marca', provinciaId: '1001' },
+  { id: '100112', nombre: 'Santa María del Valle', provinciaId: '1001' },
+  // Huamanga (Ayacucho)
+  { id: '050101', nombre: 'Ayacucho', provinciaId: '0501' },
+  { id: '050103', nombre: 'Carmen Alto', provinciaId: '0501' },
+  { id: '050107', nombre: 'San Juan Bautista (Ayacucho)', provinciaId: '0501' },
+  { id: '050114', nombre: 'Jesús Nazareno', provinciaId: '0501' },
+  { id: '050115', nombre: 'Andrés Avelino Cáceres', provinciaId: '0501' },
+  // San Martín (Tarapoto)
+  { id: '220901', nombre: 'Tarapoto', provinciaId: '2209' },
+  { id: '220906', nombre: 'La Banda de Shilcayo', provinciaId: '2209' },
+  { id: '220910', nombre: 'Morales', provinciaId: '2209' },
+  { id: '220904', nombre: 'Cacatachi', provinciaId: '2209' },
+  // Huaraz
+  { id: '020101', nombre: 'Huaraz', provinciaId: '0201' },
+  { id: '020107', nombre: 'Independencia (Huaraz)', provinciaId: '0201' },
+  { id: '020111', nombre: 'Tarica', provinciaId: '0201' },
+  // Tumbes
+  { id: '240101', nombre: 'Tumbes', provinciaId: '2401' },
+  { id: '240102', nombre: 'Corrales', provinciaId: '2401' },
+  { id: '240103', nombre: 'La Cruz', provinciaId: '2401' },
+  { id: '240106', nombre: 'San Juan de la Virgen', provinciaId: '2401' },
+  // Mariscal Nieto (Moquegua)
+  { id: '180101', nombre: 'Moquegua', provinciaId: '1801' },
+  { id: '180105', nombre: 'Samegua', provinciaId: '1801' },
+  { id: '180106', nombre: 'Torata', provinciaId: '1801' },
+  // Chincha
+  { id: '110201', nombre: 'Chincha Alta', provinciaId: '1102' },
+  { id: '110202', nombre: 'Alto Larán', provinciaId: '1102' },
+  { id: '110204', nombre: 'Chincha Baja', provinciaId: '1102' },
+  { id: '110205', nombre: 'El Carmen', provinciaId: '1102' },
+  { id: '110206', nombre: 'Grocio Prado', provinciaId: '1102' },
+  { id: '110207', nombre: 'Pueblo Nuevo (Chincha)', provinciaId: '1102' },
+  { id: '110208', nombre: 'Sunampe', provinciaId: '1102' },
+  { id: '110209', nombre: 'Tambo de Mora', provinciaId: '1102' },
+  // Cañete
+  { id: '150501', nombre: 'San Vicente de Cañete', provinciaId: '1505' },
+  { id: '150502', nombre: 'Asia', provinciaId: '1505' },
+  { id: '150504', nombre: 'Cerro Azul', provinciaId: '1505' },
+  { id: '150505', nombre: 'Chilca (Cañete)', provinciaId: '1505' },
+  { id: '150507', nombre: 'Imperial', provinciaId: '1505' },
+  { id: '150508', nombre: 'Lunahuaná', provinciaId: '1505' },
+  { id: '150509', nombre: 'Mala', provinciaId: '1505' },
+  { id: '150510', nombre: 'Nuevo Imperial', provinciaId: '1505' },
+  { id: '150512', nombre: 'Quilmaná', provinciaId: '1505' },
+  { id: '150513', nombre: 'San Antonio (Cañete)', provinciaId: '1505' },
+  { id: '150514', nombre: 'San Luis (Cañete)', provinciaId: '1505' },
+  { id: '150515', nombre: 'Santa Cruz de Flores', provinciaId: '1505' },
+  // Huaral
+  { id: '150601', nombre: 'Huaral', provinciaId: '1506' },
+  { id: '150604', nombre: 'Aucallama', provinciaId: '1506' },
+  { id: '150605', nombre: 'Chancay', provinciaId: '1506' },
+  // Barranca
+  { id: '150201', nombre: 'Barranca', provinciaId: '1502' },
+  { id: '150202', nombre: 'Paramonga', provinciaId: '1502' },
+  { id: '150203', nombre: 'Pativilca', provinciaId: '1502' },
+  { id: '150204', nombre: 'Supe', provinciaId: '1502' },
+  { id: '150205', nombre: 'Supe Puerto', provinciaId: '1502' }
 ];
+
+const getFallbackDistritos = (provinciaNameOrId: string) => {
+  if (!provinciaNameOrId) return [];
+  const p = provinciaNameOrId.trim();
+  const matched = DEFAULT_DISTRITOS.filter(d => 
+    d.provinciaId === p || 
+    d.provinciaId.startsWith(p) ||
+    d.nombre.toLowerCase().includes(p.toLowerCase()) ||
+    (p.toLowerCase().includes('lima') && d.provinciaId === '1501') ||
+    (p.toLowerCase().includes('callao') && d.provinciaId === '0701') ||
+    (p.toLowerCase().includes('arequipa') && d.provinciaId === '0401') ||
+    (p.toLowerCase().includes('trujillo') && d.provinciaId === '1301') ||
+    (p.toLowerCase().includes('chiclayo') && d.provinciaId === '1401') ||
+    (p.toLowerCase().includes('piura') && d.provinciaId === '2001') ||
+    (p.toLowerCase().includes('cusco') && d.provinciaId === '0801') ||
+    (p.toLowerCase().includes('huancayo') && d.provinciaId === '1201') ||
+    (p.toLowerCase().includes('ica') && d.provinciaId === '1101') ||
+    (p.toLowerCase().includes('tacna') && d.provinciaId === '2301') ||
+    (p.toLowerCase().includes('cajamarca') && d.provinciaId === '0601') ||
+    (p.toLowerCase().includes('iquitos') && d.provinciaId === '1601') ||
+    (p.toLowerCase().includes('pucallpa') && d.provinciaId === '2501') ||
+    (p.toLowerCase().includes('chimbote') && d.provinciaId === '0218') ||
+    (p.toLowerCase().includes('puno') && d.provinciaId === '2101') ||
+    (p.toLowerCase().includes('huánuco') && d.provinciaId === '1001') ||
+    (p.toLowerCase().includes('ayacucho') && d.provinciaId === '0501') ||
+    (p.toLowerCase().includes('tarapoto') && d.provinciaId === '2209') ||
+    (p.toLowerCase().includes('huaraz') && d.provinciaId === '0201') ||
+    (p.toLowerCase().includes('tumbes') && d.provinciaId === '2401') ||
+    (p.toLowerCase().includes('moquegua') && d.provinciaId === '1801') ||
+    (p.toLowerCase().includes('chincha') && d.provinciaId === '1102') ||
+    (p.toLowerCase().includes('cañete') && d.provinciaId === '1505') ||
+    (p.toLowerCase().includes('huaral') && d.provinciaId === '1506') ||
+    (p.toLowerCase().includes('barranca') && d.provinciaId === '1502')
+  );
+
+  if (matched.length > 0) return matched;
+
+  // Generic fallback if unknown province
+  const cleanProv = p.replace(/\(.*\)/, '').trim();
+  return [
+    { id: `${p}-01`, nombre: `${cleanProv} (Cercado/Centro)`, provinciaId: p },
+    { id: `${p}-02`, nombre: `${cleanProv} Norte`, provinciaId: p },
+    { id: `${p}-03`, nombre: `${cleanProv} Sur`, provinciaId: p },
+    { id: `${p}-04`, nombre: `${cleanProv} Este`, provinciaId: p },
+    { id: `${p}-05`, nombre: `${cleanProv} Oeste`, provinciaId: p }
+  ];
+};
 
 interface ClientesContratosViewProps {
   clients: Client[];
