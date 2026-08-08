@@ -485,6 +485,7 @@ export default function OrdenesTrabajoView({
           ots={ots}
           reports={reports}
           clients={clients}
+          contratosComerciales={contratosComerciales}
         />
       )}
 

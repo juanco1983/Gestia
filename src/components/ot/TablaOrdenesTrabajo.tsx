@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Layers, CheckCircle2, AlertCircle, Clock, Search, MessageSquare, X, ChevronLeft, ChevronRight, SlidersHorizontal, AlertTriangle, Eye, FileText, Download, ZoomIn, ZoomOut } from 'lucide-react';
-import { OrdenTrabajoLinea, OT, TechnicalReport, Client } from '../../types';
+import { OrdenTrabajoLinea, OT, TechnicalReport, Client, Contrato } from '../../types';
 import { TIPO_VENTA_VALUES, ESTADO_VALUES, PENDIENTE_VALUES, MESES_ESPANOL, getFinancialStatusInfo } from '../../utils/otDefaults';
 import DocumentFormat from '../DocumentFormat';
 import { useLocalToast } from '../shared/ToastModal';
@@ -18,6 +18,7 @@ interface TablaOrdenesTrabajoProps {
   ots?: OT[];
   reports?: TechnicalReport[];
   clients?: Client[];
+  contratosComerciales?: Contrato[];
 }
 
 export default function TablaOrdenesTrabajo({
@@ -32,7 +33,8 @@ export default function TablaOrdenesTrabajo({
   tipoCambio = 3.75,
   ots = [],
   reports = [],
-  clients = []
+  clients = [],
+  contratosComerciales = []
 }: TablaOrdenesTrabajoProps) {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,6 +216,9 @@ export default function TablaOrdenesTrabajo({
     return lineas.filter(l => {
       const matchesSearch = !searchQuery ? true : (
         l.ot.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (l.contratoId && l.contratoId.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (l.n_oc_os && l.n_oc_os.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (l.n_cotizacion && l.n_cotizacion.toLowerCase().includes(searchQuery.toLowerCase())) ||
         l.razon_social.toLowerCase().includes(searchQuery.toLowerCase()) ||
         l.empresa.toLowerCase().includes(searchQuery.toLowerCase()) ||
         l.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -231,9 +236,27 @@ export default function TablaOrdenesTrabajo({
       const matchesPendiente = !filterPendiente || l.pendiente === filterPendiente;
       const matchesMesProgFact = !filterMesProgFact || l.mes_prog_facturacion === filterMesProgFact;
 
-      return matchesSearch && matchesCliente && matchesComercial && matchesTipoVenta && matchesEstado && matchesPendiente && matchesMesProgFact;
+      return (
+        matchesSearch &&
+        matchesCliente &&
+        matchesComercial &&
+        matchesTipoVenta &&
+        matchesEstado &&
+        matchesPendiente &&
+        matchesMesProgFact
+      );
     });
-  }, [lineas, ots, searchQuery, filterCliente, filterComercial, filterTipoVenta, filterEstado, filterPendiente, filterMesProgFact]);
+  }, [
+    lineas,
+    searchQuery,
+    filterCliente,
+    filterComercial,
+    filterTipoVenta,
+    filterEstado,
+    filterPendiente,
+    filterMesProgFact,
+    ots
+  ]);
 
   // Reset page to 1 whenever filters or search query change
   useEffect(() => {
@@ -468,7 +491,8 @@ export default function TablaOrdenesTrabajo({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/60 border-b border-slate-100">
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">OT Line</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Código OT</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Contrato / OC</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Razón Social / Empresa</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Tipo Venta</th>
                 <th className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 font-mono">Monto Cuota<br/><span className="font-semibold text-slate-400 font-mono text-[9px]">(Sin IGV)</span></th>
@@ -483,7 +507,7 @@ export default function TablaOrdenesTrabajo({
             <tbody className="divide-y divide-slate-100">
               {paginatedLines.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-16 text-center text-slate-400 font-bold text-xs">
+                  <td colSpan={11} className="py-16 text-center text-slate-400 font-bold text-xs">
                     No hay cuotas de OT registradas que coincidan con los filtros de búsqueda.
                   </td>
                 </tr>
@@ -530,10 +554,24 @@ export default function TablaOrdenesTrabajo({
                   );
                   const executionText = line.pendiente === 'ANULADO' ? 'ANULADO' : isEjecutado ? 'EJECUTADO' : 'POR EJECUTAR';
 
+                  const matchedContrato = contratosComerciales?.find(c => 
+                    (line.contratoId && c.id === line.contratoId) || 
+                    (line.clientId && c.clientId === line.clientId)
+                  );
+                  const contractDisplay = matchedContrato?.n_contrato || line.contratoId || (line.n_oc_os && line.n_oc_os !== 'NO TIENE' ? line.n_oc_os : (line.ot_marco ? `Marco #${line.ot_marco}` : '—'));
+
                   return (
                     <tr key={line.id} className={`hover:bg-slate-50/50 transition-colors ${isOverdue ? 'bg-rose-50/25' : ''}`}>
                       <td className="px-4 py-3.5">
                         <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black text-teal-brand font-mono">{contractDisplay}</span>
+                          {line.n_cotizacion && (
+                            <span className="text-[9px] text-slate-400 font-mono font-bold">Cot: {line.n_cotizacion}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 max-w-xs">
                         {(() => {
