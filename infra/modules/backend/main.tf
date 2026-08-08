@@ -81,7 +81,7 @@ resource "aws_elastic_beanstalk_environment" "dev" {
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "PORT"
-    value     = "3001"
+    value     = "5000"
   }
 
   setting {
