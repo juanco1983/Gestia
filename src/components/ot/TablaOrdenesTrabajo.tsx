@@ -566,12 +566,7 @@ export default function TablaOrdenesTrabajo({
                         <span className="text-xs font-black text-slate-800 font-mono">{line.ot}</span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-teal-brand font-mono">{contractDisplay}</span>
-                          {line.n_cotizacion && (
-                            <span className="text-[9px] text-slate-400 font-mono font-bold">Cot: {line.n_cotizacion}</span>
-                          )}
-                        </div>
+                        <span className="text-xs font-black text-teal-brand font-mono">{contractDisplay}</span>
                       </td>
                       <td className="px-4 py-3.5 max-w-xs">
                         {(() => {
