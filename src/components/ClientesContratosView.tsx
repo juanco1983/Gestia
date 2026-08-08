@@ -206,7 +206,7 @@ export default function ClientesContratosView({
 
   useEffect(() => {
     if (activePais) {
-      fetch(`/api/ubigeo/provincias?paisId=${activePais}`)
+      fetch(`/api/ubigeo/provincias?paisId=${encodeURIComponent(activePais)}`)
         .then(r => r.json())
         .then(data => setProvincias(Array.isArray(data) ? data : []))
         .catch(console.error);
@@ -217,7 +217,7 @@ export default function ClientesContratosView({
 
   useEffect(() => {
     if (activeProv) {
-      fetch(`/api/ubigeo/distritos?provinciaId=${activeProv}`)
+      fetch(`/api/ubigeo/distritos?provinciaId=${encodeURIComponent(activeProv)}`)
         .then(r => r.json())
         .then(data => setDistritos(Array.isArray(data) ? data : []))
         .catch(console.error);
