@@ -929,33 +929,82 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     return (
       <div className="space-y-4">
         <div className="flex flex-col lg:flex-row gap-4">
-          <div className="lg:w-72 shrink-0 space-y-2">
-            <h4 className="text-[10px] font-bold text-slate-500 font-mono uppercase tracking-wider">Estado del Informe</h4>
+          <div className="lg:w-80 shrink-0 space-y-3">
+            <h4 className="text-[10px] font-bold text-slate-500 font-mono uppercase tracking-wider">Estado del Informe · 4 secciones</h4>
             {[
-              { label: 'Tipo de Servicio', ok: true, detail: template.display },
-              { label: 'Cabecera completa', ok: !!informeN && !!hojaServicioN },
-              { label: 'Antecedentes', ok: antecedentes.length > 10 },
-              { label: `Acciones: ${accionesRealizadas.length}/24`, ok: accionesRealizadas.length > 0 },
-              { label: `Pasos: ${pasosLista.length}`, ok: pasosLista.length > 0 },
-              { label: 'Características', ok: Object.keys(caracteristicas).length > 5 },
-              { label: `Fotos: ${filledPhotos}/${totalPhotoSlots}`, ok: filledPhotos >= totalPhotoSlots },
-              { label: 'Mediciones', ok: true },
-              { label: 'Diagnóstico + Reco.', ok: diagnostico.length > 5 || recomendaciones.length > 0 },
-            ].map((item, idx) => (
-              <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] ${
-                item.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
-              }`}>
-                <span className={`w-4 h-4 rounded flex items-center justify-center text-[7px] font-bold shrink-0 ${
-                  item.ok ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-slate-900'
-                }`}>
-                  {item.ok ? <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg> : '!'}
-                </span>
-                <span className="font-bold flex-1">{item.label}</span>
-              </div>
-            ))}
+              {
+                id: 1,
+                title: '1 · Datos del Servicio',
+                items: [
+                  { label: `Tipo ${template.display}`, ok: true },
+                  { label: 'Cabecera completa', ok: !!informeN && !!hojaServicioN },
+                  { label: 'Antecedentes', ok: antecedentes.length > 10 },
+                ],
+              },
+              {
+                id: 2,
+                title: '2 · Trabajo Realizado',
+                items: [
+                  { label: `Acciones: ${accionesRealizadas.length}/24`, ok: accionesRealizadas.length > 0 },
+                  { label: `Pasos: ${pasosLista.length}`, ok: pasosLista.length > 0 },
+                ],
+              },
+              {
+                id: 3,
+                title: '3 · Inspección Técnica',
+                items: [
+                  { label: 'Características', ok: Object.keys(caracteristicas).length > 5 },
+                  { label: `Fotos: ${filledPhotos}/${totalPhotoSlots}`, ok: filledPhotos >= totalPhotoSlots },
+                  { label: 'Mediciones', ok: true },
+                ],
+              },
+              {
+                id: 4,
+                title: '4 · Diagnóstico y Envío',
+                items: [
+                  { label: 'Diagnóstico + Reco.', ok: diagnostico.length > 5 || recomendaciones.length > 0 },
+                ],
+              },
+            ].map(section => {
+              const allOk = section.items.every(it => it.ok);
+              return (
+                <div key={section.title} className="rounded-xl border border-hairline overflow-hidden">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 border-b border-hairline text-[10px] font-bold font-mono ${
+                    allOk ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-600'
+                  }`}>
+                    <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                      allOk ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
+                    }`}>
+                      {allOk
+                        ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                        : <span className="text-[9px] font-bold">{section.id}</span>}
+                    </span>
+                    <span className="flex-1">{section.title}</span>
+                    {!allOk && <span className="text-amber-600 text-[9px] font-bold">En revisión</span>}
+                  </div>
+                  <div className="divide-y divide-hairline text-[10px]">
+                    {section.items.map(item => {
+                      const ok = item.ok;
+                      return (
+                        <div key={item.label} className={`flex items-center gap-2 px-3 py-1.5 ${ok ? 'text-slate-600' : 'text-amber-800'}`}>
+                          <span className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
+                            ok ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-slate-900'
+                          }`}>
+                            {ok
+                              ? <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                              : <span className="text-[8px] font-bold">!</span>}
+                          </span>
+                          <span className={ok ? 'text-ink-soft' : 'font-bold'}>{item.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
             {totalMissingPhotos > 0 && (
               <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-[9px] text-amber-800">
-                Faltan {totalMissingPhotos} fotos. Puedes enviar igual o regresar al paso 7.
+                Faltan {totalMissingPhotos} fotos. Puedes enviar igual o regresar a la sección 3.
               </div>
             )}
           </div>
