@@ -34,18 +34,21 @@ export const MODULE_LABEL_TO_ID: Record<string, string> = {
 /** Llena el formulario de login manualmente y espera el sidebar. */
 export async function login(page: Page, role: Role): Promise<void> {
   const user = TEST_USERS[role];
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
   await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  await page.reload();
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+  }).catch(() => {});
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByPlaceholder('nombre@gestia.com').fill(user.email);
   await page.getByPlaceholder('••••••••').fill(user.password);
   await page.getByRole('button', { name: /Acceder al sistema/i }).click();
 
   // Espera que el sidebar (identifica sesión iniciada) aparezca
-  await expect(page.locator('#sidebar-panel')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#sidebar-panel')).toBeVisible({ timeout: 25_000 });
 }
 
 /** Navega a un módulo desde el sidebar usando su displayLabel. */

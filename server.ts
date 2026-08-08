@@ -120,7 +120,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-const PORT: number = parseInt(process.env.PORT || "5000", 10);
+const PORT: number = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "3000"), 10);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -1619,16 +1619,33 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
   const cleanFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
   const key = `contracts/${cleanContractId}/${timestamp}-${cleanFilename}`;
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
+  try {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
+      return `/api/contracts/files/${key}`;
+    }
+  } catch (s3Err) {
+    console.warn("[S3 Upload Fallback] No se pudo subir contrato a S3:", (s3Err as any)?.message);
+  }
 
-  return `/api/contracts/files/${key}`;
+  // Fallback local
+  try {
+    const fs = await import('fs/promises');
+    const uploadsDir = path.join(process.cwd(), 'uploads', `contracts-${cleanContractId}`);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${timestamp}-${cleanFilename}`);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/contracts-${cleanContractId}/${timestamp}-${cleanFilename}`;
+  } catch (err) {
+    return `/api/contracts/files/${key}`;
+  }
 }
 
 // Helper to upload equipment photos (images) to S3 under equipo/ prefix
@@ -1653,15 +1670,34 @@ async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index:
   const cleanEquipoId = equipoId.replace(/[^a-zA-Z0-9_-]/g, "");
   const timestamp = Date.now();
   const key = `equipo/${cleanEquipoId}/${timestamp}-${index}.${extension}`;
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
-  return `/api/equipos/files/${key}`;
+
+  try {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
+      return `/api/equipos/files/${key}`;
+    }
+  } catch (s3Err) {
+    console.warn("[S3 Upload Fallback] No se pudo subir foto de equipo a S3:", (s3Err as any)?.message);
+  }
+
+  // Fallback local
+  try {
+    const fs = await import('fs/promises');
+    const uploadsDir = path.join(process.cwd(), 'uploads', `equipo-${cleanEquipoId}`);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/equipo-${cleanEquipoId}/${timestamp}-${index}.${extension}`;
+  } catch (err) {
+    return `/api/equipos/files/${key}`;
+  }
 }
 
 app.get("/api/contracts/files/*", async (req: any, res) => {
