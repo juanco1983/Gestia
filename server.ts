@@ -378,7 +378,7 @@ async function ensureUbigeoData() {
   try {
     const distCount = await prisma.distrito.count();
     if (distCount < 100) {
-      console.log("Seeding ALL INEI Ubigeo data from ubigeo-peru package...");
+      console.log("Seeding ALL INEI Ubigeo data...");
       await prisma.distrito.deleteMany({});
       await prisma.provincia.deleteMany({});
       await prisma.pais.deleteMany({});
@@ -392,8 +392,10 @@ async function ensureUbigeoData() {
       await prisma.pais.upsert({ where: { id: 'COL' }, update: { nombre: 'Colombia' }, create: { id: 'COL', nombre: 'Colombia' } });
       await prisma.pais.upsert({ where: { id: 'MEX' }, update: { nombre: 'México' }, create: { id: 'MEX', nombre: 'México' } });
 
-      const data = (ubigeos as any).inei || (ubigeos as any).default?.inei || ubigeos;
-      if (Array.isArray(data)) {
+      const rawUbigeo = ubigeos as any;
+      const data = rawUbigeo?.inei || rawUbigeo?.default?.inei || rawUbigeo?.default || rawUbigeo;
+      
+      if (Array.isArray(data) && data.length > 0) {
         const departamentos = data.filter((u: any) => u.provincia === '00' && u.distrito === '00');
         const provincias = data.filter((u: any) => u.provincia !== '00' && u.distrito === '00');
         const distritos = data.filter((u: any) => u.provincia !== '00' && u.distrito !== '00');
@@ -427,13 +429,29 @@ async function ensureUbigeoData() {
   }
 }
 
+// Call on startup
+ensureUbigeoData().catch(console.error);
+
 app.get("/api/ubigeo/paises", async (req, res) => {
   try {
     await ensureUbigeoData();
     let paises = await prisma.pais.findMany({ orderBy: { nombre: 'asc' } });
+    if (paises.length === 0) {
+      paises = [
+        { id: 'PER', nombre: 'Perú' },
+        { id: 'CHL', nombre: 'Chile' },
+        { id: 'COL', nombre: 'Colombia' },
+        { id: 'MEX', nombre: 'México' }
+      ] as any;
+    }
     res.json(paises);
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    res.json([
+      { id: 'PER', nombre: 'Perú' },
+      { id: 'CHL', nombre: 'Chile' },
+      { id: 'COL', nombre: 'Colombia' },
+      { id: 'MEX', nombre: 'México' }
+    ]);
   }
 });
 
@@ -441,11 +459,21 @@ app.get("/api/ubigeo/provincias", async (req, res) => {
   try {
     await ensureUbigeoData();
     const { paisId } = req.query;
-    const whereClause = paisId ? { paisId: String(paisId) } : {};
+    let whereClause: any = {};
+    if (paisId) {
+      const pStr = String(paisId).trim();
+      whereClause = {
+        OR: [
+          { paisId: pStr },
+          { pais: { nombre: { contains: pStr, mode: 'insensitive' } } }
+        ]
+      };
+    }
     let provincias = await prisma.provincia.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
     res.json(provincias);
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    console.error("Error fetching provincias:", err);
+    res.status(500).json({ error: "Error fetching provincias" });
   }
 });
 
@@ -453,11 +481,39 @@ app.get("/api/ubigeo/distritos", async (req, res) => {
   try {
     await ensureUbigeoData();
     const { provinciaId } = req.query;
-    const whereClause = provinciaId ? { provinciaId: String(provinciaId) } : {};
-    let distritos = await prisma.distrito.findMany({ where: whereClause, orderBy: { nombre: 'asc' } });
+    if (!provinciaId) {
+      let distritos = await prisma.distrito.findMany({ orderBy: { nombre: 'asc' }, take: 100 });
+      return res.json(distritos);
+    }
+    const provStr = String(provinciaId).trim();
+    
+    // Exact ID match first
+    let distritos = await prisma.distrito.findMany({ 
+      where: { provinciaId: provStr }, 
+      orderBy: { nombre: 'asc' } 
+    });
+    
+    // Match by province name if ID didn't match directly
+    if (distritos.length === 0) {
+      const provByName = await prisma.provincia.findFirst({
+        where: {
+          OR: [
+            { nombre: { contains: provStr, mode: 'insensitive' } },
+            { id: { startsWith: provStr } }
+          ]
+        }
+      });
+      if (provByName) {
+        distritos = await prisma.distrito.findMany({
+          where: { provinciaId: provByName.id },
+          orderBy: { nombre: 'asc' }
+        });
+      }
+    }
     res.json(distritos);
   } catch (err) {
-    res.status(500).json({ error: "Error" });
+    console.error("Error fetching distritos:", err);
+    res.status(500).json({ error: "Error fetching distritos" });
   }
 });
 
