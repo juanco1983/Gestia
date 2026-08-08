@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
-import { OrdenTrabajoLinea, Client } from '../../types';
+import { OrdenTrabajoLinea, Client, Contrato } from '../../types';
 import { MESES_ESPANOL, getFinancialStatusInfo, PENDIENTE_VALUES } from '../../utils/otDefaults';
 
 interface ModalEditarLineaProps {
@@ -9,6 +9,8 @@ interface ModalEditarLineaProps {
   tipoCambio: number;
   currentUser: { email: string; username: string };
   clients: Client[];
+  contratosComerciales?: Contrato[];
+  todasLasLineas?: OrdenTrabajoLinea[]; // Para calcular consumo del contrato
   onUpdateLinea: (linea: OrdenTrabajoLinea) => void;
   onClose: () => void;
 }
@@ -18,11 +20,50 @@ export default function ModalEditarLinea({
   setEditingLine,
   tipoCambio,
   clients,
+  contratosComerciales = [],
+  todasLasLineas = [],
   onUpdateLinea,
   onClose
 }: ModalEditarLineaProps) {
 
   const [showParentFields, setShowParentFields] = useState(false);
+
+  // ── Cálculo del presupuesto del Contrato + Adendas ───────────────────────
+  const sym = editingLine.simbolo_moneda || '$';
+  const subSinIgvActual = Number(editingLine.sub_importe_sin_igv) || 0;
+  const subConIgvActual = Number((subSinIgvActual * 1.18).toFixed(2));
+
+  // Buscar el contrato comercial vinculado
+  const linkedContrato = contratosComerciales.find(c => 
+    (editingLine.contratoId && c.id === editingLine.contratoId) ||
+    (editingLine.clientId && c.clientId === editingLine.clientId) ||
+    (editingLine.razon_social && c.cliente?.trim().toUpperCase() === editingLine.razon_social.trim().toUpperCase())
+  );
+
+  const montoBaseContrato = linkedContrato 
+    ? (Number(linkedContrato.monto_sin_igv) || Number(linkedContrato.presupuesto_total_usd) || Number(linkedContrato.monto_original) || 0)
+    : (Number(editingLine.monto_marco_sin_igv) || 0);
+
+  const sumaAdendas = linkedContrato?.ampliaciones 
+    ? linkedContrato.ampliaciones.reduce((acc, a) => acc + (Number(a.monto) || 0), 0)
+    : 0;
+
+  const totalContratoVigente = montoBaseContrato + sumaAdendas;
+  const totalContratoVigenteConIgv = Number((totalContratoVigente * 1.18).toFixed(2));
+
+  // Cuotas vinculadas a este contrato (excluir la cuota actual y anuladas)
+  const lineasContrato = todasLasLineas.filter(l => {
+    if (l.estado === 'ANULADO' || l.id === editingLine.id) return false;
+    if (linkedContrato && l.contratoId === linkedContrato.id) return true;
+    if (linkedContrato && l.clientId === linkedContrato.clientId) return true;
+    return l.ot_marco === editingLine.ot_marco;
+  });
+
+  const consumidoOtrasLineas = lineasContrato.reduce((acc, l) => acc + (Number(l.sub_importe_sin_igv) || 0), 0);
+  const consumidoTotal = consumidoOtrasLineas + subSinIgvActual;
+  const saldoRestante = Math.max(0, totalContratoVigente - consumidoTotal);
+  const pctConsumido = totalContratoVigente > 0 ? Math.min((consumidoTotal / totalContratoVigente) * 100, 100) : 0;
+  const barColor = pctConsumido >= 95 ? 'bg-rose-500' : pctConsumido >= 80 ? 'bg-amber-500' : 'bg-teal-500';
 
   // Si la línea ya está FACTURADA, el modal se abre en modo solo lectura (ver).
   // Cuando el usuario completa los datos reales de factura (nro + monto + fecha)
@@ -113,16 +154,80 @@ export default function ModalEditarLinea({
         )}
 
         <form onSubmit={handleEditLineSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-left text-xs font-sans">
-          
+
+          {/* ── PANEL RESUMEN FINANCIERO DEL CONTRATO Y ADENDAS ────────────── */}
+          {totalContratoVigente > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-700 font-mono">
+                  Presupuesto del Contrato {linkedContrato?.n_contrato ? `(${linkedContrato.n_contrato})` : `#${editingLine.ot_marco}`}
+                </h4>
+                <span className="text-[10px] font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                  {linkedContrato?.ampliaciones?.length || 0} {(linkedContrato?.ampliaciones?.length === 1) ? 'Adenda' : 'Adendas'} (+{sym}{sumaAdendas.toLocaleString('es-PE', { minimumFractionDigits: 2 })})
+                </span>
+              </div>
+
+              {/* Desglose: Base + Adendas = Total */}
+              <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-slate-100 text-center font-mono">
+                <div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Contrato Base</div>
+                  <div className="text-xs font-black text-slate-700">{sym}{montoBaseContrato.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                  <span className="text-[9px] text-slate-400">sin IGV</span>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Suma Adendas</div>
+                  <div className="text-xs font-black text-blue-600">+{sym}{sumaAdendas.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                  <span className="text-[9px] text-slate-400">sin IGV</span>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Total Contrato</div>
+                  <div className="text-xs font-black text-slate-900">{sym}{totalContratoVigente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                  <span className="text-[9px] text-slate-500 font-bold">{sym}{totalContratoVigenteConIgv.toLocaleString('es-PE', { minimumFractionDigits: 2 })} c/IGV</span>
+                </div>
+              </div>
+
+              {/* Barra de consumo */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-slate-600">
+                  <span>Consumido en Cuotas: {sym}{consumidoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })} <span className="text-slate-400 font-normal">(sin IGV)</span></span>
+                  <span className="text-slate-500">{pctConsumido.toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div className={`h-2 rounded-full ${barColor} transition-all`} style={{ width: `${pctConsumido}%` }} />
+                </div>
+                <div className="flex justify-between text-[9px] text-slate-400 font-mono">
+                  <span>Total Vigente: {sym}{totalContratoVigente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                  <span className="font-bold text-teal-700">Saldo Disponible: {sym}{saldoRestante.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+
+              {/* Monto de esta cuota */}
+              <div className="pt-2 border-t border-slate-200 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-[9px] text-slate-400 font-mono uppercase">Esta cuota (sin IGV)</div>
+                  <div className="text-xs font-black text-slate-800 font-mono">{sym}{subSinIgvActual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-mono uppercase">Esta cuota (con IGV)</div>
+                  <div className="text-xs font-black text-slate-800 font-mono">{sym}{subConIgvActual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 font-mono uppercase">Otras cuotas</div>
+                  <div className="text-xs font-black text-slate-500 font-mono">{sym}{consumidoOtrasLineas.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* SECCIÓN 1: DATOS ESPECÍFICOS DE LA CUOTA / LÍNEA */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-wide text-slate-400 font-mono border-b border-slate-100 pb-1">
-              Datos de la Línea / Cuota Financiera
+              Importe de esta Cuota
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Sub Importe (Sin IGV)</label>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto Cuota (Sin IGV)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -141,7 +246,7 @@ export default function ModalEditarLinea({
                 />
               </div>
               <div>
-                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Sub Importe (Con IGV)</label>
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1 font-mono">Monto Cuota (Con IGV 18%)</label>
                 <input
                   type="number"
                   step="0.01"

@@ -182,15 +182,16 @@ export default function ClientesContratosView({
 
   const getContractPdfUrl = (url: string) => {
     if (!url) return '';
-    let targetUrl = url;
-    if (url.startsWith('/api/contracts/files/')) {
-      const key = url.replace('/api/contracts/files/', '');
-      targetUrl = `/api/contracts/files/${encodeURIComponent(key)}`;
-    } else {
-      targetUrl = `/api/contracts/files/${encodeURIComponent(url)}`;
+    if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
     }
+    if (url.startsWith('/uploads/')) {
+      const token = localStorage.getItem('gestia_jwt_token');
+      return `${url}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    }
+    const cleanKey = url.replace(/^\/api\/contracts\/files\//, '').replace(/^\/+/, '');
     const token = localStorage.getItem('gestia_jwt_token');
-    return `${targetUrl}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    return `/api/contracts/files/${cleanKey}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   };
 
   useEffect(() => {
