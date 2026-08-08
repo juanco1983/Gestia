@@ -2631,17 +2631,27 @@ async function runDataFixes() {
 async function startServer() {
   await seedTipoContratos();
   await runDataFixes();
-  if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "dev") {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { 
-        middlewareMode: true,
-      },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+  const distPath = path.join(process.cwd(), "dist");
+  const hasDist = fs.existsSync(path.join(distPath, "index.html"));
+
+  if (!hasDist && process.env.NODE_ENV === "development") {
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { 
+          middlewareMode: true,
+        },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (err) {
+      console.warn("[Vite Fallback] No se pudo cargar Vite middleware dinámico:", err);
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
   } else {
-    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
