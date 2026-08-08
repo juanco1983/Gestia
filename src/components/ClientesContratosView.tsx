@@ -568,24 +568,11 @@ export default function ClientesContratosView({
           if (Array.isArray(data) && data.length > 0) {
             setDistritos(data);
           } else {
-            // Instant local fallback
-            const matched = DEFAULT_DISTRITOS.filter(d => 
-              d.provinciaId === provQuery || 
-              d.provinciaId.startsWith(provQuery) ||
-              provQuery.toLowerCase().includes('lima') ||
-              provQuery === '1501'
-            );
-            setDistritos(matched.length > 0 ? matched : DEFAULT_DISTRITOS.filter(d => d.provinciaId === '1501'));
+            setDistritos(getFallbackDistritos(provQuery));
           }
         })
         .catch(() => {
-          const matched = DEFAULT_DISTRITOS.filter(d => 
-            d.provinciaId === provQuery || 
-            d.provinciaId.startsWith(provQuery) ||
-            provQuery.toLowerCase().includes('lima') ||
-            provQuery === '1501'
-          );
-          setDistritos(matched.length > 0 ? matched : DEFAULT_DISTRITOS.filter(d => d.provinciaId === '1501'));
+          setDistritos(getFallbackDistritos(provQuery));
         });
     } else {
       setDistritos([]);
