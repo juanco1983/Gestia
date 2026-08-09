@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup PWA — Módulo Técnico Offline (Gestia)</title>
+
+<!-- Fonts: Sora (display) / Inter (sans) / IBM Plex Mono (mono) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind CDN (solo para mockup; en prod se usa el build de Tailwind v4 del repo) -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          display: ['Sora', 'Inter', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          canvas: '#F2F6F4',
+          'ink': { DEFAULT: '#0F1F1B', soft: '#5B6F69', mute: '#8CA097' },
+          hairline: '#E6EEEB',
+          'teal': { brand: '#00B594', deep: '#0B3B34', mist: '#E4F4EF' },
+        },
+        boxShadow: {
+          'soft': '0 1px 2px rgba(16,24,22,0.04), 0 4px 16px rgba(16,24,22,0.04)',
+        },
+      },
+    },
+  };
+</script>
+
+<!-- Lucide icons desde CDN -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  body { background: #F2F6F4; }
+  .mock-card { background: #fff; border: 1px solid #E6EEEB; border-radius: 16px; box-shadow: 0 1px 2px rgba(16,24,22,0.04), 0 4px 16px rgba(16,24,22,0.04); }
+  .dot { width: 8px; height: 8px; border-radius: 9999px; display: inline-block; }
+  .ring-conn-online { box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+  .ring-conn-offline { box-shadow: 0 0 0 3px rgba(244,63,94,0.16); }
+  .sweep { position: relative; overflow: hidden; }
+  .sweep::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+    transform: translateX(-120%); animation: sweep 2.6s infinite;
+  }
+  @keyframes sweep { to { transform: translateX(120%); } }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 11px; }
+  .section-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8CA097; }
+</style>
+</head>
+<body class="p-4 sm:p-8 font-sans text-ink">
+
+<div class="max-w-[1400px] mx-auto space-y-10">
+
+  <header class="space-y-1">
+    <p class="section-tag">Mockup · PWA Técnico Offline</p>
+    <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-slate-900">Módulo Técnico — Estados Offline + Instalación PWA</h1>
+    <p class="text-sm text-ink-soft max-w-3xl">Patrón Dashboard (tokens <code class="font-mono text-[11px]">teal-brand / canvas / ink</code>, <code class="font-mono text-[11px]">border-hairline</code>). Validación visual antes de code. Nada de fondos oscuros de técnicos: la homologación usa el shell claro del Dashboard.</p>
+  </header>
+
+  <!-- ============ PANTALLA 1: Header Técnico (-badge conexión + chip cola-) ============ -->
+  <section class="space-y-4">
+    <div class="flex items-center gap-2">
+      <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="hard-hat" class="w-4 h-4"></i></span>
+      <h2 class="font-display font-bold text-xl text-slate-900">1 · Header de TécnicoView — Badge de conexión + chip de cola</h2>
+    </div>
+    <p class="text-sm text-ink-soft max-w-3xl">Reemplaza la línea <code class="font-mono text-[11px]">TecnicoView.tsx:2290-2292</code> ("Online: Conectado/Offline"). El badge vive en la cabecera del portal, junto al nombre del técnico activo. El chip de cola solo aparece cuando hay reportes pendientes de sincronizar.</p>
+
+    <!-- 4 estados en grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- Estado A: Online, sin cola -->
+      <div class="mock-card overflow-hidden">
+        <div class="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <h3 class="font-mono text-sm font-bold uppercase tracking-tight text-ink flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4"></i></span>
+            Mis Órdenes de Trabajo
+          </h3>
+          <span class="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">3 asignadas</span>
+        </div>
+
+        <!-- Banda técnica + badge conexión -->
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+          <div class="flex items-center gap-3">
+            <span class="relative inline-flex">
+              <span class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center ring-conn-online">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <span class="dot bg-emerald-500 absolute -right-0 -bottom-0 ring-2 ring-white"></span>
+            </span>
+            <div>
+              <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Técnico Activo</p>
+              <p class="text-sm font-bold text-slate-900">Juan Córdova</p>
+            </div>
+          </div>
+
+          <!-- Badge conexión ONLINE -->
+          <span class="chip bg-emerald-50 border border-emerald-200 text-emerald-700">
+            <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+            Conectado
+          </span>
+        </div>
+
+        <div class="px-5 py-3 bg-slate-50/60 text-[11px] text-ink-soft">
+          <span class="text-emerald-700 font-semibold"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 inline -mt-0.5"></i> Sin reportes pendientes de sincronización.</span>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Estado A · Online, cola vacía</p>
+      </div>
+
+      <!-- Estado B: Offline, sin cola (solo datos cacheados) -->
+      <div class="mock-card overflow-hidden">
+        <div class="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <h3 class="font-mono text-sm font-bold uppercase tracking-tight text-ink flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4"></i></span>
+            Mis Órdenes de Trabajo
+          </h3>
+          <span class="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">3 asignadas</span>
+        </div>
+
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+          <div class="flex items-center gap-3">
+            <span class="relative inline-flex">
+              <span class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center ring-conn-offline">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <span class="dot bg-rose-500 absolute -right-0 -bottom-0 ring-2 ring-white"></span>
+            </span>
+            <div>
+              <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Técnico Activo</p>
+              <p class="text-sm font-bold text-slate-900">Juan Córdova</p>
+            </div>
+          </div>
+
+          <!-- Badge conexión OFFLINE -->
+          <span class="chip bg-rose-50 border border-rose-200 text-rose-600">
+            <i data-lucide="wifi-off" class="w-3.5 h-3.5"></i>
+            Sin conexión
+          </span>
+        </div>
+
+        <div class="px-5 py-3 bg-amber-50/70 border-b border-amber-100 text-[11px] text-amber-800 flex items-start gap-2">
+          <i data-lucide="cloud-off" class="w-4 h-4 mt-0.5 shrink-0"></i>
+          <span>Trabajando con datos cacheados de la última sesión. Los informes que generes se guardarán en este dispositivo y se enviarán al reconectar.</span>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Estado B · Offline, cola vacía (precarga previa)</p>
+      </div>
+
+      <!-- Estado C: Offline CON cola (chip visible + panel expandible) -->
+      <div class="mock-card overflow-hidden lg:col-span-2">
+        <div class="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <h3 class="font-mono text-sm font-bold uppercase tracking-tight text-ink flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4"></i></span>
+            Mis Órdenes de Trabajo
+          </h3>
+          <span class="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">3 asignadas</span>
+        </div>
+
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+          <div class="flex items-center gap-3">
+            <span class="relative inline-flex">
+              <span class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center ring-conn-offline">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <span class="dot bg-rose-500 absolute -right-0 -bottom-0 ring-2 ring-white"></span>
+            </span>
+            <div>
+              <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Técnico Activo</p>
+              <p class="text-sm font-bold text-slate-900">Juan Córdova</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Badge conexión OFFLINE -->
+            <span class="chip bg-rose-50 border border-rose-200 text-rose-600">
+              <i data-lucide="wifi-off" class="w-3.5 h-3.5"></i>
+              Sin conexión
+            </span>
+
+            <!-- CHIP COLA (botón que abre el drawer/panel) -->
+            <button type="button" class="chip bg-amber-50 border border-amber-200/80 text-amber-700 hover:bg-amber-100 transition-colors">
+              <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
+              <span class="tabular-nums">3</span> en cola
+              <span class="text-amber-600/70 font-normal">·</span>
+              <span class="font-normal">últ. sync 12 min</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel/drawer de cola (expandido) -->
+        <div class="px-5 py-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4 text-amber-600"></i>
+              <h4 class="text-sm font-bold text-slate-900">Cola de sincronización</h4>
+            </div>
+            <span class="text-[10px] text-ink-mute font-mono">3 pendientes · 0 fallidos · últ. sync 12 min</span>
+          </div>
+
+          <ul class="divide-y divide-hairline rounded-xl border border-hairline overflow-hidden">
+            <li class="flex items-center gap-3 px-4 py-3 bg-white">
+              <span class="w-7 h-7 rounded-lg bg-teal-mist text-teal-deep flex items-center justify-center"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-900 truncate">INF-2026-0481 · OT-2026-0888</p>
+                <p class="text-[10px] text-ink-soft font-mono">Preventivo UPS 40 KVA · hace 4 min</p>
+              </div>
+              <span class="chip bg-emerald-50 border border-emerald-200 text-emerald-700"><i data-lucide="check" class="w-3.5 h-3.5"></i>Listo</span>
+            </li>
+            <li class="flex items-center gap-3 px-4 py-3 bg-white">
+              <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-900 truncate">INF-2026-0482 · OT-2026-0889</p>
+                <p class="text-[10px] text-ink-soft font-mono">Correctivo UPS 10 KVA · hace 9 min · reintento 1/6</p>
+              </div>
+              <span class="chip bg-amber-50 border border-amber-200 text-amber-700 sweep"><i data-lucide="clock" class="w-3.5 h-3.5"></i>En cola</span>
+            </li>
+            <li class="flex items-center gap-3 px-4 py-3 bg-white">
+              <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-900 truncate">INF-2026-0483 · OT-2026-0890</p>
+                <p class="text-[10px] text-ink-soft font-mono">Instalación UPS 80 KVA · hace 12 min · reintento 3/6</p>
+              </div>
+              <span class="chip bg-amber-50 border border-amber-200 text-amber-700"><i data-lucide="clock" class="w-3.5 h-3.5"></i>En cola</span>
+            </li>
+          </ul>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <p class="text-[11px] text-ink-soft flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-ink-mute"></i>
+              Se enviarán automáticamente cuando vuelva la conexión. Si sigues offline, puedes seguir generando informes.
+            </p>
+            <div class="flex items-center gap-2">
+              <button type="button" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                <i data-lucide="arrow-down-to-line" class="w-3.5 h-3.5"></i> Exportar respaldo
+              </button>
+              <button type="button" disabled class="px-3 py-1.5 bg-teal-brand text-white text-[11px] font-bold rounded-lg transition-all active:scale-95 flex items-center gap-1.5 opacity-60 cursor-not-allowed">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reintentar ahora
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Estado C · Offline con cola · "Reintentar ahora" deshabilitado (sin red); "Exportar respaldo" queda como válvula de seguridad manual.</p>
+      </div>
+
+      <!-- Estado D: Reconectando (sweep de sincronización) -->
+      <div class="mock-card overflow-hidden lg:col-span-2">
+        <div class="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <h3 class="font-mono text-sm font-bold uppercase tracking-tight text-ink flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4"></i></span>
+            Mis Órdenes de Trabajo
+          </h3>
+          <span class="text-[10px] bg-teal-mist text-teal-deep px-2 py-1 rounded-full font-mono font-bold">3 asignadas</span>
+        </div>
+
+        <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline">
+          <div class="flex items-center gap-3">
+            <span class="relative inline-flex">
+              <span class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center ring-conn-online">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <span class="dot bg-emerald-500 absolute -right-0 -bottom-0 ring-2 ring-white animate-pulse"></span>
+            </span>
+            <div>
+              <p class="text-[10px] text-ink-mute font-mono uppercase tracking-wider">Técnico Activo</p>
+              <p class="text-sm font-bold text-slate-900">Juan Córdova</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="chip bg-emerald-50 border border-emerald-200 text-emerald-700">
+              <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+              Conectado
+            </span>
+            <!-- chip cola en estado "sincronizando" -->
+            <span class="chip bg-amber-50 border border-amber-200/80 text-amber-700 sweep">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i>
+              Sincronizando 3…
+            </span>
+          </div>
+        </div>
+
+        <!-- Toast patrón canónico (guia_ui_ux §5) al reconectar -->
+        <div class="px-5 py-3 flex items-start gap-3">
+          <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0"><i data-lucide="cloud-upload" class="w-4 h-4"></i></span>
+          <div class="flex-1">
+            <p class="text-xs font-bold text-slate-900">Sincronización en curso</p>
+            <p class="text-[11px] text-ink-soft">Enviando 3 reportes encolados. No cierres la app mientras se suben las fotos (2 de 3).</p>
+          </div>
+          <button type="button" class="text-ink-mute hover:text-slate-700"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Estado D · Reconexión · banner temporal ToastModal patrón (sin window.alert).</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA 2: Prompt "Instalar app" (Add to Home Screen) ============ -->
+  <section class="space-y-4">
+    <div class="flex items-center gap-2">
+      <span class="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><i data-lucide="download" class="w-4 h-4"></i></span>
+      <h2 class="font-display font-bold text-xl text-slate-900">2 · Prompt "Instalar app" (Add to Home Screen)</h2>
+    </div>
+    <p class="text-sm text-ink-soft max-w-3xl">Trigger de <code class="font-mono text-[11px]">beforeinstallprompt</code>. Aparece solo para rol Técnico (feature flag <code class="font-mono text-[11px]">VITE_PWA_TECNICO=1</code>) y se puede posponer. Se muestra una vez por sesión hasta que el usuario instala o descarta definitivamente.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- Variante A: Modal centrado (desktop / tablet) -->
+      <div class="mock-card overflow-hidden">
+        <div class="px-5 py-3 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <p class="section-tag">Variante A · Modal centrado</p>
+          <span class="text-[10px] text-ink-mute font-mono">desktop / tablet</span>
+        </div>
+        <div class="p-6 flex items-center justify-center bg-slate-50/40 min-h-[340px]">
+          <div class="w-full max-w-sm mock-card overflow-hidden shadow-soft">
+            <div class="px-5 py-5 text-center bg-gradient-to-b from-teal-mist to-white border-b border-hairline">
+              <span class="inline-flex w-14 h-14 rounded-2xl bg-teal-brand text-white items-center justify-center shadow-md">
+                <i data-lucide="hard-hat" class="w-7 h-7"></i>
+              </span>
+              <h3 class="font-display font-extrabold text-lg text-slate-900 mt-3">Instala Gestia Técnico</h3>
+              <p class="text-xs text-ink-soft mt-1">Como app en tu dispositivo, abre más rápido y funciona sin conexión en campo.</p>
+            </div>
+            <div class="px-5 py-4 space-y-2.5 text-[11px] text-slate-700">
+              <div class="flex items-start gap-2"><i data-lucide="wifi-off" class="w-4 h-4 text-teal-deep mt-0.5 shrink-0"></i><span><strong class="text-slate-900">Modo offline</strong> — tus OTs del día se precargan al iniciar sesión; el informe se llena sin internet.</span></div>
+              <div class="flex items-start gap-2"><i data-lucide="image" class="w-4 h-4 text-teal-deep mt-0.5 shrink-0"></i><span><strong class="text-slate-900">Fotos en campo</strong> — almacenamiento local robusto, sin saturar el navegador.</span></div>
+              <div class="flex items-start gap-2"><i data-lucide="refresh-cw" class="w-4 h-4 text-teal-deep mt-0.5 shrink-0"></i><span><strong class="text-slate-900">Sync auto</strong> — al reconectar, tus reportes se envían solos con reintentos.</span></div>
+            </div>
+            <div class="px-5 py-4 bg-slate-50/60 border-t border-hairline flex items-center justify-end gap-2">
+              <button type="button" class="px-3 py-2 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Ahora no</button>
+              <button type="button" class="px-4 py-2 bg-teal-brand hover:bg-teal-deep text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center gap-1.5">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Instalar
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Patrón ConfirmModal (guia_ui_ux §4): header teal-mist, beneficios, btn-primary "Instalar". Sin emojis.</p>
+      </div>
+
+      <!-- Variante B: Bottom-sheet (móvil / PWA instalada desde menú) -->
+      <div class="mock-card overflow-hidden">
+        <div class="px-5 py-3 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <p class="section-tag">Variante B · Bottom-sheet</p>
+          <span class="text-[10px] text-ink-mute font-mono">móvil</span>
+        </div>
+        <div class="p-6 flex items-end justify-center bg-slate-50/40 min-h-[340px]">
+          <div class="w-full max-w-sm mock-card overflow-hidden shadow-soft">
+            <div class="pt-3 pb-1 flex justify-center"><span class="w-10 h-1.5 rounded-full bg-slate-200"></span></div>
+            <div class="px-5 py-3 flex items-center gap-3">
+              <span class="inline-flex w-11 h-11 rounded-xl bg-teal-brand text-white items-center justify-center"><i data-lucide="hard-hat" class="w-5 h-5"></i></span>
+              <div class="min-w-0">
+                <h3 class="font-bold text-sm text-slate-900 truncate">Añade Gestia a tu pantalla de inicio</h3>
+                <p class="text-[11px] text-ink-soft">Acceso directo + modo offline en campo</p>
+              </div>
+            </div>
+            <div class="px-5 pb-3 flex items-center gap-2 text-[11px] text-ink-soft">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-ink-mute shrink-0"></i>
+              <span>Electricistas y técnicos: recomendado para sótanos y cuartos eléctricos sin señal.</span>
+            </div>
+            <div class="px-5 pb-4 flex items-center gap-2">
+              <button type="button" class="flex-1 px-3 py-2.5 text-slate-600 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">Ahora no</button>
+              <button type="button" class="flex-1 px-3 py-2.5 bg-teal-brand text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Añadir a inicio
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Bottom-sheet mobile-first: agarre (drag handle), 1 acción primaria, dismissible. Igual tokens del Dashboard.</p>
+      </div>
+
+      <!-- Estado: ya instalado / avisar nueva versión SW -->
+      <div class="mock-card overflow-hidden lg:col-span-2">
+        <div class="px-5 py-3 bg-canvas/40 border-b border-hairline flex items-center justify-between">
+          <p class="section-tag">Estado complementario · App instalada / actualización de SW</p>
+          <span class="text-[10px] text-ink-mute font-mono">ToastModal (guia_ui_ux §5)</span>
+        </div>
+        <div class="p-6 flex flex-wrap gap-4">
+          <!-- Toast: instalada ok -->
+          <div class="mock-card flex-1 min-w-[260px] max-w-md flex items-start gap-3 p-4">
+            <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0"><i data-lucide="check-circle-2" class="w-4 h-4"></i></span>
+            <div class="flex-1">
+              <p class="text-xs font-bold text-slate-900">App instalada</p>
+              <p class="text-[11px] text-ink-soft">Encuéntrala en tu pantalla de inicio. La próxima vez entra directo desde el ícono.</p>
+            </div>
+            <button class="text-ink-mute hover:text-slate-700"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <!-- Toast: nueva versión SW -->
+          <div class="mock-card flex-1 min-w-[260px] max-w-md flex items-start gap-3 p-4">
+            <span class="w-8 h-8 rounded-lg bg-teal-mist text-teal-deep flex items-center justify-center shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
+            <div class="flex-1">
+              <p class="text-xs font-bold text-slate-900">Nueva versión disponible</p>
+              <p class="text-[11px] text-ink-soft">Hay mejoras en el modo offline. Recargamos para activarlas.</p>
+            </div>
+            <button class="px-2.5 py-1.5 bg-teal-brand text-white text-[10px] font-bold rounded-lg active:scale-95 transition-all">Recargar</button>
+          </div>
+          <!-- Toast: permiso cámara/fotos -->
+          <div class="mock-card flex-1 min-w-[260px] max-w-md flex items-start gap-3 p-4">
+            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0"><i data-lucide="camera" class="w-4 h-4"></i></span>
+            <div class="flex-1">
+              <p class="text-xs font-bold text-slate-900">Permiso de cámara</p>
+              <p class="text-[11px] text-ink-soft">Necesario para capturar fotos del informe en campo.</p>
+            </div>
+            <button class="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 text-[10px] font-bold rounded-lg hover:bg-slate-50 transition-colors">Permitir</button>
+          </div>
+        </div>
+        <p class="px-5 pb-4 text-[10px] text-ink-mute font-mono">Todos los avisos siguen el patrón ToastModal canónico — sin window.alert, sin emojis.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ Anotaciones de tokens / interacción ============ -->
+  <section class="mock-card p-5 space-y-2">
+    <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-teal-deep"></i> Tokens y reglas usadas</h3>
+    <ul class="text-[11px] text-ink-soft space-y-1 list-disc pl-5">
+      <li><strong>Conexión:</strong> emerald-500/rose-500 para puntos; chips <code class="font-mono">bg-emerald-50/rose-50</code>; ring suave de foco accesible.</li>
+      <li><strong>Cola:</strong> amber para "en cola/reintentos", emerald para "listo". Sin hex crudos: <code class="font-mono">bg-amber-50 text-amber-700</code>.</li>
+      <li><strong>Acciones:</strong> btn-primary <code class="font-mono">bg-teal-brand hover:bg-teal-deep</code>; btn-secondary <code class="font-mono">bg-white border border-slate-200</code>.</li>
+      <li><strong>Sin emojis</strong>, sin <code class="font-mono">window.alert</code>; animaciones suaves <code class="font-mono">animate-spin</code> + sweep discreto para "sincronizando".</li>
+      <li>El chip de cola es <strong>botón</strong> (no span) para abrir el drawer; carry clic + teclado (Enter/Esc).</li>
+    </ul>
+  </section>
+
+</div>
+
+<script>
+  // Render de iconos lucide
+  if (window.lucide) { window.lucide.createIcons(); }
+</script>
+</body>
+</html>
