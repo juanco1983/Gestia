@@ -2728,13 +2728,27 @@ async function startServer() {
       app.use(vite.middlewares);
     } catch (err) {
       console.warn("[Vite Fallback] No se pudo cargar Vite middleware dinámico:", err);
-      app.use(express.static(distPath));
+      app.use(express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          const noCache = /(sw\.js|registerSW\.js|index\.html|\.webmanifest)$/.test(filePath);
+          if (noCache) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          }
+        },
+      }));
       app.get("*", (req, res) => {
         res.sendFile(path.join(distPath, "index.html"));
       });
     }
   } else {
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        const noCache = /(sw\.js|registerSW\.js|index\.html|\.webmanifest)$/.test(filePath);
+        if (noCache) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+      },
+    }));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });

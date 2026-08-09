@@ -42,7 +42,15 @@ jobs:
           else
             echo "eb_env=gestia-backend-dev" >> $GITHUB_OUTPUT
           fi
-          
+
+          # PWA (offline Técnico) se habilita en dev y qa; prod se mantiene apagado
+          # hasta que el feature quede validado en esos ambientes.
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "pwa_flag=0" >> $GITHUB_OUTPUT
+          else
+            echo "pwa_flag=1" >> $GITHUB_OUTPUT
+          fi
+
           # Generar un label único para la versión
           VERSION_LABEL="v-$(date +'%Y%m%d-%H%M%S')-${GITHUB_SHA::7}"
           echo "version_label=$VERSION_LABEL" >> $GITHUB_OUTPUT
@@ -54,6 +62,8 @@ jobs:
         run: npx prisma generate
 
       - name: Build Application (Frontend + Backend)
+        env:
+          VITE_PWA_TECNICO: ${{ steps.env.outputs.pwa_flag }}
         run: npm run build
 
       - name: Prepare Deployment Package
