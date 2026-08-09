@@ -4,6 +4,7 @@ import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
 import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
 import { compressBase64Image } from '../utils/imageCompressor';
+import { draftKey, getDraft, putDraft, deleteDraft } from '../offline/db';
 
 interface WizardInformeProps {
   ot: OT;
@@ -103,41 +104,60 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
   const [draftMsg, setDraftMsg] = useState('');
 
   const DRAFT_KEY = `mafort_wizard_draft_${ot.id}`;
+  const DRAFT_IDB_KEY = draftKey(ot.id, equipoId || '');
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) {
-        const draft = JSON.parse(saved);
-        setCurrentStep(draft.currentStep || 1);
-        setCompletedSteps(new Set(draft.completedSteps || []));
-        setSkippedSteps(new Set(draft.skippedSteps || []));
-        if (draft.tipoServicio) setTipoServicio(draft.tipoServicio);
-        if (draft.informeN) setInformeN(draft.informeN);
-        if (draft.hojaServicioN) setHojaServicioN(draft.hojaServicioN);
-        if (draft.fechaServicio) setFechaServicio(draft.fechaServicio);
-        if (draft.horaInicio) setHoraInicio(draft.horaInicio);
-        if (draft.horaFin) setHoraFin(draft.horaFin);
-        if (draft.tecnico1) setTecnico1(draft.tecnico1);
-        if (draft.tecnico2) setTecnico2(draft.tecnico2);
-        if (draft.antecedentes) setAntecedentes(draft.antecedentes);
-        if (draft.accionesRealizadas) setAccionesRealizadas(draft.accionesRealizadas);
-        if (draft.pasosLista) setPasosLista(draft.pasosLista);
-        if (draft.caracteristicas) setCaracteristicas(draft.caracteristicas);
-        if (draft.medicionesEntrada) setMedicionesEntrada(draft.medicionesEntrada);
-        if (draft.medicionesSalida) setMedicionesSalida(draft.medicionesSalida);
-        if (draft.diagnostico) setDiagnostico(draft.diagnostico);
-        if (draft.recomendaciones) setRecomendaciones(draft.recomendaciones);
-        if (draft.fotosLabeled) setFotosLabeled(draft.fotosLabeled);
-        if (draft.panoramaFoto) setPanoramaFoto(draft.panoramaFoto);
-        if (draft.observaciones) setObservaciones(draft.observaciones);
-        if (draft.capturedPhotos) setCapturedPhotos(draft.capturedPhotos);
-        setDraftMsg('Borrador restaurado correctamente');
+    let cancelled = false;
+    const applyDraft = (draft: any) => {
+      if (cancelled) return;
+      setCurrentStep(draft.currentStep || 1);
+      setCompletedSteps(new Set(draft.completedSteps || []));
+      setSkippedSteps(new Set(draft.skippedSteps || []));
+      if (draft.tipoServicio) setTipoServicio(draft.tipoServicio);
+      if (draft.informeN) setInformeN(draft.informeN);
+      if (draft.hojaServicioN) setHojaServicioN(draft.hojaServicioN);
+      if (draft.fechaServicio) setFechaServicio(draft.fechaServicio);
+      if (draft.horaInicio) setHoraInicio(draft.horaInicio);
+      if (draft.horaFin) setHoraFin(draft.horaFin);
+      if (draft.tecnico1) setTecnico1(draft.tecnico1);
+      if (draft.tecnico2) setTecnico2(draft.tecnico2);
+      if (draft.antecedentes) setAntecedentes(draft.antecedentes);
+      if (draft.accionesRealizadas) setAccionesRealizadas(draft.accionesRealizadas);
+      if (draft.pasosLista) setPasosLista(draft.pasosLista);
+      if (draft.caracteristicas) setCaracteristicas(draft.caracteristicas);
+      if (draft.medicionesEntrada) setMedicionesEntrada(draft.medicionesEntrada);
+      if (draft.medicionesSalida) setMedicionesSalida(draft.medicionesSalida);
+      if (draft.diagnostico) setDiagnostico(draft.diagnostico);
+      if (draft.recomendaciones) setRecomendaciones(draft.recomendaciones);
+      if (draft.fotosLabeled) setFotosLabeled(draft.fotosLabeled);
+      if (draft.panoramaFoto) setPanoramaFoto(draft.panoramaFoto);
+      if (draft.observaciones) setObservaciones(draft.observaciones);
+      if (draft.capturedPhotos) setCapturedPhotos(draft.capturedPhotos);
+      setDraftMsg('Borrador restaurado correctamente');
+    };
+
+    (async () => {
+      try {
+        const idbDraft = await getDraft(DRAFT_IDB_KEY);
+        if (idbDraft) {
+          applyDraft(idbDraft.data);
+          return;
+        }
+      } catch (e) {
+        console.warn('Error reading wizard draft from IndexedDB:', e);
       }
-    } catch (e) {
-      console.warn('Error loading wizard draft:', e);
-    }
-  }, []);
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          applyDraft(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.warn('Error loading wizard draft:', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [DRAFT_IDB_KEY]);
 
   const handleSaveDraft = useCallback(() => {
     try {
@@ -152,7 +172,16 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
         diagnostico, recomendaciones, fotosLabeled, panoramaFoto, observaciones,
         photoPreviewStep, capturedPhotos,
       };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      putDraft({
+        key: DRAFT_IDB_KEY,
+        otId: ot.id,
+        equipoId: equipoId || '',
+        data: draft,
+        updatedAt: Date.now(),
+      }).catch((e) => {
+        console.warn('Error saving wizard draft to IndexedDB:', e);
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch {}
+      });
       setDraftMsg('Borrador guardado');
       if (onDraftChange) {
         const partial: Partial<TechnicalReport> = { informeN, hojaServicioN, fechaServicio, horaInicio, horaFin, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, medicionesEntrada, medicionesSalida, observacionesDiagnostico: diagnostico, recomendaciones, fotosLabeled, panoramaFoto, comentariosAdicionales: observaciones };
@@ -162,7 +191,7 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
       console.warn('Error saving wizard draft:', e);
       setDraftMsg('Error al guardar borrador');
     }
-  }, [currentStep, completedSteps, skippedSteps, tipoServicio, informeN, hojaServicioN, fechaServicio, horaInicio, horaFin, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, medicionesEntrada, medicionesSalida, diagnostico, recomendaciones, fotosLabeled, panoramaFoto, observaciones, photoPreviewStep, capturedPhotos, onDraftChange]);
+  }, [currentStep, completedSteps, skippedSteps, tipoServicio, informeN, hojaServicioN, fechaServicio, horaInicio, horaFin, tecnico1, tecnico2, antecedentes, accionesRealizadas, pasosLista, caracteristicas, medicionesEntrada, medicionesSalida, diagnostico, recomendaciones, fotosLabeled, panoramaFoto, observaciones, photoPreviewStep, capturedPhotos, onDraftChange, ot.id, equipoId]);
 
   const template = getTemplate(tipoServicio);
   const totalFotos = getPhotoSlotsForTipo(tipoServicio, ot.potenciaKva);
@@ -239,7 +268,8 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
 
   const clearDraft = useCallback(() => {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
-  }, [DRAFT_KEY]);
+    deleteDraft(DRAFT_IDB_KEY).catch(() => {});
+  }, [DRAFT_IDB_KEY]);
 
   const handleSubmit = useCallback(() => {
     try {
