@@ -688,7 +688,23 @@ app.put("/api/visitas/:id", async (req, res) => {
 
 app.get("/api/ots", async (req, res) => {
   try {
-    res.json(await prisma.oT.findMany());
+    const { tecnicoTitularId, tecnicoApoyoId, fechaDesde, fechaHasta } = req.query;
+    const where: any = {};
+    if (typeof tecnicoTitularId === "string" && tecnicoTitularId) {
+      where.OR = [
+        { tecnicoTitularId },
+        { tecnicoApoyoId: tecnicoTitularId },
+      ];
+    } else if (typeof tecnicoApoyoId === "string" && tecnicoApoyoId) {
+      where.tecnicoApoyoId = tecnicoApoyoId;
+    }
+    if (typeof fechaDesde === "string" && fechaDesde) {
+      where.fechaProgramada = { ...(where.fechaProgramada || {}), gte: fechaDesde };
+    }
+    if (typeof fechaHasta === "string" && fechaHasta) {
+      where.fechaProgramada = { ...(where.fechaProgramada || {}), lte: fechaHasta };
+    }
+    res.json(await prisma.oT.findMany({ where }));
   } catch (err) {
     res.status(500).json({ error: "Error" });
   }
@@ -1354,6 +1370,8 @@ app.get("/api/equipos/files/*", async (req: any, res) => {
 // Bulk offline sync
 app.post("/api/sync", async (req, res) => {
   console.log(">>> SYNC REQUEST RECEIVED");
+  const appliedIds: string[] = [];
+  const conflicts: Array<{ otId: string; serverEstado: string }> = [];
   try {
     const { reports, ots, visitas, clients, contracts, ordenesTrabajo, contratosNuevos, users, logs } = req.body;
 
@@ -1387,7 +1405,8 @@ app.post("/api/sync", async (req, res) => {
           s3Failed = true;
         }
 
-        const { otId, ...data } = reportToSave;
+        const reportQueueId = reportToSave.queueId;
+        const { otId, queueId: _queueId, ...data } = reportToSave;
         await prisma.technicalReport.upsert({
           where: {
             otId_equipoId: {
@@ -1396,12 +1415,18 @@ app.post("/api/sync", async (req, res) => {
             }
           },
           update: { ...data, offlineDirty: s3Failed },
-          create: { ...reportToSave, offlineDirty: s3Failed }
+          create: { ...data, otId, offlineDirty: s3Failed }
         });
-        await prisma.oT.updateMany({
-          where: { id: otId },
-          data: { estado: 'Sometido a Revisión' }
-        });
+        if (reportQueueId) appliedIds.push(reportQueueId);
+        const serverOt = await prisma.oT.findUnique({ where: { id: otId } });
+        if (serverOt && ['Aprobada', 'Firmada', 'Facturada', 'Cerrada'].includes(serverOt.estado)) {
+          conflicts.push({ otId, serverEstado: serverOt.estado });
+        } else {
+          await prisma.oT.updateMany({
+            where: { id: otId },
+            data: { estado: 'Sometido a Revisión' }
+          });
+        }
       }
     }
 
@@ -1509,6 +1534,8 @@ app.post("/api/sync", async (req, res) => {
     const rawLineas = await prisma.ordenTrabajoLinea.findMany();
     res.json({
       success: true,
+      appliedIds,
+      conflicts,
       ots: await prisma.oT.findMany(),
       reports: await prisma.technicalReport.findMany(),
       clients: await prisma.client.findMany(),
