@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { OT, Client, ServiceType, TechnicalReport, EquipmentType, Equipo } from '../types';
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
-import { ALL_ACCIONES, generateDefaultReport, getTechnicalSvg, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
+import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
 import { compressBase64Image } from '../utils/imageCompressor';
 
@@ -14,26 +14,6 @@ interface WizardInformeProps {
   onComplete: (report: TechnicalReport) => void;
   onDraftChange?: (report: Partial<TechnicalReport>) => void;
   onCancel: () => void;
-}
-
-function buildCaracteristicasFromEquipo(equipo: Equipo | undefined, base: Record<string, string>): Record<string, string> {
-  if (!equipo) return base;
-  const merged: Record<string, string> = { ...base };
-  if (equipo.codigo) merged['CÓDIGO'] = equipo.codigo;
-  if (equipo.tipo) merged['TIPO'] = equipo.tipo;
-  if (equipo.marca) merged['MARCA'] = equipo.marca;
-  if (equipo.modelo) merged['MODELO'] = equipo.modelo;
-  if (equipo.serie) merged['SERIE'] = equipo.serie;
-  if (equipo.potenciaKva != null) merged['POTENCIA'] = `${equipo.potenciaKva} KVA`;
-  if (equipo.ubicacion) merged['UBICACIÓN'] = equipo.ubicacion;
-  if (equipo.estado) merged['ESTADO'] = equipo.estado;
-  if (equipo.especificaciones && typeof equipo.especificaciones === 'object') {
-    for (const [key, val] of Object.entries(equipo.especificaciones)) {
-      if (val === null || val === undefined || val === '') continue;
-      merged[key.toUpperCase()] = String(val);
-    }
-  }
-  return merged;
 }
 
 interface WizardStep {
@@ -70,8 +50,8 @@ const SECTIONS: WizardSection[] = [
 export default function WizardInforme({ ot, client, equipoId, equipo, initialReport, onComplete, onDraftChange, onCancel }: WizardInformeProps) {
   const defaults = useMemo(() => {
     if (initialReport) return initialReport;
-    return generateDefaultReport(ot, client);
-  }, [initialReport, ot, client]);
+    return generateDefaultReport(ot, client, equipo);
+  }, [initialReport, ot, client, equipo]);
 
   const initialCaracteristicas = useMemo(() => {
     if (initialReport) return initialReport.caracteristicas ?? {};

@@ -616,7 +616,7 @@ export default function TecnicoView({
     }
 
     // Instant reset to default pre-populated structural states so the form is 50% written for them
-    const def = generateDefaultReport(ot, client as Client);
+    const def = generateDefaultReport(ot, client as Client, wizardEquipo);
     setInformeN(def.informeN || '');
     setHojaServicioN(def.hojaServicioN || '');
     setAsunto(def.asunto || '');
@@ -685,7 +685,7 @@ export default function TecnicoView({
     const client = clients.find(c => c.id === selectedOt.clientId);
     if (!client) return;
 
-    const def = generateDefaultReport(selectedOt, client);
+    const def = generateDefaultReport(selectedOt, client, wizardEquipo);
     
     setInformeN(def.informeN || '');
     setHojaServicioN(def.hojaServicioN || '');
@@ -1310,7 +1310,7 @@ export default function TecnicoView({
                       // Reload defaults
                       const client = clients.find(c => c.id === selectedOt.clientId);
                       if (client) {
-                        const def = generateDefaultReport(selectedOt, client);
+                        const def = generateDefaultReport(selectedOt, client, wizardEquipo);
                         setInformeN(def.informeN || '');
                         setHojaServicioN(def.hojaServicioN || '');
                         setAsunto(def.asunto || '');
