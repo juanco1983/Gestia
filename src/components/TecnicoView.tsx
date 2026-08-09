@@ -48,6 +48,8 @@ import {
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
 import WizardInforme from './WizardInforme';
 import ErrorBoundary from './shared/ErrorBoundary';
+import { draftKey, getDraft, putDraft, deleteDraft, getQueueCount, getLastSyncAt } from '../offline/db';
+import { flushQueue, enqueueReportOffline } from '../offline/sync';
 
 interface TecnicoViewProps {
   ots: OT[];
@@ -81,6 +83,58 @@ export default function TecnicoView({
   otEquipoAsignaciones
 }: TecnicoViewProps) {
   const isTechUser = currentUser?.role === 'Tecnico';
+
+  const [queueCount, setQueueCount] = useState(0);
+  const [lastSyncAt, setLastSyncAtState] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const [count, lastSync] = await Promise.all([getQueueCount(), getLastSyncAt()]);
+        if (!cancelled) {
+          setQueueCount(count);
+          setLastSyncAtState(lastSync || null);
+        }
+      } catch (e) {
+        console.warn('Error leyendo cola de sincronización:', e);
+      }
+    };
+    refresh();
+
+    const handleOnline = () => {
+      flushQueue()
+        .then(() => refresh())
+        .then(() => setSyncError(null))
+        .catch((e) => {
+          console.warn('flushQueue en TecnicoView falló:', e);
+          setSyncError('No se pudo sincronizar la cola automáticamente.');
+        });
+    };
+    window.addEventListener('online', handleOnline);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  const handleRetrySync = async () => {
+    setSyncError(null);
+    try {
+      await flushQueue(true);
+    } catch (e) {
+      console.warn('Reintento de sync falló:', e);
+      setSyncError('No se pudo sincronizar. Reintentaremos automáticamente.');
+    }
+    try {
+      const [count, lastSync] = await Promise.all([getQueueCount(), getLastSyncAt()]);
+      setQueueCount(count);
+      setLastSyncAtState(lastSync || null);
+    } catch (e) {
+      console.warn('Error refrescando cola tras reintento:', e);
+    }
+  };
 
   const { notifySuccess, notifyError, notifyOffline, toastView } = useLocalToast();
   const { confirm, confirmView } = useConfirm();
@@ -357,7 +411,17 @@ export default function TecnicoView({
     };
 
     try {
-      localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+      putDraft({
+        key: draftKey(selectedOt.id, selectedEquipoId || ''),
+        otId: selectedOt.id,
+        equipoId: selectedEquipoId || '',
+        data: draft,
+        updatedAt: Date.now(),
+      }).then(() => {
+        localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+      }).catch(() => {
+        localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+      });
       if (showNotification) {
         notifySuccess('Borrador Guardado', 'Los cambios se guardaron de forma segura en este navegador. Puede salir o perder la conexión, y al volver a seleccionar esta Orden de Trabajo, retomará exactamente desde donde se quedó.');
       }
@@ -427,11 +491,19 @@ export default function TecnicoView({
         },
         recomendaciones
       };
-      try {
-        localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
-      } catch (e) {
-        console.warn('Error en auto-guardado local (cuota excedida):', e);
-      }
+      putDraft({
+        key: draftKey(selectedOt.id, selectedEquipoId || ''),
+        otId: selectedOt.id,
+        equipoId: selectedEquipoId || '',
+        data: draft,
+        updatedAt: Date.now(),
+      }).catch(() => {
+        try {
+          localStorage.setItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`, JSON.stringify(draft));
+        } catch (e2) {
+          console.warn('Error en auto-guardado local (cuota excedida):', e2);
+        }
+      });
     }, 1500); // 1.5s debounce to avoid spamming localStorage
     
     return () => clearTimeout(timer);
@@ -467,7 +539,7 @@ export default function TecnicoView({
     );
   }, [tipoServicio, selectedOt]);
 
-  const handleSelectOt = (ot: OT) => {
+  const handleSelectOt = async (ot: OT) => {
     setSelectedOt(ot);
     setIsEditingReport(false);
     const equiposIds = ot.equipoId ? ot.equipoId.split(',').map(x => x.trim()).filter(Boolean) : [];
@@ -479,8 +551,20 @@ export default function TecnicoView({
       distrito: 'Surco'
     };
 
-    // Check if there is an existing local draft
-    const savedDraftStr = localStorage.getItem(`mafort_draft_${ot.id}_${currentEquipoId}`);
+    // Check if there is an existing local draft (IndexedDB primero, legacy localStorage como fallback)
+    let savedDraftStr: string | null = null;
+    const idbKey = draftKey(ot.id, currentEquipoId || '');
+    try {
+      const idbDraft = await getDraft(idbKey);
+      if (idbDraft) {
+        savedDraftStr = JSON.stringify(idbDraft.data);
+      }
+    } catch (e) {
+      console.warn('Error reading draft from IndexedDB:', e);
+    }
+    if (!savedDraftStr) {
+      savedDraftStr = localStorage.getItem(`mafort_draft_${ot.id}_${currentEquipoId}`);
+    }
     if (savedDraftStr) {
       try {
         const draft = JSON.parse(savedDraftStr);
@@ -923,6 +1007,9 @@ export default function TecnicoView({
       if (!isOnline) {
         compiledReport.offlineDirty = true;
         onSaveReportOffline(compiledReport);
+        enqueueReportOffline(compiledReport).then(async () => {
+          setQueueCount(await getQueueCount());
+        }).catch((e) => console.warn('No se pudo encolar reporte en IndexedDB:', e));
         onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
         notifyOffline('Reporte Cacheado Localmente', 'El sistema de sincronización offline de Mafort ha encolado este reporte de manera segura.');
       } else {
@@ -936,7 +1023,9 @@ export default function TecnicoView({
       return;
     }
 
+    const cleanDraftKey = draftKey(selectedOt.id, selectedEquipoId || '');
     localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+    deleteDraft(cleanDraftKey).catch(() => {});
     setSelectedOt(prev => prev ? { ...prev, estado: isOnline ? OTStatus.EN_REVISION : OTStatus.TRABAJO_EN_EJECUCION } : null);
     setIsEditingReport(false);
   };
@@ -951,6 +1040,9 @@ export default function TecnicoView({
       if (!isOnline) {
         report.offlineDirty = true;
         onSaveReportOffline(report);
+        enqueueReportOffline(report).then(async () => {
+          setQueueCount(await getQueueCount());
+        }).catch((e) => console.warn('No se pudo encolar reporte en IndexedDB:', e));
         onUpdateOtStatus(selectedOt.id, OTStatus.TRABAJO_EN_EJECUCION);
         notifyOffline('Reporte Cacheado Localmente', 'El wizard ha encolado este reporte. Al reconectarse, subirá automáticamente.');
       } else {
@@ -959,6 +1051,7 @@ export default function TecnicoView({
         notifySuccess('Informe Enviado Exitosamente', 'El informe técnico se ha enviado para revisión.');
       }
       localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+      deleteDraft(draftKey(selectedOt.id, selectedEquipoId || '')).catch(() => {});
       setSelectedOt(prev => prev ? { ...prev, estado: isOnline ? OTStatus.EN_REVISION : OTStatus.TRABAJO_EN_EJECUCION } : null);
       setIsEditingReport(false);
     } catch (err) {
@@ -1017,7 +1110,51 @@ export default function TecnicoView({
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
               <span>Técnico Activo: <strong>{mockTechName}</strong></span>
             </div>
+            <div className="flex items-center gap-2">
+              {queueCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleRetrySync}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/80 rounded-xl text-[10px] font-bold font-mono text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer"
+                  title={syncError || `Intentar sincronizar ahora (último intento ${new Date(lastSyncAt || Date.now()).toLocaleTimeString()})`}
+                >
+                  <UploadCloud size={12} />
+                  <span>{queueCount} en cola</span>
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-[10px] font-bold font-mono text-emerald-700">
+                  <CheckCircle size={12} />
+                  <span>Sin cola</span>
+                </span>
+              )}
+              {isOnline ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-teal-mist text-teal-deep text-[10px] font-bold font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                  En línea
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-[10px] font-bold font-mono">
+                  <WifiOff size={11} />
+                  Offline
+                </span>
+              )}
+            </div>
           </div>
+          {syncError && (
+            <div className="flex items-center justify-between gap-2 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+              <span className="text-[10px] font-bold text-rose-700 font-mono">{syncError}</span>
+              <button
+                type="button"
+                onClick={handleRetrySync}
+                className="text-[10px] font-bold text-rose-700 underline hover:text-rose-900 cursor-pointer"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+          {lastSyncAt && queueCount === 0 && (
+            <div className="text-[10px] text-slate-400 font-mono pl-1">Último sync: hace {Math.max(0, Math.round((Date.now() - new Date(lastSyncAt).getTime()) / 60000))} min</div>
+          )}
 
           <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 text-[11px] text-slate-600 leading-relaxed">
             <p className="font-semibold text-blue-800 flex items-center gap-1.5 mb-1">
@@ -1306,6 +1443,7 @@ export default function TecnicoView({
                     });
                     if (ok) {
                       localStorage.removeItem(`mafort_draft_${selectedOt.id}_${selectedEquipoId}`);
+                      deleteDraft(draftKey(selectedOt.id, selectedEquipoId || '')).catch(() => {});
                       setDraftLoadedMessage(null);
                       // Reload defaults
                       const client = clients.find(c => c.id === selectedOt.clientId);
