@@ -221,7 +221,7 @@ Tres pipelines:
 | Trigger | Push a `dev` o `main`, **excluyendo** `infra/**` |
 | Auth AWS | Access keys (secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) — **no OIDC** (deuda) |
 | Runner | `ubuntu-latest` |
-| Steps | 1. Checkout · 2. Setup Node 20 · 3. `npm ci` · 4. Build app (`npm run build:ci`) · 5. Generate minimal `package.json` (solo `start` script) · 6. Override `Procfile` con: `web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/seedCleanDb.cjs && node dist/seedUbigeo.cjs && node dist/server.cjs` · 7. ZIP dist+package+Procfile+prisma · 8. Upload a `s3://elasticbeanstalk-us-east-1-325580897755` · 9. `CreateAppVersion` · 10. `UpdateEnvironment` (`gestia-backend-dev` o `-prod` según branch) |
+| Steps | 1. Checkout · 2. Setup Node 22 · 3. `npm ci` · 4. Build app (`npm run build`, con `VITE_PWA_TECNICO=1` en `dev`/`qa` y `0` en `main` vía output `pwa_flag` del paso "Determinar ambiente EB") · 5. Generate minimal `package.json` (solo `start` script) · 6. Override `Procfile` con: `web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/server.cjs` · 7. ZIP dist+package+Procfile+prisma · 8. Upload a `s3://elasticbeanstalk-us-east-1-325580897755` · 9. `CreateAppVersion` · 10. `UpdateEnvironment` (`gestia-backend-dev`, `gestia-backend-qa` o `gestia-backend-prod` según branch) |
 
 > [!WARNING]
 > El deploy productivo corre `prisma db push --accept-data-loss` y ejecuta
