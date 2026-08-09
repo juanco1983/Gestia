@@ -14,6 +14,7 @@ import TechMonitoringDashboard from './components/TechMonitoringDashboard';
 import DashboardView from './components/dashboard/DashboardView';
 import { APP_MODULES } from './modulesConfig';
 import { useLocalToast } from './components/shared/ToastModal';
+import { preloadOfflineData } from './offline/preload';
 import { 
   AlertCircle, 
   Terminal, 
@@ -594,6 +595,21 @@ export default function App() {
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [currentUser]);
+
+  // Precarga offline (PWA) al tener datos cargados como Técnico
+  const preloadedForUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'Tecnico') return;
+    if (preloadedForUserRef.current === currentUser.id) return;
+    if (ots.length === 0) return;
+    preloadedForUserRef.current = currentUser.id;
+    const nestedEquipos: Array<Record<string, unknown>> = clients.flatMap((c: any) =>
+      Array.isArray(c?.equipos) ? c.equipos : []
+    );
+    preloadOfflineData(currentUser.id, ots, clients, nestedEquipos).catch((e) =>
+      console.warn('Precarga offline para técnico falló:', e)
+    );
+  }, [currentUser, ots, clients]);
 
   // Sync route on role switch
   useEffect(() => {
