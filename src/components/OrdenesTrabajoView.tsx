@@ -359,15 +359,19 @@ export default function OrdenesTrabajoView({
         
         <div className="flex flex-wrap gap-2.5">
           <button
-            onClick={() => setShowCreateMarcoModal(true)}
-            className="bg-teal-brand hover:bg-teal-deep text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md transition-all active:scale-95"
+            disabled
+            aria-disabled="true"
+            title="La OT y su línea financiera se crean automáticamente al programar una visita. No se requiere ingreso manual."
+            className="bg-slate-100 text-slate-400 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-not-allowed opacity-80"
           >
             <Plus size={15} />
             Crear OT Marco (Padre)
           </button>
           <button
-            onClick={() => setShowAddLineModal(true)}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all"
+            disabled
+            aria-disabled="true"
+            title="Las cuotas se generan automáticamente al crear la OT desde la programación de servicio. No se requiere cuota manual."
+            className="bg-slate-100 text-slate-400 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-not-allowed opacity-80"
           >
             <Layers size={15} />
             Agregar Cuota/Línea
