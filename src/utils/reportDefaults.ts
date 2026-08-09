@@ -1,4 +1,4 @@
-import { OT, Client, TechnicalReport } from '../types';
+import { OT, Client, TechnicalReport, Equipo } from '../types';
 
 export const ALL_ACCIONES = [
   "Revisión general del equipo", "Limpieza general del equipo", "Ajuste mecánico del equipo",
@@ -238,27 +238,53 @@ export function getPhotoSlotsForKva(kva: number): string[] {
   return PHOTO_SLOTS_BY_POTENCIA[matched] || PHOTO_SLOTS_BY_POTENCIA[1];
 }
 
-export function generateDefaultReport(ot: OT, client: Client): TechnicalReport {
+export function buildCaracteristicasFromEquipo(equipo: Equipo | undefined, base: Record<string, string>): Record<string, string> {
+  if (!equipo) return base;
+  const merged: Record<string, string> = { ...base };
+  if (equipo.codigo) merged['CÓDIGO'] = equipo.codigo;
+  if (equipo.tipo) merged['TIPO'] = equipo.tipo;
+  if (equipo.marca) merged['MARCA'] = equipo.marca;
+  if (equipo.modelo) merged['MODELO'] = equipo.modelo;
+  if (equipo.serie) merged['SERIE'] = equipo.serie;
+  if (equipo.potenciaKva != null) merged['POTENCIA'] = `${equipo.potenciaKva} KVA`;
+  if (equipo.ubicacion) merged['UBICACIÓN'] = equipo.ubicacion;
+  if (equipo.estado) merged['ESTADO'] = equipo.estado;
+  if (equipo.especificaciones && typeof equipo.especificaciones === 'object') {
+    for (const [key, val] of Object.entries(equipo.especificaciones)) {
+      if (val === null || val === undefined || val === '') continue;
+      merged[key.toUpperCase()] = String(val);
+    }
+  }
+  return merged;
+}
+
+export function buildAntecedentesTexto(ot: OT, client: Client, caracteristicas: Record<string, string>, fecha: string, hora: string): string {
+  const marca = caracteristicas['MARCA'] || 'NO REGISTRADO';
+  const modelo = caracteristicas['MODELO'] || 'NO REGISTRADO';
+  const serie = caracteristicas['SERIE'] || 'NO REGISTRADO';
+  return `El siguiente informe Técnico se presenta a solicitud de la empresa: "${client.razonSocial}" de acuerdo con la programación y coordinación con el responsable por parte del Cliente, el "${client.contactoNombre}". El servicio se efectuó el día: ${fecha} a las ${hora}. Este equipo se encuentra ubicado en ${client.direccionSede}, ${client.distrito}. El equipo intervenido es el identificado como el UPS de potencia: ${ot.potenciaKva} KVA, marca: "${marca}", modelo: "${modelo}" y con número de serie: "${serie}". Se encontró el equipo cargando adecuadamente protegiendo las cargas del cliente sin alarmas residuales. El sistema cuenta con bypass activo interno/externo con tablero de maniobra sin corte de alimentación crítica.`;
+}
+
+export function generateDefaultReport(ot: OT, client: Client, equipo?: Equipo): TechnicalReport {
   const matchedSlots = getPhotoSlotsForKva(ot.potenciaKva);
-  
-  // Seed realistic photos
+
+  // Fotos SIEMPRE vacías: el técnico debe capturarlas; nunca precargar artefactos fake.
   const fotosLabeled = matchedSlots.map((slot, index) => {
     return {
       slotName: slot,
-      base64: getTechnicalSvg(slot, index, ot.id),
+      base64: '',
       description: `Verificación técnica de: ${slot}`
     };
   });
 
   // Default UPS Characteristics grid
   const isHighPower = ot.potenciaKva >= 40;
-  const caracteristicas: Record<string, string> = {
-    "UBICACIÓN": `CENTRO DE COMPUTO - SALA DE SERVIDORES PRINCIPAL (${client.distrito})`,
+  const baseCaracteristicas: Record<string, string> = {
     "EQUIPO": `${ot.tipoEquipo} - MODELO INDUSTRIAL CRÍTICO`,
     "POTENCIA": `${ot.potenciaKva} KVA`,
-    "MARCA": isHighPower ? "EMERSON LIEBERT" : "APC Smart-UPS",
-    "SERIE": `MF-${ot.id.replace('OT-','')}-${isHighPower ? '9880' : '5442'}`,
-    "MODELO": isHighPower ? "EXM 3 Phase Series" : "RT-X Dual Conversion",
+    "MARCA": "NO REGISTRADO",
+    "SERIE": "NO REGISTRADO",
+    "MODELO": "NO REGISTRADO",
     "TENSIÓN ENTRADA": isHighPower ? "380 VAC 3PH + N + G" : "220VAC 1PH + G",
     "TENSIÓN SALIDA": isHighPower ? "380 VAC 3PH + N + G" : "220VAC 1PH + G",
     "FASES": isHighPower ? "TRIFASICO 3PH" : "MONOFASICO 1F",
@@ -291,6 +317,10 @@ export function generateDefaultReport(ot: OT, client: Client): TechnicalReport {
     "ESTADO (Equip. Entrada)": "OPERATIVO"
   };
 
+  const caracteristicas = buildCaracteristicasFromEquipo(equipo, baseCaracteristicas);
+  const fechaServicio = ot.fechaProgramada || new Date().toISOString().split('T')[0];
+  const horaInicio = ot.horaInicioServicio || "09:00";
+
   return {
     id: `rep_${Date.now()}`,
     otId: ot.id,
@@ -305,7 +335,7 @@ export function generateDefaultReport(ot: OT, client: Client): TechnicalReport {
     },
     observacionesDiagnostico: "El equipo UPS se encontró en óptimo estado de operación. Se realizó limpieza con brocha de polvo acumulado y sopleteo del transformador de aislamiento sin corte en la sala de servidores.",
     comentariosAdicionales: "Las baterías se encuentran cargadas al 94%. Se recomienda mantener la sala hermética y con aire acondicionado térmico a 21°C constantes para resguardar la vida de las celdas.",
-    fotos: fotosLabeled.map(f => f.base64),
+    fotos: [],
     creadoEn: new Date().toISOString(),
     modificadoEn: new Date().toISOString(),
 
@@ -317,7 +347,7 @@ export function generateDefaultReport(ot: OT, client: Client): TechnicalReport {
     horaInicio: ot.horaInicioServicio || "09:00",
     tecnico1: ot.tecnicoTitular,
     tecnico2: ot.tecnicoApoyo || "Ninguno",
-    antecedentes: `El siguiente informe Técnico se presenta a solicitud de la empresa: "${client.razonSocial}" de acuerdo con la programación y coordinación con el responsable por parte del Cliente, el "${client.contactoNombre}". El servicio se efectuó el día: ${ot.fechaProgramada || new Date().toLocaleDateString()} a las ${ot.horaInicioServicio || "09:00"}. Este equipo se encuentra ubicado en ${client.direccionSede}, ${client.distrito}. El equipo intervenido es el identificado como el UPS de potencia: ${ot.potenciaKva} KVA, marca: "${caracteristicas["MARCA"]}", modelo: "${caracteristicas["MODELO"]}" y con número de serie: "${caracteristicas["SERIE"]}". Se encontró el equipo cargando adecuadamente protegiendo las cargas del cliente sin alarmas residuales. El sistema cuenta con bypass activo interno/externo con tablero de maniobra sin corte de alimentación crítica.`,
+    antecedentes: buildAntecedentesTexto(ot, client, caracteristicas, fechaServicio, horaInicio),
     accionesRealizadas: ALL_ACCIONES,
     pasos: {
       paso1: "Se procedió a visualizar el estado actual del UPS, encontrando el equipo completamente operativo en modo inversor protegiendo las cargas informáticas de TI.",
