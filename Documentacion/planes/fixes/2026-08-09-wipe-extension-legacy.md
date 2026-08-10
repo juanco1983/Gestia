@@ -29,4 +29,5 @@ campo `summary` de la respuesta.
 - [x] wipe borra Contract/Visita/TargetVenta/UserActivityLog
 - [x] usuarios y catálogos (Pais/Distrito/TipoContrato) conservados
 - [x] lint/build/validacion local OK
-- [ ] Desplegar a dev y qa y ejecutar wipe en ambos
+- [x] Desplegar a dev y qa y ejecutar wipe en ambos (2026-08-10, HTTP 200 en ambos;
+  legacy + operacional en 0, usuarios conservados: dev 8, qa 7)
