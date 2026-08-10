@@ -1097,7 +1097,7 @@ export default function TecnicoView({
       {!isEditingReport && (
         <div className="lg:col-span-1 bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden self-start animate-fade-in">
         <div className="px-5 py-4 bg-canvas/40 border-b border-hairline flex items-center justify-between">
-          <h2 className="text-ink text-sm font-bold uppercase font-mono tracking-tight flex items-center gap-2">
+          <h2 className="text-ink text-sm font-bold uppercase font-mono tracking-tight flex items-center gap-2" data-tour="bandeja-tecnico">
             <span className="w-7 h-7 rounded-lg bg-teal-brand text-white flex items-center justify-center"><Zap size={15} /></span>
             <span>Mis Órdenes de Trabajo</span>
           </h2>
@@ -2714,6 +2714,7 @@ export default function TecnicoView({
                             <button
                               type="button"
                               onClick={() => setIsEditingReport(true)}
+                              data-tour="informe-tecnico"
                               className="w-full md:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-lg shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-wider font-mono cursor-pointer active:scale-95"
                             >
                               <FileCheck size={18} />

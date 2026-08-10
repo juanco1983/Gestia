@@ -15,6 +15,9 @@ import DashboardView from './components/dashboard/DashboardView';
 import { APP_MODULES } from './modulesConfig';
 import { useLocalToast } from './components/shared/ToastModal';
 import { preloadOfflineData } from './offline/preload';
+import TourGuide from './tour/TourGuide';
+import { useTour } from './tour/useTour';
+import { TOUR_STEPS, TOUR_STORAGE_KEY, type TourModule } from './tour/steps';
 import { 
   AlertCircle, 
   Terminal, 
@@ -39,6 +42,7 @@ import {
   Building2,
   Mail,
   User as UserIcon,
+  HelpCircle,
 } from 'lucide-react';
 
 // Helper components for the main dashboard mockup look
@@ -111,7 +115,13 @@ export default function App() {
   // Clear ALL mafort cache to prevent zombie data (offline queues, old states) from pushing to the server
   useEffect(() => {
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('gestia_') && key !== 'gestia_jwt_token' && key !== 'gestia_current_user') {
+      if (
+        key.startsWith('gestia_') &&
+        key !== 'gestia_jwt_token' &&
+        key !== 'gestia_current_user' &&
+        key !== `${TOUR_STORAGE_KEY}_visto` &&
+        key !== TOUR_STORAGE_KEY
+      ) {
         localStorage.removeItem(key);
       }
     });
@@ -175,6 +185,36 @@ export default function App() {
     }
     return 'Dashboard';
   });
+
+  const tour = useTour();
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const alreadySeen = localStorage.getItem(`${TOUR_STORAGE_KEY}_visto`);
+    if (alreadySeen === '1') return;
+    const t = window.setTimeout(() => {
+      tour.start();
+      localStorage.setItem(`${TOUR_STORAGE_KEY}_visto`, '1');
+    }, 600);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        if (tour.active) {
+          tour.skip();
+        } else {
+          tour.start();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour.active]);
   
   // Search query
   const [searchQuery, setSearchQuery] = useState('');
@@ -1567,6 +1607,16 @@ export default function App() {
                 <Bell size={14} />
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
               </button>
+              <button 
+                type="button"
+                onClick={() => tour.active ? tour.skip() : tour.start()}
+                title="Guía interactiva de Gestia (Ctrl+Shift+H)"
+                aria-label="Abrir guía interactiva de Gestia"
+                data-tour="ayuda-guia"
+                className="p-1.5 bg-white hover:bg-slate-50 text-slate-500 rounded-lg border border-slate-200 hover:text-teal-700 hover:border-teal-200 cursor-pointer"
+              >
+                <HelpCircle size={14} />
+              </button>
             </div>
 
             {/* Profile capsule */}
@@ -1820,6 +1870,17 @@ export default function App() {
         </div>
       )}
       {toastView}
+      <TourGuide
+        active={tour.active}
+        stepIndex={tour.stepIndex}
+        totalSteps={tour.totalSteps}
+        currentRole={currentRole}
+        onNavigate={(module: TourModule) => setCurrentRole(module as any)}
+        onNext={tour.next}
+        onPrev={tour.prev}
+        onSkip={tour.skip}
+        onFinish={tour.finish}
+      />
     </div>
   );
 }

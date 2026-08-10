@@ -343,7 +343,7 @@ export default function OrdenesTrabajoView({
     <div className="space-y-6 text-left" id="ot-marco-main-panel">
       
       {/* Top Level Module Header */}
-      <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" data-tour="ot-crear">
         <div>
           <span className="text-[10px] font-black tracking-wider uppercase bg-teal-brand text-white px-2.5 py-1 rounded-md font-mono">
             Módulo Operacional

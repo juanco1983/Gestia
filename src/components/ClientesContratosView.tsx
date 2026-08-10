@@ -1524,6 +1524,7 @@ export default function ClientesContratosView({
           {activeTab === 'clientes' ? (
             <button
               onClick={() => setShowClientModal(true)}
+              data-tour="cliente-crear"
               className="bg-[#00B594] hover:bg-[#00a385] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-[0_4px_12px_rgba(0,181,148,0.2)] flex items-center gap-2 cursor-pointer transition-all"
             >
               <UserPlus size={15} />
@@ -1532,6 +1533,7 @@ export default function ClientesContratosView({
           ) : (
             <button
               onClick={() => setShowContratoModal(true)}
+              data-tour="contrato-crear"
               className="bg-[#00B594] hover:bg-[#00a385] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-[0_4px_12px_rgba(0,181,148,0.2)] flex items-center gap-2 cursor-pointer transition-all"
             >
               <Briefcase size={15} />
@@ -3083,6 +3085,7 @@ export default function ClientesContratosView({
                     <button
                       type="button"
                       onClick={() => { setPickerMode('contrato'); setShowEquipoPicker(true); }}
+                      data-tour="contrato-equipo"
                       className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-xl text-[10px] cursor-pointer shadow-sm flex items-center gap-1"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
