@@ -1954,6 +1954,175 @@ app.post("/api/ot-equipo-asignaciones", async (req, res) => {
 });
 
 // ----- Equipment endpoints -----
+// ----- Inventario de Equipos (módulo consolidado) -----
+const ESTADOS_VISITA_FUTURA = ['Creada', 'Pendiente de Programación', 'Asignada', 'Programada'];
+
+app.get("/api/inventario-equipos", async (req: any, res) => {
+  try {
+    const { q, clienteId, estado, tipo } = req.query;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const pageSize = Math.max(1, Math.min(50, parseInt(req.query.page_size as string, 10) || 10));
+
+    const where: any = {};
+    if (clienteId) {
+      where.OR = [
+        { clienteId: clienteId },
+        { contrato: { clientId: clienteId } }
+      ];
+    }
+    if (estado) where.estado = estado;
+    if (tipo) where.tipo = tipo;
+    if (q) {
+      const searchOR = [
+        { codigo: { contains: q, mode: 'insensitive' } },
+        { serie: { contains: q, mode: 'insensitive' } },
+        { marca: { contains: q, mode: 'insensitive' } },
+        { modelo: { contains: q, mode: 'insensitive' } },
+      ];
+      if (where.OR) {
+        const clientOR = where.OR;
+        delete where.OR;
+        where.AND = [{ OR: clientOR }, { OR: searchOR }];
+      } else {
+        where.OR = searchOR;
+      }
+    }
+
+    const [allEquipos, total] = await Promise.all([
+      prisma.equipo.findMany({
+        where,
+        orderBy: { creadoEn: 'desc' },
+        include: {
+          contrato: { select: { id: true, n_contrato: true, clientId: true, fecha_inicio: true, fecha_fin: true, cliente: true } },
+          servicios: { select: { id: true } },
+        },
+      }),
+      prisma.equipo.count({ where }),
+    ]);
+
+    const ids = allEquipos.map(e => e.id);
+    const clienteIds = allEquipos
+      .map(e => e.clienteId || e.contrato?.clientId)
+      .filter(Boolean) as string[];
+    const [asignaciones, reportsPermodules, clientes] = await Promise.all([
+      prisma.otEquipoAsignacion.findMany({ where: { equipoId: { in: ids } } }),
+      prisma.technicalReport.findMany({ where: { equipoId: { in: ids } } }),
+      prisma.client.findMany({ where: { id: { in: clienteIds } } }),
+    ]);
+    const reports = [...reportsPermodules];
+
+    const asigEquipoMap: Record<string, string[]> = {};
+    for (const a of asignaciones) {
+      (asigEquipoMap[a.equipoId] ||= []).push(a.otId);
+    }
+    const otIdsDeAsignaciones = Array.from(new Set(asignaciones.map(a => a.otId)));
+    if (otIdsDeAsignaciones.length) {
+      const legacyReports = await prisma.technicalReport.findMany({
+        where: { equipoId: null as any, otId: { in: otIdsDeAsignaciones } },
+      });
+      reports.push(...legacyReports);
+    }
+
+    const otIds = Array.from(new Set(reports.map(r => r.otId)));
+    const ots = await prisma.oT.findMany({ where: { id: { in: otIds } } });
+    const otMap = new Map(ots.map(o => [o.id, o] as const));
+    const clienteMap = new Map(clientes.map(c => [c.id, c] as const));
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const items = allEquipos.map(eq => {
+      const empresa = eq.clienteId
+        ? (clienteMap.get(eq.clienteId) || null)
+        : (eq.contrato?.clientId ? (clienteMap.get(eq.contrato.clientId) || null) : null);
+
+      const eqOtIds = asigEquipoMap[eq.id] || [];
+      const eqReports = reports.filter(r => {
+        if (r.equipoId === eq.id) return true;
+        return r.equipoId === null && eqOtIds.includes(r.otId);
+      });
+      const eqReportsSorted = eqReports
+        .map(r => ({ report: r, ot: otMap.get(r.otId) }))
+        .sort((a, b) => (b.report.fechaServicio || '').localeCompare(a.report.fechaServicio || ''))
+        .map(({ report, ot }) => ({
+          id: report.id,
+          otId: report.otId,
+          equipoId: report.equipoId,
+          informeN: report.informeN || `INF-${report.otId}`,
+          hojaServicioN: report.hojaServicioN || null,
+          fechaServicio: report.fechaServicio || null,
+          tipoServicio: report.tipoServicio || ot?.tipoMantenimiento || 'Preventivo',
+          tecnicoTitular: report.tecnico1 || ot?.tecnicoTitular || null,
+          tecnicoApoyo: report.tecnico2 || ot?.tecnicoApoyo || null,
+          voltajeEntrada: report.voltajeEntrada,
+          voltajeSalida: report.voltajeSalida,
+          otEstado: ot?.estado || null,
+          otIdCode: ot ? (ot.id.startsWith('ot_') ? ot.id.replace('ot_', 'OT-') : ot.id) : report.otId,
+        }));
+
+      const visitasFuturas = ots
+        .filter(ot => eqOtIds.includes(ot.id) && ESTADOS_VISITA_FUTURA.includes(ot.estado) && (ot.fechaProgramada || '') >= hoy)
+        .map(ot => ({
+          otId: ot.id,
+          codigo: ot.id.startsWith('ot_') ? ot.id.replace('ot_', 'OT-') : ot.id,
+          fechaProgramada: ot.fechaProgramada,
+          tipoMantenimiento: ot.tipoMantenimiento,
+          estado: ot.estado,
+        }));
+
+      const ultimoInforme = eqReportsSorted[0] || null;
+
+      return {
+        id: eq.id,
+        codigo: eq.codigo,
+        tipo: eq.tipo,
+        marca: eq.marca,
+        modelo: eq.modelo,
+        serie: eq.serie,
+        potenciaKva: eq.potenciaKva,
+        ubicacion: eq.ubicacion,
+        estado: eq.estado,
+        creadoEn: eq.creadoEn,
+        empresa: empresa ? { id: empresa.id, razonSocial: empresa.razonSocial, ruc: empresa.ruc } : null,
+        contrato: eq.contrato
+          ? {
+              id: eq.contrato.id,
+              codigo: eq.contrato.n_contrato || eq.contrato.cliente || eq.contrato.id,
+              fechaInicio: eq.contrato.fecha_inicio || null,
+              fechaFin: eq.contrato.fecha_fin || null,
+            }
+          : null,
+        visitasHistoricasCount: (eq.servicios || []).length,
+        visitasFuturas,
+        ultimoInforme,
+        informes: eqReportsSorted,
+        countInformes: eqReportsSorted.length,
+      };
+    });
+
+    const start = (page - 1) * pageSize;
+    const sliced = items.slice(start, start + pageSize);
+    const operativos = allEquipos.filter(e => e.estado === 'Operativo').length;
+    const enMantenimiento = allEquipos.filter(e => ['En reparación', 'En observación'].includes(e.estado)).length;
+    const proximasVisitas = new Set(items.flatMap(i => i.visitasFuturas.map(v => v.otId))).size;
+
+    res.json({
+      items: sliced,
+      total,
+      page,
+      page_size: pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      kpis: {
+        total: allEquipos.length,
+        operativos,
+        operativosPct: allEquipos.length ? Math.round((operativos / allEquipos.length) * 100) : 0,
+        enMantenimiento,
+        proximasVisitas,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener inventario de equipos" });
+  }
+});
+
 app.get("/api/equipos", async (req: any, res) => {
   try {
     const { contratoId, clienteId, estado, tipo, q } = req.query;

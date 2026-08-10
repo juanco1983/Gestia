@@ -439,3 +439,67 @@ export interface OtEquipoAsignacion {
   creadoEn?: string;
 }
 
+export interface InformeEquipoDTO {
+  id: string;
+  otId: string;
+  equipoId: string | null;
+  informeN: string;
+  hojaServicioN?: string | null;
+  fechaServicio?: string | null;
+  tipoServicio?: string | null;
+  tecnicoTitular?: string | null;
+  tecnicoApoyo?: string | null;
+  voltajeEntrada: number;
+  voltajeSalida: number;
+  otEstado?: string | null;
+  otIdCode?: string;
+}
+
+export interface VisitaFuturaDTO {
+  otId: string;
+  codigo: string;
+  fechaProgramada?: string;
+  tipoMantenimiento?: string;
+  estado?: string;
+}
+
+export interface InventarioEquipoDTO {
+  id: string;
+  codigo: string;
+  tipo: string;
+  marca?: string | null;
+  modelo?: string | null;
+  serie?: string | null;
+  potenciaKva?: number | null;
+  ubicacion?: string | null;
+  estado: string;
+  creadoEn?: string;
+  empresa?: { id: string; razonSocial: string; ruc?: string } | null;
+  contrato?: {
+    id: string;
+    codigo?: string | null;
+    fechaInicio?: string | null;
+    fechaFin?: string | null;
+  } | null;
+  visitasHistoricasCount: number;
+  visitasFuturas: VisitaFuturaDTO[];
+  ultimoInforme?: InformeEquipoDTO | null;
+  informes: InformeEquipoDTO[];
+  countInformes: number;
+}
+
+export interface InventarioEquiposResponse {
+  items: InventarioEquipoDTO[];
+  total: number;
+  page: number;
+  page_size: number;
+  totalPages: number;
+  kpis: {
+    total: number;
+    operativos: number;
+    operativosPct: number;
+    enMantenimiento: number;
+    proximasVisitas: number;
+  };
+}
+
