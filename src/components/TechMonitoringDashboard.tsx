@@ -468,7 +468,7 @@ export default function TechMonitoringDashboard({
         {/* Panel de Programación (Vista Principal) */}
         <div className="flex-1 flex flex-col bg-slate-100 overflow-hidden">
           {/* Main Module Header */}
-          <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col gap-4 shrink-0">
+          <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col gap-4 shrink-0" data-tour="programar-visita">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start">
                 <button 
@@ -1825,6 +1825,7 @@ export default function TechMonitoringDashboard({
                       setSelectedOtForAssign(selectedOtInfo);
                       setSelectedOtInfo(null);
                     }}
+                    data-tour="asignar-tecnico"
                     className="w-full flex items-center justify-center gap-2 bg-[#00B594] text-white text-sm font-black py-2.5 rounded-lg hover:bg-[#009b7e] transition-all shadow-md shadow-emerald-500/10"
                   >
                     <UserPlus size={16} />

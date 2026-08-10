@@ -331,7 +331,7 @@ export default function ClienteView({
           <div className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-200/80 p-12 text-center text-slate-400 space-y-3 font-sans h-full flex flex-col items-center justify-center min-h-[400px]">
             <CheckSquare size={36} className="text-slate-350" />
             <div className="space-y-1">
-              <p className="font-bold text-slate-700 text-sm">Bandeja de Conformidades del Cliente</p>
+              <p className="font-bold text-slate-700 text-sm" data-tour="cliente-bandeja">Bandeja de Conformidades del Cliente</p>
               <p className="text-slate-400 text-xs">Para previsualizar las 10 páginas del reporte completo y autorizar el cierre con su firma, seleccione una de las actas de la lista izquierda.</p>
             </div>
           </div>

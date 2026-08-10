@@ -870,6 +870,7 @@ export default function VentasView({
         </button>
         <button
           onClick={() => setVentasTab('informes')}
+          data-tour="ventas-control-calidad"
           className={`pb-3 text-xs font-bold font-sans tracking-wide transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
             ventasTab === 'informes'
               ? 'border-[#00B594] text-[#00B594] font-black'

@@ -36,7 +36,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   });
 
   return (
-    <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col space-y-4">
+    <div id="tour-dashboard-header" className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col space-y-4">
       {/* Top Header Row */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* User Greeting & Subtitle */}

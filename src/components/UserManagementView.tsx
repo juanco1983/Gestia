@@ -251,7 +251,7 @@ export default function UserManagementView({
             <span className="p-2 bg-emerald-50 rounded-xl text-emerald-600 block shadow-xs">
               <Users size={18} />
             </span>
-            <h2 className="text-base font-bold font-sans tracking-tight text-slate-800">Centro de Gestión de Operadores</h2>
+            <h2 className="text-base font-bold font-sans tracking-tight text-slate-800" data-tour="usuarios-crear">Centro de Gestión de Operadores</h2>
           </div>
           <p className="text-xs text-slate-500 font-sans">
             Administre privilegios de acceso para personal de ventas, ingenieros de campo y supervisores técnicos.
