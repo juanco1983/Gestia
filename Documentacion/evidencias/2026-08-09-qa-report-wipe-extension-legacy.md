@@ -32,5 +32,16 @@
 Cubierta la integracion local del endpoint extendido. La verificacion en los
 ambientes dev y qa se hara tras el deploy (criterios del plan).
 
+## Verificacion en ambientes (2026-08-10)
+Wipe ejecutado via `POST /api/admin/wipe-operational-db` con token admin firmado
+en `dev` (d24240l09ia1ef.cloudfront.net) y `qa` (dxw5j68fci6ic.cloudfront.net).
+| Entorno | Pre | Wipe HTTP | Post |
+|---|---|---|---|
+| dev | 8u/18cli/3legacy/54OT/2rep/79logs | 200 | 0 operacional+legacy; 8u |
+| qa | 7u/3cli/0legacy/2OT/2rep/60logs | 200 | 0 operacional+legacy; 7u |
+
+El summary de ambos responde `contractsLegacy`, confirmando el deploy del codigo
+extendido en los dos ambientes. Criterio del plan cerrado.
+
 ## Verdict
 APPROVED — listo para commit, push, PR a dev y promocion a qa.
