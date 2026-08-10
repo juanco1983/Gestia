@@ -10,7 +10,7 @@ export const INITIAL_USERS: User[] = [
     area: 'Administración General',
     ultimoIngreso: '2026-06-30 00:19:55',
     creadoEn: '2026-01-01',
-    allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios']
+    allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios', 'InventarioEquipos']
   },
   {
     id: 'user_1',
@@ -21,7 +21,7 @@ export const INITIAL_USERS: User[] = [
     area: 'Planeamiento Comercial',
     ultimoIngreso: '2026-06-22 07:15',
     creadoEn: '2026-01-10',
-    allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas']
+    allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'InventarioEquipos']
   },
   {
     id: 'user_2',
@@ -32,7 +32,7 @@ export const INITIAL_USERS: User[] = [
     area: 'Mantenimiento de Campo',
     ultimoIngreso: '2026-06-22 07:22',
     creadoEn: '2026-01-12',
-    allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico']
+    allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico', 'InventarioEquipos']
   },
   {
     id: 'user_3',
@@ -43,7 +43,7 @@ export const INITIAL_USERS: User[] = [
     area: 'Control de Calidad (SLA)',
     ultimoIngreso: '2026-06-27 03:06:49',
     creadoEn: '2026-01-15',
-    allowedModules: ['Supervisor', 'Monitoreo', 'GestionOTs']
+    allowedModules: ['Supervisor', 'Monitoreo', 'GestionOTs', 'InventarioEquipos']
   },
   {
     id: 'user_4',

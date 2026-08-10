@@ -71,6 +71,7 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
         });
         setTipos(prev => Array.from(new Set([...prev, ...json.items.map((it: any) => it.tipo).filter(Boolean)])));
       }
+      return json;
     } catch (err: any) {
       setError(err.message || 'Error de red');
     } finally {
@@ -84,7 +85,16 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
 
   const totalPages = data?.totalPages || 1;
 
-  const refresh = useCallback(() => { load(); if (selected) setSelected(null); }, [load, selected]);
+  const refresh = useCallback(async () => {
+    const json = await load();
+    if (!selected) return;
+    const updated = json?.items?.find((it: any) => it.id === selected.id);
+    if (updated) {
+      setSelected(updated as InventarioEquipoDTO);
+    } else {
+      setSelected(null);
+    }
+  }, [load, selected]);
 
   return (
     <div className="space-y-5">
