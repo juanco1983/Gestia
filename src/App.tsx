@@ -10,6 +10,7 @@ import SupervisorView from './components/SupervisorView';
 import ClienteView from './components/ClienteView';
 import LoginView from './components/LoginView';
 import UserManagementView from './components/UserManagementView';
+import InventarioEquiposView from './components/InventarioEquiposView';
 import TechMonitoringDashboard from './components/TechMonitoringDashboard';
 import DashboardView from './components/dashboard/DashboardView';
 import { APP_MODULES } from './modulesConfig';
@@ -170,7 +171,7 @@ export default function App() {
     return null;
   });
 
-  const [currentRole, setCurrentRole] = useState<'Dashboard' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente' | 'Usuarios' | 'GestionOTs' | 'ClientesContratos' | 'Monitoreo'>(() => {
+  const [currentRole, setCurrentRole] = useState<'Dashboard' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente' | 'Usuarios' | 'GestionOTs' | 'ClientesContratos' | 'Monitoreo' | 'InventarioEquipos'>(() => {
     const local = localStorage.getItem('gestia_current_user');
     if (local) {
       try {
@@ -1424,6 +1425,9 @@ export default function App() {
               if (link.id === 'GestionOTs' || link.id === 'ClientesContratos') {
                 return currentUser.role === 'Ventas';
               }
+              if (link.id === 'InventarioEquipos') {
+                return ['Administrador', 'Ventas', 'Supervisor', 'Tecnico'].includes(currentUser.role);
+              }
               if (link.id === 'Usuarios') {
                 return false;
               }
@@ -1441,6 +1445,8 @@ export default function App() {
                 badgeCount = 'CRM';
               } else if (link.id === 'Monitoreo') {
                 badgeCount = 'Agenda';
+              } else if (link.id === 'InventarioEquipos') {
+                badgeCount = 'Equipos';
               } else if (link.id === 'GestionOTs') {
                 badgeCount = 'SLA';
               } else if (link.id === 'Ventas') {
@@ -1795,6 +1801,11 @@ export default function App() {
                   }}
                 />
               </div>
+            )}
+
+            {/* Inventario de Equipos */}
+            {currentRole === 'InventarioEquipos' && (
+              <InventarioEquiposView currentUser={currentUser} />
             )}
 
             {/* 6. SEGURIDAD & OPERADORES VIEW MODULE */}
