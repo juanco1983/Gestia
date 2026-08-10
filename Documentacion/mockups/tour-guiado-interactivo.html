@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gestia — Tour Guiado del Proceso (Mockup)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --color-canvas:#F2F6F4; --color-surface:#FFFFFF; --color-ink:#16241F;
+    --color-ink-soft:#5B6B63; --color-ink-mute:#8CA097; --color-hairline:#E1E9E4;
+    --color-teal-brand:#0F9E82; --color-teal-deep:#0B3B34; --color-teal-mist:#E4F4EF;
+    --color-ai-brand:#6C6FE0; --color-ai-mist:#EEEEFB;
+  }
+  html,body{font-family:"Inter",ui-sans-serif,system-ui,sans-serif;background:var(--color-canvas);}
+  .font-display{font-family:"Sora",sans-serif;}
+  .font-mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+  .bg-canvas{background:var(--color-canvas);} .bg-surface{background:#fff;}
+  .bg-teal-brand{background:var(--color-teal-brand);} .bg-teal-mist{background:var(--color-teal-mist);}
+  .bg-teal-deep{background:var(--color-teal-deep);}
+  .text-teal-brand{color:var(--color-teal-brand);} .text-teal-deep{color:var(--color-teal-deep);}
+  .border-hairline{border-color:var(--color-hairline);} .border-teal-brand{border-color:var(--color-teal-brand);}
+  .card-shadow{box-shadow:0 8px 30px rgba(0,0,0,.015);}
+  .spotlight-mask{box-shadow:0 0 0 9999px rgba(9,28,25,.62); border-radius:18px; outline:2px solid var(--color-teal-brand); outline-offset:6px;}
+  .mock{margin-bottom:48px;border:1px solid var(--color-hairline);border-radius:20px;overflow:hidden;background:var(--color-canvas);}
+  .mock-label{background:#0B3B34;color:#A7E9D8;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:8px 14px;}
+  .pill{font-size:9px;font-weight:800;font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em;border-radius:9999px;padding:2px 8px;}
+  nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:12px;font-weight:700;color:#475569;}
+  nav a.active{background:rgba(15,158,130,.10);color:var(--color-teal-deep);}
+  nav a.active .dot{background:var(--color-teal-brand);}
+  .dot{width:6px;height:6px;border-radius:9999px;background:#cbd5e1;}
+  .kbd{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;border-bottom-width:2px;border-radius:6px;padding:1px 6px;color:#475569;}
+  .danger-card{background:#fff7ed;border:1px solid #fed7aa;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .fade{animation:fadeIn .25s ease-out;}
+  .ring-amber-soft{box-shadow:0 0 0 4px rgba(245,158,11,.22);}
+</style>
+</head>
+<body class="text-slate-900">
+<div class="max-w-[1280px] mx-auto p-6">
+
+  <header class="mb-6">
+    <h1 class="font-display text-3xl font-black tracking-tight text-slate-900">Tour Guiado del Proceso — Mockup</h1>
+    <p class="text-sm text-slate-500 mt-1 font-mono uppercase tracking-wider">Sistema Gestia · Tour lineal único · 12 pasos en orden del negocio</p>
+    <p class="text-xs text-slate-500 mt-2">Orden: Cliente → Contrato → Programar visita → Crear OT → Asignar técnico → Informe → Aprobación → Ventas → Cliente → Admin · Avisos de dependencia en OT</p>
+  </header>
+
+  <!-- ============ MOCK 1: BIENVENIDA ============ -->
+  <section class="mock">
+    <div class="mock-label">01 · Bienvenida — "Empezar tour" (lineal, único)</div>
+    <div class="grid grid-cols-[220px_1fr] min-h-[460px]">
+      <aside class="bg-white border-r border-hairline p-3">
+        <div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div>
+        <nav class="mt-4 space-y-1" id="nav1"></nav>
+      </aside>
+      <main class="p-5 relative">
+        <div class="bg-white rounded-2xl border border-slate-100 card-shadow p-5 flex justify-between items-center">
+          <div><h2 class="font-display text-xl font-black text-slate-900">Hola, Juan Córdova</h2><p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-0.5">Centro de Comando Operativo</p></div>
+          <span class="pill bg-emerald-50 text-emerald-700 border border-emerald-200">Conexión estable</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div class="bg-white rounded-2xl border border-slate-100 p-4"><p class="text-[10px] font-mono uppercase text-slate-400">OTs activas</p><p class="font-display text-2xl font-black mt-1">12</p></div>
+          <div class="bg-white rounded-2xl border border-slate-100 p-4"><p class="text-[10px] font-mono uppercase text-slate-400">Cumplimiento</p><p class="font-display text-2xl font-black mt-1 text-teal-brand">94%</p></div>
+        </div>
+        <div class="absolute inset-0 bg-[#091c19]/60 backdrop-blur-[1px] grid place-items-center">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-xl w-[440px] p-6 fade">
+            <div class="w-12 h-12 rounded-xl bg-teal-mist text-teal-deep grid place-items-center mb-3"><i data-lucide="route" class="w-6 h-6"></i></div>
+            <h3 class="font-display text-xl font-black text-slate-900">Recorre el proceso de Gestia</h3>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Te guiaré por el flujo completo en orden: <span class="font-semibold text-slate-700">Cliente → Contrato → Visita → OT → Técnico → Aprobación</span>. En ~3 min entenderás cuándo usar cada módulo y por qué el orden importa.</p>
+            <div class="bg-slate-50 rounded-xl border border-slate-100 p-3 mt-4">
+              <ol class="space-y-1.5 text-xs text-slate-600 font-mono">
+                <li><span class="text-slate-400">01</span> Dashboard · bienvenida</li>
+                <li><span class="text-slate-400">02</span> Crear cliente</li>
+                <li><span class="text-slate-400">03</span> Crear contrato</li>
+                <li><span class="text-slate-400">04</span> Programar visita <span class="text-amber-600">↳ antes de la OT</span></li>
+                <li><span class="text-slate-400">05</span> Crear OT</li>
+                <li class="text-slate-400">… 7 pasos más</li>
+              </ol>
+            </div>
+            <div class="flex items-center justify-between mt-5">
+              <button class="text-xs font-bold text-slate-500 hover:text-slate-900">Ver después</button>
+              <button class="bg-teal-brand hover:bg-teal-deep text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2">Empezar tour <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ MOCK 2: PASO 3 · COMERCIAL — NUEVO CLIENTE ============ -->
+  <section class="mock">
+    <div class="mock-label">02 · Paso 3 de 12 · Comercial — spotlight "Nuevo cliente"</div>
+    <div class="grid grid-cols-[220px_1fr] min-h-[420px]">
+      <aside class="bg-white border-r border-hairline p-3"><div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div><nav class="mt-4 space-y-1" id="nav2"></nav></aside>
+      <main class="p-5 relative">
+        <div class="bg-white rounded-2xl border border-slate-100 card-shadow p-5 flex justify-between items-center">
+          <div><h2 class="font-display text-xl font-black text-slate-900">Comercial</h2><p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-0.5">Clientes y contratos · CRM</p></div>
+          <div class="relative">
+            <button class="bg-teal-brand text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 spotlight-mask"><i data-lucide="plus" class="w-4 h-4"></i> Nuevo cliente</button>
+            <div class="absolute right-0 top-full mt-3 bg-white rounded-2xl border border-slate-100 shadow-xl w-[340px] p-5 fade">
+              <div class="flex items-center justify-between mb-2"><span class="pill bg-teal-mist text-teal-deep">Paso 3 de 12 · Comercial</span><span class="text-[10px] font-mono text-slate-400">03/12</span></div>
+              <h4 class="font-display font-black text-slate-900 text-base">Crea el cliente de la operación</h4>
+              <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Todo el proceso empieza aquí: registra el cliente con RUC y sede. Luego le asociarás contrato (paso siguiente) y, más adelante, visitas y OTs.</p>
+              <div class="h-1 rounded-full bg-slate-100 mt-4 overflow-hidden"><div class="h-full bg-teal-brand" style="width:25%"></div></div>
+              <div class="flex items-center justify-between mt-4">
+                <button class="text-xs font-bold text-slate-500 flex items-center gap-1"><i data-lucide="x" class="w-3.5 h-3.5"></i> Saltar</button>
+                <div class="flex items-center gap-2"><button class="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Atrás</button><button class="bg-teal-brand text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1">Siguiente <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="absolute inset-0 bg-[#091c19]/60 pointer-events-none"></div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ MOCK 3: PASO 4 · OPERACIONES — PROGRAMAR VISITA (aviso dependencia) ============ -->
+  <section class="mock">
+    <div class="mock-label">03 · Paso 4 de 12 · Operaciones — programar visita (aviso: antes de la OT)</div>
+    <div class="grid grid-cols-[220px_1fr] min-h-[440px]">
+      <aside class="bg-white border-r border-hairline p-3"><div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div><nav class="mt-4 space-y-1" id="nav3"></nav></aside>
+      <main class="p-5 relative">
+        <div class="bg-white rounded-2xl border border-slate-100 card-shadow p-5 flex justify-between items-center">
+          <div><h2 class="font-display text-xl font-black text-slate-900">Operaciones</h2><p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-0.5">Agenda · visitas programadas</p></div>
+          <div class="relative">
+            <button class="bg-teal-brand text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 spotlight-mask"><i data-lucide="calendar-plus" class="w-4 h-4"></i> Programar visita</button>
+            <div class="absolute right-0 top-full mt-3 bg-white rounded-2xl border border-slate-100 shadow-xl w-[360px] p-5 fade">
+              <div class="flex items-center justify-between mb-2"><span class="pill bg-blue-50 text-blue-700">Paso 4 de 12 · Operaciones</span><span class="text-[10px] font-mono text-slate-400">04/12</span></div>
+              <h4 class="font-display font-black text-slate-900 text-base">Programa la visita</h4>
+              <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Aquí defines cuándo y dónde se hará la visita técnica. Esta visita es la que <span class="font-semibold text-slate-700">alimenta la OT del paso siguiente</span>: sin visita programada, no hay OT.</p>
+              <!-- aviso de dependencia -->
+              <div class="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 mt-0.5"></i>
+                <p class="text-[11px] text-amber-800 leading-snug"><span class="font-bold">Dependencia:</span> la OT (paso 5) se genera a partir de una visita. Programa la visita primero.</p>
+              </div>
+              <div class="h-1 rounded-full bg-slate-100 mt-4 overflow-hidden"><div class="h-full bg-teal-brand" style="width:33%"></div></div>
+              <div class="flex items-center justify-between mt-4">
+                <button class="text-xs font-bold text-slate-500 flex items-center gap-1"><i data-lucide="x" class="w-3.5 h-3.5"></i> Saltar</button>
+                <div class="flex items-center gap-2"><button class="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl">Atrás</button><button class="bg-teal-brand text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1">Siguiente <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="absolute inset-0 bg-[#091c19]/60 pointer-events-none"></div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ MOCK 4: PASO 5 · GESTIÓN DE OT — CREAR OT (aviso: requiere visita) ============ -->
+  <section class="mock">
+    <div class="mock-label">04 · Paso 5 de 12 · Gestión de OT — crear OT (aviso: requiere visita previa)</div>
+    <div class="grid grid-cols-[220px_1fr] min-h-[460px]">
+      <aside class="bg-white border-r border-hairline p-3"><div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div><nav class="mt-4 space-y-1" id="nav4"></nav></aside>
+      <main class="p-5 relative">
+        <div class="bg-white rounded-2xl border border-slate-100 card-shadow p-5 flex justify-between items-center">
+          <div><h2 class="font-display text-xl font-black text-slate-900">Gestión de OT</h2><p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-0.5">Órdenes de trabajo · SLA</p></div>
+          <div class="relative">
+            <button class="bg-teal-brand text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-2 spotlight-mask"><i data-lucide="file-plus-2" class="w-4 h-4"></i> Crear OT</button>
+            <div class="absolute right-0 top-full mt-3 bg-white rounded-2xl border border-slate-100 shadow-xl w-[360px] p-5 fade">
+              <div class="flex items-center justify-between mb-2"><span class="pill bg-indigo-50 text-indigo-700">Paso 5 de 12 · Gestión de OT</span><span class="text-[10px] font-mono text-slate-400">05/12</span></div>
+              <h4 class="font-display font-black text-slate-900 text-base">Genera la OT</h4>
+              <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">La Orden de Trabajo formaliza la intervención. Aquí vinculas la visita del paso anterior y defines el tipo de mantenimiento.</p>
+              <div class="mt-3 flex items-start gap-2 danger-card rounded-xl p-2.5">
+                <i data-lucide="lock" class="w-4 h-4 text-rose-600 mt-0.5"></i>
+                <p class="text-[11px] text-rose-800 leading-snug"><span class="font-bold">Requiere visita:</span> no puedes crear una OT sin una visita programada en <span class="font-semibold">Operaciones</span> (paso 4). Si no la tienes, vuelve atrás.</p>
+              </div>
+              <button class="mt-3 text-[11px] font-bold text-teal-brand flex items-center gap-1 hover:underline"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Volver a Operaciones para programar la visita</button>
+              <div class="h-1 rounded-full bg-slate-100 mt-3 overflow-hidden"><div class="h-full bg-teal-brand" style="width:42%"></div></div>
+              <div class="flex items-center justify-between mt-3">
+                <button class="text-xs font-bold text-slate-500 flex items-center gap-1"><i data-lucide="x" class="w-3.5 h-3.5"></i> Saltar</button>
+                <div class="flex items-center gap-2"><button class="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl">Atrás</button><button class="bg-teal-brand text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1">Siguiente <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="absolute inset-0 bg-[#091c19]/60 pointer-events-none"></div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ MOCK 5: CENTRO DE AYUDA — progreso lineal ============ -->
+  <section class="mock">
+    <div class="mock-label">05 · Centro de ayuda — progreso del tour lineal + continuar / reiniciar</div>
+    <div class="grid grid-cols-[220px_1fr_340px] min-h-[440px]">
+      <aside class="bg-white border-r border-hairline p-3"><div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div><nav class="mt-4 space-y-1" id="nav5"></nav></aside>
+      <main class="p-5 relative">
+        <div class="bg-white rounded-2xl border border-slate-100 card-shadow p-5 flex justify-between items-center">
+          <div><h2 class="font-display text-xl font-black text-slate-900">Dashboard</h2><p class="text-[10px] text-slate-400 font-mono uppercase tracking-wider mt-0.5">Centro de Comando Operativo</p></div>
+          <button class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 grid place-items-center text-slate-600 hover:text-slate-900 hover:bg-slate-100"><i data-lucide="graduation-cap" class="w-4 h-4"></i></button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3"><div class="bg-white rounded-2xl border border-slate-100 p-4"><p class="text-[10px] font-mono uppercase text-slate-400">OTs activas</p><p class="font-display text-2xl font-black mt-1">12</p></div><div class="bg-white rounded-2xl border border-slate-100 p-4"><p class="text-[10px] font-mono uppercase text-slate-400">Cumplimiento</p><p class="font-display text-2xl font-black mt-1 text-teal-brand">94%</p></div></div>
+      </main>
+      <aside class="bg-white border-l border-hairline p-4 flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2"><i data-lucide="life-buoy" class="w-4 h-4 text-teal-brand"></i><h3 class="font-display font-black text-slate-900 text-sm">Centro de ayuda</h3></div>
+          <button class="w-7 h-7 rounded-lg bg-slate-50 grid place-items-center text-slate-500 hover:bg-slate-100"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div class="mt-3 mb-2">
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>Progreso del tour</span><span>4 / 12</span></div>
+          <div class="h-1.5 rounded-full bg-slate-100 mt-1 overflow-hidden"><div class="h-full bg-teal-brand" style="width:33%"></div></div>
+        </div>
+        <ul class="space-y-1 text-sm overflow-y-auto" id="helpList"></ul>
+        <div class="mt-auto pt-3 border-t border-slate-100 space-y-2">
+          <button class="w-full bg-teal-brand hover:bg-teal-deep text-white font-bold text-xs px-3 py-2.5 rounded-xl flex items-center justify-center gap-2"><i data-lucide="play" class="w-3.5 h-3.5"></i> Continuar desde el paso 5</button>
+          <button class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-2.5 rounded-xl flex items-center justify-center gap-2"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar tour</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ MOCK 6: ESTADO FINAL ============ -->
+  <section class="mock">
+    <div class="mock-label">06 · Estado final — tour del proceso completo</div>
+    <div class="grid grid-cols-[220px_1fr] min-h-[360px]">
+      <aside class="bg-white border-r border-hairline p-3"><div class="flex items-center gap-2 px-2 py-2"><div class="w-8 h-8 rounded-xl bg-teal-brand text-white grid place-items-center font-display font-black">G</div><span class="font-display font-bold text-sm text-slate-800">Gestia</span></div><nav class="mt-4 space-y-1" id="nav6"></nav></aside>
+      <main class="p-5 relative grid place-items-center">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-xl w-[420px] p-6 text-center fade">
+          <div class="w-12 h-12 rounded-xl bg-teal-mist text-teal-deep grid place-items-center mx-auto mb-3"><i data-lucide="check-check" class="w-6 h-6"></i></div>
+          <h3 class="font-display text-xl font-black text-slate-900">Recorriste el proceso completo</h3>
+          <p class="text-sm text-slate-500 mt-2">Ya sabes cuándo usar cada módulo y por qué el orden importa: cliente, contrato, visita, OT, técnico, aprobación.</p>
+          <div class="bg-slate-50 rounded-xl border border-slate-100 p-3 mt-4 text-left">
+            <p class="text-[11px] text-slate-500 leading-snug"><span class="font-bold text-slate-700">Tip:</span> puedes repetir el tour cuando quieras desde el ícono de ayuda en el header, o con <span class="kbd">?</span>.</p>
+          </div>
+          <div class="flex items-center justify-center gap-2 mt-5">
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl">Reiniciar tour</button>
+            <button class="bg-teal-brand hover:bg-teal-deep text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">Empezar a usar Gestia <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <footer class="mt-8 mb-4 text-center text-xs text-slate-400 font-mono uppercase tracking-wider">
+    Mockup para aprobación · tour lineal único por proceso · sin código de producción
+  </footer>
+</div>
+
+<script>
+const MODS = [
+  {id:'Dashboard', label:'Dashboard', icon:'layout-dashboard', color:'text-teal-brand', badge:'Principal'},
+  {id:'ClientesContratos', label:'Comercial', icon:'building-2', color:'text-indigo-500', badge:'CRM'},
+  {id:'GestionOTs', label:'Gestión de OT', icon:'file-text', color:'text-teal-brand', badge:'SLA'},
+  {id:'Monitoreo', label:'Operaciones', icon:'calendar', color:'text-teal-brand', badge:'Agenda'},
+  {id:'Tecnico', label:'Técnicos', icon:'wrench', color:'text-amber-500', badge:'3'},
+  {id:'Supervisor', label:'Supervisión', icon:'shield-check', color:'text-blue-600', badge:'1'},
+  {id:'Ventas', label:'Portal de Ventas', icon:'trending-up', color:'text-teal-brand', badge:'Ventas'},
+  {id:'Cliente', label:'Portal Cliente', icon:'briefcase', color:'text-slate-500', badge:'0'},
+  {id:'Usuarios', label:'Administración', icon:'users', color:'text-slate-500', badge:'6'},
+];
+function buildNav(elId, activeId){ const el=document.getElementById(elId); if(!el) return; el.innerHTML = MODS.map(m=>`<a class="${m.id===activeId?'active':''}" href="#"><span class="dot"></span><i data-lucide="${m.icon}" class="w-3.5 h-3.5 ${m.color}"></i><span>${m.label}</span><span class="ml-auto pill bg-slate-100 text-slate-500">${m.badge}</span></a>`).join(''); }
+buildNav('nav1','Dashboard'); buildNav('nav2','ClientesContratos'); buildNav('nav3','Monitoreo'); buildNav('nav4','GestionOTs'); buildNav('nav5','Dashboard'); buildNav('nav6','Dashboard');
+
+const STEPS = [
+  {n:1, mod:'Dashboard', t:'Bienvenida'},
+  {n:2, mod:'Comercial', t:'Introducción al CRM'},
+  {n:3, mod:'Comercial', t:'Crear cliente'},
+  {n:4, mod:'Comercial', t:'Crear contrato'},
+  {n:5, mod:'Operaciones', t:'Programar visita'},
+  {n:6, mod:'Gestión de OT', t:'Crear OT (requiere visita)'},
+  {n:7, mod:'Operaciones', t:'Asignar técnico'},
+  {n:8, mod:'Técnicos', t:'Tomar OT y hacer informe'},
+  {n:9, mod:'Técnicos', t:'Modo offline (opcional)'},
+  {n:10, mod:'Supervisión', t:'Aprobar / rechazar informe'},
+  {n:11, mod:'Ventas', t:'Portal de Ventas'},
+  {n:12, mod:'Cliente / Admin', t:'Portales y Administración'},
+];
+const helpEl = document.getElementById('helpList');
+if(helpEl){
+  helpEl.innerHTML = STEPS.map(s=>{
+    const done = s.n<=4; const cur = s.n===5;
+    return `<li class="flex items-center gap-2 px-2 py-2 rounded-lg ${cur?'bg-teal-mist':''}">
+      <span class="w-5 h-5 rounded-full grid place-items-center text-[10px] font-mono font-bold ${done?'bg-emerald-100 text-emerald-700':cur?'bg-teal-brand text-white':'bg-slate-100 text-slate-400'}">${done?'✓':s.n}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold text-slate-700 truncate">${s.t}</p>
+        <p class="text-[10px] text-slate-400 font-mono">${s.mod}</p>
+      </div>
+      ${cur?'<span class="pill bg-teal-brand text-white">Aquí</span>':''}
+    </li>`;
+  }).join('');
+}
+lucide.createIcons();
+</script>
+</body>
+</html>

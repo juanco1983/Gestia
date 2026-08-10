@@ -275,6 +275,10 @@ app.post("/api/admin/wipe-operational-db", async (req: any, res) => {
     const deletedEquipos = await prisma.equipo.deleteMany();
     const deletedAdendas = await prisma.contratoAmpliacion.deleteMany();
     const deletedContratos = await prisma.contratoNuevo.deleteMany();
+    const deletedVisitas = await prisma.visita.deleteMany();
+    const deletedLegacyContracts = await prisma.contract.deleteMany();
+    const deletedTargets = await prisma.targetVenta.deleteMany();
+    const deletedLogs = await prisma.userActivityLog.deleteMany();
     const deletedClients = await prisma.client.deleteMany();
 
     res.json({
@@ -285,6 +289,10 @@ app.post("/api/admin/wipe-operational-db", async (req: any, res) => {
         servicioEquipos: deletedServicios.count,
         ots: deletedOts.count,
         ordenTrabajoLineas: deletedOtLineas.count,
+        visitas: deletedVisitas.count,
+        contractsLegacy: deletedLegacyContracts.count,
+        targetVentas: deletedTargets.count,
+        userActivityLogs: deletedLogs.count,
         equipoAmpliaciones: deletedEquipoAmpliaciones.count,
         equipos: deletedEquipos.count,
         contratoAmpliaciones: deletedAdendas.count,

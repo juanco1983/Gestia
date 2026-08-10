@@ -682,6 +682,7 @@ export default function TablaOrdenesTrabajo({
                           {/* Edit / View Detail Button */}
                           <button
                             onClick={() => onEditClick(line)}
+                            data-tour="linea-facturacion"
                             className={`p-1 border rounded-md cursor-pointer text-[10px] font-extrabold font-mono uppercase px-2 py-1 transition-colors flex items-center gap-1 ${
                               isCompletada
                                 ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
