@@ -453,6 +453,16 @@ export interface InformeEquipoDTO {
   voltajeSalida: number;
   otEstado?: string | null;
   otIdCode?: string;
+  diagnosticoGabinete?: TechnicalReport['diagnosticoGabinete'] | null;
+  revisionNormas?: TechnicalReport['revisionNormas'] | null;
+  recomendaciones?: string[] | null;
+  observacionesDiagnostico?: string | null;
+  medicionesEntrada?: TechnicalReport['medicionesEntrada'] | null;
+  medicionesSalida?: TechnicalReport['medicionesSalida'] | null;
+  antecedentes?: string | null;
+  accionesRealizadas?: string[] | null;
+  pasosLista?: string[] | null;
+  caracteristicas?: string | null;
 }
 
 export interface VisitaFuturaDTO {
@@ -473,6 +483,7 @@ export interface InventarioEquipoDTO {
   potenciaKva?: number | null;
   ubicacion?: string | null;
   estado: string;
+  estadoOrigen?: string;
   creadoEn?: string;
   empresa?: { id: string; razonSocial: string; ruc?: string } | null;
   contrato?: {

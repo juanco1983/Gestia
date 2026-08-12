@@ -174,7 +174,18 @@
         <div><div class="text-[10px] text-slate-400 font-mono uppercase">Ubicación</div><div class="text-slate-700 font-semibold">Sala TI Piso 3</div></div>
         <div><div class="text-[10px] text-slate-400 font-mono uppercase">Estado</div><span class="inline-flex items-center font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px]">Operativo</span></div>
       </div>
-      <button class="mt-4 w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><i data-lucide="refresh-cw" style="width:12px;height:12px"></i>Cambiar Estado</button>
+      <!-- ESTADO DERIVADO DEL ÚLTIMO INFORME -->
+      <div class="mt-4 rounded-xl bg-teal-50 border border-teal-100 p-3 flex items-start gap-2">
+        <i data-lucide="info" class="text-teal-600 flex-none mt-0.5" style="width:14px;height:14px"></i>
+        <div>
+          <p class="text-[10px] font-black font-mono text-teal-700 uppercase tracking-wider">Estado según último informe</p>
+          <p class="text-[11px] text-teal-800 mt-0.5">
+            <span class="font-mono font-bold">INF-2026-001</span> · diagnóstico: estado operativo ✓, sin equipo en bypass →
+            <span class="font-bold">Operativo</span>
+          </p>
+          <p class="text-[9px] font-mono text-teal-600 mt-1">El estado solo cambia al emitir un nuevo informe técnico desde la OT.</p>
+        </div>
+      </div>
     </div>
 
     <!-- Empresa y Contrato -->
@@ -217,7 +228,10 @@
             <span><span class="text-slate-400">V. Entrada:</span> <span class="text-slate-700 font-bold">220V</span></span>
             <span><span class="text-slate-400">V. Salida:</span> <span class="text-slate-700 font-bold">220V</span></span>
           </div>
-          <div class="flex justify-end mt-2">
+          <div class="flex justify-end gap-1.5 mt-2">
+            <button class="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer">
+              <i data-lucide="eye" style="width:11px;height:11px"></i>Ver
+            </button>
             <button class="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-teal-500/20">
               <i data-lucide="download" style="width:11px;height:11px"></i>PDF
             </button>
@@ -237,7 +251,10 @@
             <span><span class="text-slate-400">V. Entrada:</span> <span class="text-slate-700 font-bold">220V</span></span>
             <span><span class="text-slate-400">V. Salida:</span> <span class="text-slate-700 font-bold">220V</span></span>
           </div>
-          <div class="flex justify-end mt-2">
+          <div class="flex justify-end gap-1.5 mt-2">
+            <button class="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer">
+              <i data-lucide="eye" style="width:11px;height:11px"></i>Ver
+            </button>
             <button class="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-teal-500/20">
               <i data-lucide="download" style="width:11px;height:11px"></i>PDF
             </button>
@@ -257,7 +274,10 @@
             <span><span class="text-slate-400">V. Entrada:</span> <span class="text-slate-700 font-bold">220V</span></span>
             <span><span class="text-slate-400">V. Salida:</span> <span class="text-slate-700 font-bold">220V</span></span>
           </div>
-          <div class="flex justify-end mt-2">
+          <div class="flex justify-end gap-1.5 mt-2">
+            <button class="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer">
+              <i data-lucide="eye" style="width:11px;height:11px"></i>Ver
+            </button>
             <button class="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-teal-500/20">
               <i data-lucide="download" style="width:11px;height:11px"></i>PDF
             </button>
@@ -297,6 +317,106 @@
     <h3 class="text-lg font-bold text-slate-700 font-display mt-4">Aún no hay equipos registrados</h3>
     <p class="text-xs text-slate-400 font-mono mt-1">Cuando registres tu primer equipo con contrato, aparecerá aquí.</p>
     <button class="mt-5 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mx-auto"><i data-lucide="plus" style="width:13px;height:13px"></i>Agregar Equipo</button>
+  </div>
+</div>
+
+<!-- ============ SECCIÓN 4: MODAL VER INFORME (FORMATO PDF) ============ -->
+<div class="text-center py-3 bg-slate-900 text-white mt-6">
+  <span class="text-[10px] font-mono uppercase tracking-widest">Pantalla 4 · Modal "Ver" Informe Técnico — Formato PDF (INF-2026-001)</span>
+</div>
+
+<div class="p-6 bg-slate-100">
+  <!-- Overlay -->
+  <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-start justify-center p-4 z-50" style="position:relative">
+    <!-- Panel del modal (simula hoja A4 del informe) -->
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden" style="margin-top:24px">
+      <!-- Barra superior del modal -->
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-600">
+          <i data-lucide="file-text" style="width:14px;height:14px" class="text-teal-600"></i>
+          <span class="font-bold">INF-2026-001</span>
+          <span class="text-slate-400">·</span>
+          <span>Vista previa del informe</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer">
+            <i data-lucide="download" style="width:11px;height:11px"></i>Descargar PDF
+          </button>
+          <button class="p-1.5 hover:bg-slate-200 rounded-full text-slate-500 cursor-pointer"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+        </div>
+      </div>
+
+      <!-- Contenido tipo hoja A4 (mismo diseño que el PDF) -->
+      <div class="p-8 max-h-[70vh] overflow-y-auto">
+        <!-- Encabezado del informe -->
+        <div class="border-b-2 border-slate-900 pb-4 mb-5 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-black text-slate-900 font-display tracking-tight">INFORME TÉCNICO DE SERVICIO</h2>
+            <p class="text-[11px] font-mono text-slate-500 mt-1">Gestia Service · Servicio Técnico Especializado</p>
+          </div>
+          <div class="text-right">
+            <div class="font-mono font-black text-sm text-slate-800">N.º INF-2026-001</div>
+            <div class="font-mono text-[11px] text-slate-500">15 de julio de 2026</div>
+          </div>
+        </div>
+
+        <!-- Datos del cliente y equipo -->
+        <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[11px] mb-5">
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Cliente</span><span class="text-slate-800 font-semibold">Prosegur S.A.</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Contrato</span><span class="text-slate-800 font-mono">CT-2024-007</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Ubicación</span><span class="text-slate-800 font-semibold">Sala TI Piso 3</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Equipo</span><span class="text-slate-800 font-mono font-bold">UPS-001</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Modelo</span><span class="text-slate-800">Eaton 9PX 11KVA</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Serie</span><span class="text-slate-800 font-mono">SN-88231A</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Tipo Servicio</span><span class="text-slate-800 font-semibold">Preventivo</span></div>
+          <div class="grid grid-cols-[110px_1fr] gap-1"><span class="text-slate-400 font-mono uppercase tracking-wide">Técnico</span><span class="text-slate-800">Carlos Ocsa</span></div>
+        </div>
+
+        <!-- Mediciones -->
+        <div class="mb-5">
+          <h3 class="text-[11px] font-black text-slate-500 font-mono uppercase tracking-widest mb-2 border-b border-slate-200 pb-1">Mediciones</h3>
+          <table class="w-full text-[11px]">
+            <thead><tr class="text-slate-400 font-mono uppercase text-[10px] border-b border-slate-200"><th class="text-left py-1.5">Parámetro</th><th class="text-left py-1.5">Entrada</th><th class="text-left py-1.5">Salida</th><th class="text-left py-1.5">Valor Ref.</th></tr></thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr><td class="py-1.5 text-slate-600">Voltaje</td><td class="py-1.5 font-mono font-bold text-emerald-700">220V</td><td class="py-1.5 font-mono font-bold text-emerald-700">220V</td><td class="py-1.5 font-mono text-slate-400">220V ±10%</td></tr>
+              <tr><td class="py-1.5 text-slate-600">Frecuencia</td><td class="py-1.5 font-mono font-bold text-emerald-700">60 Hz</td><td class="py-1.5 font-mono font-bold text-emerald-700">60 Hz</td><td class="py-1.5 font-mono text-slate-400">60 Hz</td></tr>
+              <tr><td class="py-1.5 text-slate-600">Carga</td><td class="py-1.5 font-mono text-slate-700">—</td><td class="py-1.5 font-mono font-bold text-amber-600">42%</td><td class="py-1.5 font-mono text-slate-400">&lt; 80%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Diagnóstico -->
+        <div class="mb-5">
+          <h3 class="text-[11px] font-black text-slate-500 font-mono uppercase tracking-widest mb-2 border-b border-slate-200 pb-1">Diagnóstico</h3>
+          <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-2">
+            <i data-lucide="circle-check-big" class="text-emerald-600" style="width:16px;height:16px"></i>
+            <span class="text-sm font-bold text-emerald-800">Equipo operativo</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-relaxed mt-2">Se realizó revisión preventiva completa. La unidad opera dentro de parámetros nominales, sin eventos de bypass ni alarmas activas. Se recomienda mantener el plan de mantenimiento trimestral.</p>
+        </div>
+
+        <!-- Recomendaciones -->
+        <div class="mb-5">
+          <h3 class="text-[11px] font-black text-slate-500 font-mono uppercase tracking-widest mb-2 border-b border-slate-200 pb-1">Recomendaciones</h3>
+          <ul class="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+            <li>Continuar con mantenimiento preventivo trimestral.</li>
+            <li>Verificar carga del banco de baterías en la próxima visita.</li>
+          </ul>
+        </div>
+
+        <!-- Firmas -->
+        <div class="grid grid-cols-2 gap-8 mt-8 pt-6 border-t border-slate-200">
+          <div>
+            <div class="h-10"></div>
+            <div class="border-t border-slate-400 pt-1 text-[10px] font-mono text-slate-500 uppercase tracking-wide">Carlos Ocsa<br/>Técnico de Servicio</div>
+          </div>
+          <div>
+            <div class="h-10"></div>
+            <div class="border-t border-slate-400 pt-1 text-[10px] font-mono text-slate-500 uppercase tracking-wide">Prosegur S.A.<br/>Cliente / Conformidad</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

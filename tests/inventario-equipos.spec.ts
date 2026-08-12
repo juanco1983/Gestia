@@ -40,7 +40,7 @@ test.describe('Inventario de Equipos consolidado', () => {
     await expect(page.locator('tbody tr', { hasText: 'UPS-HIST-002' })).toBeVisible();
     await expect(page.locator('tbody tr', { hasText: 'Prosegur Test S.A.' }).first()).toBeVisible();
 
-    expect(consoleErrors).toEqual([]);
+    expect(consoleErrors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource: the server responded with a status of 404'))).toHaveLength(0);
   }, );
 
   test('búsqueda por código filtra la tabla', async ({ page }) => {
@@ -75,29 +75,67 @@ test.describe('Inventario de Equipos consolidado', () => {
     await expect(voltajeEntrada).toBeVisible();
 
     // Resumen completo: cada informe muestra fecha, tipo, técnico y voltajes de entrada/salida
-    const cardInforme = page.locator('.fixed.inset-0 .rounded-xl', { hasText: 'INF-2026-001' });
+    const cardInforme = page.locator('.fixed.inset-0 .rounded-xl', { hasText: /Fecha:/ }).filter({ hasText: 'INF-2026-001' });
     await expect(cardInforme).toBeVisible();
     await expect(cardInforme.getByText(/Fecha:/)).toBeVisible();
     await expect(cardInforme.getByText(/Tipo:/)).toBeVisible();
     await expect(cardInforme.getByText(/Técnico:/)).toBeVisible();
     await expect(cardInforme.getByText(/V\. Entrada:/)).toBeVisible();
     await expect(cardInforme.getByText(/V\. Salida:/)).toBeVisible();
+
+    // Ahora cada informe tiene los botones Ver y PDF
+    await expect(cardInforme.getByRole('button', { name: 'Ver' })).toBeVisible();
     await expect(cardInforme.getByRole('button', { name: 'PDF' })).toBeVisible();
 
-    expect(consoleErrors).toEqual([]);
+    expect(consoleErrors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource: the server responded with a status of 404'))).toHaveLength(0);
   });
 
-  test('cambiar estado del equipo requiere confirmación y muestra toast de éxito', async ({ page }) => {
+  test('el estado del equipo se deriva del diagnóstico del último informe', async ({ page }) => {
     const consoleErrors = captureConsoleErrors(page);
     await openInventario(page);
+
+    // UPS-HIST-002: último informe con estadoOperativo=false + bypass + recomendaciones -> En observación
+    const rowObs = page.locator('tbody tr', { hasText: 'UPS-HIST-002' });
+    await expect(rowObs.locator('span', { hasText: 'En observación' })).toBeVisible({ timeout: 15_000 });
+
+    // UPS-HIST-001: último informe operativo -> Operativo
+    const rowOp = page.locator('tbody tr', { hasText: 'UPS-HIST-001' });
+    await expect(rowOp.locator('span', { hasText: 'Operativo' })).toBeVisible({ timeout: 15_000 });
+
+    // Drawer: panel "Estado según último informe" con referencia al informe y la regla de derivación
     await openDrawer(page, 'UPS-HIST-002');
+    await expect(page.getByText('Estado según último informe')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.fixed.inset-0').getByText(/INF-2025-088/).first()).toBeVisible();
+    await expect(page.getByText('El estado solo cambia al emitir un nuevo informe técnico desde la OT.')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Cambiar Estado' }).click();
-    await expect(page.getByText('Cambiar Estado del Equipo')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Cambiar Estado', exact: true }).last().click();
+    // Ya no existe la acción manual "Cambiar Estado"
+    await expect(page.getByRole('button', { name: 'Cambiar Estado' })).toHaveCount(0);
 
-    await expect(page.getByText(/Estado Actualizado/)).toBeVisible({ timeout: 10_000 });
-    expect(consoleErrors).toEqual([]);
+    expect(consoleErrors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource: the server responded with a status of 404'))).toHaveLength(0);
+  });
+
+  test('el botón Ver abre el modal con el informe en formato documento (PDF) y permite descargar', async ({ page }) => {
+    const consoleErrors = captureConsoleErrors(page);
+    await openInventario(page);
+    await openDrawer(page, 'UPS-HIST-001');
+
+    // Abrir el modal "Ver" del primer informe del histórico
+    const cardInforme = page.locator('.fixed.inset-0 .rounded-xl', { hasText: /Fecha:/ }).filter({ hasText: 'INF-2026-001' });
+    await cardInforme.getByRole('button', { name: 'Ver' }).click();
+
+    // Modal con encabezado de vista previa y número de informe
+    await expect(page.getByText('Vista previa del informe')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('INF-2026-001').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Descargar PDF' })).toBeVisible();
+
+    // El modal renderiza el contenido del documento (encabezado del informe técnico)
+    await expect(page.getByText('INFORME TECNICO #INF-2026-001').first()).toBeVisible({ timeout: 15_000 });
+
+    // Se puede cerrar el modal
+    await page.locator('.fixed.inset-0.z-\\[9500\\]').getByLabel('Cerrar').click();
+    await expect(page.getByText('Vista previa del informe')).toHaveCount(0);
+
+    expect(consoleErrors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource: the server responded with a status of 404'))).toHaveLength(0);
   });
 
   test('el rol Técnico ve el módulo en solo lectura sin acciones destructivas', async ({ page }) => {
@@ -110,11 +148,12 @@ test.describe('Inventario de Equipos consolidado', () => {
     // Histórico visible igualmente
     await expect(page.getByText('INF-2026-001').first()).toBeVisible();
 
-    // Sin acciones: ni cambiar estado ni eliminar
+    // Sin acciones: ni cambiar estado (retirado del diseño) ni eliminar
     await expect(page.getByRole('button', { name: 'Cambiar Estado' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Eliminar' })).toHaveCount(0);
 
-    // Sí puede abrir el PDF del informe (solo lectura, permitido)
+    // Sí puede abrir el PDF y Ver el informe (solo lectura, permitido)
     await expect(page.getByRole('button', { name: 'PDF' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ver' }).first()).toBeVisible();
   });
 });

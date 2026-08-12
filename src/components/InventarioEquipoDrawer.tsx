@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Cpu, History, FileText, Download, RefreshCw, Trash2, AlertTriangle, CalendarClock, MapPin } from 'lucide-react';
+import { X, Cpu, History, FileText, Download, Trash2, CalendarClock, MapPin, Info, Eye } from 'lucide-react';
 import { InventarioEquipoDTO, InformeEquipoDTO, User, OT, TechnicalReport, Client } from '../types';
 import { useLocalToast } from './shared/ToastModal';
 import { useConfirm } from './shared/ConfirmModal';
@@ -39,9 +39,10 @@ function otBadge(estado: string | null): string {
 }
 
 export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, onChanged }: InventarioEquipoDrawerProps) {
-  const [isChanged, setIsChanged] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [pdfReport, setPdfReport] = useState<{ report: TechnicalReport; ot: OT; client: Client } | null>(null);
+  const [viewReport, setViewReport] = useState<{ report: TechnicalReport; ot: OT; client: Client } | null>(null);
+  const [isViewing, setIsViewing] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { notifySuccess, notifyError, toastView } = useLocalToast();
   const { confirm, confirmView } = useConfirm();
@@ -182,29 +183,17 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
     }
   }
 
-  async function handleCambiarEstado() {
-    const ok = await confirm({
-      title: 'Cambiar Estado del Equipo',
-      message: `¿Deseas cambiar el estado de "${equipo.codigo}"?\n\nEstado actual: ${equipo.estado}`,
-      confirmLabel: 'Cambiar Estado',
-      tone: 'warning',
-    });
-    if (!ok) return;
-    setIsChanged(true);
+  async function handleVerInforme(inf: InformeEquipoDTO) {
+    if (!inf) return;
+    setIsViewing(true);
     try {
-      const next = equipo.estado === 'Operativo' ? 'En reparación' : 'Operativo';
-      const res = await fetch(`/api/equipos/${equipo.id}/estado`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: next }),
-      });
-      if (!res.ok) throw new Error('No se pudo actualizar el estado');
-      notifySuccess('Estado Actualizado', `El equipo ${equipo.codigo} ahora está: ${next}`);
-      onChanged();
+      const data = await loadFullData(inf);
+      setViewReport(data);
     } catch (err: any) {
-      notifyError('Error', err.message || 'No se pudo actualizar el estado');
+      console.error('View report failed', err);
+      notifyError('Informe no Redactado', 'El informe técnico aún no ha sido redactado por el personal técnico.');
     } finally {
-      setIsChanged(false);
+      setIsViewing(false);
     }
   }
 
@@ -276,15 +265,20 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
                 <span className={`inline-flex items-center font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] border mt-0.5 ${estadoBadge(equipo.estado)}`}>{equipo.estado}</span>
               </div>
             </div>
-            {!isSoloLectura && (
-              <button
-                onClick={handleCambiarEstado}
-                disabled={isChanged}
-                className="mt-4 w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw size={12} /> {isChanged ? 'Actualizando...' : 'Cambiar Estado'}
-              </button>
-            )}
+            <div className="mt-4 rounded-xl bg-teal-50 border border-teal-100 p-3 flex items-start gap-2">
+              <Info size={14} className="text-teal-600 flex-none mt-0.5" />
+              <div>
+                <p className="text-[10px] font-black font-mono text-teal-700 uppercase tracking-wider">Estado según último informe</p>
+                {equipo.ultimoInforme ? (
+                  <p className="text-[11px] text-teal-800 mt-0.5">
+                    <span className="font-mono font-bold">{equipo.ultimoInforme.informeN}</span> · diagnóstico: {descripcionDiagnostico(equipo.ultimoInforme)}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-teal-800 mt-0.5">Sin informes técnicos emitidos.</p>
+                )}
+                <p className="text-[9px] font-mono text-teal-600 mt-1">El estado solo cambia al emitir un nuevo informe técnico desde la OT.</p>
+              </div>
+            </div>
           </div>
 
           {/* Empresa y Contrato */}
@@ -379,11 +373,23 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
                     <span><span className="text-slate-400">V. Entrada:</span> <span className="text-slate-700 font-bold">{inf.voltajeEntrada}V</span></span>
                     <span><span className="text-slate-400">V. Salida:</span> <span className="text-slate-700 font-bold">{inf.voltajeSalida}V</span></span>
                   </div>
-                  <div className="flex justify-end mt-2">
+                  <div className="flex justify-end gap-1.5 mt-2">
+                    <button
+                      onClick={() => handleVerInforme(inf)}
+                      disabled={isViewing}
+                      className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isViewing ? (
+                        <div className="w-3 h-3 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Eye size={11} />
+                      )}
+                      Ver
+                    </button>
                     <button
                       onClick={() => handleDownloadPDF(inf)}
                       disabled={isGeneratingPdf}
-                      className="flex items-center gap-1.5 bg-teal-brand hover:bg-teal-deep text-white px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-deep text-white px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isGeneratingPdf ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -420,6 +426,48 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
           </div>
         </div>
       )}
+      {viewReport && (
+        <div
+          className="fixed inset-0 z-[9500] flex items-start justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+          onClick={() => setViewReport(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-600">
+                <FileText size={14} className="text-teal-600" />
+                <span className="font-bold">{viewReport.report.informeN || 'Informe Técnico'}</span>
+                <span className="text-slate-400">·</span>
+                <span>Vista previa del informe</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const inf = equipo.informes.find(i => i.id === viewReport.report.id);
+                    if (inf) handleDownloadPDF(inf as InformeEquipoDTO);
+                    else setViewReport(null);
+                  }}
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-black font-mono uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  <Download size={11} /> Descargar PDF
+                </button>
+                <button
+                  onClick={() => setViewReport(null)}
+                  aria-label="Cerrar"
+                  className="p-1.5 hover:bg-slate-200 rounded-full text-slate-500 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="p-8 max-h-[70vh] overflow-y-auto bg-slate-100/50">
+              <DocumentFormat report={viewReport.report} ot={viewReport.ot} client={viewReport.client} />
+            </div>
+          </div>
+        </div>
+      )}
       {toastView}
       {confirmView}
     </div>,
@@ -436,4 +484,16 @@ function estadoBadge(estado: string): string {
     case 'Baja': return 'bg-red-50 text-red-700 border-red-200';
     default: return 'bg-slate-50 text-slate-600 border-slate-200';
   }
+}
+
+function descripcionDiagnostico(inf: InformeEquipoDTO): string {
+  const gab = inf.diagnosticoGabinete || {};
+  const rev = inf.revisionNormas || {};
+  const recs = inf.recomendaciones || [];
+  const partes: string[] = [];
+  if (rev.estadoOperativo !== undefined) partes.push(`estado operativo ${rev.estadoOperativo ? '✓' : '✗'}`);
+  if (gab.equipoEnBypass !== undefined) partes.push(gab.equipoEnBypass === 'si' ? 'equipo en bypass' : 'sin equipo en bypass');
+  if (recs.length > 0) partes.push(`${recs.length} recomendación(es)`);
+  if (partes.length === 0) partes.push('sin diagnóstico emitido');
+  return partes.join(', ') + ' → ' + (rev.estadoOperativo === false || gab.equipoEnBypass === 'si' || gab.equipoEnBypass === 'apagado' || recs.length > 0 ? 'En observación' : 'Operativo');
 }

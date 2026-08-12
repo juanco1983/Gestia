@@ -1957,6 +1957,20 @@ app.post("/api/ot-equipo-asignaciones", async (req, res) => {
 // ----- Inventario de Equipos (módulo consolidado) -----
 const ESTADOS_VISITA_FUTURA = ['Creada', 'Pendiente de Programación', 'Asignada', 'Programada'];
 
+function deriveEstadoEquipo(estadoOrigen: string, ultimoInforme: any): { estado: string; origen: string } {
+  if (!ultimoInforme) return { estado: estadoOrigen, origen: estadoOrigen };
+  if (estadoOrigen === 'Baja' || estadoOrigen === 'En almacén') return { estado: estadoOrigen, origen: estadoOrigen };
+  const gab = ultimoInforme.diagnosticoGabinete || {};
+  const rev = ultimoInforme.revisionNormas || {};
+  const recs = Array.isArray(ultimoInforme.recomendaciones) ? ultimoInforme.recomendaciones : [];
+  const hasDiagnostico = gab.equipoEnBypass !== undefined || rev.estadoOperativo !== undefined || recs.length > 0;
+  if (!hasDiagnostico) return { estado: 'Operativo', origen: estadoOrigen };
+  if (gab.equipoEnBypass === 'si' || gab.equipoEnBypass === 'apagado') return { estado: 'En observación', origen: estadoOrigen };
+  if (recs.length > 0) return { estado: 'En observación', origen: estadoOrigen };
+  if (rev.estadoOperativo === false) return { estado: 'En observación', origen: estadoOrigen };
+  return { estado: 'Operativo', origen: estadoOrigen };
+}
+
 app.get("/api/inventario-equipos", async (req: any, res) => {
   try {
     const { q, clienteId, estado, tipo } = req.query;
@@ -1970,7 +1984,6 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
         { contrato: { clientId: clienteId } }
       ];
     }
-    if (estado) where.estado = estado;
     if (tipo) where.tipo = tipo;
     if (q) {
       const searchOR = [
@@ -2056,6 +2069,16 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
           voltajeSalida: report.voltajeSalida,
           otEstado: ot?.estado || null,
           otIdCode: ot ? (ot.id.startsWith('ot_') ? ot.id.replace('ot_', 'OT-') : ot.id) : report.otId,
+          diagnosticoGabinete: report.diagnosticoGabinete || null,
+          revisionNormas: report.revisionNormas || null,
+          recomendaciones: report.recomendaciones || null,
+          observacionesDiagnostico: report.observacionesDiagnostico || null,
+          medicionesEntrada: report.medicionesEntrada || null,
+          medicionesSalida: report.medicionesSalida || null,
+          antecedentes: report.antecedentes || null,
+          accionesRealizadas: report.accionesRealizadas || null,
+          pasosLista: report.pasosLista || null,
+          caracteristicas: report.caracteristicas || null,
         }));
 
       const visitasFuturas = ots
@@ -2069,6 +2092,7 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
         }));
 
       const ultimoInforme = eqReportsSorted[0] || null;
+      const derivado = deriveEstadoEquipo(eq.estado, ultimoInforme);
 
       return {
         id: eq.id,
@@ -2079,7 +2103,8 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
         serie: eq.serie,
         potenciaKva: eq.potenciaKva,
         ubicacion: eq.ubicacion,
-        estado: eq.estado,
+        estado: derivado.estado,
+        estadoOrigen: derivado.origen,
         creadoEn: eq.creadoEn,
         empresa: empresa ? { id: empresa.id, razonSocial: empresa.razonSocial, ruc: empresa.ruc } : null,
         contrato: eq.contrato
@@ -2099,17 +2124,20 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
     });
 
     const start = (page - 1) * pageSize;
-    const sliced = items.slice(start, start + pageSize);
-    const operativos = allEquipos.filter(e => e.estado === 'Operativo').length;
-    const enMantenimiento = allEquipos.filter(e => ['En reparación', 'En observación'].includes(e.estado)).length;
+    let filteredItems = items;
+    if (estado) filteredItems = items.filter(i => i.estado === estado);
+    const sliced = filteredItems.slice(start, start + pageSize);
+    const totalFiltered = filteredItems.length;
+    const operativos = items.filter(i => i.estado === 'Operativo').length;
+    const enMantenimiento = items.filter(i => ['En reparación', 'En observación'].includes(i.estado)).length;
     const proximasVisitas = new Set(items.flatMap(i => i.visitasFuturas.map(v => v.otId))).size;
 
     res.json({
       items: sliced,
-      total,
+      total: totalFiltered,
       page,
       page_size: pageSize,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      totalPages: Math.max(1, Math.ceil(totalFiltered / pageSize)),
       kpis: {
         total: allEquipos.length,
         operativos,
