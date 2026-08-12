@@ -8,7 +8,8 @@ import {
   FileText, 
   Users, 
   Briefcase,
-  TrendingUp
+  TrendingUp,
+  Boxes
 } from 'lucide-react';
 
 export interface AppModule {
@@ -61,6 +62,17 @@ export const APP_MODULES: AppModule[] = [
     badge: (selected: boolean) => (
       <span className={`text-[9px] font-black font-mono uppercase tracking-tight py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-[#E6F7F4] text-[#00B594]'}`}>
         Agenda
+      </span>
+    )
+  },
+  { 
+    id: 'InventarioEquipos', 
+    displayLabel: 'Inventario de Equipos', 
+    iconColor: 'text-teal-brand', 
+    icon: <Boxes size={15} />,
+    badge: (selected: boolean) => (
+      <span className={`text-[9px] font-black font-mono uppercase tracking-tight py-0.5 px-2 rounded-full ${selected ? 'bg-white/20 text-white' : 'bg-teal-mist text-teal-brand'}`}>
+        Equipos
       </span>
     )
   },
