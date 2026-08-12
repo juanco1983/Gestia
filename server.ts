@@ -1954,6 +1954,203 @@ app.post("/api/ot-equipo-asignaciones", async (req, res) => {
 });
 
 // ----- Equipment endpoints -----
+// ----- Inventario de Equipos (módulo consolidado) -----
+const ESTADOS_VISITA_FUTURA = ['Creada', 'Pendiente de Programación', 'Asignada', 'Programada'];
+
+function deriveEstadoEquipo(estadoOrigen: string, ultimoInforme: any): { estado: string; origen: string } {
+  if (!ultimoInforme) return { estado: estadoOrigen, origen: estadoOrigen };
+  if (estadoOrigen === 'Baja' || estadoOrigen === 'En almacén') return { estado: estadoOrigen, origen: estadoOrigen };
+  const gab = ultimoInforme.diagnosticoGabinete || {};
+  const rev = ultimoInforme.revisionNormas || {};
+  const recs = Array.isArray(ultimoInforme.recomendaciones) ? ultimoInforme.recomendaciones : [];
+  const hasDiagnostico = gab.equipoEnBypass !== undefined || rev.estadoOperativo !== undefined || recs.length > 0;
+  if (!hasDiagnostico) return { estado: 'Operativo', origen: estadoOrigen };
+  if (gab.equipoEnBypass === 'si' || gab.equipoEnBypass === 'apagado') return { estado: 'En observación', origen: estadoOrigen };
+  if (recs.length > 0) return { estado: 'En observación', origen: estadoOrigen };
+  if (rev.estadoOperativo === false) return { estado: 'En observación', origen: estadoOrigen };
+  return { estado: 'Operativo', origen: estadoOrigen };
+}
+
+app.get("/api/inventario-equipos", async (req: any, res) => {
+  try {
+    const { q, clienteId, estado, tipo } = req.query;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const pageSize = Math.max(1, Math.min(50, parseInt(req.query.page_size as string, 10) || 10));
+
+    const where: any = {};
+    if (clienteId) {
+      where.OR = [
+        { clienteId: clienteId },
+        { contrato: { clientId: clienteId } }
+      ];
+    }
+    if (tipo) where.tipo = tipo;
+    if (q) {
+      const searchOR = [
+        { codigo: { contains: q, mode: 'insensitive' } },
+        { serie: { contains: q, mode: 'insensitive' } },
+        { marca: { contains: q, mode: 'insensitive' } },
+        { modelo: { contains: q, mode: 'insensitive' } },
+      ];
+      if (where.OR) {
+        const clientOR = where.OR;
+        delete where.OR;
+        where.AND = [{ OR: clientOR }, { OR: searchOR }];
+      } else {
+        where.OR = searchOR;
+      }
+    }
+
+    const [allEquipos, total] = await Promise.all([
+      prisma.equipo.findMany({
+        where,
+        orderBy: { creadoEn: 'desc' },
+        include: {
+          contrato: { select: { id: true, n_contrato: true, clientId: true, fecha_inicio: true, fecha_fin: true, cliente: true } },
+          servicios: { select: { id: true } },
+        },
+      }),
+      prisma.equipo.count({ where }),
+    ]);
+
+    const ids = allEquipos.map(e => e.id);
+    const clienteIds = allEquipos
+      .map(e => e.clienteId || e.contrato?.clientId)
+      .filter(Boolean) as string[];
+    const [asignaciones, reportsPermodules, clientes] = await Promise.all([
+      prisma.otEquipoAsignacion.findMany({ where: { equipoId: { in: ids } } }),
+      prisma.technicalReport.findMany({ where: { equipoId: { in: ids } } }),
+      prisma.client.findMany({ where: { id: { in: clienteIds } } }),
+    ]);
+    const reports = [...reportsPermodules];
+
+    const asigEquipoMap: Record<string, string[]> = {};
+    for (const a of asignaciones) {
+      (asigEquipoMap[a.equipoId] ||= []).push(a.otId);
+    }
+    const otIdsDeAsignaciones = Array.from(new Set(asignaciones.map(a => a.otId)));
+    if (otIdsDeAsignaciones.length) {
+      const legacyReports = await prisma.technicalReport.findMany({
+        where: { equipoId: null as any, otId: { in: otIdsDeAsignaciones } },
+      });
+      reports.push(...legacyReports);
+    }
+
+    const otIds = Array.from(new Set(reports.map(r => r.otId)));
+    const ots = await prisma.oT.findMany({ where: { id: { in: otIds } } });
+    const otMap = new Map(ots.map(o => [o.id, o] as const));
+    const clienteMap = new Map(clientes.map(c => [c.id, c] as const));
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const items = allEquipos.map(eq => {
+      const empresa = eq.clienteId
+        ? (clienteMap.get(eq.clienteId) || null)
+        : (eq.contrato?.clientId ? (clienteMap.get(eq.contrato.clientId) || null) : null);
+
+      const eqOtIds = asigEquipoMap[eq.id] || [];
+      const eqReports = reports.filter(r => {
+        if (r.equipoId === eq.id) return true;
+        return r.equipoId === null && eqOtIds.includes(r.otId);
+      });
+      const eqReportsSorted = eqReports
+        .map(r => ({ report: r, ot: otMap.get(r.otId) }))
+        .sort((a, b) => (b.report.fechaServicio || '').localeCompare(a.report.fechaServicio || ''))
+        .map(({ report, ot }) => ({
+          id: report.id,
+          otId: report.otId,
+          equipoId: report.equipoId,
+          informeN: report.informeN || `INF-${report.otId}`,
+          hojaServicioN: report.hojaServicioN || null,
+          fechaServicio: report.fechaServicio || null,
+          tipoServicio: report.tipoServicio || ot?.tipoMantenimiento || 'Preventivo',
+          tecnicoTitular: report.tecnico1 || ot?.tecnicoTitular || null,
+          tecnicoApoyo: report.tecnico2 || ot?.tecnicoApoyo || null,
+          voltajeEntrada: report.voltajeEntrada,
+          voltajeSalida: report.voltajeSalida,
+          otEstado: ot?.estado || null,
+          otIdCode: ot ? (ot.id.startsWith('ot_') ? ot.id.replace('ot_', 'OT-') : ot.id) : report.otId,
+          diagnosticoGabinete: report.diagnosticoGabinete || null,
+          revisionNormas: report.revisionNormas || null,
+          recomendaciones: report.recomendaciones || null,
+          observacionesDiagnostico: report.observacionesDiagnostico || null,
+          medicionesEntrada: report.medicionesEntrada || null,
+          medicionesSalida: report.medicionesSalida || null,
+          antecedentes: report.antecedentes || null,
+          accionesRealizadas: report.accionesRealizadas || null,
+          pasosLista: report.pasosLista || null,
+          caracteristicas: report.caracteristicas || null,
+        }));
+
+      const visitasFuturas = ots
+        .filter(ot => eqOtIds.includes(ot.id) && ESTADOS_VISITA_FUTURA.includes(ot.estado) && (ot.fechaProgramada || '') >= hoy)
+        .map(ot => ({
+          otId: ot.id,
+          codigo: ot.id.startsWith('ot_') ? ot.id.replace('ot_', 'OT-') : ot.id,
+          fechaProgramada: ot.fechaProgramada,
+          tipoMantenimiento: ot.tipoMantenimiento,
+          estado: ot.estado,
+        }));
+
+      const ultimoInforme = eqReportsSorted[0] || null;
+      const derivado = deriveEstadoEquipo(eq.estado, ultimoInforme);
+
+      return {
+        id: eq.id,
+        codigo: eq.codigo,
+        tipo: eq.tipo,
+        marca: eq.marca,
+        modelo: eq.modelo,
+        serie: eq.serie,
+        potenciaKva: eq.potenciaKva,
+        ubicacion: eq.ubicacion,
+        estado: derivado.estado,
+        estadoOrigen: derivado.origen,
+        creadoEn: eq.creadoEn,
+        empresa: empresa ? { id: empresa.id, razonSocial: empresa.razonSocial, ruc: empresa.ruc } : null,
+        contrato: eq.contrato
+          ? {
+              id: eq.contrato.id,
+              codigo: eq.contrato.n_contrato || eq.contrato.cliente || eq.contrato.id,
+              fechaInicio: eq.contrato.fecha_inicio || null,
+              fechaFin: eq.contrato.fecha_fin || null,
+            }
+          : null,
+        visitasHistoricasCount: (eq.servicios || []).length,
+        visitasFuturas,
+        ultimoInforme,
+        informes: eqReportsSorted,
+        countInformes: eqReportsSorted.length,
+      };
+    });
+
+    const start = (page - 1) * pageSize;
+    let filteredItems = items;
+    if (estado) filteredItems = items.filter(i => i.estado === estado);
+    const sliced = filteredItems.slice(start, start + pageSize);
+    const totalFiltered = filteredItems.length;
+    const operativos = items.filter(i => i.estado === 'Operativo').length;
+    const enMantenimiento = items.filter(i => ['En reparación', 'En observación'].includes(i.estado)).length;
+    const proximasVisitas = new Set(items.flatMap(i => i.visitasFuturas.map(v => v.otId))).size;
+
+    res.json({
+      items: sliced,
+      total: totalFiltered,
+      page,
+      page_size: pageSize,
+      totalPages: Math.max(1, Math.ceil(totalFiltered / pageSize)),
+      kpis: {
+        total: allEquipos.length,
+        operativos,
+        operativosPct: allEquipos.length ? Math.round((operativos / allEquipos.length) * 100) : 0,
+        enMantenimiento,
+        proximasVisitas,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Error al obtener inventario de equipos" });
+  }
+});
+
 app.get("/api/equipos", async (req: any, res) => {
   try {
     const { contratoId, clienteId, estado, tipo, q } = req.query;
@@ -2498,12 +2695,12 @@ async function runDataFixes() {
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync('mafort', salt);
       const initialUsers = [
-        { id: 'user_0', username: 'Administrador General', email: 'admin@mafort.pe', password: hash, role: 'Administrador', estado: 'Activo', area: 'Administración General', ultimoIngreso: '2026-06-30 00:19:55', creadoEn: '2026-01-01', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios'] },
-        { id: 'user_1', username: 'Coord. Ventas', email: 'ventas@mafort.pe', password: hash, role: 'Ventas', estado: 'Activo', area: 'Planeamiento Comercial', ultimoIngreso: '2026-06-22 07:15', creadoEn: '2026-01-10', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas'] },
-        { id: 'user_2', username: 'Carlos Ocsa', email: 'carlos.ocsa@mafort.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Mantenimiento de Campo', ultimoIngreso: '2026-06-22 07:22', creadoEn: '2026-01-12', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] },
-        { id: 'user_3', username: 'Ing. Roberto Salas', email: 'supervisor@mafort.pe', password: hash, role: 'Supervisor', estado: 'Activo', area: 'Control de Calidad (SLA)', ultimoIngreso: '2026-06-27 03:06:49', creadoEn: '2026-01-15', allowedModules: ['Dashboard', 'Monitoreo', 'Supervisor'] },
+        { id: 'user_0', username: 'Administrador General', email: 'admin@mafort.pe', password: hash, role: 'Administrador', estado: 'Activo', area: 'Administración General', ultimoIngreso: '2026-06-30 00:19:55', creadoEn: '2026-01-01', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'Tecnico', 'Supervisor', 'Cliente', 'Usuarios', 'InventarioEquipos'] },
+        { id: 'user_1', username: 'Coord. Ventas', email: 'ventas@mafort.pe', password: hash, role: 'Ventas', estado: 'Activo', area: 'Planeamiento Comercial', ultimoIngreso: '2026-06-22 07:15', creadoEn: '2026-01-10', allowedModules: ['Dashboard', 'Monitoreo', 'GestionOTs', 'ClientesContratos', 'Ventas', 'InventarioEquipos'] },
+        { id: 'user_2', username: 'Carlos Ocsa', email: 'carlos.ocsa@mafort.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Mantenimiento de Campo', ultimoIngreso: '2026-06-22 07:22', creadoEn: '2026-01-12', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico', 'InventarioEquipos'] },
+        { id: 'user_3', username: 'Ing. Roberto Salas', email: 'supervisor@mafort.pe', password: hash, role: 'Supervisor', estado: 'Activo', area: 'Control de Calidad (SLA)', ultimoIngreso: '2026-06-27 03:06:49', creadoEn: '2026-01-15', allowedModules: ['Dashboard', 'Monitoreo', 'Supervisor', 'InventarioEquipos'] },
         { id: 'user_4', username: 'Ana Gutiérrez', email: 'ana.gutierrez@prosegur.pe', password: hash, role: 'Cliente', estado: 'Activo', area: 'Infraestructura TI - Prosegur', ultimoIngreso: '2026-06-28 16:30', creadoEn: '2026-02-01', clientId: 'client_1', allowedModules: ['Dashboard', 'Monitoreo', 'Cliente'] },
-        { id: 'user_5', username: 'Juan Córdova', email: 'juan.cordova@materiagris.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Seguridad Eléctrica & Supervisor', ultimoIngreso: '2026-06-29 07:45', creadoEn: '2026-01-20', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] },
+        { id: 'user_5', username: 'Juan Córdova', email: 'juan.cordova@materiagris.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Seguridad Eléctrica & Supervisor', ultimoIngreso: '2026-06-29 07:45', creadoEn: '2026-01-20', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico', 'InventarioEquipos'] },
         { id: 'user_6', username: 'Gino Murillo', email: 'gino.murillo@mafort.pe', password: hash, role: 'Tecnico', estado: 'Activo', area: 'Climatización & Control', ultimoIngreso: '2026-06-29 08:30', creadoEn: '2026-01-20', allowedModules: ['Dashboard', 'Monitoreo', 'Tecnico'] }
       ];
       for (const u of initialUsers) {

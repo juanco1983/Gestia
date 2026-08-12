@@ -5,6 +5,14 @@
 **Tipo:** feature
 **Mockup de referencia:** [`Documentacion/mockups/inventario-equipos.html`](../../mockups/inventario-equipos.html) — aprobado por usuario el 2026-07-25
 
+> **ACTUALIZACIÓN 2026-08-10 (ciclo vigente):** este plan V1 no llegó a
+> implementarse (rama descartada, su único commit ya está en `dev`). El ciclo que
+> se ejecuta ahora se especifica en
+> [`2026-08-10-inventario-equipos-historico-spec.md`](2026-08-10-inventario-equipos-historico-spec.md)
+> y su mockup vigente (con la card de **Histórico de Informes Técnicos**) es
+> [`Documentacion/mockups/inventario-equipos-historico.html`](../../mockups/inventario-equipos-historico.html).
+> Rama nueva: `feature/inventario-equipos-historico`.
+
 ---
 
 ## 1. Contexto
