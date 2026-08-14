@@ -319,7 +319,7 @@ export function generateDefaultReport(ot: OT, client: Client, equipo?: Equipo): 
 
   const caracteristicas = buildCaracteristicasFromEquipo(equipo, baseCaracteristicas);
   const fechaServicio = ot.fechaProgramada || new Date().toISOString().split('T')[0];
-  const horaInicio = ot.horaInicioServicio || "09:00";
+  const horaInicio = ot.horaProgramada || ot.horaInicioServicio || "09:00";
 
   return {
     id: `rep_${Date.now()}`,
@@ -344,7 +344,7 @@ export function generateDefaultReport(ot: OT, client: Client, equipo?: Equipo): 
     hojaServicioN: `HJ-544-${ot.id.replace('OT-','')}`,
     asunto: `MANTENIMIENTO PREVENTIVO DE ${ot.tipoEquipo} DE ${ot.potenciaKva} KVA`,
     fechaServicio: ot.fechaProgramada || new Date().toISOString().split('T')[0],
-    horaInicio: ot.horaInicioServicio || "09:00",
+    horaInicio: ot.horaProgramada || ot.horaInicioServicio || "09:00",
     tecnico1: ot.tecnicoTitular,
     tecnico2: ot.tecnicoApoyo || "Ninguno",
     antecedentes: buildAntecedentesTexto(ot, client, caracteristicas, fechaServicio, horaInicio),
