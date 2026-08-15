@@ -110,14 +110,15 @@ const ConfirmModalView: React.FC<{
       onClick={() => onClose(false)}
       role="presentation"
     >
-      <dialog
-        open
-        className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left m-0"
+      <div
+        role="dialog"
+        className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 text-left relative z-10"
         onClick={e => e.stopPropagation()}
         onKeyDown={handleKeyDown}
         aria-modal="true"
         aria-labelledby="gestia-confirm-title"
         aria-describedby="gestia-confirm-message"
+        tabIndex={-1}
       >
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${palette.iconBg}`}>
@@ -165,7 +166,7 @@ const ConfirmModalView: React.FC<{
             {state.confirmLabel}
           </button>
         </div>
-      </dialog>
+      </div>
     </div>,
     document.body
   );
