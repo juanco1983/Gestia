@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { OT, Client, ServiceType, TechnicalReport, EquipmentType, Equipo } from '../types';
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
-import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
+import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES, buildAntecedentesTexto } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
 import { compressBase64Image } from '../utils/imageCompressor';
 import { draftKey, getDraft, putDraft, deleteDraft } from '../offline/db';
@@ -59,6 +59,23 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     const base = defaults.caracteristicas ?? {};
     return buildCaracteristicasFromEquipo(equipo, base);
   }, [initialReport, defaults.caracteristicas, equipo]);
+
+  useEffect(() => {
+    if (equipo && !initialReport) {
+      setCaracteristicas(prev => {
+        const updated = buildCaracteristicasFromEquipo(equipo, prev);
+        
+        setAntecedentes(prevAnt => {
+          if (prevAnt.includes('NO REGISTRADO') || prevAnt === defaults.antecedentes) {
+            return buildAntecedentesTexto(ot, client, updated, defaults.fechaServicio || new Date().toISOString().split('T')[0], defaults.horaInicio || '09:00');
+          }
+          return prevAnt;
+        });
+
+        return updated;
+      });
+    }
+  }, [equipo, initialReport, ot, client, defaults.fechaServicio, defaults.horaInicio, defaults.antecedentes]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -121,10 +138,32 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
       if (draft.horaFin) setHoraFin(draft.horaFin);
       if (draft.tecnico1) setTecnico1(draft.tecnico1);
       if (draft.tecnico2) setTecnico2(draft.tecnico2);
-      if (draft.antecedentes) setAntecedentes(draft.antecedentes);
+      if (draft.antecedentes) {
+        setAntecedentes(prevAnt => {
+          if (draft.antecedentes.includes('NO REGISTRADO') && !prevAnt.includes('NO REGISTRADO') && prevAnt !== '') {
+            return prevAnt;
+          }
+          return draft.antecedentes;
+        });
+      }
       if (draft.accionesRealizadas) setAccionesRealizadas(draft.accionesRealizadas);
       if (draft.pasosLista) setPasosLista(draft.pasosLista);
-      if (draft.caracteristicas) setCaracteristicas(draft.caracteristicas);
+      if (draft.caracteristicas) {
+        setCaracteristicas(prev => {
+          if (draft.caracteristicas['MARCA'] === 'NO REGISTRADO' && prev['MARCA'] && prev['MARCA'] !== 'NO REGISTRADO') {
+            return { 
+              ...draft.caracteristicas, 
+              MARCA: prev['MARCA'], 
+              MODELO: prev['MODELO'], 
+              SERIE: prev['SERIE'], 
+              POTENCIA: prev['POTENCIA'],
+              TIPO: prev['TIPO'],
+              CÓDIGO: prev['CÓDIGO']
+            };
+          }
+          return draft.caracteristicas;
+        });
+      }
       if (draft.medicionesEntrada) setMedicionesEntrada(draft.medicionesEntrada);
       if (draft.medicionesSalida) setMedicionesSalida(draft.medicionesSalida);
       if (draft.diagnostico) setDiagnostico(draft.diagnostico);
