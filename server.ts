@@ -1274,14 +1274,21 @@ app.get("/api/photos/*", async (req: any, res) => {
 });
 
 app.get("/api/contracts/files/*", async (req: any, res) => {
-  if (!req.user) {
+  let token = req.query.token as string || (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);
+  let user = req.user;
+  if (!user && token) {
+    try {
+      user = jwt.verify(token, JWT_SECRET);
+    } catch (e) {}
+  }
+  if (!user) {
     return res.status(401).json({ error: "No autorizado" });
   }
 
   let rawKey = decodeURIComponent(req.params[0] || '').replace(/^\/+/, '');
   const key = rawKey.startsWith('contracts/') ? rawKey : `contracts/${rawKey}`;
 
-  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(user.role);
   if (!isAllowed) {
     return res.status(403).json({ error: "Acceso denegado a este recurso" });
   }
@@ -1317,11 +1324,19 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
     // Check local fallback
     try {
       const fs = await import('fs');
-      const cleanContractDir = key.replace('contracts/', 'contracts-');
-      const localPath = path.join(process.cwd(), 'uploads', cleanContractDir);
-      if (fs.existsSync(localPath)) {
-        res.setHeader("Content-Type", "application/pdf");
-        return fs.createReadStream(localPath).pipe(res);
+      const filename = key.split('/').pop();
+      const folderName = key.split('/')[1] ? `contracts-${key.split('/')[1]}` : '';
+      const possiblePaths = [
+        path.join(process.cwd(), 'uploads', key.replace('contracts/', 'contracts-')),
+        path.join(process.cwd(), 'uploads', folderName, filename || ''),
+        path.join(process.cwd(), 'uploads', filename || '')
+      ];
+      for (const p of possiblePaths) {
+        if (p && fs.existsSync(p)) {
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+          return fs.createReadStream(p).pipe(res);
+        }
       }
     } catch (localErr) {}
     console.warn("Contract file not found in S3 or local uploads:", key);
@@ -1737,10 +1752,11 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
     await fs.mkdir(uploadsDir, { recursive: true });
     const filePath = path.join(uploadsDir, `${timestamp}-${cleanFilename}`);
     await fs.writeFile(filePath, buffer);
-    return `/uploads/contracts-${cleanContractId}/${timestamp}-${cleanFilename}`;
   } catch (err) {
-    return `/api/contracts/files/${key}`;
+    console.warn("[Local Contract File Warning] Error al guardar copia local:", err);
   }
+
+  return `/api/contracts/files/${key}`;
 }
 
 // Helper to upload equipment photos (images) to S3 under equipo/ prefix
