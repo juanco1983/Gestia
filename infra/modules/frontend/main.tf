@@ -72,3 +72,15 @@ resource "aws_amplify_branch" "dev" {
     Env     = var.env
   }
 }
+
+# ─── Asociación de Dominio Personalizado ──────────────────────────────────────
+resource "aws_amplify_domain_association" "custom_domain" {
+  count       = var.custom_domain_name != "" ? 1 : 0
+  app_id      = aws_amplify_app.gestia.id
+  domain_name = var.custom_domain_name
+
+  sub_domain {
+    branch_name = aws_amplify_branch.dev.branch_name
+    prefix      = var.custom_subdomain_prefix
+  }
+}
