@@ -108,3 +108,4 @@ module "frontend" {
   custom_domain_name      = "perugenius.com"
   custom_subdomain_prefix = "qagestia"
 }
+# trigger qa deployment
