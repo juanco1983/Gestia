@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { OT, Client, ServiceType, TechnicalReport, EquipmentType, Equipo } from '../types';
 import { getTemplate, getPhotoSlotsForTipo } from '../utils/serviceTemplates';
-import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES } from '../utils/reportDefaults';
+import { ALL_ACCIONES, generateDefaultReport, buildCaracteristicasFromEquipo, getPhotoSlotsForKva, DEFAULT_RECOMENDACIONES, buildAntecedentesTexto } from '../utils/reportDefaults';
 import DocumentFormat from './DocumentFormat';
 import { compressBase64Image } from '../utils/imageCompressor';
 import { draftKey, getDraft, putDraft, deleteDraft } from '../offline/db';
@@ -59,6 +59,23 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
     const base = defaults.caracteristicas ?? {};
     return buildCaracteristicasFromEquipo(equipo, base);
   }, [initialReport, defaults.caracteristicas, equipo]);
+
+  useEffect(() => {
+    if (equipo && !initialReport) {
+      setCaracteristicas(prev => {
+        const updated = buildCaracteristicasFromEquipo(equipo, prev);
+        
+        setAntecedentes(prevAnt => {
+          if (prevAnt.includes('NO REGISTRADO') || prevAnt === defaults.antecedentes) {
+            return buildAntecedentesTexto(ot, client, updated, defaults.fechaServicio || new Date().toISOString().split('T')[0], defaults.horaInicio || '09:00');
+          }
+          return prevAnt;
+        });
+
+        return updated;
+      });
+    }
+  }, [equipo, initialReport, ot, client, defaults.fechaServicio, defaults.horaInicio, defaults.antecedentes]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
