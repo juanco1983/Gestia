@@ -138,10 +138,32 @@ export default function WizardInforme({ ot, client, equipoId, equipo, initialRep
       if (draft.horaFin) setHoraFin(draft.horaFin);
       if (draft.tecnico1) setTecnico1(draft.tecnico1);
       if (draft.tecnico2) setTecnico2(draft.tecnico2);
-      if (draft.antecedentes) setAntecedentes(draft.antecedentes);
+      if (draft.antecedentes) {
+        setAntecedentes(prevAnt => {
+          if (draft.antecedentes.includes('NO REGISTRADO') && !prevAnt.includes('NO REGISTRADO') && prevAnt !== '') {
+            return prevAnt;
+          }
+          return draft.antecedentes;
+        });
+      }
       if (draft.accionesRealizadas) setAccionesRealizadas(draft.accionesRealizadas);
       if (draft.pasosLista) setPasosLista(draft.pasosLista);
-      if (draft.caracteristicas) setCaracteristicas(draft.caracteristicas);
+      if (draft.caracteristicas) {
+        setCaracteristicas(prev => {
+          if (draft.caracteristicas['MARCA'] === 'NO REGISTRADO' && prev['MARCA'] && prev['MARCA'] !== 'NO REGISTRADO') {
+            return { 
+              ...draft.caracteristicas, 
+              MARCA: prev['MARCA'], 
+              MODELO: prev['MODELO'], 
+              SERIE: prev['SERIE'], 
+              POTENCIA: prev['POTENCIA'],
+              TIPO: prev['TIPO'],
+              CÓDIGO: prev['CÓDIGO']
+            };
+          }
+          return draft.caracteristicas;
+        });
+      }
       if (draft.medicionesEntrada) setMedicionesEntrada(draft.medicionesEntrada);
       if (draft.medicionesSalida) setMedicionesSalida(draft.medicionesSalida);
       if (draft.diagnostico) setDiagnostico(draft.diagnostico);
