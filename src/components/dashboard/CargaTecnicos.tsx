@@ -8,8 +8,8 @@ interface CargaTecnicosProps {
 }
 
 export const CargaTecnicos: React.FC<CargaTecnicosProps> = ({ users, ots, onNavigateToTab }) => {
-  // Filter technical staff
-  const tecnicos = users.filter(u => u.role === 'Tecnico' || u.role === 'Administrador');
+  // Filter technical staff (exclusivamente rol 'Tecnico')
+  const tecnicos = users.filter(u => u.role === 'Tecnico');
 
   // Active OTs count by technician
   const activeOts = ots.filter(o => o.estado !== OTStatus.APROBADA && o.estado !== OTStatus.CERRADA && o.estado !== OTStatus.FACTURADA);
