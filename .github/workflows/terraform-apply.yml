@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # En la rama `main`: requiere aprobación manual de un revisor
-    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    environment: ${{ github.ref_name == 'main' && 'production' || '' }}
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
