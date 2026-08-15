@@ -40,6 +40,8 @@ export async function login(page: Page, role: Role): Promise<void> {
     try {
       localStorage.clear();
       sessionStorage.clear();
+      // Evita que el tour de bienvenida (que navega entre módulos) interfiera en los E2E.
+      localStorage.setItem('gestia_tour_progreso_visto', '1');
     } catch {}
   }).catch(() => {});
   await page.reload({ waitUntil: 'domcontentloaded' });
