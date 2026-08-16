@@ -19,3 +19,6 @@
    - **NUNCA** se realiza el PR ni el merge hacia `dev` si las pruebas de integración y E2E no han sido ejecutadas y aprobadas.
 5. **Video de Evidencia Obligatorio**:
    - Toda ejecución de prueba de integración y E2E DEBE generar y conservar grabaciones de video `.webm` en la carpeta `test-results/` (configuración `video: 'on'` en `playwright.config.ts`) como evidencia visual obligatoria antes de solicitar la creación del PR hacia `dev`.
+6. **Actualización Obligatoria de Documentación (`Documentacion/`)**:
+   - Todo cambio, nueva funcionalidad, fix o refactor DEBE actualizar la documentación correspondiente en `Documentacion/` (incluyendo el **Documento de Análisis Funcional** `Documentacion/analisis_funcional.md`, `data_dictionary.md`, `architecture_c4.md`, `guia_ui_ux.md` y guiones de prueba E2E) dentro del mismo Commit y PR hacia `dev`.
+   - **NUNCA** se realiza un PR sin haber sincronizado la documentación del sistema.
