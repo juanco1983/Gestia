@@ -20,6 +20,36 @@ function estadoBadgeColor(estado: string): string {
   }
 }
 
+function renderContratoBadge(contrato: InventarioEquipoDTO['contrato']) {
+  if (!contrato) {
+    return (
+      <span className="inline-flex items-center font-mono font-bold px-2 py-0.5 rounded-full text-[9px] bg-slate-100 text-slate-500 border border-slate-200">
+        Sin Contrato
+      </span>
+    );
+  }
+  const hoy = new Date().toISOString().split('T')[0];
+  const isVencido = Boolean(contrato.fechaFin && contrato.fechaFin < hoy);
+  if (isVencido) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="inline-flex items-center w-fit font-mono font-bold px-2 py-0.5 rounded-full text-[9px] bg-rose-50 text-rose-700 border border-rose-200">
+          Vencido
+        </span>
+        {contrato.fechaFin && <span className="text-[9px] font-mono text-slate-400">Venció {contrato.fechaFin}</span>}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="inline-flex items-center w-fit font-mono font-bold px-2 py-0.5 rounded-full text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+        Vigente
+      </span>
+      {contrato.fechaFin && <span className="text-[9px] font-mono text-slate-400">Hasta {contrato.fechaFin}</span>}
+    </div>
+  );
+}
+
 export default function InventarioEquiposView({ currentUser }: InventarioEquiposViewProps) {
   const [data, setData] = useState<InventarioEquiposResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,6 +244,7 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
                 <th className="text-left px-4 py-3">Marca</th>
                 <th className="text-left px-4 py-3">Modelo</th>
                 <th className="text-left px-4 py-3">Serie</th>
+                <th className="text-left px-4 py-3">Contrato</th>
                 <th className="text-left px-4 py-3">Voltaje Últ. Info.</th>
                 <th className="text-left px-4 py-3">Empresa</th>
                 <th className="text-left px-4 py-3">Estado</th>
@@ -228,6 +259,7 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
                   <td className="px-4 py-3 font-semibold text-slate-700">{eq.marca || '–'}</td>
                   <td className="px-4 py-3 text-slate-600">{eq.modelo || '–'}</td>
                   <td className="px-4 py-3 font-mono text-slate-500">{eq.serie || 'S/D'}</td>
+                  <td className="px-4 py-3">{renderContratoBadge(eq.contrato)}</td>
                   <td className="px-4 py-3 font-mono text-slate-700">
                     {eq.ultimoInforme ? `${eq.ultimoInforme.voltajeEntrada}V` : '–'}
                   </td>
