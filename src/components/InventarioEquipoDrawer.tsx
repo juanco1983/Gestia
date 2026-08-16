@@ -323,9 +323,15 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
                 <p className="text-xs text-slate-400">Sin visitas registradas.</p>
               )}
               {equipo.visitasHistoricasCount > 0 && (
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
-                  <History size={11} className="text-slate-400" /> {equipo.visitasHistoricasCount} servicio(s) realizado(s)
-                </p>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center justify-between">
+                  <p className="text-xs text-slate-700 font-mono flex items-center gap-2 font-bold">
+                    <History size={14} className="text-teal-600" />
+                    <span>{equipo.visitasHistoricasCount} servicio(s) realizado(s)</span>
+                  </p>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">
+                    {equipo.countInformes} informe(s) emitido(s)
+                  </span>
+                </div>
               )}
             </div>
             {equipo.visitasFuturas.length > 0 && (
