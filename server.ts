@@ -2090,7 +2090,7 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
         ...eqReports.map(r => r.otId),
         ...eqOtIds.filter(id => {
           const ot = otMap.get(id);
-          return ot && ot.estado !== OTStatus.CREADA && ot.estado !== OTStatus.PENDIENTE_PROGRAMACION;
+          return ot && ot.estado !== 'Creada' && ot.estado !== 'Pendiente de Programación';
         })
       ]).size;
 
