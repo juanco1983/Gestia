@@ -98,11 +98,11 @@ module "backend" {
 }
 
 module "frontend" {
-  source        = "../../modules/frontend"
-  project       = var.project
-  env           = var.env
-  github_repo   = var.github_repo
-  github_token  = var.github_token
+  source                  = "../../modules/frontend"
+  project                 = var.project
+  env                     = var.env
+  github_repo             = var.github_repo
+  github_token            = var.github_token
   backend_url             = module.backend.beanstalk_endpoint
   branch                  = "qa"
   custom_domain_name      = "perugenius.com"

@@ -523,12 +523,15 @@ export default function ClientesContratosView({
     if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    if (url.startsWith('/uploads/')) {
-      const token = localStorage.getItem('gestia_jwt_token');
-      return `${url}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-    }
-    const cleanKey = url.replace(/^\/api\/contracts\/files\//, '').replace(/^\/+/, '');
     const token = localStorage.getItem('gestia_jwt_token');
+    let cleanKey = url;
+    if (cleanKey.startsWith('/uploads/')) {
+      cleanKey = cleanKey.replace('/uploads/', '').replace(/^contracts-/, 'contracts/');
+    }
+    cleanKey = cleanKey.replace(/^\/api\/contracts\/files\//, '').replace(/^\/+/, '');
+    if (!cleanKey.startsWith('contracts/')) {
+      cleanKey = `contracts/${cleanKey}`;
+    }
     return `/api/contracts/files/${cleanKey}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   };
 

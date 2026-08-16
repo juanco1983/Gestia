@@ -29,7 +29,7 @@ resource "aws_elastic_beanstalk_environment" "dev" {
   setting {
     namespace = "aws:ec2:instances"
     name      = "InstanceTypes"
-    value     = var.instance_type  # t3.micro (Free Tier)
+    value     = var.instance_type # t3.micro (Free Tier)
   }
 
   # ── Red: subnets públicas ────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ resource "aws_elastic_beanstalk_environment" "dev" {
   setting {
     namespace = "aws:elasticbeanstalk:environment"
     name      = "EnvironmentType"
-    value     = "SingleInstance"  # Sin ELB en DEV (gratis)
+    value     = "SingleInstance" # Sin ELB en DEV (gratis)
   }
 
   # ── Variables de entorno de la aplicación ────────────────────────────────────
@@ -104,6 +104,12 @@ resource "aws_elastic_beanstalk_environment" "dev" {
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "S3_BUCKET_NAME"
+    value     = var.photos_bucket_name
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
     name      = "AWS_REGION"
     value     = var.region
   }
@@ -112,7 +118,7 @@ resource "aws_elastic_beanstalk_environment" "dev" {
   setting {
     namespace = "aws:elasticbeanstalk:healthreporting:system"
     name      = "SystemType"
-    value     = "basic"  # Usa "enhanced" en PROD
+    value     = "basic" # Usa "enhanced" en PROD
   }
 
   setting {
@@ -147,16 +153,16 @@ resource "aws_cloudfront_distribution" "backend" {
     origin_id   = "BeanstalkBackend"
 
     custom_origin_config {
-      http_port                = 80
-      https_port               = 443
-      origin_protocol_policy   = "http-only"
-      origin_ssl_protocols     = ["TLSv1.2"]
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment             = "CDN HTTPS para Beanstalk API (${var.env})"
+  enabled         = true
+  is_ipv6_enabled = true
+  comment         = "CDN HTTPS para Beanstalk API (${var.env})"
 
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]

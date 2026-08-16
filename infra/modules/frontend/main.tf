@@ -4,8 +4,8 @@
 ##############################################
 
 resource "aws_amplify_app" "gestia" {
-  name       = "${var.project}-frontend"
-  repository = "https://github.com/${var.github_repo}"
+  name         = "${var.project}-frontend"
+  repository   = "https://github.com/${var.github_repo}"
   access_token = var.github_token
 
   # Build spec para React/Vite
