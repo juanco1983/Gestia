@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Gestia - Visitas Históricas en Detalle de Equipo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+          colors: {
+            teal: {
+              brand: '#00B594',
+              hover: '#00967a',
+              light: '#E6F7F4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="p-6 text-slate-800 antialiased">
+
+  <div class="max-w-md mx-auto space-y-4 text-left">
+
+    <!-- Drawer Top Header Card -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-2">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-extrabold font-mono text-slate-900 uppercase tracking-tight">OM-CO-001-E2</h2>
+        <span class="text-[10px] bg-teal-light border border-teal-brand/30 text-teal-brand font-bold font-mono px-2 py-0.5 rounded-full uppercase">FORZA TRK-26789</span>
+      </div>
+      <div class="text-xs text-slate-500 font-sans space-y-1">
+        <div class="flex justify-between"><span class="text-slate-400">RUC:</span> <span class="font-mono">206088899123</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Contrato:</span> <span class="font-mono">OM-CO-001</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Vigencia:</span> <span class="font-mono">2026-08-13 — 2026-09-12</span></div>
+      </div>
+    </div>
+
+    <!-- Voltaje card -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+      <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Voltaje Último Informe</h3>
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 font-mono uppercase">Entrada</span>
+          <div class="text-lg font-bold font-mono text-slate-900">220V</div>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 font-mono uppercase">Salida</span>
+          <div class="text-lg font-bold font-mono text-slate-900">220V</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISITAS HISTORICAS CARD (CORREGIDA) -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider">
+          Visitas Históricas (1) <span class="text-[9px] bg-teal-brand text-white px-1.5 py-0.2 rounded font-mono ml-1">CORREGIDO</span>
+        </h3>
+      </div>
+      
+      <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center justify-between">
+        <p class="text-xs text-slate-700 font-mono flex items-center gap-2 font-bold">
+          <i data-lucide="history" class="w-4 h-4 text-teal-brand"></i>
+          <span>1 servicio(s) realizado(s)</span>
+        </p>
+        <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">
+          1 informe(s) emitido(s)
+        </span>
+      </div>
+    </div>
+
+    <!-- Informes Técnicos Card -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider">Informes Técnicos (1)</h3>
+        <span class="text-[10px] text-slate-400 font-mono flex items-center gap-1"><i data-lucide="history" class="w-3 h-3"></i> Histórico completo</span>
+      </div>
+
+      <div class="rounded-xl border border-slate-100 p-3.5 space-y-2 bg-slate-50/50">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold font-mono text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+            INF-2026-OM-CO-001-2
+          </span>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full uppercase">Aprobada</span>
+        </div>
+        <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-600 font-sans">
+          <div><span class="text-slate-400">Fecha:</span> 2026-08-27</div>
+          <div><span class="text-slate-400">Tipo:</span> Preventivo</div>
+          <div class="col-span-2"><span class="text-slate-400">Técnico:</span> Juan Córdova</div>
+          <div><span class="text-slate-400">V. Entrada:</span> <span class="font-mono font-bold text-slate-800">220V</span></div>
+          <div><span class="text-slate-400">V. Salida:</span> <span class="font-mono font-bold text-slate-800">220V</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

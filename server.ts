@@ -2094,6 +2094,16 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
       const ultimoInforme = eqReportsSorted[0] || null;
       const derivado = deriveEstadoEquipo(eq.estado, ultimoInforme);
 
+      const historicalOtsCount = new Set([
+        ...eqReports.map(r => r.otId),
+        ...eqOtIds.filter(id => {
+          const ot = otMap.get(id);
+          return ot && ot.estado !== OTStatus.CREADA && ot.estado !== OTStatus.PENDIENTE_PROGRAMACION;
+        })
+      ]).size;
+
+      const visitasHistoricasCount = Math.max(historicalOtsCount, eqReportsSorted.length);
+
       return {
         id: eq.id,
         codigo: eq.codigo,
@@ -2115,7 +2125,7 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
               fechaFin: eq.contrato.fecha_fin || null,
             }
           : null,
-        visitasHistoricasCount: (eq.servicios || []).length,
+        visitasHistoricasCount,
         visitasFuturas,
         ultimoInforme,
         informes: eqReportsSorted,
