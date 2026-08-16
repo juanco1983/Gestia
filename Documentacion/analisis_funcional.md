@@ -1,6 +1,6 @@
 # Especificación de Análisis Funcional del Sistema — Gestia IA
 
-**Versión:** 4.1.0  
+**Versión:** 4.2.0  
 **Fecha de Última Actualización:** 2026-08-16  
 **Proyecto:** Gestia IA — Plataforma de Gestión de Mantenimiento Eléctrico, Climatización e Informes Técnicos  
 
@@ -28,26 +28,26 @@ La solución abarca el ciclo de vida completo del servicio: desde la cotización
 
 ## 3. Módulos Funcionales y Reglas de Negocio
 
-### 3.1. Módulo Inventario de Equipos (`InventarioEquiposView.tsx`)
+### 3.1. Dashboard Principal (`DashboardView.tsx` & `RankingEquiposFallas.tsx`)
+- **Ranking de Equipos con Incidencias (Top 5):** Muestra los 5 equipos con mayor volumen de fallas reales.
+- **Redirección Directa a Incidencias:** Cada tarjeta de equipo del Ranking posee el botón **`Ver Incidencias →`** e interacción de clic que navega directamente a la ficha e historial de dicho equipo.
+- **Criterio Estricto de Detección de Fallas:**
+  - Solo se contabilizan como fallas los informes con anomalías técnicas (`bypassActivo = true`, `paso1_funcionamiento === 'bypass'`, palabras clave de fallas/reemplazo/avería/sulfatación/ruido/sobrecalentamiento o informes rechazados en estado `OBSERVADA`).
+  - Se excluyen notas neutras o positivas (ej: *"equipo en óptimo estado de operación"*, *"operativo sin problemas"*).
+
+### 3.2. Módulo Inventario de Equipos (`InventarioEquiposView.tsx`)
 - **Ficha Técnica Consolidada:** Muestra el catálogo de equipos asignados a clientes y sedes.
-- **Columna Dedicada Marca:** Muestra la marca del equipo (ej: *APC, Eaton, Emerson, Schneider*) derivada del registro técnico.
+- **Columna Dedicada Marca:** Muestra la marca del equipo (ej: *APC, Eaton, Emerson, Schneider*).
 - **Columna Dedicada Estado del Contrato:**
   - 🟢 **`Vigente`**: Contrato activo cuya fecha de fin es igual o posterior a la fecha actual.
   - 🔴 **`Vencido`**: Contrato cuya fecha de fin ya expiró.
   - ⚪ **`Sin Contrato`**: Equipo no asociado a un contrato marco o adenda activa.
-- **Cálculo de Visitas Históricas:** Combina dinámicamente el conteo de OTs ejecutadas históricamente y los informes técnicos consolidados en base de datos Postgres (`Math.max(otsCount, reportsCount)`).
+- **Cálculo de Visitas Históricas:** Combina dinámicamente el conteo de OTs ejecutadas e informes técnicos consolidados en Postgres (`Math.max(otsCount, reportsCount)`).
 
-### 3.2. Módulo Supervisión y Auditoría (`SupervisorView.tsx` & `TechMonitoringDashboard.tsx`)
+### 3.3. Módulo Supervisión y Auditoría (`SupervisorView.tsx` & `TechMonitoringDashboard.tsx`)
 - **Panel de Revisión de Calidad:** Espacio de auditoría rápida de lecturas (Voltaje Entrada/Salida, Bypass, Estado Baterías) y diagnóstico técnico.
 - **Visor Lightbox Modal de Foto Ampliada:** Al hacer clic sobre cualquier miniatura del *Registro Fotográfico de Conformidad* (18 slots de evidencia), la imagen se despliega en un modal centrado a pantalla completa en alta definición.
-- **Regla de Limpieza de Observaciones al Aprobar:**
-  - Cuando un supervisor hace clic en **"Aprobar Informe"**, la OT cambia a estado 🟢 **`Aprobada`** y se elimina explícitamente cualquier nota previa de corrección (`correccionesSupervisor = ""`).
-  - El informe desaparece de la bandeja de pendientes/observados y se traslada a la bitácora de informes aprobados/firmados.
-
-### 3.3. Módulo Técnico de Campo (`TecnicoView.tsx` & `WizardInforme.tsx`)
-- **Bandeja de Trabajo:** Organizada en pestañas (*Por Ejecutar / En Proceso*, *Historial Aprobados*).
-- **Asistente Wizard de Informe:** Flujo estructurado en pasos (Antecedentes, Acciones Realizadas, Mediciones de Entrada/Salida, Registro Fotográfico Obligatorio SLA, Diagnóstico y Recomendaciones).
-- **Ejecución Offline:** Sincronización transparente con IndexedDB/Dexie cuando no hay conectividad a Internet.
+- **Regla de Limpieza de Observaciones al Aprobar:** Al hacer clic en **"Aprobar Informe"**, la OT cambia a estado 🟢 **`Aprobada`** y se borra la nota previa de corrección (`correccionesSupervisor = ""`).
 
 ---
 

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <defs>
+    <pattern id="grid-0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid-0)"/>
+  <rect x="15" y="15" width="370" height="270" fill="none" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <g>
+      <rect x="130" y="80" width="140" height="100" rx="4" fill="none" stroke="#38bdf8" stroke-width="2"/>
+      <path d="M 150 100 L 250 100" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="2 2"/>
+      <path d="M 150 120 L 210 120" stroke="#0ea5e9" stroke-width="1.5"/>
+      <path d="M 150 140 L 230 140" stroke="#0ea5e9" stroke-width="1.5"/>
+      <circle cx="240" cy="125" r="10" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+      <path d="M 240 115 L 240 135" stroke="#38bdf8" stroke-width="1"/>
+    </g>
+  <rect x="15" y="245" width="370" height="40" fill="#020617" opacity="0.8"/>
+  <text x="200" y="262" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">
+    REGISTRO TÉCNICO OFICIAL MAFORT
+  </text>
+  <text x="200" y="276" fill="#38bdf8" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">
+    PLACA CARACTERÍSTICAS DEL UPS
+  </text>
+  <rect x="25" y="25" width="90" height="18" rx="4" fill="#020617" opacity="0.75"/>
+  <text x="32" y="37" fill="#38bdf8" font-family="monospace" font-size="7.5" font-weight="bold">
+    OT-OM-CO-001-1 #01
+  </text>
+</svg>
