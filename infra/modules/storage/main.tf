@@ -71,7 +71,7 @@ resource "aws_s3_bucket_cors_configuration" "photos" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST"]
-    allowed_origins = ["*"]  # En PROD: reemplazar con el dominio real
+    allowed_origins = ["*"] # En PROD: reemplazar con el dominio real
     max_age_seconds = 3000
   }
 }
