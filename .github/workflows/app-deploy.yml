@@ -147,7 +147,22 @@ jobs:
             --output text 2>/dev/null || echo "None")
           
           if [ "$ENV_STATUS" != "None" ] && [ -n "$ENV_STATUS" ] && [ "$ENV_STATUS" != "Terminated" ]; then
-            echo "El ambiente $ENV_NAME existe (Estado: $ENV_STATUS). Actualizando a la versión $VERSION_LABEL..."
+            echo "El ambiente $ENV_NAME existe (Estado actual: $ENV_STATUS)..."
+            
+            # Esperar a que el ambiente pase a estado Ready si está en Updating
+            WAIT_COUNT=0
+            while [ "$ENV_STATUS" == "Updating" ] && [ $WAIT_COUNT -lt 20 ]; do
+              echo "El ambiente $ENV_NAME está en estado Updating. Esperando 15 segundos a que pase a Ready..."
+              sleep 15
+              WAIT_COUNT=$((WAIT_COUNT + 1))
+              ENV_STATUS=$(aws elasticbeanstalk describe-environments \
+                --application-name "${{ env.APP_NAME }}" \
+                --environment-names "$ENV_NAME" \
+                --query "Environments[0].Status" \
+                --output text 2>/dev/null || echo "Ready")
+            done
+
+            echo "Actualizando ambiente $ENV_NAME a la versión $VERSION_LABEL..."
             aws elasticbeanstalk update-environment \
               --environment-name "$ENV_NAME" \
               --version-label "$VERSION_LABEL"
