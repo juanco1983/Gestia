@@ -22,12 +22,12 @@ resource "aws_db_instance" "postgres" {
   # Engine
   engine         = "postgres"
   engine_version = "15"
-  instance_class = var.instance_class   # db.t3.micro = Free Tier
+  instance_class = var.instance_class # db.t3.micro = Free Tier
 
   # Storage (Free Tier: 20 GB gp2)
-  allocated_storage     = var.allocated_storage
-  storage_type          = "gp2"
-  storage_encrypted     = true
+  allocated_storage = var.allocated_storage
+  storage_type      = "gp2"
+  storage_encrypted = true
 
   # Credenciales
   db_name  = var.db_name
@@ -37,7 +37,7 @@ resource "aws_db_instance" "postgres" {
   # Networking
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.rds_sg_id]
-  publicly_accessible    = false   # Solo accesible desde la VPC
+  publicly_accessible    = false # Solo accesible desde la VPC
 
   # Backups (desactivado en DEV para cumplir con la Capa Gratuita)
   backup_retention_period = 0
@@ -51,8 +51,8 @@ resource "aws_db_instance" "postgres" {
   auto_minor_version_upgrade = true
 
   # En DEV: permite borrar sin snapshot final
-  skip_final_snapshot       = true
-  deletion_protection       = false
+  skip_final_snapshot = true
+  deletion_protection = false
 
   # Performance Insights (gratuito en t3.micro)
   performance_insights_enabled = false
