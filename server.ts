@@ -895,6 +895,11 @@ app.put("/api/ots/:id", async (req, res) => {
     if (updatedOt.estado === "Conformidad Firmada (Listo para Facturar)" || 
         updatedOt.estado === "Aprobada" || 
         updatedOt.estado === "Firmada") {
+      // Clear supervisor corrections on technical report when approved
+      await prisma.technicalReport.updateMany({
+        where: { otId: id },
+        data: { correccionesSupervisor: "" }
+      }).catch(() => {});
       // Search by otFinancieraId OR by OT number — always sync regardless of whether otFinancieraId is set
       const finId = updatedOt.otFinancieraId;
       const lines = await prisma.ordenTrabajoLinea.findMany({

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Gestia - Limpieza de Observaciones al Aprobar Informe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+          colors: {
+            teal: {
+              brand: '#00B594',
+              hover: '#00967a',
+              light: '#E6F7F4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="p-6 text-slate-800 antialiased flex items-center justify-center min-h-screen">
+
+  <div class="max-w-2xl w-full space-y-6">
+
+    <!-- Header Card -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+      <div>
+        <h3 class="font-display font-black text-slate-800 text-sm">Flujo de Aprobación de Calidad</h3>
+        <p class="text-xs text-slate-500 font-mono">Actualización automática de estado e informe</p>
+      </div>
+      <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-mono font-bold uppercase flex items-center gap-1.5">
+        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> APROBADA
+      </span>
+    </div>
+
+    <!-- Before and After Comparison -->
+    <div class="grid grid-cols-2 gap-4">
+      
+      <!-- ANTES (Con Observación Residual) -->
+      <div class="bg-white border border-rose-200 rounded-2xl p-4 space-y-3 shadow-xs">
+        <div class="flex items-center justify-between border-b border-rose-100 pb-2">
+          <span class="text-xs font-bold text-rose-700 font-mono">❌ ANTES (Bug)</span>
+          <span class="text-[9px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded font-mono font-bold">OBSERVADA</span>
+        </div>
+        <p class="text-xs text-slate-600">Al ser aprobado, el informe conservaba el texto residual del rechazo previo:</p>
+        <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 italic">
+          "Observación previa: Falta foto de multímetro en bornes de baterías..."
+        </div>
+      </div>
+
+      <!-- DESPUÉS (Limpio y Aprobado) -->
+      <div class="bg-white border border-emerald-200 rounded-2xl p-4 space-y-3 shadow-xs">
+        <div class="flex items-center justify-between border-b border-emerald-100 pb-2">
+          <span class="text-xs font-bold text-emerald-700 font-mono">✅ DESPUÉS (Corregido)</span>
+          <span class="text-[9px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono font-bold">APROBADA</span>
+        </div>
+        <p class="text-xs text-slate-600">Al presionar "Aprobar Informe", se limpia la observación y el estado pasa a Aprobado:</p>
+        <div class="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-medium flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+          <span>Informe verificado por supervisor. Sin observaciones pendientes.</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

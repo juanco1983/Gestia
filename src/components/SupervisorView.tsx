@@ -115,6 +115,16 @@ export default function SupervisorView({
       notifyError('Acción Restringida', 'Este informe ya ha sido aprobado previamente y no se pueden realizar nuevas aprobaciones.');
       return;
     }
+
+    const report = getAssociatedReport(selectedOt.id, selectedEquipoId || undefined);
+    if (report) {
+      const updatedReport = {
+        ...report,
+        correccionesSupervisor: ''
+      };
+      onUpdateReport(updatedReport);
+    }
+
     onUpdateOtStatus(selectedOt.id, OTStatus.APROBADA);
     notifySuccess('Informe Aprobado', 'Se envió la notificación automatizada al cliente para firma de conformidad.');
     setSelectedOt(null);
