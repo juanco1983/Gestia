@@ -211,6 +211,7 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
             <thead>
               <tr className="bg-slate-50/90 text-[10px] font-black font-mono uppercase tracking-wider text-slate-400 border-b border-slate-100">
                 <th className="text-left px-4 py-3">Código</th>
+                <th className="text-left px-4 py-3">Marca</th>
                 <th className="text-left px-4 py-3">Modelo</th>
                 <th className="text-left px-4 py-3">Serie</th>
                 <th className="text-left px-4 py-3">Voltaje Últ. Info.</th>
@@ -224,7 +225,8 @@ export default function InventarioEquiposView({ currentUser }: InventarioEquipos
               {data.items.map(eq => (
                 <tr key={eq.id} className="hover:bg-slate-50/60 cursor-pointer">
                   <td className="px-4 py-3 font-mono font-bold text-slate-800">{eq.codigo}</td>
-                  <td className="px-4 py-3 text-slate-600">{eq.marca} {eq.modelo}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700">{eq.marca || '–'}</td>
+                  <td className="px-4 py-3 text-slate-600">{eq.modelo || '–'}</td>
                   <td className="px-4 py-3 font-mono text-slate-500">{eq.serie || 'S/D'}</td>
                   <td className="px-4 py-3 font-mono text-slate-700">
                     {eq.ultimoInforme ? `${eq.ultimoInforme.voltajeEntrada}V` : '–'}

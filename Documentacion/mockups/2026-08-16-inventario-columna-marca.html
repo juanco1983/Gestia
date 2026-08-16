@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Gestia - Columna Marca en Inventario de Equipos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+          colors: {
+            teal: {
+              brand: '#00B594',
+              hover: '#00967a',
+              light: '#E6F7F4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="p-6 text-slate-800 antialiased">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-brand/10 text-teal-brand flex items-center justify-center font-bold">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold font-display text-slate-900">Inventario Global de Equipos</h1>
+          <p class="text-xs text-slate-400">Listado centralizado de UPS, Transformadores y Gabinetes con seguimiento de parámetros</p>
+        </div>
+      </div>
+      <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-mono font-bold">
+        Total: 4 Equipos
+      </span>
+    </div>
+
+    <!-- Main Table Container -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-left">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between gap-4">
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" placeholder="Buscar por código, marca, modelo, serie o cliente..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-brand font-sans">
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 font-mono">Filtrar por:</span>
+          <span class="px-2.5 py-1 bg-teal-light text-teal-brand font-mono font-bold text-xs rounded-lg border border-teal-brand/20">Todos los Equipos</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-slate-50/90 text-[10px] font-black font-mono uppercase tracking-wider text-slate-400 border-b border-slate-100">
+              <th class="text-left px-4 py-3">Código</th>
+              <th class="text-left px-4 py-3 text-teal-brand font-bold bg-teal-light/50">Marca <span class="text-[8px] bg-teal-brand text-white px-1 rounded ml-1">NUEVA</span></th>
+              <th class="text-left px-4 py-3">Modelo</th>
+              <th class="text-left px-4 py-3">Serie</th>
+              <th class="text-left px-4 py-3">Voltaje Últ. Info.</th>
+              <th class="text-left px-4 py-3">Empresa</th>
+              <th class="text-left px-4 py-3">Estado</th>
+              <th class="text-left px-4 py-3">Informes</th>
+              <th class="text-right px-4 py-3">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-sans">
+            <!-- Row 1 -->
+            <tr class="hover:bg-slate-50/60 cursor-pointer">
+              <td class="px-4 py-3 font-mono font-bold text-slate-900">EQ-UPS-001</td>
+              <td class="px-4 py-3 font-bold text-slate-800 bg-teal-50/30">APC / Schneider</td>
+              <td class="px-4 py-3 text-slate-600">Smart-UPS RT 10000VA</td>
+              <td class="px-4 py-3 font-mono text-slate-500">SURT10000XLI-2026</td>
+              <td class="px-4 py-3 font-mono font-bold text-slate-700">219V</td>
+              <td class="px-4 py-3 text-slate-600">OMNIA MEDICA SAC</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Operativo
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px]">3</span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button class="p-1.5 text-slate-500 hover:text-teal-brand hover:bg-slate-100 rounded-lg transition-colors">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="hover:bg-slate-50/60 cursor-pointer">
+              <td class="px-4 py-3 font-mono font-bold text-slate-900">EQ-UPS-002</td>
+              <td class="px-4 py-3 font-bold text-slate-800 bg-teal-50/30">FORTMAN</td>
+              <td class="px-4 py-3 text-slate-600">UPS FORTMAN 315 (65 KVA)</td>
+              <td class="px-4 py-3 font-mono text-slate-500">FTM-65K-8921</td>
+              <td class="px-4 py-3 font-mono font-bold text-slate-700">220V</td>
+              <td class="px-4 py-3 text-slate-600">OMNIA MEDICA SAC</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Operativo
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px]">1</span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button class="p-1.5 text-slate-500 hover:text-teal-brand hover:bg-slate-100 rounded-lg transition-colors">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr class="hover:bg-slate-50/60 cursor-pointer">
+              <td class="px-4 py-3 font-mono font-bold text-slate-900">EQ-TR-001</td>
+              <td class="px-4 py-3 font-bold text-slate-800 bg-teal-50/30">DELCROSA</td>
+              <td class="px-4 py-3 text-slate-600">Transformador Aislamiento 21 kVA</td>
+              <td class="px-4 py-3 font-mono text-slate-500">TR-21K-0091</td>
+              <td class="px-4 py-3 font-mono font-bold text-slate-700">380V</td>
+              <td class="px-4 py-3 text-slate-600">OMNIA MEDICA SAC</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                  En Mantenimiento
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[10px]">2</span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button class="p-1.5 text-slate-500 hover:text-teal-brand hover:bg-slate-100 rounded-lg transition-colors">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-400">
+        <span>Mostrando 3 de 3 equipos</span>
+        <span class="text-teal-brand font-bold">Gestia 4.0 Pro</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
