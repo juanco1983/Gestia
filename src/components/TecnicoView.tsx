@@ -33,7 +33,8 @@ import {
   Undo2,
   Truck,
   Navigation,
-  XCircle
+  XCircle,
+  Search
 } from 'lucide-react';
 import { OT, OTStatus, EquipmentType, ServiceType, TechnicalReport, Client, User, Equipo, OtEquipoAsignacion, Visita, VisitaStatus } from '../types';
 import { useLocalToast } from './shared/ToastModal';
