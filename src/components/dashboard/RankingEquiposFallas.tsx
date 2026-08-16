@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Client, OT, TechnicalReport } from '../../types';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, ArrowRight } from 'lucide-react';
 
 interface RankingEquiposFallasProps {
   clients: Client[];
@@ -38,13 +38,22 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
       // Unique key per equipment and client
       const itemKey = `${equipTag} (${clientName})`;
 
-      // Check if report has observations, bypass, or repair needed
+      // Evaluate text for real faults vs benign positive maintenance notes
+      const positiveKeywords = ['óptimo', 'optimo', 'sin anomalías', 'sin anomalias', 'sin fallas', 'operación normal', 'operacion normal', 'operativo sin problemas'];
+      const faultKeywords = ['falla', 'reemplazo', 'reemplazar', 'crítico', 'critico', 'avería', 'averia', 'ruido', 'sobrecalentamiento', 'sulfatad', 'desgastad', 'descalibrad', 'anomalía', 'anomalia', 'reparar', 'reparación', 'reparacion', 'dañad', 'danad', 'bajo voltaje', 'sobrevoltaje'];
+
+      const textToEvaluate = `${r.observacionesDiagnostico || ''} ${r.comentariosAdicionales || ''} ${r.pasos?.paso6_observaciones || ''}`.toLowerCase();
+      const hasFaultKeyword = faultKeywords.some(kw => textToEvaluate.includes(kw));
+      const isPositiveNote = positiveKeywords.some(kw => textToEvaluate.includes(kw)) && !hasFaultKeyword;
+
+      // Check if report has real observations, bypass, or repair needed
       const hasFalla = Boolean(
-        r.observacionesDiagnostico ||
-        r.comentariosAdicionales ||
         r.indicadoresBateria?.bypassActivo ||
         r.pasos?.paso1_funcionamiento === 'bypass' ||
-        r.pasos?.paso6_observaciones
+        hasFaultKeyword ||
+        (r.correccionesSupervisor && r.correccionesSupervisor.trim().length > 0) ||
+        (linkedOt?.estado === 'Observada') ||
+        (textToEvaluate.length > 0 && !isPositiveNote && !textToEvaluate.includes('limpieza con brocha'))
       );
 
       if (hasFalla) {
@@ -52,8 +61,8 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
           equipFailMap[itemKey] = {
             tag: equipTag,
             clientName,
-            tipoCat: r.indicadoresBateria?.bypassActivo ? '(Bypass)' : '(Mantenimiento)',
-            causa: r.observacionesDiagnostico || r.comentariosAdicionales || r.pasos?.paso6_observaciones || 'Observación registrada en informe',
+            tipoCat: r.indicadoresBateria?.bypassActivo ? '(Bypass Activo)' : '(Atención Req.)',
+            causa: hasFaultKeyword ? r.observacionesDiagnostico || r.comentariosAdicionales || 'Anomalía registrada en informe' : 'Incidencia en revisión técnica',
             count: 0
           };
         }
@@ -108,7 +117,9 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
             {items.map((item) => (
               <div
                 key={item.tag}
-                className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center justify-between gap-3 hover:bg-white hover:border-slate-200 transition-all"
+                onClick={() => onNavigateToTab?.('InventarioEquipos')}
+                className="p-3 rounded-2xl bg-slate-50/70 border border-slate-100/80 flex items-center justify-between gap-3 hover:bg-white hover:border-[#00B594]/40 hover:shadow-xs transition-all cursor-pointer group"
+                title="Haz clic para abrir el inventario y revisar las incidencias de este equipo"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`text-base font-black font-mono shrink-0 ${item.rankColor}`}>
@@ -117,7 +128,7 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
 
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-1.5 truncate">
-                      <h4 className="text-xs font-black font-mono text-slate-900 truncate">
+                      <h4 className="text-xs font-black font-mono text-slate-900 truncate group-hover:text-[#00B594] transition-colors">
                         {item.tag}
                       </h4>
                       <span className="text-[10px] text-slate-400 font-medium">
@@ -137,12 +148,9 @@ export const RankingEquiposFallas: React.FC<RankingEquiposFallasProps> = ({
                   <span className={`text-xs font-black font-mono ${item.textColor}`}>
                     {item.incidenciasCount} fallas
                   </span>
-                  <div className="w-14 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                    <div
-                      className={`h-full ${item.barBg} rounded-full`}
-                      style={{ width: `${Math.min(100, item.incidenciasCount * 20)}%` }}
-                    />
-                  </div>
+                  <span className="text-[9px] font-mono font-bold text-[#00B594] group-hover:underline flex items-center gap-0.5 mt-1">
+                    Ver Incidencias <ArrowRight size={10} />
+                  </span>
                 </div>
               </div>
             ))}

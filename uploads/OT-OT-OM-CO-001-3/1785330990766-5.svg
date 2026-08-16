@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="100%" height="100%" fill="#022c22"/>
+  <defs>
+    <pattern id="grid-5" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid-5)"/>
+  <rect x="15" y="15" width="370" height="270" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <g>
+      <path d="M 100 130 L 150 130 L 170 80 L 190 180 L 210 120 L 230 140 L 250 130 L 300 130" 
+            stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="190" cy="180" r="5" fill="#ef4444"/>
+      <circle cx="170" cy="80" r="5" fill="#10b981"/>
+    </g>
+  <rect x="15" y="245" width="370" height="40" fill="#020617" opacity="0.8"/>
+  <text x="200" y="262" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">
+    REGISTRO TÉCNICO OFICIAL MAFORT
+  </text>
+  <text x="200" y="276" fill="#34d399" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">
+    ESTADO DE BORNERAS
+  </text>
+  <rect x="25" y="25" width="90" height="18" rx="4" fill="#020617" opacity="0.75"/>
+  <text x="32" y="37" fill="#34d399" font-family="monospace" font-size="7.5" font-weight="bold">
+    OT-OM-CO-001-3 #06
+  </text>
+</svg>

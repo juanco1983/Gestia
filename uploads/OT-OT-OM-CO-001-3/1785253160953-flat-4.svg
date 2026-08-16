@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <defs>
+    <pattern id="grid-4" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid-4)"/>
+  <rect x="15" y="15" width="370" height="270" fill="none" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <g>
+      <circle cx="200" cy="130" r="50" fill="none" stroke="#38bdf8" stroke-width="2"/>
+      <circle cx="200" cy="130" r="10" fill="#38bdf8"/>
+      <path d="M 200 120 C 180 100, 180 80, 200 80 C 220 80, 220 100, 200 120 Z" fill="#0ea5e9" opacity="0.6"/>
+      <path d="M 200 140 C 180 160, 180 180, 200 180 C 220 180, 220 160, 200 140 Z" fill="#0ea5e9" opacity="0.6"/>
+      <path d="M 190 130 C 170 110, 150 110, 150 130 C 150 150, 170 150, 190 130 Z" fill="#0ea5e9" opacity="0.6"/>
+      <path d="M 210 130 C 230 110, 250 110, 250 130 C 250 150, 230 150, 210 130 Z" fill="#0ea5e9" opacity="0.6"/>
+    </g>
+  <rect x="15" y="245" width="370" height="40" fill="#020617" opacity="0.8"/>
+  <text x="200" y="262" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">
+    REGISTRO TÉCNICO OFICIAL MAFORT
+  </text>
+  <text x="200" y="276" fill="#38bdf8" font-family="monospace" font-size="8.5" font-weight="bold" text-anchor="middle">
+    SOPLETEO DE TRANSFORMADOR
+  </text>
+  <rect x="25" y="25" width="90" height="18" rx="4" fill="#020617" opacity="0.75"/>
+  <text x="32" y="37" fill="#38bdf8" font-family="monospace" font-size="7.5" font-weight="bold">
+    OT-OM-CO-001-3 #05
+  </text>
+</svg>
