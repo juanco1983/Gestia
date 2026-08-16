@@ -51,7 +51,7 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
   else if (mimeType === "image/webp") extension = "webp";
   else if (mimeType === "image/svg+xml") extension = "svg";
 
-  const cleanOtId = otId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const cleanOtId = otId.replace(/^OT-/, '').replace(/[^a-zA-Z0-9_-]/g, "");
   const timestamp = Date.now();
   const key = `reports/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
 
@@ -1192,24 +1192,35 @@ app.post("/api/reports", async (req, res) => {
 
 app.get("/api/photos/*", async (req: any, res) => {
   const user = req.user;
-  const key = req.params[0];
+  let key = req.params[0] || '';
+  if (!key.startsWith('reports/')) {
+    key = `reports/${key}`;
+  }
 
-  // Validate path pattern
-  const pathRegex = /^reports\/OT-[\w-]+\/[\w.-]+$/;
+  // Validate path pattern (accepts single or double OT- prefixes)
+  const pathRegex = /^reports\/(OT-)+[\w-]+\/[\w.-]+$/;
   if (!pathRegex.test(key)) {
     return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
   }
 
-  const otIdMatch = key.match(/^reports\/(OT-[\w-]+)\//);
+  const otIdMatch = key.match(/^reports\/((?:OT-)+[\w-]+)\//);
   if (!otIdMatch) {
     return res.status(400).json({ error: "Formato de ruta inválido" });
   }
-  const otId = otIdMatch[1];
+  const rawOtId = otIdMatch[1];
+  const cleanOtId = rawOtId.replace(/^(OT-)+/, 'OT-');
 
   try {
-    const ot = await prisma.oT.findUnique({
-      where: { id: otId }
+    const ot = await prisma.oT.findFirst({
+      where: {
+        OR: [
+          { id: rawOtId },
+          { id: cleanOtId },
+          { id: cleanOtId.replace(/^OT-/, '') }
+        ]
+      }
     });
+
     if (!ot) {
       return res.status(404).json({ error: "Orden de trabajo asociada no encontrada" });
     }
@@ -1225,37 +1236,45 @@ app.get("/api/photos/*", async (req: any, res) => {
       }
     }
 
-    // Pre-signed URL generation if requested
-    if (req.query.presign === 'true' && process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
-      const presignedUrl = await getSignedUrl(s3, new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      }), { expiresIn: 900 });
-      return res.json({ url: presignedUrl, expiresIn: 900 });
+    // Fetch Object from S3 (attempting fallback key if double OT- was stored)
+    let s3Response;
+    try {
+      s3Response = await s3.send(
+        new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key
+        })
+      );
+    } catch (firstErr: any) {
+      if (firstErr.name === "NoSuchKey" && key.includes("/OT-OT-")) {
+        const altKey = key.replace("/OT-OT-", "/OT-");
+        s3Response = await s3.send(
+          new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: altKey
+          })
+        );
+      } else {
+        throw firstErr;
+      }
     }
-
-    const s3Response = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      })
-    );
 
     res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=3600");
 
     if (s3Response.Body) {
-      (s3Response.Body as any).pipe(res);
+      const byteArray = await s3Response.Body.transformToByteArray();
+      return res.status(200).send(Buffer.from(byteArray));
     } else {
-      res.status(500).json({ error: "Archivo sin contenido" });
+      return res.status(500).json({ error: "Archivo sin contenido" });
     }
   } catch (err: any) {
     if (err.name === "NoSuchKey") {
       return res.status(404).json({ error: "Imagen no encontrada en S3" });
     }
     console.error("Error al obtener imagen de S3:", err);
-    res.status(500).json({ error: "Error al recuperar recurso" });
+    return res.status(500).json({ error: "Error al recuperar recurso" });
   }
 });
 
