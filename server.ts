@@ -17,6 +17,7 @@ import ubigeos from 'ubigeo-peru';
 const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
 // AWS S3 client initialization
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || "gestia-dev-photos";
 
 // Helper to convert base64 image strings and upload to AWS S3
@@ -64,18 +65,9 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
       })
     );
     return `/api/photos/${key}`;
-  } catch (s3Err) {
-    console.error("[S3 Upload Error] No se pudo subir foto a S3:", (s3Err as any)?.message);
-    try {
-      const fs = await import('fs/promises');
-      const uploadsDir = path.join(process.cwd(), 'uploads', `OT-${cleanOtId}`);
-      await fs.mkdir(uploadsDir, { recursive: true });
-      const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
-      await fs.writeFile(filePath, buffer);
-      return `/api/photos/${key}`;
-    } catch (localErr) {
-      throw new Error(`Fallo en almacenamiento S3: ${(s3Err as any)?.message}`);
-    }
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al guardar foto en S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error de almacenamiento S3 (${BUCKET_NAME}): ${s3Err?.message || 'Fallo de conexión o permisos con AWS S3'}`);
   }
 }
 
@@ -1733,18 +1725,9 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
       })
     );
     return `/api/contracts/files/${key}`;
-  } catch (s3Err) {
-    console.error("[S3 Upload Error] No se pudo subir contrato a S3:", (s3Err as any)?.message);
-    try {
-      const fs = await import('fs/promises');
-      const uploadsDir = path.join(process.cwd(), 'uploads', `contracts-${cleanContractId}`);
-      await fs.mkdir(uploadsDir, { recursive: true });
-      const filePath = path.join(uploadsDir, `${timestamp}-${cleanFilename}`);
-      await fs.writeFile(filePath, buffer);
-      return `/api/contracts/files/${key}`;
-    } catch (localErr) {
-      throw new Error(`Fallo en almacenamiento S3 de contrato: ${(s3Err as any)?.message}`);
-    }
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al subir contrato PDF a S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error en almacenamiento S3 de contrato (${BUCKET_NAME}): ${s3Err?.message || 'No se pudo subir contrato a S3'}`);
   }
 }
 
@@ -1781,18 +1764,9 @@ async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index:
       })
     );
     return `/api/equipos/files/${key}`;
-  } catch (s3Err) {
-    console.error("[S3 Upload Error] No se pudo subir foto de equipo a S3:", (s3Err as any)?.message);
-    try {
-      const fs = await import('fs/promises');
-      const uploadsDir = path.join(process.cwd(), 'uploads', `equipo-${cleanEquipoId}`);
-      await fs.mkdir(uploadsDir, { recursive: true });
-      const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
-      await fs.writeFile(filePath, buffer);
-      return `/api/equipos/files/${key}`;
-    } catch (localErr) {
-      throw new Error(`Fallo en almacenamiento S3 de foto de equipo: ${(s3Err as any)?.message}`);
-    }
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al subir foto de equipo a S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error en almacenamiento S3 de equipo (${BUCKET_NAME}): ${s3Err?.message || 'No se pudo subir foto de equipo a S3'}`);
   }
 }
 
