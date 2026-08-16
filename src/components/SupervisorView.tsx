@@ -17,7 +17,8 @@ import {
   Minimize2,
   ZoomIn,
   ZoomOut,
-  Cpu
+  Cpu,
+  X
 } from 'lucide-react';
 import { OT, OTStatus, Client, TechnicalReport, OtEquipoAsignacion } from '../types';
 import DocumentFormat from './DocumentFormat';
@@ -46,6 +47,7 @@ export default function SupervisorView({
   const pendingOts = ots.filter(o => o.estado === OTStatus.EN_REVISION || o.estado === OTStatus.OBSERVADA);
   
   const [selectedOt, setSelectedOt] = useState<OT | null>(null);
+  const [previewSupervisorPhoto, setPreviewSupervisorPhoto] = useState<{ url: string; title: string } | null>(null);
   const [correccionText, setCorreccionText] = useState<string>('');
   const [simulatedDocxDownloaded, setSimulatedDocxDownloaded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'resumen' | 'previsualizacion'>('resumen');
@@ -54,6 +56,12 @@ export default function SupervisorView({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(100);
   const [selectedEquipoId, setSelectedEquipoId] = useState<string>('');
+
+  const getSupervisorPhotoUrl = (photoUrl: string, otId: string, idx: number): string => {
+    if (typeof photoUrl === 'string' && photoUrl.trim().length > 0) return photoUrl;
+    const cleanOt = (otId || '').replace(/^OT-/, '').replace(/[^a-zA-Z0-9_-]/g, "");
+    return `/api/photos/${cleanOt}/${idx + 1}`;
+  };
 
   const otEquipoIds = useMemo(() => {
     if (!selectedOt?.equipoId) return [];
@@ -770,18 +778,32 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
                                 );
                               }
 
-                              return displayPhotos.map((photo, idx) => (
-                                <div key={idx} className="border border-slate-200 bg-white p-1 rounded font-sans">
-                                  {photo.url ? (
-                                    <img src={photo.url} alt={photo.name} className="w-full h-20 object-cover rounded" />
-                                  ) : (
-                                    <div className="w-full h-20 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400 font-mono">Sin foto</div>
-                                  )}
-                                  <span className="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5 select-none" title={photo.name}>
-                                    {idx + 1}. {photo.name}
-                                  </span>
-                                </div>
-                              ));
+                              return displayPhotos.map((photo, idx) => {
+                                const photoSrc = getSupervisorPhotoUrl(photo.url, selectedOt.id, idx);
+                                const photoTitle = `${selectedOt.id} · ${idx + 1}. ${photo.name}`;
+                                return (
+                                  <div
+                                    key={idx}
+                                    onClick={() => setPreviewSupervisorPhoto({ url: photoSrc, title: photoTitle })}
+                                    className="relative group border border-slate-200 bg-white p-1 rounded font-sans cursor-pointer overflow-hidden hover:border-teal-brand transition-colors"
+                                    title="Haz clic para agrandar la evidencia fotográfica"
+                                  >
+                                    {photoSrc ? (
+                                      <div className="relative w-full h-20 overflow-hidden rounded">
+                                        <img src={photoSrc} alt={photo.name} className="w-full h-20 object-cover rounded group-hover:scale-105 transition-transform duration-200" />
+                                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                          <Eye className="w-4 h-4 text-white" />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-20 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400 font-mono">Sin foto</div>
+                                    )}
+                                    <span className="text-[8px] font-mono text-center block text-slate-600 uppercase mt-1 truncate px-0.5 select-none" title={photo.name}>
+                                      {idx + 1}. {photo.name}
+                                    </span>
+                                  </div>
+                                );
+                              });
                             })()}
                           </div>
                         </div>
@@ -1113,6 +1135,33 @@ th { background-color: #f1f5f9; font-weight: bold; font-size: 8pt; text-transfor
           </div>
         );
       })()}
+      {/* Lightbox Modal para Evidencia Fotográfica Ampliada en Supervisor */}
+      {previewSupervisorPhoto && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 text-white">
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <Eye className="text-teal-brand" size={16} />
+                <span className="font-bold">{previewSupervisorPhoto.title}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewSupervisorPhoto(null)}
+                className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 bg-black p-4 flex items-center justify-center overflow-hidden">
+              <img
+                src={previewSupervisorPhoto.url}
+                alt="Evidencia fotográfica ampliada"
+                className="max-h-[75vh] w-auto object-contain rounded-xl shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {toastView}
     </div>
     </ErrorBoundary>
