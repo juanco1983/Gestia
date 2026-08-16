@@ -164,26 +164,50 @@ export default function TecnicoView({
 
   const normalizedCurrentUser = normalizeName(mockTechName);
   
-  // If user is Admin, Ventas or Supervisor, show all OTs assigned or let them see the full board
-  const myOts = ots.filter(o => {
-    if (isTechUser) {
-      const isTitular = normalizeName(o.tecnicoTitular) === normalizedCurrentUser || o.tecnicoTitularId === currentUser?.id;
-      const isApoyoArr = (o.tecnicosAdicionalesIds || []).includes(currentUser?.id || '') || 
-                         (o.tecnicosAdicionalesNombres || []).map(n => normalizeName(n)).includes(normalizedCurrentUser);
-      const isApoyoLegacy = normalizeName(o.tecnicoApoyo) === normalizedCurrentUser;
-      const hasEquipmentAsg = (otEquipoAsignaciones || []).some(a => a.otId === o.id && (a.tecnicoTitularId === currentUser?.id || a.tecnicoApoyoId === currentUser?.id));
-      
-      return isTitular || isApoyoArr || isApoyoLegacy || hasEquipmentAsg;
+  // Filter OTs assigned to current technician (or all non-draft OTs if admin/fallback)
+  const myOts = useMemo(() => {
+    let list = ots.filter(o => {
+      if (isTechUser) {
+        const isTitular = normalizeName(o.tecnicoTitular) === normalizedCurrentUser || o.tecnicoTitularId === currentUser?.id;
+        const isApoyoArr = (o.tecnicosAdicionalesIds || []).includes(currentUser?.id || '') || 
+                           (o.tecnicosAdicionalesNombres || []).map(n => normalizeName(n)).includes(normalizedCurrentUser);
+        const isApoyoLegacy = normalizeName(o.tecnicoApoyo) === normalizedCurrentUser;
+        const hasEquipmentAsg = (otEquipoAsignaciones || []).some(a => a.otId === o.id && (a.tecnicoTitularId === currentUser?.id || a.tecnicoApoyoId === currentUser?.id));
+        
+        return isTitular || isApoyoArr || isApoyoLegacy || hasEquipmentAsg;
+      }
+      return o.estado !== OTStatus.CREADA && o.estado !== OTStatus.PENDIENTE_PROGRAMACION;
+    });
+
+    if (isTechUser && list.length === 0) {
+      list = ots.filter(o => o.estado !== OTStatus.CREADA && o.estado !== OTStatus.PENDIENTE_PROGRAMACION);
     }
-    // Para roles administrativos, mostrar todas las OTs programadas o en proceso para pruebas
-    return o.estado !== OTStatus.CREADA && o.estado !== OTStatus.PENDIENTE_PROGRAMACION;
-  });
+    return list;
+  }, [ots, isTechUser, normalizedCurrentUser, currentUser, otEquipoAsignaciones]);
 
-  // Group OTs by Visita for the technician sidebar
-  const groupedVisitas = useMemo(() => {
+  // Tray tabs state for technician sidebar
+  const [technicianTrayTab, setTechnicianTrayTab] = useState<'pendientes' | 'aprobados'>('pendientes');
+  const [searchHistorial, setSearchHistorial] = useState<string>('');
+
+  const APPROVED_STATUSES = useMemo(() => [
+    OTStatus.APROBADA,
+    OTStatus.FIRMADA,
+    OTStatus.FACTURADA,
+    OTStatus.CERRADA
+  ], []);
+
+  const myPendingOts = useMemo(() => {
+    return myOts.filter(ot => !APPROVED_STATUSES.includes(ot.estado));
+  }, [myOts, APPROVED_STATUSES]);
+
+  const myApprovedOts = useMemo(() => {
+    return myOts.filter(ot => APPROVED_STATUSES.includes(ot.estado));
+  }, [myOts, APPROVED_STATUSES]);
+
+  // Group OTs by Visita for the active pending tray
+  const groupedVisitasPendientes = useMemo(() => {
     const map = new Map<string, { visita: Visita | null; ots: OT[] }>();
-
-    myOts.forEach(ot => {
+    myPendingOts.forEach(ot => {
       const vId = ot.visitaId || 'standalone';
       if (!map.has(vId)) {
         const foundVisita = vId !== 'standalone' ? (visitas.find(v => v.id === vId) || null) : null;
@@ -191,13 +215,43 @@ export default function TecnicoView({
       }
       map.get(vId)!.ots.push(ot);
     });
-
     return Array.from(map.entries()).map(([id, item]) => ({
       id,
       visita: item.visita,
       ots: item.ots
     }));
-  }, [myOts, visitas]);
+  }, [myPendingOts, visitas]);
+
+  // Group OTs by Visita for approved history tray
+  const groupedVisitasAprobados = useMemo(() => {
+    let filtered = myApprovedOts;
+    if (searchHistorial.trim()) {
+      const q = searchHistorial.toLowerCase().trim();
+      filtered = filtered.filter(ot => {
+        const client = clients.find(c => c.id === ot.clientId);
+        return (
+          ot.id.toLowerCase().includes(q) ||
+          (ot.equipoId && ot.equipoId.toLowerCase().includes(q)) ||
+          (ot.tipoEquipo && ot.tipoEquipo.toLowerCase().includes(q)) ||
+          (client && client.razonSocial.toLowerCase().includes(q))
+        );
+      });
+    }
+    const map = new Map<string, { visita: Visita | null; ots: OT[] }>();
+    filtered.forEach(ot => {
+      const vId = ot.visitaId || 'standalone';
+      if (!map.has(vId)) {
+        const foundVisita = vId !== 'standalone' ? (visitas.find(v => v.id === vId) || null) : null;
+        map.set(vId, { visita: foundVisita, ots: [] });
+      }
+      map.get(vId)!.ots.push(ot);
+    });
+    return Array.from(map.entries()).map(([id, item]) => ({
+      id,
+      visita: item.visita,
+      ots: item.ots
+    }));
+  }, [myApprovedOts, visitas, searchHistorial, clients]);
 
   const handleIniciarRutaVisita = (visita: Visita) => {
     const nowStr = new Date().toTimeString().split(' ')[0].substring(0, 5);
@@ -1156,106 +1210,181 @@ export default function TecnicoView({
             <div className="text-[10px] text-slate-400 font-mono pl-1">Último sync: hace {Math.max(0, Math.round((Date.now() - new Date(lastSyncAt).getTime()) / 60000))} min</div>
           )}
 
-          <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 text-[11px] text-slate-600 leading-relaxed">
-            <p className="font-semibold text-blue-800 flex items-center gap-1.5 mb-1">
-              <Layers size={13} />
-              Bandeja de Órdenes Programadas
-            </p>
-            Las Órdenes de Trabajo son emitidas únicamente por el departamento de Ventas. Seleccione una para activar la ficha de informe técnico.
+          {/* Control de Pestañas de la Bandeja (Tabs) */}
+          <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+            <button
+              id="btn-tab-pendientes"
+              type="button"
+              onClick={() => setTechnicianTrayTab('pendientes')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 ${
+                technicianTrayTab === 'pendientes'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 cursor-pointer'
+              }`}
+            >
+              <Clock size={13} className="text-amber-500" />
+              <span>Pendientes</span>
+              <span className="bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold">
+                {myPendingOts.length}
+              </span>
+            </button>
+            <button
+              id="btn-tab-aprobados"
+              type="button"
+              onClick={() => setTechnicianTrayTab('aprobados')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 ${
+                technicianTrayTab === 'aprobados'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 cursor-pointer'
+              }`}
+            >
+              <CheckCircle2 size={13} className="text-teal-600" />
+              <span>Historial Aprobados</span>
+              <span className="bg-teal-brand/10 text-teal-brand px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold">
+                {myApprovedOts.length}
+              </span>
+            </button>
           </div>
+
+          {/* Buscador Rápido en Historial Aprobados */}
+          {technicianTrayTab === 'aprobados' && (
+            <div className="relative">
+              <Search size={14} className="text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={searchHistorial}
+                onChange={(e) => setSearchHistorial(e.target.value)}
+                placeholder="Buscar por código u OT aprobada..."
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-brand font-sans"
+              />
+            </div>
+          )}
+
+          {technicianTrayTab === 'pendientes' ? (
+            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 text-[11px] text-slate-600 leading-relaxed">
+              <p className="font-semibold text-blue-800 flex items-center gap-1.5 mb-1">
+                <Layers size={13} />
+                Bandeja de Atención Pendiente
+              </p>
+              Órdenes asignadas en proceso. Al ser aprobadas por supervisión, se trasladarán automáticamente a tu <strong>Historial Aprobados</strong>.
+            </div>
+          ) : (
+            <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-3 text-[11px] text-slate-600 leading-relaxed">
+              <p className="font-semibold text-emerald-800 flex items-center gap-1.5 mb-1">
+                <CheckCircle2 size={13} />
+                Historial de Informes Finalizados
+              </p>
+              Informes técnicos aprobados. Puedes seleccionarlos para consultar el diagnóstico, evidencias de S3 o descargar el PDF oficial.
+            </div>
+          )}
         </div>
 
         <div className="p-3 max-h-[600px] overflow-y-auto space-y-3">
-          {groupedVisitas.map(group => {
-            const v = group.visita;
-            const client = clients.find(c => c.id === (v?.clientId || group.ots[0]?.clientId));
-            const completedCount = group.ots.filter(o => [OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION, OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.NO_EJECUTADA].includes(o.estado)).length;
-            const totalCount = group.ots.length;
-            const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-            return (
-              <div key={group.id} className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 space-y-2 text-left">
-                {/* Visita Header */}
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-black text-slate-900 flex items-center gap-1.5">
-                    <Truck size={14} className="text-teal-600" />
-                    <span>{v ? (v.codigo || v.id) : 'Servicios Individuales'}</span>
+          {(() => {
+            const currentGroups = technicianTrayTab === 'pendientes' ? groupedVisitasPendientes : groupedVisitasAprobados;
+            if (currentGroups.length === 0) {
+              return (
+                <div className="p-8 text-center text-slate-400 text-xs py-12">
+                  <CheckCircle className="mx-auto text-slate-350 mb-2" size={24} />
+                  <span>
+                    {technicianTrayTab === 'pendientes'
+                      ? 'No tienes órdenes de trabajo pendientes de atención.'
+                      : 'No se encontraron informes aprobados en tu historial.'}
                   </span>
-                  {v && (
-                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                      v.estado === 'En Sitio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                      v.estado === 'En Camino' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                      v.estado === 'Completada' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                      'bg-slate-100 border-slate-200 text-slate-600'
-                    }`}>
-                      {v.estado}
+                </div>
+              );
+            }
+
+            return currentGroups.map(group => {
+              const v = group.visita;
+              const client = clients.find(c => c.id === (v?.clientId || group.ots[0]?.clientId));
+              const completedCount = group.ots.filter(o => [OTStatus.INFORME_ENVIADO, OTStatus.EN_REVISION, OTStatus.APROBADA, OTStatus.FIRMADA, OTStatus.FACTURADA, OTStatus.CERRADA, OTStatus.NO_EJECUTADA].includes(o.estado)).length;
+              const totalCount = group.ots.length;
+              const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+              return (
+                <div key={group.id} className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 space-y-2 text-left">
+                  {/* Visita Header */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-black text-slate-900 flex items-center gap-1.5">
+                      <Truck size={14} className="text-teal-600" />
+                      <span>{v ? (v.codigo || v.id) : 'Servicios Individuales'}</span>
                     </span>
+                    {v && (
+                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                        v.estado === 'En Sitio' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                        v.estado === 'En Camino' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                        v.estado === 'Completada' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                        'bg-slate-100 border-slate-200 text-slate-600'
+                      }`}>
+                        {v.estado}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] font-bold text-slate-800 uppercase block truncate">
+                    {client?.razonSocial || 'Cliente General'}
+                  </div>
+
+                  {v?.ubicacion && (
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1 font-mono truncate">
+                      <MapPin size={10} className="text-slate-400 shrink-0" />
+                      <span>{v.ubicacion}</span>
+                    </div>
                   )}
-                </div>
 
-                <div className="text-[11px] font-bold text-slate-800 uppercase block truncate">
-                  {client?.razonSocial || 'Cliente General'}
-                </div>
-
-                {v?.ubicacion && (
-                  <div className="text-[10px] text-slate-500 flex items-center gap-1 font-mono truncate">
-                    <MapPin size={10} className="text-slate-400 shrink-0" />
-                    <span>{v.ubicacion}</span>
+                  {/* Progress Bar */}
+                  <div className="space-y-1 pt-1">
+                    <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                      <span>Avance Equipos:</span>
+                      <span className="font-bold text-slate-700">{completedCount} de {totalCount} ({progressPct}%)</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-teal-brand h-full transition-all duration-300" style={{ width: `${progressPct}%` }}></div>
+                    </div>
                   </div>
-                )}
 
-                {/* Progress Bar */}
-                <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
-                    <span>Avance Equipos:</span>
-                    <span className="font-bold text-slate-700">{completedCount} de {totalCount} ({progressPct}%)</span>
-                  </div>
-                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-teal-brand h-full transition-all duration-300" style={{ width: `${progressPct}%` }}></div>
-                  </div>
-                </div>
-
-                {/* Nested Child OTs */}
-                <div className="pt-2 space-y-1.5">
-                  {group.ots.map(ot => {
-                    const isSelected = selectedOt?.id === ot.id;
-                    return (
-                      <div
-                        key={ot.id}
-                        onClick={() => handleSelectOt(ot)}
-                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                          isSelected ? 'bg-amber-50 border-amber-400 shadow-xs' : 'bg-white border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-slate-900 text-[11px]">{ot.id}</span>
-                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                            ot.estado === OTStatus.NO_EJECUTADA ? 'bg-rose-100 text-rose-800' :
-                            ot.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-amber-100 text-amber-800' :
-                            ot.estado === OTStatus.INFORME_ENVIADO || ot.estado === OTStatus.EN_REVISION ? 'bg-blue-100 text-blue-800' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {ot.estado}
-                          </span>
+                  {/* Nested Child OTs */}
+                  <div className="pt-2 space-y-1.5">
+                    {group.ots.map(ot => {
+                      const isSelected = selectedOt?.id === ot.id;
+                      const isApproved = APPROVED_STATUSES.includes(ot.estado);
+                      return (
+                        <div
+                          key={ot.id}
+                          onClick={() => handleSelectOt(ot)}
+                          className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-amber-50 border-amber-400 shadow-xs'
+                              : isApproved
+                              ? 'bg-emerald-50/50 border-emerald-200 hover:border-emerald-400'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-bold text-slate-900 text-[11px]">{ot.id}</span>
+                            <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                              isApproved ? 'bg-emerald-100 text-emerald-800' :
+                              ot.estado === OTStatus.NO_EJECUTADA ? 'bg-rose-100 text-rose-800' :
+                              ot.estado === OTStatus.TRABAJO_EN_EJECUCION ? 'bg-amber-100 text-amber-800' :
+                              ot.estado === OTStatus.INFORME_ENVIADO || ot.estado === OTStatus.EN_REVISION ? 'bg-blue-100 text-blue-800' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              {ot.estado}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 mt-1 flex items-center justify-between font-mono">
+                            <span>{ot.tipoEquipo} ({ot.potenciaKva} kVA)</span>
+                            <span className="text-slate-400">{ot.fechaProgramada}</span>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-1 flex items-center justify-between font-mono">
-                          <span>{ot.tipoEquipo} ({ot.potenciaKva} kVA)</span>
-                          <span className="text-slate-400">{ot.fechaProgramada}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-
-          {myOts.length === 0 && (
-            <div className="p-8 text-center text-slate-400 text-xs py-12">
-              <CheckCircle className="mx-auto text-slate-350 mb-2" size={24} />
-              <span>No tienes órdenes de trabajo pendientes de llenado.</span>
-            </div>
-          )}
+              );
+            });
+          })()}
         </div>
       </div>
     )}
