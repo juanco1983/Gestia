@@ -104,6 +104,12 @@ resource "aws_elastic_beanstalk_environment" "dev" {
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "S3_BUCKET_NAME"
+    value     = var.photos_bucket_name
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
     name      = "AWS_REGION"
     value     = var.region
   }
