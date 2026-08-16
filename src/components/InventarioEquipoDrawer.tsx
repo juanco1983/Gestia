@@ -258,6 +258,8 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
             <h3 className="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Ficha Técnica</h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div><div className="text-[10px] text-slate-400 font-mono uppercase">Tipo</div><div className="text-slate-700 font-semibold">{equipo.tipo}</div></div>
+              <div><div className="text-[10px] text-slate-400 font-mono uppercase">Marca</div><div className="text-slate-700 font-semibold">{equipo.marca || 'S/D'}</div></div>
+              <div><div className="text-[10px] text-slate-400 font-mono uppercase">Modelo</div><div className="text-slate-700 font-semibold">{equipo.modelo || 'S/D'}</div></div>
               <div><div className="text-[10px] text-slate-400 font-mono uppercase">Potencia</div><div className="text-slate-700 font-mono font-bold">{equipo.potenciaKva ? `${equipo.potenciaKva} kVA` : 'S/D'}</div></div>
               <div><div className="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1"><MapPin size={10} /> Ubicación</div><div className="text-slate-700 font-semibold">{equipo.ubicacion || 'No especificada'}</div></div>
               <div>
