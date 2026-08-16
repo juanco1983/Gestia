@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Gestia - Bandeja y Historial del Técnico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+          colors: {
+            teal: {
+              brand: '#00B594',
+              hover: '#00967a',
+              light: '#E6F7F4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="p-6 text-slate-800 antialiased">
+
+  <!-- Main Container -->
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header Mockup -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-brand/10 text-teal-brand flex items-center justify-center font-bold">
+          <i data-lucide="wrench" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold font-display text-slate-900">Portal del Técnico de Campo</h1>
+          <p class="text-xs text-slate-400">Gestión de Órdenes de Trabajo e Historial de Informes de Mantenimiento</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-mono font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado (Online)
+        </span>
+        <div class="text-right">
+          <span class="text-xs font-bold block text-slate-800">Juan Córdova</span>
+          <span class="text-[10px] text-teal-brand font-mono font-bold uppercase">Técnico Titular</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout Grid: Left Sidebar (Bandeja / Historial) + Right Main Content (Informe) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT SIDEBAR: BANDEJA Y HISTORIAL CON TABS -->
+      <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-4 flex flex-col justify-between">
+        
+        <div class="space-y-4">
+          <!-- Control de Pestañas (Tabs) -->
+          <div class="flex bg-slate-100 p-1 rounded-xl gap-1">
+            <button id="tab-pendientes" onclick="switchTab('pendientes')" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 bg-white text-slate-900 shadow-xs">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Pendientes</span>
+              <span class="bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full text-[9px] font-mono">2</span>
+            </button>
+            <button id="tab-aprobados" onclick="switchTab('aprobados')" class="flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 text-slate-500 hover:text-slate-900">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-teal-brand"></i>
+              <span>Historial Aprobados</span>
+              <span class="bg-teal-brand/10 text-teal-brand px-1.5 py-0.2 rounded-full text-[9px] font-mono">3</span>
+            </button>
+          </div>
+
+          <!-- Buscador en Historial -->
+          <div id="search-container" class="hidden">
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+              <input type="text" placeholder="Buscar por código u OT aprobada..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-brand font-sans">
+            </div>
+          </div>
+
+          <!-- VISTA 1: LISTA DE PENDIENTES Y EN PROCESO -->
+          <div id="panel-pendientes" class="space-y-3">
+            <div class="p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[11px] text-slate-600 leading-relaxed">
+              <span class="font-bold text-blue-800 block mb-0.5">Bandeja Activa de Atención:</span>
+              Muestra únicamente tus órdenes asignadas pendientes. Cuando el supervisor apruebe un informe, la orden se trasladará automáticamente a tu <strong>Historial Aprobados</strong>.
+            </div>
+
+            <!-- OT Card 1: En Ejecución -->
+            <div class="p-3 bg-white border border-teal-brand/30 rounded-xl shadow-xs hover:border-teal-brand transition-all cursor-pointer space-y-2 border-l-4 border-l-teal-brand">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-slate-900">OT-OM-CO-001-4</span>
+                <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-mono font-bold px-2 py-0.5 rounded-md">
+                  En Ejecución
+                </span>
+              </div>
+              <div class="text-xs font-bold text-slate-800">OMNIA MEDICA SAC</div>
+              <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                <span>UPS FORTMAN 315 (65 KVA)</span>
+                <span class="text-slate-400">Hoy</span>
+              </div>
+            </div>
+
+            <!-- OT Card 2: En Revisión -->
+            <div class="p-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all cursor-pointer space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-slate-900">OT-OM-CO-001-5</span>
+                <span class="bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-mono font-bold px-2 py-0.5 rounded-md">
+                  En Revisión
+                </span>
+              </div>
+              <div class="text-xs font-bold text-slate-800">OMNIA MEDICA SAC</div>
+              <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                <span>Transformador 21 kVA</span>
+                <span class="text-slate-400">Ayer</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISTA 2: LISTA DE HISTORIAL APROBADOS (INICIALMENTE OCULTA) -->
+          <div id="panel-aprobados" class="hidden space-y-3">
+            <div class="p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-xl text-[11px] text-slate-600 leading-relaxed">
+              <span class="font-bold text-emerald-800 block mb-0.5">Historial de Informes Finalizados:</span>
+              Lista de todos tus informes aprobados por supervisión. Puedes abrirlos para revisar su diagnóstico, evidencias en S3 o descargar la ficha oficial PDF.
+            </div>
+
+            <!-- OT Aprobada 1 -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:border-teal-brand/40 transition-all cursor-pointer space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-slate-900">OT-OM-CO-001-3</span>
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Aprobada
+                </span>
+              </div>
+              <div class="text-xs font-bold text-slate-800">OMNIA MEDICA SAC</div>
+              <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                <span>UPS FORTMAN (65 KVA)</span>
+                <span class="text-slate-400">2026-09-17</span>
+              </div>
+            </div>
+
+            <!-- OT Aprobada 2 -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:border-teal-brand/40 transition-all cursor-pointer space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-slate-900">OT-OM-CO-001-1</span>
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Aprobada
+                </span>
+              </div>
+              <div class="text-xs font-bold text-slate-800">OMNIA MEDICA SAC</div>
+              <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                <span>UPS SURT3550 (65 kVA)</span>
+                <span class="text-slate-400">2026-08-17</span>
+              </div>
+            </div>
+
+            <!-- OT Aprobada 3 -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:border-teal-brand/40 transition-all cursor-pointer space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-slate-900">OT-OM-CO-001-2</span>
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="check" class="w-3 h-3 text-emerald-700"></i> Aprobada
+                </span>
+              </div>
+              <div class="text-xs font-bold text-slate-800">OMNIA MEDICA SAC</div>
+              <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                <span>Transformador (21 kVA)</span>
+                <span class="text-slate-400">2026-08-27</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 text-[10px] font-mono text-slate-400 flex justify-between">
+          <span>Total Registros: 5</span>
+          <span class="text-teal-brand font-bold">Gestia 4.0 Pro</span>
+        </div>
+      </div>
+
+      <!-- RIGHT MAIN CONTENT: DETALLE O PREVISUALIZACIÓN -->
+      <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-6 text-left">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-base font-extrabold text-slate-900">OT-OM-CO-001-3</span>
+              <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full">
+                Informe Aprobado
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-mono mt-0.5">Cliente: OMNIA MEDICA SAC | Sede: Av. Las Camelias 450</p>
+          </div>
+          <button class="px-4 py-2 bg-teal-brand text-white font-bold rounded-xl text-xs shadow-xs hover:bg-teal-hover transition-all flex items-center gap-2 font-mono">
+            <i data-lucide="download" class="w-4 h-4"></i> Descargar PDF Oficial
+          </button>
+        </div>
+
+        <!-- Secciones del Informe Aprobado (Modo Lectura) -->
+        <div class="space-y-4">
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <h4 class="text-xs font-bold uppercase text-slate-700 font-mono">1. ANTECEDENTES DEL SERVICIO</h4>
+            <p class="text-xs text-slate-600 leading-relaxed font-sans italic">
+              "Se realizó el mantenimiento preventivo programado según contrato vigentes. El equipo operaba en modo inversor sin presentar alarmas activas."
+            </p>
+          </div>
+
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold uppercase text-slate-700 font-mono">2. REGISTRO FOTOGRÁFICO DE CONFORMIDAD (ALMACENADO EN S3)</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="border border-slate-200 bg-white p-2 rounded-lg text-center space-y-1">
+                <div class="w-full h-20 bg-slate-800 text-teal-brand rounded flex items-center justify-center font-mono text-[9px]">S3 Object Photo #1</div>
+                <span class="text-[8px] font-mono text-slate-500 uppercase block truncate">1. Placa Características</span>
+              </div>
+              <div class="border border-slate-200 bg-white p-2 rounded-lg text-center space-y-1">
+                <div class="w-full h-20 bg-slate-800 text-teal-brand rounded flex items-center justify-center font-mono text-[9px]">S3 Object Photo #2</div>
+                <span class="text-[8px] font-mono text-slate-500 uppercase block truncate">2. Estado Inicial UPS</span>
+              </div>
+              <div class="border border-slate-200 bg-white p-2 rounded-lg text-center space-y-1">
+                <div class="w-full h-20 bg-slate-800 text-teal-brand rounded flex items-center justify-center font-mono text-[9px]">S3 Object Photo #3</div>
+                <span class="text-[8px] font-mono text-slate-500 uppercase block truncate">3. Mantenimiento Baterías</span>
+              </div>
+              <div class="border border-slate-200 bg-white p-2 rounded-lg text-center space-y-1">
+                <div class="w-full h-20 bg-slate-800 text-teal-brand rounded flex items-center justify-center font-mono text-[9px]">S3 Object Photo #4</div>
+                <span class="text-[8px] font-mono text-slate-500 uppercase block truncate">4. Medición Salida</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchTab(tab) {
+      const btnPendientes = document.getElementById('tab-pendientes');
+      const btnAprobados = document.getElementById('tab-aprobados');
+      const panelPendientes = document.getElementById('panel-pendientes');
+      const panelAprobados = document.getElementById('panel-aprobados');
+      const searchContainer = document.getElementById('search-container');
+
+      if (tab === 'pendientes') {
+        btnPendientes.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 bg-white text-slate-900 shadow-xs";
+        btnAprobados.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 text-slate-500 hover:text-slate-900";
+        panelPendientes.classList.remove('hidden');
+        panelAprobados.classList.add('hidden');
+        searchContainer.classList.add('hidden');
+      } else {
+        btnAprobados.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 bg-white text-slate-900 shadow-xs";
+        btnPendientes.className = "flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 text-slate-500 hover:text-slate-900";
+        panelAprobados.classList.remove('hidden');
+        panelPendientes.classList.add('hidden');
+        searchContainer.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
