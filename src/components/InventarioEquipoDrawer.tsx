@@ -258,6 +258,8 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
             <h3 className="text-xs font-extrabold text-slate-500 font-mono uppercase tracking-wider mb-3">Ficha Técnica</h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div><div className="text-[10px] text-slate-400 font-mono uppercase">Tipo</div><div className="text-slate-700 font-semibold">{equipo.tipo}</div></div>
+              <div><div className="text-[10px] text-slate-400 font-mono uppercase">Marca</div><div className="text-slate-700 font-semibold">{equipo.marca || 'S/D'}</div></div>
+              <div><div className="text-[10px] text-slate-400 font-mono uppercase">Modelo</div><div className="text-slate-700 font-semibold">{equipo.modelo || 'S/D'}</div></div>
               <div><div className="text-[10px] text-slate-400 font-mono uppercase">Potencia</div><div className="text-slate-700 font-mono font-bold">{equipo.potenciaKva ? `${equipo.potenciaKva} kVA` : 'S/D'}</div></div>
               <div><div className="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1"><MapPin size={10} /> Ubicación</div><div className="text-slate-700 font-semibold">{equipo.ubicacion || 'No especificada'}</div></div>
               <div>
@@ -321,9 +323,15 @@ export default function InventarioEquipoDrawer({ equipo, currentUser, onClose, o
                 <p className="text-xs text-slate-400">Sin visitas registradas.</p>
               )}
               {equipo.visitasHistoricasCount > 0 && (
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
-                  <History size={11} className="text-slate-400" /> {equipo.visitasHistoricasCount} servicio(s) realizado(s)
-                </p>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center justify-between">
+                  <p className="text-xs text-slate-700 font-mono flex items-center gap-2 font-bold">
+                    <History size={14} className="text-teal-600" />
+                    <span>{equipo.visitasHistoricasCount} servicio(s) realizado(s)</span>
+                  </p>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">
+                    {equipo.countInformes} informe(s) emitido(s)
+                  </span>
+                </div>
               )}
             </div>
             {equipo.visitasFuturas.length > 0 && (

@@ -46,8 +46,17 @@ export default function TechMonitoringDashboard({
   const [selectedOtForAssign, setSelectedOtForAssign] = useState<OT | null>(null);
   const [dropInitialValues, setDropInitialValues] = useState<{ techId?: string; fecha?: string; hora?: string } | null>(null);
   const [selectedReportForAudit, setSelectedReportForAudit] = useState<TechnicalReport | null>(null);
+  const [previewAuditPhoto, setPreviewAuditPhoto] = useState<{ url: string; title: string } | null>(null);
   const [reportFilterStatus, setReportFilterStatus] = useState<'todos' | 'pendientes' | 'observados' | 'aprobados'>('todos');
   const [expandedContracts, setExpandedContracts] = useState<Set<string>>(new Set());
+
+  const getAuditPhotoSrc = (pic: any, otId: string, idx: number): string => {
+    if (typeof pic === 'string' && pic.trim().length > 0) return pic;
+    if (pic?.base64 && typeof pic.base64 === 'string' && pic.base64.trim().length > 0) return pic.base64;
+    if (pic?.url && typeof pic.url === 'string' && pic.url.trim().length > 0) return pic.url;
+    const cleanOt = (otId || '').replace(/^OT-/, '').replace(/[^a-zA-Z0-9_-]/g, "");
+    return `/api/photos/${cleanOt}/${idx + 1}`;
+  };
   const [contractSearchQuery, setContractSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 25;
@@ -1701,25 +1710,50 @@ export default function TechMonitoringDashboard({
                       </div>
 
                       {/* Photo Attachments Preview */}
-                      {selectedReportForAudit.fotosLabeled && selectedReportForAudit.fotosLabeled.length > 0 && (
-                        <div className="space-y-2">
-                          <h5 className="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider">Evidencias Fotográficas ({selectedReportForAudit.fotosLabeled.length})</h5>
-                          <div className="flex gap-1.5 overflow-x-auto pb-1 max-w-full">
-                            {selectedReportForAudit.fotosLabeled.map((pic: any, idx: number) => (
-                              <div key={idx} className="relative group shrink-0 w-16 h-16 bg-slate-100 border border-slate-200 rounded-lg overflow-hidden">
-                                <img 
-                                  src={pic.url || pic} 
-                                  alt={pic.label || `foto-${idx}`} 
-                                  className="w-full h-full object-cover" 
-                                />
-                                <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] py-0.5 truncate text-center opacity-0 group-hover:opacity-100 transition-opacity font-mono">
-                                  {pic.label || `Foto ${idx+1}`}
-                                </span>
-                              </div>
-                            ))}
+                      {(() => {
+                        const rawPhotos = (selectedReportForAudit.fotosLabeled && selectedReportForAudit.fotosLabeled.length > 0)
+                          ? selectedReportForAudit.fotosLabeled
+                          : (selectedReportForAudit.fotos || []).map((f: string, i: number) => ({ base64: f, label: `Foto ${i + 1}` }));
+
+                        if (rawPhotos.length === 0) return null;
+
+                        return (
+                          <div className="space-y-2">
+                            <h5 className="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider">
+                              Evidencias Fotográficas ({rawPhotos.length})
+                            </h5>
+                            <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                              {rawPhotos.map((pic: any, idx: number) => {
+                                const photoSrc = getAuditPhotoSrc(pic, selectedReportForAudit.otId, idx);
+                                const photoLabel = pic?.label || pic?.slotName || `Foto ${idx + 1}`;
+                                return (
+                                  <div
+                                    key={idx}
+                                    onClick={() => setPreviewAuditPhoto({
+                                      url: photoSrc,
+                                      title: `${selectedReportForAudit.informeN || 'Informe'} · ${photoLabel}`
+                                    })}
+                                    className="relative group aspect-square bg-slate-100 border border-slate-200 rounded-xl overflow-hidden shadow-xs cursor-pointer"
+                                    title="Haz clic para agrandar la evidencia fotográfica"
+                                  >
+                                    <img
+                                      src={photoSrc}
+                                      alt={photoLabel}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                    />
+                                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <Eye className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="absolute bottom-0 inset-x-0 bg-slate-900/75 text-white text-[8px] py-0.5 px-1 truncate font-mono text-center">
+                                      {photoLabel}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Supervisor Observations (Read-Only) */}
                       {selectedReportForAudit.correccionesSupervisor && (
@@ -1910,6 +1944,34 @@ export default function TechMonitoringDashboard({
           reports={reports}
           clients={clients}
         />
+      )}
+
+      {/* Lightbox Modal para Evidencia Fotográfica Ampliada */}
+      {previewAuditPhoto && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="max-w-4xl w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 text-white">
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <Eye className="text-[#00B594]" size={16} />
+                <span className="font-bold">{previewAuditPhoto.title}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewAuditPhoto(null)}
+                className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 bg-black p-4 flex items-center justify-center overflow-hidden">
+              <img
+                src={previewAuditPhoto.url}
+                alt="Evidencia fotográfica ampliada"
+                className="max-h-[75vh] w-auto object-contain rounded-xl shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

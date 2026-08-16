@@ -9,6 +9,7 @@ verdad** alojada en `Documentacion/`:
 
 | Documento | Aplica a |
 |---|---|
+| [`Documentacion/analisis_funcional.md`](Documentacion/analisis_funcional.md) | **Análisis Funcional del Sistema**. Especificación de casos de uso, flujos de trabajo, reglas de negocio y comportamiento por módulo. **Toda nueva funcionalidad, cambio de flujo o regla DEBE actualizar este doc en la misma PR.** |
 | [`Documentacion/architecture_c4.md`](Documentacion/architecture_c4.md) | Modelo C4 del sistema. Toda decisión arquitectónica o referencia a componentes DEBE citar este doc. |
 | [`Documentacion/arquitectura_infraestructura_nube.md`](Documentacion/arquitectura_infraestructura_nube.md) | Infraestructura AWS, Terraform, CI/CD. Toda modificación en `infra/`, `.github/workflows/`, `.ebextensions/` o `Procfile` DEBE actualizar este doc en la misma PR. |
 | [`Documentacion/data_dictionary.md`](Documentacion/data_dictionary.md) | Modelo de datos. Toda modificación a `prisma/schema.prisma` o `src/types.ts` DEBE actualizar este doc en la misma PR. |

@@ -13,7 +13,7 @@ import UserManagementView from './components/UserManagementView';
 import InventarioEquiposView from './components/InventarioEquiposView';
 import TechMonitoringDashboard from './components/TechMonitoringDashboard';
 import DashboardView from './components/dashboard/DashboardView';
-import { APP_MODULES } from './modulesConfig';
+import { APP_MODULES, getModulePath, getRoleFromPath } from './modulesConfig';
 import { useLocalToast } from './components/shared/ToastModal';
 import { preloadOfflineData } from './offline/preload';
 import TourGuide from './tour/TourGuide';
@@ -172,6 +172,10 @@ export default function App() {
   });
 
   const [currentRole, setCurrentRole] = useState<'Dashboard' | 'Ventas' | 'Tecnico' | 'Supervisor' | 'Cliente' | 'Usuarios' | 'GestionOTs' | 'ClientesContratos' | 'Monitoreo' | 'InventarioEquipos'>(() => {
+    if (typeof window !== 'undefined') {
+      const roleFromUrl = getRoleFromPath(window.location.pathname);
+      if (roleFromUrl) return roleFromUrl as any;
+    }
     const local = localStorage.getItem('gestia_current_user');
     if (local) {
       try {
@@ -186,6 +190,44 @@ export default function App() {
     }
     return 'Dashboard';
   });
+
+  const navigateToRole = (role: any, pushToHistory: boolean = true) => {
+    setCurrentRole(role);
+    if (typeof window !== 'undefined') {
+      const targetPath = getModulePath(role);
+      console.log(`[ROUTER] navigateToRole: role=${role}, targetPath=${targetPath}, currentPath=${window.location.pathname}, push=${pushToHistory}`);
+      if (window.location.pathname !== targetPath) {
+        if (pushToHistory) {
+          window.history.pushState({ role }, '', targetPath);
+        } else {
+          window.history.replaceState({ role }, '', targetPath);
+        }
+        console.log(`[ROUTER] After navigation, location.pathname is now: ${window.location.pathname}`);
+      }
+    }
+  };
+
+  // Escuchar el evento popstate (botones atrás / adelante del navegador)
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const roleFromHistory = e.state?.role || (typeof window !== 'undefined' ? getRoleFromPath(window.location.pathname) : null);
+      if (roleFromHistory) {
+        setCurrentRole(roleFromHistory as any);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sincronizar URL inicial o cambios pasivos de rol cuando la sesión está activa
+  useEffect(() => {
+    if (currentUser && typeof window !== 'undefined') {
+      const targetPath = getModulePath(currentRole);
+      if (window.location.pathname !== targetPath) {
+        window.history.replaceState({ role: currentRole }, '', targetPath);
+      }
+    }
+  }, [currentRole, currentUser]);
 
   const tour = useTour();
 
@@ -1354,7 +1396,7 @@ export default function App() {
                               user.role === 'Tecnico' ? 'Tecnico' :
                               user.role === 'Supervisor' ? 'Supervisor' :
                               user.role === 'Ventas' ? 'Ventas' : 'Dashboard';
-          setCurrentRole(defaultRole as any);
+          navigateToRole(defaultRole as any, false);
         }} 
       />
     );
@@ -1418,6 +1460,7 @@ export default function App() {
           {/* Navigation Items */}
           <nav className="space-y-0.5 flex-1">
             {APP_MODULES.filter(link => {
+              if (currentUser.role === 'Administrador') return true;
               if (link.id === 'InventarioEquipos') {
                 return ['Administrador', 'Ventas', 'Supervisor', 'Tecnico'].includes(currentUser.role)
                   || currentUser.allowedModules?.includes('InventarioEquipos') === true;
@@ -1425,7 +1468,6 @@ export default function App() {
               if (currentUser.allowedModules && currentUser.allowedModules.length > 0) {
                 return currentUser.allowedModules.includes(link.id);
               }
-              if (currentUser.role === 'Administrador') return true;
               if (link.id === 'GestionOTs' || link.id === 'ClientesContratos') {
                 return currentUser.role === 'Ventas';
               }
@@ -1461,8 +1503,9 @@ export default function App() {
               return (
                 <button
                   key={link.id}
+                  id={`nav-item-${link.id}`}
                   onClick={() => {
-                    setCurrentRole(link.id as any);
+                    navigateToRole(link.id as any);
                     if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 1024px)').matches) {
                       setIsSidebarOpen(false);
                     }
@@ -1669,7 +1712,7 @@ export default function App() {
                 users={users}
                 contratosNuevos={contratosNuevos}
                 otEquipoAsignaciones={otEquipoAsignaciones}
-                onNavigateToTab={(tabId) => setCurrentRole(tabId as any)}
+                onNavigateToTab={(tabId) => navigateToRole(tabId as any)}
               />
             )}
             {/* 1.5 MONITOREO DE TÉCNICOS VIEW MODULE */}

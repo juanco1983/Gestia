@@ -18,9 +18,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "gestia_secret_token_key_123456";
 
 // AWS S3 client initialization
 const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || "gestia-dev-photos";
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || "gestia-dev-photos";
 
-// Helper to convert base64 image strings and upload to AWS S3 or fallback locally
+// Helper to convert base64 image strings and upload to AWS S3
 async function uploadBase64ToS3(base64Str: string, otId: string, index: string | number): Promise<string> {
   if (!base64Str || typeof base64Str !== "string") return "";
   if (base64Str.startsWith("/api/photos/") || base64Str.startsWith("/uploads/") || base64Str.startsWith("http")) {
@@ -51,37 +51,23 @@ async function uploadBase64ToS3(base64Str: string, otId: string, index: string |
   else if (mimeType === "image/webp") extension = "webp";
   else if (mimeType === "image/svg+xml") extension = "svg";
 
-  const cleanOtId = otId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const cleanOtId = otId.replace(/^OT-/, '').replace(/[^a-zA-Z0-9_-]/g, "");
   const timestamp = Date.now();
   const key = `reports/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
 
   try {
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: key,
-          Body: buffer,
-          ContentType: mimeType,
-        })
-      );
-      return `/api/photos/${key}`;
-    }
-  } catch (s3Err) {
-    console.warn("[S3 Upload Fallback] No se pudo subir a S3, guardando localmente:", (s3Err as any)?.message);
-  }
-
-  // Fallback local: Guardar en carpeta uploads local o retornar la imagen Base64
-  try {
-    const fs = await import('fs/promises');
-    const uploadsDir = path.join(process.cwd(), 'uploads', `OT-${cleanOtId}`);
-    await fs.mkdir(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
-    await fs.writeFile(filePath, buffer);
-    return `/uploads/OT-${cleanOtId}/${timestamp}-${index}.${extension}`;
-  } catch (err) {
-    console.warn("[Local File Warning] No se pudo guardar imagen localmente, conservando Base64:", err);
-    return base64Str;
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    );
+    return `/api/photos/${key}`;
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al guardar foto en S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error de almacenamiento S3 (${BUCKET_NAME}): ${s3Err?.message || 'Fallo de conexión o permisos con AWS S3'}`);
   }
 }
 
@@ -909,6 +895,11 @@ app.put("/api/ots/:id", async (req, res) => {
     if (updatedOt.estado === "Conformidad Firmada (Listo para Facturar)" || 
         updatedOt.estado === "Aprobada" || 
         updatedOt.estado === "Firmada") {
+      // Clear supervisor corrections on technical report when approved
+      await prisma.technicalReport.updateMany({
+        where: { otId: id },
+        data: { correccionesSupervisor: "" }
+      }).catch(() => {});
       // Search by otFinancieraId OR by OT number — always sync regardless of whether otFinancieraId is set
       const finId = updatedOt.otFinancieraId;
       const lines = await prisma.ordenTrabajoLinea.findMany({
@@ -1205,85 +1196,109 @@ app.post("/api/reports", async (req, res) => {
 });
 
 app.get("/api/photos/*", async (req: any, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "No autorizado" });
+  const user = req.user;
+  let key = req.params[0] || '';
+  if (!key.startsWith('reports/')) {
+    key = `reports/${key}`;
   }
 
-  const user = req.user;
-  const key = req.params[0];
-
-  // Validate path pattern
-  const pathRegex = /^reports\/OT-[\w-]+\/[\w.-]+$/;
+  // Validate path pattern (accepts single or double OT- prefixes)
+  const pathRegex = /^reports\/(OT-)+[\w-]+\/[\w.-]+$/;
   if (!pathRegex.test(key)) {
     return res.status(400).json({ error: "Formato de archivo o ruta inválidos" });
   }
 
-  const otIdMatch = key.match(/^reports\/(OT-[\w-]+)\//);
+  const otIdMatch = key.match(/^reports\/((?:OT-)+[\w-]+)\//);
   if (!otIdMatch) {
     return res.status(400).json({ error: "Formato de ruta inválido" });
   }
-  const otId = otIdMatch[1];
+  const rawOtId = otIdMatch[1];
+  const cleanOtId = rawOtId.replace(/^(OT-)+/, 'OT-');
 
   try {
-    const ot = await prisma.oT.findUnique({
-      where: { id: otId }
+    const ot = await prisma.oT.findFirst({
+      where: {
+        OR: [
+          { id: rawOtId },
+          { id: cleanOtId },
+          { id: cleanOtId.replace(/^OT-/, '') }
+        ]
+      }
     });
+
     if (!ot) {
       return res.status(404).json({ error: "Orden de trabajo asociada no encontrada" });
     }
 
-    const isAllowed = 
-      ["Administrador", "Ventas", "Supervisor"].includes(user.role) ||
-      (user.role === "Tecnico" && (ot.tecnicoTitularId === user.id || ot.tecnicoApoyoId === user.id)) ||
-      (user.role === "Cliente" && ot.clientId === user.clientId);
+    if (user) {
+      const isAllowed = 
+        ["Administrador", "Ventas", "Supervisor"].includes(user.role) ||
+        (user.role === "Tecnico" && (ot.tecnicoTitularId === user.id || ot.tecnicoApoyoId === user.id)) ||
+        (user.role === "Cliente" && ot.clientId === user.clientId);
 
-    if (!isAllowed) {
-      return res.status(403).json({ error: "Acceso denegado a este recurso" });
+      if (!isAllowed) {
+        return res.status(403).json({ error: "Acceso denegado a este recurso" });
+      }
     }
 
-    // Pre-signed URL generation if requested
-    if (req.query.presign === 'true' && process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
-      const presignedUrl = await getSignedUrl(s3, new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      }), { expiresIn: 900 });
-      return res.json({ url: presignedUrl, expiresIn: 900 });
+    // Fetch Object from S3 (attempting fallback key if double OT- was stored)
+    let s3Response;
+    try {
+      s3Response = await s3.send(
+        new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key
+        })
+      );
+    } catch (firstErr: any) {
+      if (firstErr.name === "NoSuchKey" && key.includes("/OT-OT-")) {
+        const altKey = key.replace("/OT-OT-", "/OT-");
+        s3Response = await s3.send(
+          new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: altKey
+          })
+        );
+      } else {
+        throw firstErr;
+      }
     }
-
-    const s3Response = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key
-      })
-    );
 
     res.setHeader("Content-Type", s3Response.ContentType || "image/jpeg");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, max-age=3600");
 
     if (s3Response.Body) {
-      (s3Response.Body as any).pipe(res);
+      const byteArray = await s3Response.Body.transformToByteArray();
+      return res.status(200).send(Buffer.from(byteArray));
     } else {
-      res.status(500).json({ error: "Archivo sin contenido" });
+      return res.status(500).json({ error: "Archivo sin contenido" });
     }
   } catch (err: any) {
     if (err.name === "NoSuchKey") {
       return res.status(404).json({ error: "Imagen no encontrada en S3" });
     }
     console.error("Error al obtener imagen de S3:", err);
-    res.status(500).json({ error: "Error al recuperar recurso" });
+    return res.status(500).json({ error: "Error al recuperar recurso" });
   }
 });
 
 app.get("/api/contracts/files/*", async (req: any, res) => {
-  if (!req.user) {
+  let token = req.query.token as string || (req.headers["authorization"] && req.headers["authorization"].split(" ")[1]);
+  let user = req.user;
+  if (!user && token) {
+    try {
+      user = jwt.verify(token, JWT_SECRET);
+    } catch (e) {}
+  }
+  if (!user) {
     return res.status(401).json({ error: "No autorizado" });
   }
 
   let rawKey = decodeURIComponent(req.params[0] || '').replace(/^\/+/, '');
   const key = rawKey.startsWith('contracts/') ? rawKey : `contracts/${rawKey}`;
 
-  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(req.user.role);
+  const isAllowed = ["Administrador", "Ventas", "Supervisor"].includes(user.role);
   if (!isAllowed) {
     return res.status(403).json({ error: "Acceso denegado a este recurso" });
   }
@@ -1319,11 +1334,19 @@ app.get("/api/contracts/files/*", async (req: any, res) => {
     // Check local fallback
     try {
       const fs = await import('fs');
-      const cleanContractDir = key.replace('contracts/', 'contracts-');
-      const localPath = path.join(process.cwd(), 'uploads', cleanContractDir);
-      if (fs.existsSync(localPath)) {
-        res.setHeader("Content-Type", "application/pdf");
-        return fs.createReadStream(localPath).pipe(res);
+      const filename = key.split('/').pop();
+      const folderName = key.split('/')[1] ? `contracts-${key.split('/')[1]}` : '';
+      const possiblePaths = [
+        path.join(process.cwd(), 'uploads', key.replace('contracts/', 'contracts-')),
+        path.join(process.cwd(), 'uploads', folderName, filename || ''),
+        path.join(process.cwd(), 'uploads', filename || '')
+      ];
+      for (const p of possiblePaths) {
+        if (p && fs.existsSync(p)) {
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+          return fs.createReadStream(p).pipe(res);
+        }
       }
     } catch (localErr) {}
     console.warn("Contract file not found in S3 or local uploads:", key);
@@ -1717,31 +1740,18 @@ async function uploadContractBase64ToS3(base64Str: string, contractId: string, f
   const key = `contracts/${cleanContractId}/${timestamp}-${cleanFilename}`;
 
   try {
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: key,
-          Body: buffer,
-          ContentType: mimeType,
-        })
-      );
-      return `/api/contracts/files/${key}`;
-    }
-  } catch (s3Err) {
-    console.warn("[S3 Upload Fallback] No se pudo subir contrato a S3:", (s3Err as any)?.message);
-  }
-
-  // Fallback local
-  try {
-    const fs = await import('fs/promises');
-    const uploadsDir = path.join(process.cwd(), 'uploads', `contracts-${cleanContractId}`);
-    await fs.mkdir(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, `${timestamp}-${cleanFilename}`);
-    await fs.writeFile(filePath, buffer);
-    return `/uploads/contracts-${cleanContractId}/${timestamp}-${cleanFilename}`;
-  } catch (err) {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    );
     return `/api/contracts/files/${key}`;
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al subir contrato PDF a S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error en almacenamiento S3 de contrato (${BUCKET_NAME}): ${s3Err?.message || 'No se pudo subir contrato a S3'}`);
   }
 }
 
@@ -1769,31 +1779,18 @@ async function uploadEquipoPhotoToS3(base64Str: string, equipoId: string, index:
   const key = `equipo/${cleanEquipoId}/${timestamp}-${index}.${extension}`;
 
   try {
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.S3_BUCKET_NAME) {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: key,
-          Body: buffer,
-          ContentType: mimeType,
-        })
-      );
-      return `/api/equipos/files/${key}`;
-    }
-  } catch (s3Err) {
-    console.warn("[S3 Upload Fallback] No se pudo subir foto de equipo a S3:", (s3Err as any)?.message);
-  }
-
-  // Fallback local
-  try {
-    const fs = await import('fs/promises');
-    const uploadsDir = path.join(process.cwd(), 'uploads', `equipo-${cleanEquipoId}`);
-    await fs.mkdir(uploadsDir, { recursive: true });
-    const filePath = path.join(uploadsDir, `${timestamp}-${index}.${extension}`);
-    await fs.writeFile(filePath, buffer);
-    return `/uploads/equipo-${cleanEquipoId}/${timestamp}-${index}.${extension}`;
-  } catch (err) {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    );
     return `/api/equipos/files/${key}`;
+  } catch (s3Err: any) {
+    console.error(`[S3 Error] Fallo al subir foto de equipo a S3 (${BUCKET_NAME}):`, s3Err?.message || s3Err);
+    throw new Error(`Error en almacenamiento S3 de equipo (${BUCKET_NAME}): ${s3Err?.message || 'No se pudo subir foto de equipo a S3'}`);
   }
 }
 
@@ -2094,6 +2091,16 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
       const ultimoInforme = eqReportsSorted[0] || null;
       const derivado = deriveEstadoEquipo(eq.estado, ultimoInforme);
 
+      const historicalOtsCount = new Set([
+        ...eqReports.map(r => r.otId),
+        ...eqOtIds.filter(id => {
+          const ot = otMap.get(id);
+          return ot && ot.estado !== 'Creada' && ot.estado !== 'Pendiente de Programación';
+        })
+      ]).size;
+
+      const visitasHistoricasCount = Math.max(historicalOtsCount, eqReportsSorted.length);
+
       return {
         id: eq.id,
         codigo: eq.codigo,
@@ -2115,7 +2122,7 @@ app.get("/api/inventario-equipos", async (req: any, res) => {
               fechaFin: eq.contrato.fecha_fin || null,
             }
           : null,
-        visitasHistoricasCount: (eq.servicios || []).length,
+        visitasHistoricasCount,
         visitasFuturas,
         ultimoInforme,
         informes: eqReportsSorted,
