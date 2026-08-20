@@ -1899,11 +1899,15 @@ export default function TechMonitoringDashboard({
           users={users}
           clients={clients}
           initialValues={dropInitialValues || undefined}
-          onUpdateOT={(ot) => {
-            if (onUpdateOt) onUpdateOt(ot);
-            setSelectedOtForAssign(null);
-            setDropInitialValues(null);
-            setDraggedOt(null);
+          onUpdateOT={async (ot) => {
+            try {
+              if (onUpdateOt) await onUpdateOt(ot);
+              setSelectedOtForAssign(null);
+              setDropInitialValues(null);
+              setDraggedOt(null);
+            } catch (err: any) {
+              console.error("Error al guardar asignación:", err);
+            }
           }}
           onClose={() => {
             setSelectedOtForAssign(null);

@@ -33,7 +33,7 @@ export default function ClienteView({
 
   const [selectedOt, setSelectedOt] = useState<OT | null>(null);
   
-  const { notifySuccess, toastView } = useLocalToast();
+  const { notifySuccess, notifyError, toastView } = useLocalToast();
   
   // Custom Canvas Drawing pad
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -133,25 +133,31 @@ export default function ClienteView({
     setHasSigned(false);
   };
 
-  const handleConfirmSignature = () => {
+  const handleConfirmSignature = async () => {
     if (!selectedOt || !canvasRef.current || !hasSigned) return;
 
     const signatureDataUrl = canvasRef.current.toDataURL('image/png');
-    const report = getAssociatedReport(selectedOt.id);
-    if (report) {
-      const updatedReport = {
-        ...report,
-        firmaCliente: signatureDataUrl
-      };
-      onUpdateReport(updatedReport);
-    }
+    try {
+      const report = getAssociatedReport(selectedOt.id);
+      if (report) {
+        const updatedReport = {
+          ...report,
+          firmaCliente: signatureDataUrl
+        };
+        onUpdateReport(updatedReport);
+      }
 
-    onUpdateOtStatus(selectedOt.id, OTStatus.FIRMADA);
-    notifySuccess(
-      'Firma Exitosa',
-      'Se ha registrado la conformidad del cliente y archivado las mediciones. El informe técnico oficial está listo para auditoría final.'
-    );
-    setSelectedOt(null);
+      await onUpdateOtStatus(selectedOt.id, OTStatus.FIRMADA);
+      notifySuccess(
+        'Firma Exitosa',
+        'Se ha registrado la conformidad del cliente y archivado las mediciones. El informe técnico oficial está listo para auditoría final.'
+      );
+      setSelectedOt(null);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo registrar la firma: sin conexión con el servidor. La firma NO fue guardada. Verifique e intente de nuevo.'
+        : `No se pudo registrar la firma: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   return (

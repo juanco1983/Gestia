@@ -723,12 +723,11 @@ export default function App() {
       setClients(prev => [...prev, created]);
       return true;
     } catch (e: any) {
-      if (e.message && (e.message.includes("registrar") || e.message.includes("servidor") || e.message.includes("Sesión expirada"))) {
+      if (e.message && e.message.includes("Sesión expirada")) {
         throw e;
       }
-      setClients(prev => [...prev, newClient]);
-      console.warn("Cliente guardado en caché local:", e);
-      throw new Error("offline");
+      console.error("Error al registrar cliente en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al registrar el cliente."));
     }
   };
 
@@ -745,24 +744,33 @@ export default function App() {
       setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
       return true;
     } catch (e: any) {
-      if (e.message && (e.message.includes("actualizar") || e.message.includes("Sesión expirada"))) {
+      if (e.message && e.message.includes("Sesión expirada")) {
         throw e;
       }
-      setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
-      console.warn("Error al actualizar cliente en el servidor (actualizado localmente):", e);
-      throw new Error("offline");
+      console.error("Error al actualizar cliente en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar el cliente."));
     }
   };
 
   const handleAddContract = async (newContract: Contract) => {
-    setContracts(prev => [...prev, newContract]);
     try {
-      await fetchWithAuth('/api/contracts', {
+      const response = await fetchWithAuth('/api/contracts', {
         method: 'POST',
         body: JSON.stringify(newContract)
       });
-    } catch (e) {
-      console.warn("Contrato guardado en caché local:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error en el servidor al registrar el contrato.");
+      }
+      const created = await response.json();
+      setContracts(prev => [...prev, created]);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al registrar contrato en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al registrar el contrato."));
     }
   };
 
@@ -776,14 +784,19 @@ export default function App() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         notifyError('Error al Crear OT', `No se pudo crear la OT: ${errorData.error || 'Error desconocido'}`);
-        return;
+        throw new Error(errorData.error || 'Error al crear la OT');
       }
 
       const created = await response.json();
       setOts(prev => [...prev, created]);
-    } catch (e) {
-      console.warn("OT guardada en caché local (offline):", e);
-      setOts(prev => [...prev, newOT]);
+      return created;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al crear OT en la BD:", e);
+      notifyError('Sin Conexión', 'No se pudo crear la OT: sin conexión con el servidor. La OT NO fue guardada. Verifique su conexión e intente de nuevo.');
+      throw new Error("offline");
     }
   };
 
@@ -820,15 +833,33 @@ export default function App() {
   };
 
   const handleUpdateOT = async (updatedOT: OT) => {
-    setOts(prev => prev.map(o => o.id === updatedOT.id ? updatedOT : o));
-    syncFinancialLineWithOT(updatedOT.id, updatedOT.estado, updatedOT.otFinancieraId);
+    const isTecnico = currentUser?.role === 'Tecnico';
     try {
-      await fetchWithAuth(`/api/ots/${updatedOT.id}`, {
+      const response = await fetchWithAuth(`/api/ots/${updatedOT.id}`, {
         method: 'PUT',
         body: JSON.stringify(updatedOT)
       });
-    } catch (e) {
-      console.warn("OT update guardado localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar la OT.");
+      }
+      const serverUpdated = await response.json();
+      setOts(prev => prev.map(o => o.id === serverUpdated.id ? serverUpdated : o));
+      syncFinancialLineWithOT(serverUpdated.id, serverUpdated.estado, serverUpdated.otFinancieraId);
+      return true;
+    } catch (e: any) {
+      if (isTecnico) {
+        // Módulo Técnico: offline total (cambios visibles localmente, sin conexión)
+        setOts(prev => prev.map(o => o.id === updatedOT.id ? updatedOT : o));
+        syncFinancialLineWithOT(updatedOT.id, updatedOT.estado, updatedOT.otFinancieraId);
+        console.warn("OT actualizada localmente (modo Técnico):", e);
+        return false;
+      }
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al actualizar OT en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar la OT."));
     }
   };
 
@@ -862,21 +893,43 @@ export default function App() {
       const now = new Date();
       extraUpdates.horaInicioServicio = now.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
     }
-    
-    setOts(prevOts => {
-      const matched = prevOts.find(o => o.id === otId);
-      if (matched) {
-        syncFinancialLineWithOT(otId, status, matched.otFinancieraId);
-      }
-      return prevOts.map(o => o.id === otId ? { ...o, estado: status, ...extraUpdates } : o);
-    });
+    const isTecnico = currentUser?.role === 'Tecnico';
+
+    const applyLocalUpdate = () => {
+      setOts(prevOts => {
+        const matched = prevOts.find(o => o.id === otId);
+        if (matched) {
+          syncFinancialLineWithOT(otId, status, matched.otFinancieraId);
+        }
+        return prevOts.map(o => o.id === otId ? { ...o, estado: status, ...extraUpdates } : o);
+      });
+    };
+
     try {
-      await fetchWithAuth(`/api/ots/${otId}`, {
+      const response = await fetchWithAuth(`/api/ots/${otId}`, {
         method: 'PUT',
         body: JSON.stringify({ estado: status, ...extraUpdates })
       });
-    } catch (e) {
-      console.warn("Estado de OT guardado localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar el estado de la OT.");
+      }
+      const serverUpdated = await response.json();
+      setOts(prevOts => prevOts.map(o => o.id === otId ? { ...o, ...serverUpdated } : o));
+      syncFinancialLineWithOT(otId, status, serverUpdated.otFinancieraId);
+      return true;
+    } catch (e: any) {
+      if (isTecnico) {
+        // Módulo Técnico: offline total (estado visible localmente, sin conexión)
+        applyLocalUpdate();
+        console.warn("Estado de OT actualizado localmente (modo Técnico):", e);
+        return false;
+      }
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al actualizar estado de OT en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar el estado de la OT."));
     }
   };
 
@@ -977,50 +1030,77 @@ export default function App() {
   };
 
   const handleAddUser = async (user: User) => {
-    setUsers(prev => [...prev, user]);
     try {
-      await fetchWithAuth('/api/users', {
+      const response = await fetchWithAuth('/api/users', {
         method: 'POST',
         body: JSON.stringify(user)
       });
-    } catch (e) {
-      console.warn("Usuario guardado en local:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al crear el usuario.");
+      }
+      const created = await response.json();
+      setUsers(prev => [...prev, created]);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al crear usuario en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al crear el usuario."));
     }
   };
 
   const handleUpdateUser = async (userId: string, updated: Partial<User>) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u));
-    
-    if (currentUser && currentUser.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, ...updated } : null);
-    }
-
     try {
-      await fetchWithAuth(`/api/users/${userId}`, {
+      const response = await fetchWithAuth(`/api/users/${userId}`, {
         method: 'PUT',
         body: JSON.stringify(updated)
       });
-    } catch (e) {
-      console.warn("Cambios guardados localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar el usuario.");
+      }
+      const serverUpdated = await response.json();
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...serverUpdated } : u));
+
+      if (currentUser && currentUser.id === userId) {
+        setCurrentUser(prev => prev ? { ...prev, ...serverUpdated } : null);
+      }
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al actualizar usuario en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar el usuario."));
     }
   };
 
   const handleAddLog = async (log: UserActivityLog) => {
-    setUserLogs(prev => [log, ...prev]);
     try {
-      await fetchWithAuth('/api/logs', {
+      const response = await fetchWithAuth('/api/logs', {
         method: 'POST',
         body: JSON.stringify(log)
       });
-    } catch (e) {
-      console.warn("Bitácora guardada en local:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al registrar la bitácora.");
+      }
+      const created = await response.json();
+      setUserLogs(prev => [created, ...prev]);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al registrar bitácora en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al registrar la bitácora."));
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     const userToDelete = users.find(u => u.id === userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
-
     const newAuditLog: UserActivityLog = {
       id: `log_${Date.now()}`,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
@@ -1029,67 +1109,95 @@ export default function App() {
       details: `Baja permanente del operador [${userToDelete?.username || userId}]`,
       ipAddress: '192.168.10.15'
     };
-    handleAddLog(newAuditLog);
-
     try {
-      await fetchWithAuth(`/api/users/${userId}`, {
+      const response = await fetchWithAuth(`/api/users/${userId}`, {
         method: 'DELETE'
       });
-    } catch (e) {
-      console.warn("Usuario eliminado localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al eliminar el usuario.");
+      }
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      await handleAddLog(newAuditLog);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al eliminar usuario en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al eliminar el usuario."));
     }
   };
 
   // FINANCIAL / OPERATIONS HANDLERS FOR ORDENESTRABAJOVIEW
   const handleAddOtLinea = async (linea: OrdenTrabajoLinea) => {
-    setOrdenesTrabajo(prev => [linea, ...prev]);
     try {
-      await fetchWithAuth('/api/ot-lineas', {
+      const response = await fetchWithAuth('/api/ot-lineas', {
         method: 'POST',
         body: JSON.stringify(linea)
       });
-    } catch (e) {
-      console.warn("Línea OT guardada localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al crear la línea OT.");
+      }
+      const created = await response.json();
+      setOrdenesTrabajo(prev => [created, ...prev]);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al crear línea OT en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al crear la línea OT."));
     }
   };
 
   const handleUpdateOtLinea = async (updated: OrdenTrabajoLinea) => {
-    setOrdenesTrabajo(prev => {
-      const nextLines = prev.map(l => (l.id === updated.id ? updated : l));
-
-      // Instantly update contract balance and consumption in memory
-      const targetContratoId = updated.contratoId || ots.find(o => o.id === updated.otTecnicaId)?.contratoId;
-      if (targetContratoId) {
-        setContratosNuevos(prevContratos => prevContratos.map(c => {
-          if (c.id === targetContratoId || c.n_contrato === targetContratoId) {
-            const allContractLines = nextLines.filter(l => l.contratoId === c.id || l.otTecnicaId);
-            const totalFacturado = allContractLines.reduce((acc, l) => {
-              if (l.n_factura || l.estado === 'FACTURADO' || l.pendiente === 'EJECUTADO') {
-                return acc + (l.sub_importe_sin_igv || l.monto_marco_sin_igv || 0);
-              }
-              return acc;
-            }, 0);
-            const presupuesto = c.monto_sin_igv || c.presupuesto_total_usd || c.monto_original || 0;
-            return {
-              ...c,
-              monto_facturado_sin_igv: totalFacturado,
-              saldo_disponible_usd: Math.max(0, presupuesto - totalFacturado)
-            };
-          }
-          return c;
-        }));
-      }
-
-      return nextLines;
-    });
-
     try {
-      await fetchWithAuth(`/api/ot-lineas/${updated.id}`, {
+      const response = await fetchWithAuth(`/api/ot-lineas/${updated.id}`, {
         method: 'PUT',
         body: JSON.stringify(updated)
       });
-    } catch (e) {
-      console.warn("Línea OT actualizada localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al actualizar la línea OT.");
+      }
+      const serverUpdated = await response.json();
+      setOrdenesTrabajo(prev => {
+        const nextLines = prev.map(l => (l.id === serverUpdated.id ? serverUpdated : l));
+
+        // Update contract balance and consumption in memory (server-confirmed)
+        const targetContratoId = serverUpdated.contratoId || ots.find(o => o.id === serverUpdated.otTecnicaId)?.contratoId;
+        if (targetContratoId) {
+          setContratosNuevos(prevContratos => prevContratos.map(c => {
+            if (c.id === targetContratoId || c.n_contrato === targetContratoId) {
+              const allContractLines = nextLines.filter(l => l.contratoId === c.id || l.otTecnicaId);
+              const totalFacturado = allContractLines.reduce((acc, l) => {
+                if (l.n_factura || l.estado === 'FACTURADO' || l.pendiente === 'EJECUTADO') {
+                  return acc + (l.sub_importe_sin_igv || l.monto_marco_sin_igv || 0);
+                }
+                return acc;
+              }, 0);
+              const presupuesto = c.monto_sin_igv || c.presupuesto_total_usd || c.monto_original || 0;
+              return {
+                ...c,
+                monto_facturado_sin_igv: totalFacturado,
+                saldo_disponible_usd: Math.max(0, presupuesto - totalFacturado)
+              };
+            }
+            return c;
+          }));
+        }
+
+        return nextLines;
+      });
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al actualizar línea OT en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar la línea OT."));
     }
   };
 
@@ -1107,12 +1215,11 @@ export default function App() {
       setContratosNuevos(prev => [created, ...prev]);
       return true;
     } catch (e: any) {
-      if (e.message && (e.message.includes("crear") || e.message.includes("Sesión expirada"))) {
+      if (e.message && e.message.includes("Sesión expirada")) {
         throw e;
       }
-      setContratosNuevos(prev => [newContrato, ...prev]);
-      console.warn("Contrato comercial guardado localmente:", e);
-      throw new Error("offline");
+      console.error("Error al crear contrato comercial en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al crear el contrato comercial."));
     }
   };
 
@@ -1130,24 +1237,32 @@ export default function App() {
       setContratosNuevos(prev => prev.map(c => c.id === updated.id ? serverUpdated : c));
       return true;
     } catch (e: any) {
-      if (e.message && (e.message.includes("actualizar") || e.message.includes("Sesión expirada"))) {
+      if (e.message && e.message.includes("Sesión expirada")) {
         throw e;
       }
-      setContratosNuevos(prev => prev.map(c => c.id === updated.id ? updated : c));
-      console.warn("Contrato comercial actualizado localmente:", e);
-      throw new Error("offline");
+      console.error("Error al actualizar contrato comercial en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al actualizar el contrato comercial."));
     }
   };
 
   const handleUpdateTipoCambio = async (val: number) => {
-    setTipoCambio(val);
     try {
-      await fetchWithAuth('/api/config', {
+      const response = await fetchWithAuth('/api/config', {
         method: 'POST',
         body: JSON.stringify({ tipoCambio: val })
       });
-    } catch (e) {
-      console.warn("Tipo de cambio guardado localmente:", e);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al guardar el tipo de cambio.");
+      }
+      setTipoCambio(val);
+      return true;
+    } catch (e: any) {
+      if (e.message && e.message.includes("Sesión expirada")) {
+        throw e;
+      }
+      console.error("Error al guardar tipo de cambio en la BD:", e);
+      throw new Error(e instanceof TypeError ? "offline" : (e.message || "Error al guardar el tipo de cambio."));
     }
   };
 
@@ -1390,7 +1505,7 @@ export default function App() {
             return u;
           }));
 
-          handleAddLog(newAuditLog);
+          handleAddLog(newAuditLog).catch(() => {});
           setCurrentUser({ ...user, ultimoIngreso: newAuditLog.timestamp });
           const defaultRole = user.role === 'Cliente' ? 'Cliente' :
                               user.role === 'Tecnico' ? 'Tecnico' :
@@ -1605,7 +1720,7 @@ export default function App() {
                     action: 'EDITAR_USUARIO',
                     details: 'Sincronizador en la nube activado.',
                     ipAddress: '127.0.0.1'
-                  });
+                  }).catch(() => {});
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                   isOnline ? 'bg-[#10B981] text-white shadow-2xs' : 'text-slate-400 hover:text-slate-600'
@@ -1625,7 +1740,7 @@ export default function App() {
                     action: 'EDITAR_USUARIO',
                     details: 'Simulación de desconexión sin señal Wifi activada.',
                     ipAddress: '127.0.0.1'
-                  });
+                  }).catch(() => {});
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                   !isOnline ? 'bg-slate-500 text-white shadow-2xs' : 'text-slate-400 hover:text-slate-600'
@@ -1912,7 +2027,7 @@ export default function App() {
                     details: 'Cierre de sesión seguro realizado exitosamente.',
                     ipAddress: '192.168.10.15'
                   };
-                  handleAddLog(newAuditLog);
+                  handleAddLog(newAuditLog).catch(() => {});
                   setCurrentUser(null);
                 }}
                 className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all animate-none"

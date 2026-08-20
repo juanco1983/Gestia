@@ -708,24 +708,10 @@ export default function ClientesContratosView({
       if (err.message === "offline") {
         setAlertState({
           show: true,
-          type: 'offline',
-          title: 'Guardado Offline',
-          message: '¡El cliente se guardó en la caché local! Se sincronizará automáticamente cuando vuelva la conexión.'
+          type: 'error',
+          title: 'Error de Conexión',
+          message: 'No se pudo registrar el cliente: sin conexión con el servidor. El cliente NO fue guardado. Verifique su conexión e intente de nuevo.'
         });
-        setClientForm({
-          id: '',
-          razonSocial: '',
-          ruc: '',
-          direccionSede: '',
-          distrito: '',
-          contactoNombre: '',
-          contactoEmail: '',
-          contactoTelefono: '',
-          pais: '',
-          provincia: '',
-          contactos: []
-        });
-        setShowClientModal(false);
       } else {
         setAlertState({
           show: true,
@@ -788,12 +774,10 @@ export default function ClientesContratosView({
         if (err.message === "offline") {
           setAlertState({
             show: true,
-            type: 'offline',
-            title: 'Actualización Local',
-            message: '¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.'
+            type: 'error',
+            title: 'Error de Conexión',
+            message: 'No se pudo actualizar el cliente: sin conexión con el servidor. Los cambios NO fueron guardados. Verifique su conexión e intente de nuevo.'
           });
-          setSelectedClientForView(updatedClient);
-          setIsEditingClient(false);
         } else {
           setAlertState({
             show: true,
@@ -876,12 +860,10 @@ export default function ClientesContratosView({
         if (err.message === "offline") {
           setAlertState({
             show: true,
-            type: 'offline',
-            title: 'Actualización Local',
-            message: '¡Cambios guardados localmente! Se sincronizará automáticamente cuando vuelva la conexión.'
+            type: 'error',
+            title: 'Error de Conexión',
+            message: 'No se pudo actualizar el contrato: sin conexión con el servidor. Los cambios NO fueron guardados. Verifique su conexión e intente de nuevo.'
           });
-          setSelectedContratoForView(updatedContrato);
-          setIsEditingContrato(false);
         } else {
           setAlertState({
             show: true,
@@ -963,26 +945,11 @@ export default function ClientesContratosView({
       });
     } catch (err: any) {
       if (err.message === "offline") {
-        setShowContratoModal(false);
         setAlertState({
           show: true,
-          type: 'offline',
-          title: 'Guardado Offline',
-          message: '¡El contrato se guardó en la caché local! Se sincronizará automáticamente cuando vuelva la conexión.'
-        });
-        setContratoForm({
-          clientId: '',
-          tipo_contract: '',
-          tipo_contrato: '',
-          fecha_inicio: '',
-          fecha_fin: '',
-          estado: 'VIGENTE',
-          comercialId: '',
-          comentarios: '',
-          monto_original: '',
-          moneda: 'USD',
-          pdf_base64: '',
-          pdf_name: ''
+          type: 'error',
+          title: 'Error de Conexión',
+          message: 'No se pudo registrar el contrato: sin conexión con el servidor. El contrato NO fue guardado. Verifique su conexión e intente de nuevo.'
         });
       } else {
         setShowContratoModal(false);

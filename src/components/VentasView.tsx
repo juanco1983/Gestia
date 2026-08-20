@@ -246,27 +246,33 @@ export default function VentasView({
   }, [anyModalOpen]);
 
   // Form submission handlers
-  const handleClientSubmit = (e: React.FormEvent) => {
+  const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientForm.razonSocial || !clientForm.ruc) return;
     const newClient: Client = {
       id: `client_${Date.now()}`,
       ...clientForm
     };
-    onAddClient(newClient);
-    setShowClientModal(false);
-    setClientForm({
-      razonSocial: '',
-      ruc: '',
-      direccionSede: '',
-      distrito: '',
-      contactoNombre: '',
-      contactoEmail: '',
-      contactoTelefono: ''
-    });
+    try {
+      await onAddClient(newClient);
+      setShowClientModal(false);
+      setClientForm({
+        razonSocial: '',
+        ruc: '',
+        direccionSede: '',
+        distrito: '',
+        contactoNombre: '',
+        contactoEmail: '',
+        contactoTelefono: ''
+      });
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo registrar el cliente: sin conexión con el servidor. El cliente NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo registrar el cliente: ${err.message || 'Error desconocido'}`);
+    }
   };
 
-  const handleContractSubmit = (e: React.FormEvent) => {
+  const handleContractSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contractForm.clientId) return;
     const newContract: Contract = {
@@ -277,20 +283,44 @@ export default function VentasView({
       fechaInicio: contractForm.fechaInicio || new Date().toISOString().split('T')[0],
       fechaFin: contractForm.fechaFin || new Date(Date.now() + 31536000000).toISOString().split('T')[0]
     };
-    onAddContract(newContract);
-    setShowContractModal(false);
+    try {
+      await onAddContract(newContract);
+      setShowContractModal(false);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo registrar el contrato: sin conexión con el servidor. El contrato NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo registrar el contrato: ${err.message || 'Error desconocido'}`);
+    }
   };
 
-  const handleOtSubmit = (e: React.FormEvent) => {
+  const handleOtSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otForm.clientId) return;
 
-    if (otModalMode === 'edit' && editingOtId && onUpdateOT) {
-      const existingOT = ots.find(o => o.id === editingOtId);
-      if (existingOT) {
-        onUpdateOT({
-          ...existingOT,
-          id: otForm.id.trim() || existingOT.id,
+    try {
+      if (otModalMode === 'edit' && editingOtId && onUpdateOT) {
+        const existingOT = ots.find(o => o.id === editingOtId);
+        if (existingOT) {
+          await onUpdateOT({
+            ...existingOT,
+            id: otForm.id.trim() || existingOT.id,
+            clientId: otForm.clientId,
+            contratoId: otForm.contratoId || undefined,
+            adendaId: otForm.adendaId || undefined,
+            equipoId: otForm.equipoId || undefined,
+            costo_estimado_usd: otForm.costo_estimado_usd || undefined,
+            tipoMantenimiento: otForm.tipoMantenimiento,
+            tipoEquipo: otForm.tipoEquipo,
+            potenciaKva: Number(otForm.potenciaKva),
+            fechaProgramada: otForm.fechaProgramada || existingOT.fechaProgramada,
+            tecnicoTitular: otForm.tecnicoTitular,
+            tecnicoApoyo: otForm.tecnicoApoyo || undefined,
+          } as any);
+        }
+      } else {
+        const cleanId = otForm.id.trim() || `OT-${Math.floor(4000 + Math.random() * 999)}`;
+        const newOT: OT = {
+          id: cleanId,
           clientId: otForm.clientId,
           contratoId: otForm.contratoId || undefined,
           adendaId: otForm.adendaId || undefined,
@@ -299,31 +329,19 @@ export default function VentasView({
           tipoMantenimiento: otForm.tipoMantenimiento,
           tipoEquipo: otForm.tipoEquipo,
           potenciaKva: Number(otForm.potenciaKva),
-          fechaProgramada: otForm.fechaProgramada || existingOT.fechaProgramada,
+          fechaProgramada: otForm.fechaProgramada || new Date().toISOString().split('T')[0],
           tecnicoTitular: otForm.tecnicoTitular,
           tecnicoApoyo: otForm.tecnicoApoyo || undefined,
-        } as any);
+          estado: OTStatus.CREADA
+        } as any;
+        await onAddOT(newOT);
       }
-    } else {
-      const cleanId = otForm.id.trim() || `OT-${Math.floor(4000 + Math.random() * 999)}`;
-      const newOT: OT = {
-        id: cleanId,
-        clientId: otForm.clientId,
-        contratoId: otForm.contratoId || undefined,
-        adendaId: otForm.adendaId || undefined,
-        equipoId: otForm.equipoId || undefined,
-        costo_estimado_usd: otForm.costo_estimado_usd || undefined,
-        tipoMantenimiento: otForm.tipoMantenimiento,
-        tipoEquipo: otForm.tipoEquipo,
-        potenciaKva: Number(otForm.potenciaKva),
-        fechaProgramada: otForm.fechaProgramada || new Date().toISOString().split('T')[0],
-        tecnicoTitular: otForm.tecnicoTitular,
-        tecnicoApoyo: otForm.tecnicoApoyo || undefined,
-        estado: OTStatus.CREADA
-      } as any;
-      onAddOT(newOT);
+      setShowOTModal(false);
+    } catch (err: any) {
+      notifyError('Error al Crear OT', err.message === "offline"
+        ? 'No se pudo crear la OT: sin conexión con el servidor. La OT NO fue guardada. Verifique su conexión e intente de nuevo.'
+        : `No se pudo crear la OT: ${err.message || 'Error desconocido'}`);
     }
-    setShowOTModal(false);
   };
 
   const openEditOtModal = (ot: OT) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
 import { OrdenTrabajoLinea, Client, Contrato } from '../../types';
 import { MESES_ESPANOL, getFinancialStatusInfo, PENDIENTE_VALUES } from '../../utils/otDefaults';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface ModalEditarLineaProps {
   editingLine: OrdenTrabajoLinea;
@@ -27,6 +28,7 @@ export default function ModalEditarLinea({
 }: ModalEditarLineaProps) {
 
   const [showParentFields, setShowParentFields] = useState(false);
+  const { notifyError, toastView } = useLocalToast();
 
   // ── Cálculo del presupuesto del Contrato + Adendas ───────────────────────
   const sym = editingLine.simbolo_moneda || '$';
@@ -72,7 +74,7 @@ export default function ModalEditarLinea({
   // (PUT /api/ot-lineas/:id responde 409 cuando ya está FACTURADA).
   const isFacturado = (editingLine.estado || '').toUpperCase() === 'FACTURADO';
 
-  const handleEditLineSubmit = (e: React.FormEvent) => {
+  const handleEditLineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Salvaguarda: si por alguna razón llega el submit estando facturada, abortar.
@@ -111,8 +113,14 @@ export default function ModalEditarLinea({
       pendiente: autoPendiente
     };
 
-    onUpdateLinea(updatedLine);
-    onClose();
+    try {
+      await onUpdateLinea(updatedLine);
+      onClose();
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudieron guardar los cambios: sin conexión con el servidor. Los cambios NO fueron guardados. Verifique e intente de nuevo.'
+        : `No se pudieron guardar los cambios: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   useEffect(() => {
@@ -545,6 +553,7 @@ export default function ModalEditarLinea({
         </form>
       </div>
     </div>
+    {toastView}
     </>
   );
 }

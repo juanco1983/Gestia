@@ -108,7 +108,7 @@ export default function SupervisorView({
     setZoom(100);
   };
 
-  const handleApproveReport = () => {
+  const handleApproveReport = async () => {
     if (!selectedOt) return;
     const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
     if (isApprovedOrCompleted) {
@@ -125,12 +125,18 @@ export default function SupervisorView({
       onUpdateReport(updatedReport);
     }
 
-    onUpdateOtStatus(selectedOt.id, OTStatus.APROBADA);
-    notifySuccess('Informe Aprobado', 'Se envió la notificación automatizada al cliente para firma de conformidad.');
-    setSelectedOt(null);
+    try {
+      await onUpdateOtStatus(selectedOt.id, OTStatus.APROBADA);
+      notifySuccess('Informe Aprobado', 'Se envió la notificación automatizada al cliente para firma de conformidad.');
+      setSelectedOt(null);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo aprobar el informe: sin conexión con el servidor. La aprobación NO fue guardada. Verifique e intente de nuevo.'
+        : `No se pudo aprobar el informe: ${err.message || 'Error desconocido'}`);
+    }
   };
 
-  const handleDeclineReport = () => {
+  const handleDeclineReport = async () => {
     if (!selectedOt) return;
     const isApprovedOrCompleted = ['Aprobada', 'Conformidad Firmada (Listo para Facturar)', 'Firmada', 'Cerrada', 'Facturada'].includes(selectedOt.estado);
     if (isApprovedOrCompleted) {
@@ -151,9 +157,15 @@ export default function SupervisorView({
       onUpdateReport(updatedReport);
     }
 
-    onUpdateOtStatus(selectedOt.id, OTStatus.OBSERVADA);
-    notifySuccess('Enviado a Corrección', 'El informe regresó a la bandeja del técnico con las anotaciones correspondientes.');
-    setSelectedOt(null);
+    try {
+      await onUpdateOtStatus(selectedOt.id, OTStatus.OBSERVADA);
+      notifySuccess('Enviado a Corrección', 'El informe regresó a la bandeja del técnico con las anotaciones correspondientes.');
+      setSelectedOt(null);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo enviar a corrección: sin conexión con el servidor. El cambio NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo enviar a corrección: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   const handleDownloadDocx = () => {
