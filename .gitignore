@@ -16,6 +16,10 @@ coverage/
 # Prisma generado
 /src/generated/prisma
 
+# Artefactos de pruebas (Playwright) — no versionar
+test-results/
+playwright-report/
+
 # Logs
 *.log
 npm-debug.log*

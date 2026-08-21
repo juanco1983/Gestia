@@ -32,7 +32,7 @@ export default function ModalAgregarLinea({
 
   const cleanString = (val: string) => val.trim().toUpperCase();
 
-  const handleAddLineSubmit = (e: React.FormEvent) => {
+  const handleAddLineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addLineForm.ot_marco) return;
 
@@ -93,8 +93,14 @@ export default function ModalAgregarLinea({
       comercial: parentTemplate.comercial
     };
 
-    onAddLinea(newLine);
-    onClose();
+    try {
+      await onAddLinea(newLine);
+      onClose();
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo agregar la cuota: sin conexión con el servidor. La línea NO fue guardada. Verifique e intente de nuevo.'
+        : `No se pudo agregar la cuota: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   return (

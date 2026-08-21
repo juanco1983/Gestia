@@ -27,6 +27,7 @@ import ModalAgregarLinea from './ot/ModalAgregarLinea';
 import ModalEditarLinea from './ot/ModalEditarLinea';
 import ModalAsignarTecnico from './ot/ModalAsignarTecnico';
 import { useConfirm } from './shared/ConfirmModal';
+import { useLocalToast } from './shared/ToastModal';
 
 interface OrdenesTrabajoViewProps {
   lineas: OrdenTrabajoLinea[];
@@ -63,6 +64,7 @@ export default function OrdenesTrabajoView({
   const [subTab, setSubTab] = useState<'lista' | 'analytics' | 'targets' | 'comercial'>('lista');
 
   const { confirm, confirmView } = useConfirm();
+  const { notifyError, toastView } = useLocalToast();
 
   // Modals state
   const [showCreateMarcoModal, setShowCreateMarcoModal] = useState(false);
@@ -258,12 +260,16 @@ export default function OrdenesTrabajoView({
           }
         ]
       };
-      onUpdateLinea(updated);
+      try {
+        await onUpdateLinea(updated);
+      } catch (err: any) {
+        console.error("Error al anular línea OT:", err);
+      }
     }
   };
 
   // Submit Comments / Bitácora Form
-  const handleAddCommentSubmit = (e: React.FormEvent) => {
+  const handleAddCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLineForComments || !newCommentText.trim()) return;
 
@@ -278,9 +284,13 @@ export default function OrdenesTrabajoView({
       estatus: [...(selectedLineForComments.estatus || []), newComment]
     };
 
-    onUpdateLinea(updatedLine);
-    setSelectedLineForComments(updatedLine);
-    setNewCommentText('');
+    try {
+      await onUpdateLinea(updatedLine);
+      setSelectedLineForComments(updatedLine);
+      setNewCommentText('');
+    } catch (err: any) {
+      console.error("Error al guardar comentario en línea OT:", err);
+    }
   };
 
   // CSV/Excel Exporter with absolute precision
@@ -405,7 +415,15 @@ export default function OrdenesTrabajoView({
             step="0.001"
             className="w-16 font-mono font-black text-xs text-slate-800 focus:outline-none focus:border-teal-brand text-center"
             value={tipoCambio}
-            onChange={(e) => onUpdateTipoCambio(parseFloat(e.target.value) || 3.75)}
+            onChange={async (e) => {
+              try {
+                await onUpdateTipoCambio(parseFloat(e.target.value) || 3.75);
+              } catch (err: any) {
+                notifyError('Error de Conexión', err.message === "offline"
+                  ? 'No se pudo guardar el tipo de cambio: sin conexión con el servidor. El valor NO fue guardado. Verifique e intente de nuevo.'
+                  : `No se pudo guardar el tipo de cambio: ${err.message || 'Error desconocido'}`);
+              }
+            }}
           />
           <span className="text-[10px] font-black text-teal-brand font-mono shrink-0 flex items-center gap-0.5">
             <RefreshCw size={10} className="animate-spin" />
@@ -665,15 +683,20 @@ export default function OrdenesTrabajoView({
           ots={ots}
           users={users}
           clients={clients}
-          onUpdateOT={(ot) => {
-            if (onUpdateOT) onUpdateOT(ot);
-            setSelectedLineForAssign(null);
+          onUpdateOT={async (ot) => {
+            try {
+              if (onUpdateOT) await onUpdateOT(ot);
+              setSelectedLineForAssign(null);
+            } catch (err: any) {
+              console.error("Error al guardar asignación:", err);
+            }
           }}
           onClose={() => setSelectedLineForAssign(null)}
         />
       )}
 
       {confirmView}
+      {toastView}
     </div>
   );
 }

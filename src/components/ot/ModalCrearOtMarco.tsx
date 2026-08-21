@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, X, Cpu, AlertTriangle } from 'lucide-react';
 import { OrdenTrabajoLinea, Client, Contrato, EquipmentType, ServiceType } from '../../types';
 import { MESES_ESPANOL, TIPO_VENTA_VALUES, TIPO_CONTRATACION_VALUES } from '../../utils/otDefaults';
+import { useLocalToast } from '../shared/ToastModal';
 
 interface ModalCrearOtMarcoProps {
   clients: Client[];
@@ -61,6 +62,7 @@ export default function ModalCrearOtMarco({
   const [isLoadingEquipos, setIsLoadingEquipos] = useState(false);
   const [showEquiposDrawer, setShowEquiposDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
+  const { notifyError, toastView } = useLocalToast();
 
   const getNextOtCode = (contratoId: string, adendaId: string | null) => {
     if (!contratoId) return `OT-S_N-${Math.floor(4000 + Math.random() * 999)}-001`;
@@ -137,7 +139,7 @@ export default function ModalCrearOtMarco({
 
   const cleanString = (val: string) => val.trim().toUpperCase();
 
-  const handleCreateMarcoSubmit = (e: React.FormEvent) => {
+  const handleCreateMarcoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!marcoForm.razon_social) return;
 
@@ -192,8 +194,14 @@ export default function ModalCrearOtMarco({
       equipoId: marcoForm.equipoId || undefined
     };
 
-    onAddLinea(firstLine);
-    onClose();
+    try {
+      await onAddLinea(firstLine);
+      onClose();
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo registrar la OT Marco: sin conexión con el servidor. La OT Marco NO fue guardada. Verifique e intente de nuevo.'
+        : `No se pudo registrar la OT Marco: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   useEffect(() => {
@@ -673,6 +681,7 @@ export default function ModalCrearOtMarco({
         </>
       )}
     </div>
+    {toastView}
     </>
   );
 }
