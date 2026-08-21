@@ -247,7 +247,7 @@ export default function ModalAsignarTecnico({
           estado: OTStatus.PROGRAMADA
         };
 
-        onUpdateOT(updatedOt);
+        await onUpdateOT(updatedOt);
         notifySuccess('Asignación Exitosa', 'Las asignaciones y programaciones de equipos se guardaron correctamente.');
       } else {
         // Fallback: single assignment at OT level
@@ -266,7 +266,7 @@ export default function ModalAsignarTecnico({
             : matchingOt.estado
         };
 
-        onUpdateOT(updatedOt);
+        await onUpdateOT(updatedOt);
         notifySuccess('Asignación Exitosa', 'La asignación general de la OT se guardó correctamente.');
       }
     } catch (err) {

@@ -99,7 +99,7 @@ export default function UserManagementView({
     setNewAllowedModules(getDefaultModulesForRole(role));
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername || !newEmail || !newArea || !newPassword) {
       notifyError('Validación Requerida', 'Complete todos los campos obligatorios, incluyendo la contraseña.');
@@ -124,30 +124,37 @@ export default function UserManagementView({
       allowedModules: newAllowedModules
     };
 
-    onAddUser(newUser);
+    try {
+      await onAddUser(newUser);
 
-    // Create Audit Log
-    const newAuditLog: UserActivityLog = {
-      id: `log_${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userEmail: currentUser.email,
-      action: 'CREAR_USUARIO',
-      details: `Usuario creado con éxito: ${newUser.username} (${newUser.role}) con acceso al área ${newUser.area} y módulos [${newAllowedModules.join(', ')}]. Contraseña configurada.`,
-      ipAddress: '192.168.10.15'
-    };
-    onAddLog(newAuditLog);
+      // Create Audit Log
+      const newAuditLog: UserActivityLog = {
+        id: `log_${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        userEmail: currentUser.email,
+        action: 'CREAR_USUARIO',
+        details: `Usuario creado con éxito: ${newUser.username} (${newUser.role}) con acceso al área ${newUser.area} y módulos [${newAllowedModules.join(', ')}]. Contraseña configurada.`,
+        ipAddress: '192.168.10.15'
+      };
+      await onAddLog(newAuditLog);
 
-    // Reset Form
-    setNewUsername('');
-    setNewEmail('');
-    setNewArea('');
-    setNewPassword('');
-    setNewRole('Tecnico');
-    setNewAllowedModules(['Dashboard', 'Monitoreo', 'Tecnico']);
-    setShowAddForm(false);
+      // Reset Form
+      setNewUsername('');
+      setNewEmail('');
+      setNewArea('');
+      setNewPassword('');
+      setNewRole('Tecnico');
+      setNewAllowedModules(['Dashboard', 'Monitoreo', 'Tecnico']);
+      setShowAddForm(false);
+      notifySuccess('Usuario Creado', `El usuario ${newUser.username} fue creado exitosamente en la base de datos.`);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo crear el usuario: sin conexión con el servidor. El usuario NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo crear el usuario: ${err.message || 'Error desconocido'}`);
+    }
   };
 
-  const handleToggleStatus = (user: User) => {
+  const handleToggleStatus = async (user: User) => {
     // Self-suspending safety lock
     if (user.email === currentUser.email) {
       notifyError('Acción Restringida', 'No se permite suspender su propia sesión activa.');
@@ -155,18 +162,25 @@ export default function UserManagementView({
     }
 
     const nextStatus = user.estado === 'Activo' ? 'Suspendido' : 'Activo';
-    onUpdateUser(user.id, { estado: nextStatus });
+    try {
+      await onUpdateUser(user.id, { estado: nextStatus });
 
-    // Log the security breach/update event
-    const newAuditLog: UserActivityLog = {
-      id: `log_${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userEmail: currentUser.email,
-      action: 'CAMBIAR_ESTADO',
-      details: `Estado modificado de [${user.username}]: ${user.estado} -> ${nextStatus}`,
-      ipAddress: '192.168.10.15'
-    };
-    onAddLog(newAuditLog);
+      // Log the security breach/update event
+      const newAuditLog: UserActivityLog = {
+        id: `log_${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        userEmail: currentUser.email,
+        action: 'CAMBIAR_ESTADO',
+        details: `Estado modificado de [${user.username}]: ${user.estado} -> ${nextStatus}`,
+        ipAddress: '192.168.10.15'
+      };
+      await onAddLog(newAuditLog);
+      notifySuccess('Estado Actualizado', `El estado de ${user.username} cambió a ${nextStatus}.`);
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo actualizar el estado: sin conexión con el servidor. El cambio NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo actualizar el estado: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   const startEdit = (user: User) => {
@@ -177,31 +191,38 @@ export default function UserManagementView({
     setEditAllowedModules(user.allowedModules && user.allowedModules.length > 0 ? user.allowedModules : getDefaultModulesForRole(user.role));
   };
 
-  const saveEdit = (userId: string) => {
+  const saveEdit = async (userId: string) => {
     if (!editUsername || !editArea) {
       notifyError('Validación Requerida', 'El nombre de usuario y el departamento no pueden estar vacíos.');
       return;
     }
 
-    onUpdateUser(userId, {
-      username: editUsername,
-      area: editArea,
-      role: editRole,
-      allowedModules: editAllowedModules
-    });
+    try {
+      await onUpdateUser(userId, {
+        username: editUsername,
+        area: editArea,
+        role: editRole,
+        allowedModules: editAllowedModules
+      });
 
-    // Audit Log
-    const newAuditLog: UserActivityLog = {
-      id: `log_${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userEmail: currentUser.email,
-      action: 'EDITAR_USUARIO',
-      details: `Modificación de metadatos del usuario catalogado id ${userId}. Nombre: ${editUsername}, Rol: ${editRole}, Área: ${editArea}, Módulos: [${editAllowedModules.join(', ')}]`,
-      ipAddress: '192.168.10.15'
-    };
-    onAddLog(newAuditLog);
+      // Audit Log
+      const newAuditLog: UserActivityLog = {
+        id: `log_${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        userEmail: currentUser.email,
+        action: 'EDITAR_USUARIO',
+        details: `Modificación de metadatos del usuario catalogado id ${userId}. Nombre: ${editUsername}, Rol: ${editRole}, Área: ${editArea}, Módulos: [${editAllowedModules.join(', ')}]`,
+        ipAddress: '192.168.10.15'
+      };
+      await onAddLog(newAuditLog);
 
-    setEditingUserId(null);
+      setEditingUserId(null);
+      notifySuccess('Cambios Guardados', 'Los cambios del usuario fueron guardados en la base de datos.');
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudieron guardar los cambios: sin conexión con el servidor. Los cambios NO fueron guardados. Verifique e intente de nuevo.'
+        : `No se pudieron guardar los cambios: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   const startResetPassword = (user: User) => {
@@ -209,7 +230,7 @@ export default function UserManagementView({
     setNewPasswordForReset('');
   };
 
-  const saveNewPassword = (e: React.FormEvent) => {
+  const saveNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetPasswordUser) return;
     if (!newPasswordForReset.trim()) {
@@ -217,22 +238,28 @@ export default function UserManagementView({
       return;
     }
 
-    onUpdateUser(resetPasswordUser.id, { password: newPasswordForReset.trim() });
+    try {
+      await onUpdateUser(resetPasswordUser.id, { password: newPasswordForReset.trim() });
 
-    // Audit Log
-    const newAuditLog: UserActivityLog = {
-      id: `log_${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      userEmail: currentUser.email,
-      action: 'REINICIO_CONTRASENA',
-      details: `Actualización manual de credenciales de acceso (contraseña personalizada) para ${resetPasswordUser.username} (${resetPasswordUser.email})`,
-      ipAddress: '192.168.10.15'
-    };
-    onAddLog(newAuditLog);
+      // Audit Log
+      const newAuditLog: UserActivityLog = {
+        id: `log_${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        userEmail: currentUser.email,
+        action: 'REINICIO_CONTRASENA',
+        details: `Actualización manual de credenciales de acceso (contraseña personalizada) para ${resetPasswordUser.username} (${resetPasswordUser.email})`,
+        ipAddress: '192.168.10.15'
+      };
+      await onAddLog(newAuditLog);
 
-    setResetPasswordUser(null);
-    setNewPasswordForReset('');
-    notifySuccess('Contraseña Actualizada', 'La contraseña se actualizó exitosamente.');
+      setResetPasswordUser(null);
+      setNewPasswordForReset('');
+      notifySuccess('Contraseña Actualizada', 'La contraseña se actualizó exitosamente.');
+    } catch (err: any) {
+      notifyError('Error de Conexión', err.message === "offline"
+        ? 'No se pudo actualizar la contraseña: sin conexión con el servidor. El cambio NO fue guardado. Verifique e intente de nuevo.'
+        : `No se pudo actualizar la contraseña: ${err.message || 'Error desconocido'}`);
+    }
   };
 
   const sortedLogs = [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -577,7 +604,14 @@ export default function UserManagementView({
                                       tone: 'danger'
                                     });
                                     if (ok) {
-                                      onDeleteUser(user.id);
+                                      try {
+                                        await onDeleteUser(user.id);
+                                        notifySuccess('Usuario Eliminado', `El usuario ${user.username} fue eliminado de forma permanente.`);
+                                      } catch (err: any) {
+                                        notifyError('Error de Conexión', err.message === "offline"
+                                          ? 'No se pudo eliminar el usuario: sin conexión con el servidor. El usuario NO fue eliminado. Verifique e intente de nuevo.'
+                                          : `No se pudo eliminar el usuario: ${err.message || 'Error desconocido'}`);
+                                      }
                                     }
                                   }}
                                   className="p-1.5 text-slate-400 hover:text-rose-605 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
