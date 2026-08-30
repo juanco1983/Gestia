@@ -11,17 +11,18 @@ datasource db {
 }
 
 model User {
-  id             String  @id
-  username       String
-  email          String  @unique
-  password       String
-  role           String
-  estado         String
-  area           String
-  ultimoIngreso  String?
-  creadoEn       String
-  clientId       String?
-  allowedModules Json?
+  id                String  @id
+  username          String
+  email             String  @unique
+  password          String
+  role              String
+  estado            String
+  area              String
+  ultimoIngreso     String?
+  creadoEn          String
+  clientId          String?
+  allowedModules    Json?
+  refreshTokenHash  String?
 }
 
 model Client {
