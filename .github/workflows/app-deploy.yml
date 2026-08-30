@@ -69,19 +69,18 @@ jobs:
       - name: Prepare Deployment Package
         run: |
           mkdir eb-deploy-temp
-          mkdir eb-deploy-temp/prisma
           
           # Copiar archivos compilados
           cp -r dist eb-deploy-temp/
           rm -f eb-deploy-temp/dist/backend-deploy.zip || true
           
-          # Copiar esquema y configuraciones
-          cp prisma/schema.prisma eb-deploy-temp/prisma/
+          # Copiar esquema, migraciones y configuraciones
+          cp -r prisma eb-deploy-temp/
           cp prisma.config.js eb-deploy-temp/ || true
           if [ -d ".ebextensions" ]; then cp -r .ebextensions eb-deploy-temp/; fi
           if [ -d ".platform" ]; then cp -r .platform eb-deploy-temp/; fi
 
-          # Generar package.json de producción
+          # Generar package.json de producción con todas las dependencias del backend
           cat <<EOF > eb-deploy-temp/package.json
           {
             "name": "gestia-backend-prod",
@@ -93,13 +92,15 @@ jobs:
             },
             "dependencies": {
               "@aws-sdk/client-s3": "^3.712.0",
-              "@aws-sdk/s3-request-presigner": "^3.712.0",
+              "@aws-sdk/s3-request-presigner": "^3.1105.0",
               "@google/genai": "^2.4.0",
               "@prisma/adapter-pg": "^7.8.0",
               "@prisma/client": "^7.8.0",
               "bcryptjs": "^3.0.3",
+              "cors": "^2.8.6",
               "dotenv": "^17.2.3",
               "express": "^4.21.2",
+              "express-rate-limit": "^8.7.0",
               "jsonwebtoken": "^9.0.3",
               "pg": "^8.22.0",
               "prisma": "^7.8.0",
@@ -109,7 +110,7 @@ jobs:
           EOF
 
           # Generar Procfile (inicio rápido para evitar timeout en EB healthcheck)
-          echo "web: npx prisma migrate deploy && npx prisma generate && node dist/server.cjs" > eb-deploy-temp/Procfile
+          echo "web: npx prisma generate && npx prisma db push && node dist/server.cjs" > eb-deploy-temp/Procfile
 
           # Comprimir en formato ZIP
           cd eb-deploy-temp

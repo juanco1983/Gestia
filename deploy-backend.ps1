@@ -44,8 +44,7 @@ if (Test-Path $ZipFile) { Remove-Item -Force $ZipFile }
 New-Item -ItemType Directory -Path "$DeployDir/prisma" -Force | Out-Null
 
 Copy-Item -Path "dist" -Destination "$DeployDir" -Recurse -Force
-if (Test-Path "$DeployDir/dist/backend-deploy.zip") { Remove-Item "$DeployDir/dist/backend-deploy.zip" -Force }
-Copy-Item "prisma/schema.prisma" "$DeployDir/prisma/schema.prisma"
+Copy-Item -Path "prisma" -Destination "$DeployDir" -Recurse -Force
 $ProdPackage = @{
     name = "gestia-backend-prod"
     version = "1.0.0"
@@ -55,15 +54,20 @@ $ProdPackage = @{
         start = "node dist/server.cjs"
     }
     dependencies = @{
+        "@aws-sdk/client-s3" = "^3.712.0"
+        "@aws-sdk/s3-request-presigner" = "^3.1105.0"
         "@google/genai" = "^2.4.0"
         "@prisma/adapter-pg" = "^7.8.0"
         "@prisma/client" = "^7.8.0"
         "bcryptjs" = "^3.0.3"
+        "cors" = "^2.8.6"
         "dotenv" = "^17.2.3"
         "express" = "^4.21.2"
+        "express-rate-limit" = "^8.7.0"
         "jsonwebtoken" = "^9.0.3"
         "pg" = "^8.22.0"
         "prisma" = "^7.8.0"
+        "ubigeo-peru" = "^2.0.2"
     }
 } | ConvertTo-Json -Depth 5
 [System.IO.File]::WriteAllText("$DeployDir/package.json", $ProdPackage, (New-Object System.Text.UTF8Encoding $false))

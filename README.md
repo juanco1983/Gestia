@@ -87,3 +87,16 @@ Cuando manejes miles de reportes con fotos pesadas, en lugar de guardar las foto
 1. Sube el archivo de imagen directamente a un servicio de almacenamiento como **AWS S3** o **Azure Blob Storage**.
 2. Guarda únicamente la **URL pública/firmada** de la imagen en tu base de datos.
 3. El frontend renderizará las imágenes usando esa URL de manera nativa e instantánea.
+
+---
+
+## 📚 Documentación Técnica
+
+| Documento | Descripción |
+|-----------|-------------|
+| [Documentacion/architecture_c4.md](Documentacion/architecture_c4.md) | Modelo C4 del sistema (contexto, contenedores, componentes, flujos) |
+| [Documentacion/arquitectura_infraestructura_nube.md](Documentacion/arquitectura_infraestructura_nube.md) | **Infraestructura AWS canónica** — Terraform, CI/CD, EB, Secrets, Deployment |
+| [Documentacion/data_dictionary.md](Documentacion/data_dictionary.md) | Diccionario de datos (19 modelos Prisma) |
+| [Documentacion/analisis_funcional.md](Documentacion/analisis_funcional.md) | Análisis funcional — casos de uso, reglas de negocio, flujos |
+| [Documentacion/guia_ui_ux.md](Documentacion/guia_ui_ux.md) | Sistema de diseño — tokens, componentes, patrones Dashboard |
+| [Documentacion/inventario_inconsistencias_ui.md](Documentacion/inventario_inconsistencias_ui.md) | Auditoría UI/UX + plan de homologación |
