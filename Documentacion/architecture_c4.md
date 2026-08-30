@@ -107,11 +107,12 @@ flowchart TD
 
 ## 3. Nivel 3: Diagrama de Componentes (Backend API)
 
-Zoom al interior del único contenedor backend (`server.ts`).
+Zoom al interior del único contenedor backend (`server.ts` ~3000 líneas, 25 componentes).
 
 ```mermaid
 flowchart TD
     classDef component fill:#85bbf0,stroke:#5b82b8,color:#000
+    classDef internal fill:#a8d0e6,stroke:#5b82b8,color:#000,stroke-dasharray: 5 5
     classDef external fill:#438dd5,stroke:#2e6295,color:#fff
     classDef db fill:#2d882d,stroke:#1a4d1a,color:#fff
     classDef store fill:#f5a623,stroke:#c47e0e,color:#fff
@@ -121,23 +122,33 @@ flowchart TD
     S3[("S3")]:::store
     SM[("Secrets Manager")]:::db
 
-    subgraph ServerTS ["Backend Node.js — server.ts (2139 líneas)"]
+    subgraph ServerTS ["Backend Node.js — server.ts (~3000 líneas)"]
         direction TB
-        Auth["Auth Middleware\n(JWT, bcrypt, 24h)"]:::component
-        Users["UserController\n(/api/users, /api/login, /api/logs)"]:::component
+        Auth["AuthMiddleware\n(JWT verify, public endpoints)"]:::component
+        Users["UserController\n(/api/login, /api/users*, /api/logs)"]:::component
         Ubigeo["UbigeoController\n(/api/ubigeo/*)"]:::component
-        Clients["ClientsController\n(/api/clients)"]:::component
-        Legacy["LegacyContracts\n(/api/contracts)"]:::component
-        Contratos["ContratosController\n(/api/contratos-comerciales, ampliaciones)"]:::component
-        Equipos["EquiposController\n(/api/equipos, /api/contracts/*/equipos)"]:::component
-        OTs["OTController\n(/api/ots + auto-crea OTLinea + descuenta saldo)"]:::component
-        Reports["ReportsController\n(/api/reports, fotos→S3, @@unique)"]:::component
-        Sync["SyncController\n(/api/sync bulk-upsert offline)"]:::component
-        OTLinea["OTLineaController\n(/api/ot-lineas factura, lock FACTURADO)"]:::component
-        Asign["OtEquipoAsignController\n(/api/ot-equipo-asignaciones)"]:::component
-        S3Helper["S3Helper\n(uploadBase64, deleteS3, PDF/auth)"]:::component
-        AI["GeminiAdapter\n(Copiloto IA Dashboard)"]:::component
-        Seed["BootSeeders\n(TipoContrato, ubigeo, fixes client)"]:::component
+        Clients["ClientsController\n(/api/clients*)"]:::component
+        Legacy["LegacyContractsController\n(/api/contracts* legacy)"]:::component
+        Visitas["VisitasController\n(/api/visitas*, cascade a OTs)"]:::component
+        OTs["OTController\n(/api/ots* atómico + OTLinea)"]:::component
+        Reports["ReportsController\n(/api/reports* upsert + S3)"]:::component
+        Sync["SyncController\n(/api/sync bulk offline)"]:::component
+        OTLinea["OTLineaController\n(/api/ot-lineas* factura)"]:::component
+        Contratos["ContratosController\n(/api/contratos-comerciales*)"]:::component
+        Equipos["EquiposController\n(/api/equipos*, inventario)"]:::component
+        Asign["OtEquipoAsignController\n(/api/ot-equipo-asignaciones*)"]:::component
+        S3Helper["S3Helper\n(upload/delete/presigned)"]:::component
+        AI["GeminiAdapter\n(Copiloto IA)"]:::component
+        Seed["BootSeeders\n(seed ubigeo, tipos, fixes)"]:::component
+        Health["HealthController\n(/health, /api/health)"]:::component
+        VisitasCascade["VisitasCascade\n(interno)"]:::internal
+        OTAutoFin["OTAutoFinanciera\n(interno, transacción atómica)"]:::internal
+        PhotoProc["ReportPhotoProcessor\n(interno, Base64→S3)"]:::internal
+        Sanitizer["ReportSanitizer\n(interno, whitelist campos)"]:::internal
+        DeriveEstado["DeriveEstadoEquipo\n(interno, estado real)"]:::internal
+        InventAgg["InventarioAggregator\n(interno, KPIs + paginación)"]:::internal
+        EquipoPhoto["EquipoPhotoHandler\n(interno, upload S3)"]:::internal
+        FileAuthZ["FileServingAuthZ\n(role-gated file access)"]:::internal
     end
 
     SPA -- "Bearer Token" --> Auth
@@ -150,43 +161,66 @@ flowchart TD
     SPA -- "/api/*" --> Reports
     SPA -- "/api/sync" --> Sync
     SPA -- "/api/*" --> OTLinea
+    SPA -- "/api/visitas*" --> Visitas
+    SPA -- "/api/health" --> Health
 
     Auth --> Users
     Users --> DB
     Ubigeo --> DB
     Clients --> DB
-    Contratos --> DB
-    Equipos --> DB
+    Legacy --> DB
+    Visitas --> DB
+    Visitas --> VisitasCascade
     OTs --> DB
+    OTs --> OTAutoFin
     Reports --> DB
-    Reports --> S3Helper
+    Reports --> PhotoProc
+    Reports --> Sanitizer
     Sync --> DB
     OTLinea --> DB
+    Contratos --> DB
+    Equipos --> DB
+    Equipos --> DeriveEstado
+    Equipos --> InventAgg
+    Equipos --> EquipoPhoto
     Asign --> DB
     S3Helper --> S3
+    S3Helper --> FileAuthZ
+    FileAuthZ --> S3
     AI -- "prompt Gemini" --> SPA
     Seed --> DB
+    Health --> DB
 ```
 
-**Componentes del backend (single-file `server.ts`):**
+**Componentes del backend (single-file `server.ts` ~3000 líneas):**
 
-| Componente | Líneas aprox. | Responsabilidad |
-|---|---|---|
-| `Auth Middleware` | 110–125 | Verifica JWT, fallback `?token=`, suspende `Suspendido` |
-| `UserController` | 127–305 | Login, CRUD users, activity log |
-| `UbigeoController` | 361–394 | Catálogo geográfico Perú (`Pais`/`Provincia`/`Distrito`) |
-| `ClientsController` | 395–458 | CRUD clientes |
-| `Legacy Contracts` | 460–477 | Contratos anuales heredados (`Contract`) |
-| `ContratosController` | 1813–1954 | ContratoNuevo + ContratoAmpliacion, PDFs a S3 |
-| `EquiposController` | 1506–1664 | Catalogación de equipos, servicios, estado |
-| `AsignController` | 1412–1505 | Pivote OT ↔ equipo con técnicos |
-| `OTController` | 479–772 | Crea OT técnica + OT financiera atómica, descuenta saldo contrato |
-| `ReportsController` | 773–950 | Upsert por `@@unique([otId, equipoId])`, conversión Base64→S3 |
-| `SyncController` | 951–1106 | `/api/sync` — bulk upsert offline (reports, OTs, clientes, contratos nuevos) |
-| `OTLineaController` | 1107–1237 | Línea financiera, auto-factura, lock FACTURADO |
-| `S3Helper` | 22–79, 1239–1410 | `uploadBase64ToS3`, `uploadContractBase64ToS3`, `uploadEquipoPhotoToS3`, `deleteFromS3`, role-gated file serving |
-| `GeminiAdapter` | embebido en CopilotoIAPanel | Generación de insights, KPI narratives |
-| `BootSeeders` | arranque servidor | `seedTipoContratos`, `runDataFixes`, `ensureUbigeoData` |
+| # | Componente | Líneas Aprox | Endpoints Clave | Responsabilidad |
+|---|------------|--------------|-----------------|-----------------|
+| 1 | `AuthMiddleware` | 128–141 | `/api/*` (global) | JWT verify, público/protegido, fallback `?token=` |
+| 2 | `UserController` | 145–369 | `/api/login`, `/api/users*`, `/api/logs*`, `/api/db-dump`, `/api/admin/wipe-operational-db` | Auth, CRUD users, activity log, admin ops |
+| 3 | `UbigeoController` | 429–512 | `/api/ubigeo/*` | Catálogo Perú (Pais/Provincia/Distrito) + seed automático |
+| 4 | `ClientsController` | 514–583 | `/api/clients*` | CRUD Clientes + código auto-generado |
+| 5 | `LegacyContractsController` | 585–602 | `/api/contracts*` (legacy) | Contratos anuales heredados (solo lectura) |
+| 6 | `VisitasController` | 604–681 | `/api/visitas*`, `/api/visitas/:id/ots` | CRUD Visitas + cascade estado a OTs hijas |
+| 7 | `OTController` | 683–996 | `/api/ots*` | CRUD OT + creación atómica OT+Financiera+descuenta saldo contrato |
+| 8 | `ReportsController` | 998–1196 | `/api/reports*` | Upsert único por `(otId,equipoId)`, fotos→S3, auto-sync OTLinea |
+| 9 | `SyncController` | 1402–1750 | `/api/sync` | Bulk upsert offline (reports, OTs, visitas, clients, contratos, equipos) |
+| 10 | `OTLineaController` | 1107–1237 | `/api/ordenes-trabajo*`, `/api/ot-lineas*` | Línea financiera, auto-factura, lock FACTURADO, estatus bitácora |
+| 11 | `ContratosController` | 1813–1954 | `/api/contratos-comerciales*`, `/api/contratos/*/ampliaciones*` | ContratoNuevo + Ampliaciones, PDFs→S3, presupuesto/saldo |
+| 12 | `EquiposController` | 1506–1664 + 2161–2350 | `/api/equipos*`, `/api/inventario-equipos` | Catálogo equipos, fotos S3, inventario paginado + KPIs + deriveEstado |
+| 13 | `OtEquipoAsignController` | 1412–1505 | `/api/ot-equipo-asignaciones*` | Pivote OT↔Equipo con técnicos asignados |
+| 14 | `S3Helper` | 24–96, 1239–1410 | `/api/photos/*`, `/api/contracts/files/*`, `/api/equipos/files/*` | uploadBase64, delete, presigned URLs, role-gated file serving |
+| 15 | `GeminiAdapter` | ~2300+ | `/api/ai/*` (embebido) | Copiloto IA Dashboard: prompts → Gemini, KPI narratives |
+| 16 | `BootSeeders` | 371–427, arranque | — | `ensureUbigeoData`, `seedTipoContratos`, `runDataFixes` |
+| 17 | `HealthController` | 120–126 | `/api/health`, `/health` | Health check + DB status |
+| 18 | `VisitasCascade` | 669–674 | Interno | Actualiza estado OTs hijas al cambiar estado Visita |
+| 19 | `OTAutoFinanciera` | 707–872 | Interno | Transacción atómica: OT + OTLinea + descuenta saldo contrato |
+| 20 | `ReportPhotoProcessor` | 1009–1060 | Interno | Base64→S3, rollback on error, firma/panorama/labeled/flat |
+| 21 | `ReportSanitizer` | 1062–1082 | Interno | `VALID_REPORT_FIELDS` whitelist para Prisma |
+| 22 | `DeriveEstadoEquipo` | 1955–1969 | Interno | Calcula estado real equipo desde último informe + gabinete + normas |
+| 23 | `InventarioAggregator` | 1971–2159 | `/api/inventario-equipos` | Agrega equipos + informes + visitas + KPIs + paginación |
+| 24 | `EquipoPhotoHandler` | 2222–2264 | `/api/equipos` POST | Subida fotos equipo→S3, código auto-generado |
+| 25 | `FileServingAuthZ` | 1198–1399 | `/api/photos/*`, `/api/contracts/files/*`, `/api/equipos/files/*` | Role-gated access: Admin/Ventas/Supervisor/Tecnico(propio)/Cliente(suyo) |
 
 ---
 
@@ -265,6 +299,161 @@ sequenceDiagram
     API->>DB: $transaction {<br/>  1. INSERT OT<br/>  2. INSERT OrdenTrabajoLinea (cuota comercial)<br/>  3. UPDATE ContratoNuevo.saldo_disponible_usd -= costo_estimado<br/>}
     DB-->>API: success
     API-->>SPA: 201 OT + otFinancieraId
+```
+
+### 4.4 Visita → OTs Hijas → Informes
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor V as Ventas
+    participant SPA as Frontend
+    participant API as Backend
+    participant DB as PostgreSQL
+
+    V->>SPA: Crea Visita (cliente, fecha, equipos)
+    SPA->>API: POST /api/visitas
+    API->>DB: INSERT Visita + genera OTs hijas por equipo/servicio
+    API-->>SPA: 201 Visita + OTs hijas
+    Note over SPA,API: Técnico ejecuta OTs → Informes
+    SPA->>API: POST /api/reports (por OT)
+    API->>DB: Upsert TechnicalReport @@unique(otId,equipoId)
+    API-->>SPA: 201 Report
+    Note over SPA,API: Supervisor aprueba
+    SPA->>API: PUT /api/ots/:id {estado: "Aprobada", correccionesSupervisor: ""}
+    API->>DB: UPDATE OT + limpieza observaciones
+```
+
+### 4.5 Inventario — Derive Estado Equipo
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario (Supervisor/Ventas)
+    participant SPA as Frontend
+    participant API as Backend
+    participant DB as PostgreSQL
+
+    U->>SPA: Abre Inventario Equipos
+    SPA->>API: GET /api/inventario-equipos
+    API->>API: InventarioAggregator (agrega equipos + informes + visitas)
+    API->>API: DeriveEstadoEquipo (último informe + gabinete + normas)
+    alt bypassActivo OR equipoEnBypass OR normas.estadoOperativo=false
+        API->>API: estado = "En observación"
+    else recomendaciones con fallas/reemplazo/avería/sulfatación/ruido/sobrecalentamiento
+        API->>API: estado = "En observación"
+    else
+        API->>API: estado = "Operativo"
+    end
+    API-->>SPA: Lista equipos con estado derivado + KPIs
+```
+
+### 4.6 Ranking Fallas → Redirección Ficha Equipo
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant SPA as Frontend
+    participant API as Backend
+    participant DB as PostgreSQL
+
+    U->>SPA: Dashboard → RankingEquiposFallas
+    SPA->>API: GET /api/inventario-equipos (con fallas)
+    API->>DB: Query equipos con fallas (criterio estricto)
+    Note right of API: Criterio: bypassActivo, paso1=bypass,<br/>palabras clave (falla,reemplazo,avería,<br/>sulfatación,ruido,sobrecalentamiento),<br/>estado OBSERVADA
+    API-->>SPA: Ranking ordenado por fallas
+    U->>SPA: Click "Ver Incidencias" en equipo
+    SPA->>API: GET /api/inventario-equipos/:id (drawer)
+    API->>DB: Historial servicios + informes + visitas futuras
+    API-->>SPA: InventarioEquipoDrawer (ficha técnica)
+```
+
+### 4.7 Supervisor — Lightbox Foto + Limpieza Observaciones
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor S as Supervisor
+    participant SPA as Frontend
+    participant API as Backend
+    participant DB as PostgreSQL
+
+    S->>SPA: Panel Auditoría → click miniatura
+    SPA->>SPA: Lightbox modal (imagen ampliada)
+    S->>SPA: "Aprobar Informe"
+    SPA->>API: PUT /api/ots/:id {estado: "Aprobada", correccionesSupervisor: ""}
+    API->>DB: UPDATE OT SET estado='Aprobada', correccionesSupervisor=''
+    API->>DB: UPDATE TechnicalReport (si aplica)
+    API-->>SPA: 200 OK
+    SPA->>SPA: Toast "Informe Aprobado" + navega a lista
+```
+
+### 4.8 Tour Guiado — Onboarding
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario Nuevo
+    participant SPA as Frontend
+    participant LS as localStorage
+
+    U->>SPA: Primera vez en Dashboard
+    SPA->>LS: Check gestia_tour_completed_<rol>
+    alt no completado
+        SPA->>SPA: driver.js steps (src/tour/steps.ts)
+        SPA->>SPA: Highlights UI por rol (Admin/Ventas/Técnico/Supervisor/Cliente)
+        U->>SPA: Completa pasos
+        SPA->>LS: SET gestia_tour_completed_<rol>=true
+    else completado
+        SPA->>SPA: No muestra tour
+    end
+```
+
+### 4.9 PWA Técnico — Offline Draft → Sync
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor T as Técnico
+    participant SPA as Frontend (TecnicoView)
+    participant SW as Service Worker
+    participant LS as localStorage
+    participant API as Backend
+    participant DB as PostgreSQL
+
+    T->>SPA: Abre Wizard Informe (sin señal)
+    SW->>SW: Cache static assets (vite-plugin-pwa)
+    T->>SPA: Llena formulario + fotos
+    SPA->>LS: Save draft (gestia_offline_queue)
+    SPA->>SPA: offlineDirty = true
+    Note over T,API: Recupera conexión
+    SPA->>API: POST /api/sync {reports, ots, visitas, ...}
+    API->>API: Bulk upsert + Base64→S3 fotos
+    API->>DB: Transaction (reports + OTs + visitas)
+    API-->>SPA: 200 OK estado sincronizado
+    SPA->>LS: Clear draft + offlineDirty = false
+```
+
+### 4.10 Copiloto IA — KPI Narratives
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario (Admin/Ventas/Supervisor)
+    participant SPA as Frontend (Dashboard)
+    participant AI as CopilotoIAPanel
+    participant API as Backend
+    participant GM as Google Gemini
+
+    U->>SPA: Dashboard → Click "Copiloto IA"
+    SPA->>AI: Prompt contextual (KPIs + filtros actuales)
+    AI->>API: POST /api/ai/generate {prompt, context}
+    API->>API: GeminiAdapter.buildPrompt(kpiData)
+    API->>GM: generateContent(prompt)
+    GM-->>API: Narrative text
+    API-->>AI: {narrative}
+    AI->>SPA: Render narrative en panel
 ```
 
 ---
