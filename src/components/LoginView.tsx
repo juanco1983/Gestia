@@ -49,7 +49,7 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
     .then(async (res) => {
       if (res.ok) {
         const data = await res.json();
-        onLoginSuccess(data.user, data.token);
+        onLoginSuccess(data.user, data.token || data.accessToken);
       } else {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || 'Correo o contraseña incorrectos.');
@@ -83,7 +83,7 @@ export default function LoginView({ users, onLoginSuccess }: LoginViewProps) {
     .then(async (res) => {
       if (res.ok) {
         const data = await res.json();
-        onLoginSuccess(data.user, data.token);
+        onLoginSuccess(data.user, data.token || data.accessToken);
       } else {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || 'La contraseña por defecto no es correcta.');
