@@ -192,7 +192,7 @@ flowchart TD
 
 ## 4. Flujos Críticos (Secuencia)
 
-### 4.1 Login + Auth
+### 4.1 Login + Auth (Access + Refresh Tokens)
 
 ```mermaid
 sequenceDiagram
@@ -209,9 +209,19 @@ sequenceDiagram
     API->>DB: SELECT User WHERE email
     DB-->>API: User (con hash bcrypt)
     API->>API: bcrypt.compare + verifica estado Activo
-    API->>API: jwt.sign({id,email,role}, JWT_SECRET, {expiresIn: 24h})
-    API-->>SPA: {token, user}
-    SPA->>SPA: localStorage['gestia_jwt_token'] + carga Dashboard
+    API->>API: signAccessToken({id,email,role}, 15min) + signRefreshToken({id}, 7d)
+    API->>API: hashRefreshToken(refreshToken) → bcrypt
+    API->>DB: UPDATE User SET refreshTokenHash = hash
+    API-->>SPA: {accessToken, refreshToken, user}
+    SPA->>SPA: localStorage['gestia_access_token'] + localStorage['gestia_refresh_token'] + carga Dashboard
+    
+    Note over SPA,API: Access token expira en 15min → auto-refresh
+    SPA->>API: POST /api/auth/refresh {refreshToken}
+    API->>DB: SELECT User WHERE id (desde refreshToken)
+    API->>API: verifyRefreshToken(refreshToken, user.refreshTokenHash)
+    API->>API: signAccessToken(nuevo, 15min) + signRefreshToken(nuevo, 7d)
+    API->>DB: UPDATE User SET refreshTokenHash = nuevoHash
+    API-->>SPA: {accessToken, refreshToken}
 ```
 
 ### 4.2 Captura de Informe Técnico Offline
@@ -275,17 +285,19 @@ sequenceDiagram
 
 ## 6. Deuda Técnica Arquitectónica
 
-| Item | Impacto | Riesgo |
-|---|---|---|
-| `server.ts` monolítico (2139 líneas) | Mantenibilidad | Alto al escalar |
-| `prisma db push --accept-data-loss` en prod | Pérdida de datos silenciosa | Crítico |
-| JWT sin refresh ni revocación | UX de sesión | Medio |
-| `authenticateToken` silenciosamente pasa si no hay token | Seguridad | Medio |
-| No hay rate limiting | Abuso de API | Bajo (uso interno) |
-| Boot seeders en cold start | Lentitud en deploy | Bajo |
-| Relaciones soft FK (sin `@relation`) en la mayoría de modelos | Integridad referencial | Medio |
-| Typo `adensasOrigen` propagado | Limpieza cosmética | Bajo |
-| Inconsistencia UI/UX entre módulos | UX | Alto (ver [inventario_inconsistencias_ui.md](./inventario_inconsistencias_ui.md)) |
+| Item | Impacto | Riesgo | Estado |
+|---|---|---|---|
+| `server.ts` monolítico (~3000 líneas) | Mantenibilidad | Alto al escalar | 🟡 Vigente |
+| `prisma db push --accept-data-loss` en prod | Pérdida de datos silenciosa | Crítico | ✅ **Resuelto** (migrate deploy) |
+| JWT sin refresh ni revocación | UX de sesión | Medio | ✅ **Resuelto** (access/refresh + revocación) |
+| `authenticateToken` silenciosamente pasa si no hay token | Seguridad | Medio | ✅ **Resuelto** (401 en endpoints protegidos) |
+| No hay rate limiting | Abuso de API | Bajo (uso interno) | ✅ **Resuelto** (100/200 req/min) |
+| Boot seeders en cold start | Lentitud en deploy | Bajo | 🟡 Vigente |
+| Relaciones soft FK (sin `@relation`) en la mayoría de modelos | Integridad referencial | Medio | 🟡 Vigente |
+| Typo `adensasOrigen` propagado | Limpieza cosmética | Bajo | 🟡 Vigente |
+| Inconsistencia UI/UX entre módulos | UX | Alto | 🟡 Vigente (ver [inventario_inconsistencias_ui.md](./inventario_inconsistencias_ui.md)) |
+| **Nueva**: Monolito creciendo (~3000 líneas) | Mantenibilidad | Alto | 🟡 Vigente |
+| **Nueva**: `GeminiAdapter` embebido (no componente separado) | Separación de responsabilidades | Medio | 🟡 Vigente |
 
 ---
 
