@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-08-16  
 **Categoría:** `features`  
-**Estado:** `inProgress`  
+**Estado:** ⏸️ **PENDIENTE** — Requiere ambientes AWS (EB dev/qa) encendidos para validación E2E y mockup. Retomar cuando infra disponible.  
 **Mockup Asociado:** [`Documentacion/mockups/2026-08-16-auditoria-fotos-reporte.html`](file:///c:/Informes%20Mafort%20IA/Documentacion/mockups/2026-08-16-inventario-columna-marca.html)  
 
 ---
