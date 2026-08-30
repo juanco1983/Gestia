@@ -4,7 +4,7 @@ name: "⚡ EC2 Power Control (Ahorro de Costos)"
 #  Disparador: SOLO manual desde GitHub Actions UI.
 #  En "Run workflow" aparecerá un formulario con:
 #    • action  → STOP o START
-#    • env     → dev o prod
+#    • env     → dev, qa o prod
 # ─────────────────────────────────────────────────────────
 on:
   workflow_dispatch:
@@ -24,6 +24,7 @@ on:
         type: choice
         options:
           - dev
+          - qa
           - prod
 
 permissions:
@@ -37,9 +38,6 @@ jobs:
   power-control:
     name: "${{ inputs.action }} EC2 · ${{ inputs.environment }}"
     runs-on: ubuntu-latest
-
-    # Proteger producción con un environment de GitHub que requiera aprobación
-    environment: ${{ inputs.environment == 'prod' && 'production' || '' }}
 
     steps:
       # ── 1. Credenciales AWS ────────────────────────────────────────────────

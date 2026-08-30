@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import 'dotenv/config';
+import { signAccessToken, signRefreshToken, verifyAccessToken, hashRefreshToken, verifyRefreshToken } from "./src/utils/jwt.js";
 
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
@@ -109,6 +110,33 @@ const prisma = new PrismaClient({ adapter });
 const app = express();
 const PORT: number = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "3000"), 10);
 
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:3000").split(",");
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
+const apiLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiadas solicitudes, intente de nuevo más tarde" },
+});
+app.use("/api/", apiLimiter);
+
+const syncLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiadas solicitudes de sincronización, intente de nuevo más tarde" },
+});
+app.use("/api/sync", syncLimiter);
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -125,18 +153,45 @@ app.get("/health", (req, res) => {
   res.json({ status: "healthy" });
 });
 
+const PUBLIC_ENDPOINTS = new Set([
+  "/api/health",
+  "/api/login",
+  "/api/auth/refresh",
+  "/api/auth/logout",
+  "/api/photos",
+  "/api/contracts/files",
+  "/api/equipos/files",
+]);
+
+function isPublicEndpoint(path: string): boolean {
+  return PUBLIC_ENDPOINTS.has(path) || 
+         path.startsWith("/api/photos/") || 
+         path.startsWith("/api/contracts/files/") || 
+         path.startsWith("/api/equipos/files/");
+}
+
 function authenticateToken(req: any, res: any, next: any) {
+  const path = req.path;
+  
   const authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
   if (!token && req.query.token) {
     token = req.query.token as string;
   }
+  
   if (token) {
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifyAccessToken(token);
+    if (decoded) {
       req.user = decoded;
-    } catch (err) {}
+    } else if (!isPublicEndpoint(path)) {
+      return res.status(401).json({ error: "Token inválido o expirado" });
+    }
   }
+  
+  if (!req.user && !isPublicEndpoint(path)) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+  
   next();
 }
 
@@ -173,17 +228,75 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
     }
 
-    const token = jwt.sign(
-      { id: matchedUser.id, email: matchedUser.email, role: matchedUser.role },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    const accessToken = signAccessToken({ id: matchedUser.id, email: matchedUser.email, role: matchedUser.role });
+    const refreshToken = signRefreshToken({ id: matchedUser.id });
+    const refreshTokenHash = await hashRefreshToken(refreshToken);
 
-    const { password: _, ...userWithoutPassword } = matchedUser;
-    res.json({ token, user: userWithoutPassword });
+    await prisma.user.update({
+      where: { id: matchedUser.id },
+      data: { refreshTokenHash },
+    });
+
+    const { password: _, refreshTokenHash: __, ...userWithoutPassword } = matchedUser;
+    res.json({ accessToken, refreshToken, user: userWithoutPassword });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+app.post("/api/auth/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token requerido" });
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_SECRET) as { id: string };
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+    if (!user || !user.refreshTokenHash) {
+      return res.status(401).json({ error: "Refresh token inválido" });
+    }
+
+    const isValid = await verifyRefreshToken(refreshToken, user.refreshTokenHash);
+    if (!isValid) {
+      return res.status(401).json({ error: "Refresh token inválido" });
+    }
+
+    const newAccessToken = signAccessToken({ id: user.id, email: user.email, role: user.role });
+    const newRefreshToken = signRefreshToken({ id: user.id });
+    const newRefreshTokenHash = await hashRefreshToken(newRefreshToken);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshTokenHash: newRefreshTokenHash },
+    });
+
+    res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: "Refresh token inválido o expirado" });
+  }
+});
+
+app.post("/api/auth/logout", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token requerido" });
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_SECRET) as { id: string };
+    await prisma.user.update({
+      where: { id: decoded.id },
+      data: { refreshTokenHash: null },
+    });
+
+    res.json({ message: "Sesión cerrada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al cerrar sesión" });
   }
 });
 

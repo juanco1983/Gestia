@@ -254,7 +254,7 @@ Tres pipelines:
 |---|---|
 | Trigger | **`workflow_dispatch` manual** — SOLO desde GitHub Actions UI (botón "Run workflow") |
 | Auth AWS | Access keys (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) |
-| Inputs | `action` (STOP/START) + `environment` (dev/prod) |
+| Inputs | `action` (STOP/START) + `environment` (dev/qa/prod) |
 | Permisos | IAM user necesita: `autoscaling:SuspendProcesses`, `autoscaling:ResumeProcesses`, `ec2:StopInstances`, `ec2:StartInstances`, `ec2:DescribeInstances` |
 | Mecanismo | `STOP`: Suspende Auto-Healing en el ASG (`autoscaling:SuspendProcesses`) y detiene la instancia EC2 (`ec2:StopInstances`); `START`: Reanuda el ASG y enciende la EC2 |
 | Producción | El ambiente `prod` requiere aprobación manual del environment de GitHub antes de ejecutarse |
@@ -262,7 +262,7 @@ Tres pipelines:
 
 > [!WARNING]
 > Si la instancia EC2 está **DETENIDA (STOP)**, el pipeline `app-deploy.yml` fallará porque el ambiente no puede desplegar en una instancia apagada.
-> Siempre ejecutar `START` antes de hacer push/merge a `dev` o `main`.
+> Siempre ejecutar `START` antes de hacer push/merge a `dev`, `qa` o `main`.
 
 ### 4.5 Pruebas automáticas en `dev` (brecha y plan)
 

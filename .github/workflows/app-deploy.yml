@@ -109,7 +109,7 @@ jobs:
           EOF
 
           # Generar Procfile (inicio rápido para evitar timeout en EB healthcheck)
-          echo "web: npx prisma generate && npx prisma db push --accept-data-loss && node dist/server.cjs" > eb-deploy-temp/Procfile
+          echo "web: npx prisma migrate deploy && npx prisma generate && node dist/server.cjs" > eb-deploy-temp/Procfile
 
           # Comprimir en formato ZIP
           cd eb-deploy-temp
