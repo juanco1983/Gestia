@@ -96,7 +96,7 @@ flowchart TD
 |---|---|---|---|
 | Frontend SPA | React 19 + Vite 6 + Tailwind 4 | AWS Amplify (repo GitHub) | Interfaz de usuario. Sin router, conmutación por rol vía `useState` |
 | CDN | CloudFront | AWS edge | HTTPS + redirect-to-https, cacheo estático |
-| Backend API | Express 4 + Prisma 7 + bcrypt + JWT | Elastic Beanstalk (EC2 t3.micro, Node 20 AL2023) | Único `server.ts` (2139 líneas) con ~80 endpoints REST |
+| Backend API | Express 4 + Prisma 7 + bcrypt + JWT | Elastic Beanstalk (EC2 t3.micro, Node 20 AL2023) | Único `server.ts` (~3000 líneas) con ~85 endpoints REST |
 | Base de datos | PostgreSQL 15 + Prisma ORM | RDS db.t3.micro, gp2 20GB | Schema con 19 modelos (ver [data_dictionary.md](./data_dictionary.md)) |
 | Blob storage | S3 (fotos + PDFs) | bucket `gestia-dev-photos` | Ciclo de vida Glacier@90d, versionado, SSE-AES256 |
 | Secrets | AWS Secrets Manager | `/gestia/{env}/db_password`, `/jwt_secret` | Credenciales RDS y JWT |
@@ -261,13 +261,15 @@ sequenceDiagram
 
 ## 5. Decisiones Arquitectónicas Clave
 
-1. **Single-server monolith**: un único `server.ts` con todos los endpoints (~80) y helpers. No hay capa de servicios, ni controllers folder. Trade-off: simplicidad inicial + deuda de mantenimiento.
+1. **Single-server monolith**: un único `server.ts` con todos los endpoints (~85) y helpers. No hay capa de servicios, ni controllers folder. Trade-off: simplicidad inicial + deuda de mantenimiento.
 2. **Sin router en el frontend**: `App.tsx` conmuta vistas por `useState(currentRole)`. Las rutas se definen en `src\modulesConfig.tsx`. Permite SSR-free deploy en Amplify estático.
-3. **Prisma `db push` en producción**: el deploy CI ejecuta `prisma db push --accept-data-loss` en vez de `migrate deploy`. Riesgo: drift silencioso del schema. Las migrations en `prisma/migrations/` existen pero solo para dev.
+3. **Prisma `migrate deploy` en producción**: el deploy CI ejecuta `prisma migrate deploy` (Procfile). Migraciones versionadas en `prisma/migrations/`. **Resuelto (2026-08-29)**.
 4. **`localStorage` para offline**: los técnicos persisten drafts en `gestia_offline_queue`. No hay IndexedDB. Sync vía `/api/sync` endpoint bulk.
 5. **S3 como blob storage**: fotos de informes (`reports/`), PDFs de contratos (`contracts/`), fotos de equipos (`equipo/`). URLs guardadas en columnas del schema; nunca Base64 en DB.
-6. **JWT sin refresh token**: token único 24h. Si expira, logout automático. Sin revocación de sesiones.
-7. **No hay jobs programados**: no cron, no queues. Las tareas (`seedTipoContratos`, `runDataFixes`, `ensureUbigeoData`) se ejecutan al arranque del servidor.
+6. **JWT Access + Refresh Tokens**: Access 15min + Refresh 7d con revocación en BD (`User.refreshTokenHash`). Endpoints `/api/auth/refresh`, `/api/auth/logout`. **Resuelto (2026-08-29)**.
+7. **Rate Limiting + CORS**: 100 req/min `/api/*`, 200 req/min `/api/sync`. CORS con `ALLOWED_ORIGINS` env. **Resuelto (2026-08-29)**.
+8. **No hay jobs programados**: no cron, no queues. Las tareas (`seedTipoContratos`, `runDataFixes`, `ensureUbigeoData`) se ejecutan al arranque del servidor.
+9. **PWA Scope**: Solo rol Técnico (`VITE_PWA_TECNICO=1` en dev/qa, 0 en prod). Service Worker `src/sw.ts` + `vite-plugin-pwa`.
 
 ---
 
