@@ -113,9 +113,22 @@ const PORT: number = parseInt(process.env.PORT || (process.env.NODE_ENV === "pro
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:3000").split(",");
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:3000,http://localhost:5000").split(",").map(o => o.trim());
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (process.env.NODE_ENV !== "production") return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.includes("amplifyapp.com") ||
+      origin.includes("elasticbeanstalk.com") ||
+      origin.includes("cloudfront.net") ||
+      origin.includes("localhost")
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
 }));
 
@@ -158,21 +171,39 @@ const PUBLIC_ENDPOINTS = new Set([
   "/api/login",
   "/api/auth/refresh",
   "/api/auth/logout",
-  "/api/photos",
-  "/api/contracts/files",
-  "/api/equipos/files",
+  "/health",
+  "/login",
+  "/auth/refresh",
+  "/auth/logout",
 ]);
 
-function isPublicEndpoint(path: string): boolean {
-  return PUBLIC_ENDPOINTS.has(path) || 
-         path.startsWith("/api/photos/") || 
-         path.startsWith("/api/contracts/files/") || 
-         path.startsWith("/api/equipos/files/");
+function isPublicEndpoint(req: any): boolean {
+  const url = (req.originalUrl || "").split("?")[0];
+  const reqPath = (req.path || "").split("?")[0];
+  const baseUrl = req.baseUrl || "";
+  const fullPath = (baseUrl + reqPath).split("?")[0];
+
+  return (
+    PUBLIC_ENDPOINTS.has(url) ||
+    PUBLIC_ENDPOINTS.has(reqPath) ||
+    PUBLIC_ENDPOINTS.has(fullPath) ||
+    url.startsWith("/api/photos/") ||
+    reqPath.startsWith("/photos/") ||
+    reqPath.startsWith("/api/photos/") ||
+    url.startsWith("/api/contracts/files/") ||
+    reqPath.startsWith("/contracts/files/") ||
+    reqPath.startsWith("/api/contracts/files/") ||
+    url.startsWith("/api/equipos/files/") ||
+    reqPath.startsWith("/equipos/files/") ||
+    reqPath.startsWith("/api/equipos/files/")
+  );
 }
 
 function authenticateToken(req: any, res: any, next: any) {
-  const path = req.path;
-  
+  if (isPublicEndpoint(req)) {
+    return next();
+  }
+
   const authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
   if (!token && req.query.token) {
@@ -183,16 +214,13 @@ function authenticateToken(req: any, res: any, next: any) {
     const decoded = verifyAccessToken(token);
     if (decoded) {
       req.user = decoded;
-    } else if (!isPublicEndpoint(path)) {
+      return next();
+    } else {
       return res.status(401).json({ error: "Token inválido o expirado" });
     }
   }
   
-  if (!req.user && !isPublicEndpoint(path)) {
-    return res.status(401).json({ error: "No autorizado" });
-  }
-  
-  next();
+  return res.status(401).json({ error: "No autorizado" });
 }
 
 app.use("/api", authenticateToken);
@@ -238,7 +266,7 @@ app.post("/api/login", async (req, res) => {
     });
 
     const { password: _, refreshTokenHash: __, ...userWithoutPassword } = matchedUser;
-    res.json({ accessToken, refreshToken, user: userWithoutPassword });
+    res.json({ token: accessToken, accessToken, refreshToken, user: userWithoutPassword });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error en el servidor" });

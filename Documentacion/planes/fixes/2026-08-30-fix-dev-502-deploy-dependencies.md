@@ -1,36 +1,34 @@
-# PLAN: Fix 502 Bad Gateway en Ambiente Dev (Dependencias de Despliegue CI/CD)
+# PLAN: Fix 502 Bad Gateway y Autenticacion en Ambiente Dev
 
 **Fecha:** 2026-08-30
 **Tipo:** fix
-**Prioridad:** CRITICA (Bloquea disponibilidad de ambiente dev)
+**Prioridad:** CRITICA
 **Rama:** fix/dev-502-deploy-dependencies
 
 ---
 
 ## 1. Contexto
 
-Tras la fusion del PR #179, el ambiente dev en AWS Elastic Beanstalk (gestia-backend-dev) dejo de responder y quedo mostrando el error HTTP 502 Bad Gateway.
-
-### Analisis de Causa Raiz
-1. Dependencias faltantes en package.json de produccion: app-deploy.yml omitia cors, express-rate-limit y @aws-sdk/s3-request-presigner.
-2. Empaquetado incompleto de Prisma: Solo se copiaba schema.prisma.
-3. Fallo en comando de inicio: Procfile ejecutaba prisma migrate deploy sin migraciones existentes para los nuevos modelos.
-4. Timeout en Elastic Beanstalk: El servidor Node no inicio en puerto 5000.
+Tras la fusion del PR #179, se identificaron dos incidentes criticos:
+1. Ambiente dev en 502 Bad Gateway por dependencias faltantes en CI/CD (cors, express-rate-limit, @aws-sdk/s3-request-presigner) y Procfile con prisma migrate deploy.
+2. Error No autorizado al intentar loguearse: authenticateToken evaluaba req.path (/login) en vez de la ruta completa montada en /api, bloqueando el endpoint publico /api/login.
 
 ---
 
 ## 2. Alcance de Cambios
 
-- .github/workflows/app-deploy.yml: Agregar dependencias completas de produccion, copiar prisma/ completo, Procfile con prisma generate && prisma db push.
-- deploy-backend.ps1: Sincronizar dependencias de produccion.
-- Documentacion/arquitectura_infraestructura_nube.md: Actualizar especificacion de Procfile.
+- .github/workflows/app-deploy.yml: Dependencias completas en package.json de produccion, copia completa de prisma/, Procfile con prisma generate && prisma db push.
+- deploy-backend.ps1: Sincronizacion de dependencias y empaquetado de prisma/.
+- server.ts: isPublicEndpoint y authenticateToken corregidos para reconocer req.originalUrl y req.baseUrl; CORS ampliado para soportar origenes de Amplify; /api/login retorna token y accessToken.
+- src/components/LoginView.tsx: Compatibilidad con data.token y data.accessToken.
 
 ---
 
 ## 3. Criterios de Aceptacion
 
-- [x] Dependencias de produccion completas en app-deploy.yml
-- [x] Copia completa de prisma/ en eb-deploy-temp/
-- [x] Procfile con prisma generate && prisma db push && node dist/server.cjs
-- [x] Build y lint exitosos localmente
-- [x] Rama fix/dev-502-deploy-dependencies pusheada a GitHub
+- [x] Dependencias de produccion completas en CI/CD
+- [x] Procfile con prisma generate && prisma db push
+- [x] /api/login y endpoints publicos no bloqueados por authenticateToken
+- [x] Origenes de Amplify y localhost permitidos en CORS
+- [x] Build y lint limpios localmente
+- [x] Rama fix/dev-502-deploy-dependencies subida a GitHub
